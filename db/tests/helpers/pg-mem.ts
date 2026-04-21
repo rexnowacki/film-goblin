@@ -19,6 +19,10 @@ CREATE TABLE IF NOT EXISTS auth.users (
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
   SELECT NULL::uuid;
 $$;
+CREATE TABLE IF NOT EXISTS _migrations (
+  name TEXT PRIMARY KEY,
+  applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 `;
 
 function listSqlFiles(dir: string): string[] {
@@ -43,8 +47,12 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
   // auth stub so FK references resolve
   await client.query(AUTH_STUB_SQL);
 
-  // Apply worker migrations (films, price_history, watchlists stub)
+  // Apply worker migrations (films, price_history) — skip the watchlists stub because
+  // pg-mem's DROP TABLE doesn't release the primary key index name, so re-creating watchlists
+  // in 0105 would fail with "watchlists_pkey already exists". The real watchlists table is
+  // created by the db migrations after 0100_drop_watchlists_stub.sql cleans it up.
   for (const f of listSqlFiles(WORKER_MIGRATIONS)) {
+    if (f.includes("watchlists_stub")) continue;
     await client.query(readFileSync(join(WORKER_MIGRATIONS, f), "utf8"));
   }
 
