@@ -34,9 +34,13 @@ export async function makeTestDb(): Promise<TestDb> {
   // Then our migrations via the applyMigrations runner so _migrations gets populated
   await applyMigrations(client, DB_MIGRATIONS);
 
-  // Allow cross-schema access for test roles (they need to read everything the policies permit)
+  // Allow cross-schema access for test roles (they need to read everything the policies permit).
+  // Mirror Supabase's real grant structure: anon gets SELECT only; authenticated gets full DML
+  // (RLS policies then restrict which rows); service_role already has BYPASSRLS.
   await client.query(`GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;`);
-  await client.query(`GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;`);
+  await client.query(`GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;`);
+  await client.query(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;`);
+  await client.query(`GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;`);
   await client.query(`GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;`);
 
   return {

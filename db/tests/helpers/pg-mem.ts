@@ -49,9 +49,17 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
   }
 
   // Apply db migrations EXCEPT trigger files (pg-mem can't parse SECURITY DEFINER reliably).
+  // Also strip RLS statements (ENABLE ROW LEVEL SECURITY, CREATE POLICY) — pg-mem doesn't
+  // support them and the smoke test only checks DDL shape, not policy enforcement.
   for (const f of listSqlFiles(DB_MIGRATIONS)) {
     if (f.includes("_trigger")) continue;
-    await client.query(readFileSync(join(DB_MIGRATIONS, f), "utf8"));
+    const raw = readFileSync(join(DB_MIGRATIONS, f), "utf8");
+    const stripped = raw
+      .split(/;\s*\n/)
+      .filter(stmt => !/ALTER\s+TABLE\s+\S+\s+ENABLE\s+ROW\s+LEVEL\s+SECURITY/i.test(stmt))
+      .filter(stmt => !/CREATE\s+POLICY\b/i.test(stmt))
+      .join(";\n");
+    if (stripped.trim()) await client.query(stripped);
   }
 
   return { client, close: async () => { await client.end(); } };
