@@ -70,3 +70,18 @@ export async function fetchPrices(
   }
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
+
+export async function searchFilms(
+  term: string,
+  opts: FetchOptions & { limit?: number } = {}
+): Promise<ITunesLookupResponse> {
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  const url = new URL("https://itunes.apple.com/search");
+  url.searchParams.set("term", term);
+  url.searchParams.set("country", "US");
+  url.searchParams.set("entity", "movie");
+  url.searchParams.set("limit", String(opts.limit ?? 25));
+  const res = await fetchImpl(url.toString());
+  if (!res.ok) throw new Error(`itunes search ${res.status}`);
+  return (await res.json()) as ITunesLookupResponse;
+}
