@@ -40,8 +40,8 @@ export async function runOnce(client: Client, opts: RunOnceOptions = {}): Promis
       const parsed = parseFilm(raw);
       if (!parsed) {
         // Invalid read (kind mismatch, price = 0/null, etc.). Bump last_checked_at and move on.
-        digest.parseFailure(film.itunes_id);
         await updateLastChecked(client, film.id);
+        digest.parseFailure(film.itunes_id);
         digest.filmRefreshed();
         continue;
       }
