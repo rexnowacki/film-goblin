@@ -11,14 +11,31 @@ export async function selectFilmsToRefresh(
   client: Client,
   limit: number
 ): Promise<FilmRow[]> {
-  const r = await client.query<FilmRow>(
+  const r = await client.query(
     `SELECT * FROM films
      WHERE tracking = TRUE
      ORDER BY last_checked_at ASC NULLS FIRST
      LIMIT $1`,
     [limit]
   );
-  return r.rows;
+  // BIGINT comes back as a string from pg; coerce at the boundary.
+  return r.rows.map((row: any) => ({
+    ...row,
+    itunes_id: Number(row.itunes_id),
+  })) as FilmRow[];
+}
+
+export async function maxPriceInWindow(
+  client: Client,
+  filmId: string,
+  days: number
+): Promise<number | null> {
+  const r = await client.query(
+    `SELECT MAX(price_usd) AS max_price FROM price_history
+     WHERE film_id = $1 AND captured_at > now() - ($2 || ' days')::INTERVAL`,
+    [filmId, String(days)]
+  );
+  return numOrNull(r.rows[0]?.max_price);
 }
 
 export async function latestPriceHistory(

@@ -37,6 +37,9 @@ export class Digest {
       `parse_failures=${s.parse_failures}`,
       `unavailable_marked=${s.unavailable_marked}`,
     ];
+    if (s.parse_failure_ids.length > 0) {
+      parts.push(`parse_failure_ids=${s.parse_failure_ids.join(",")}`);
+    }
     return parts.join(" ");
   }
 }

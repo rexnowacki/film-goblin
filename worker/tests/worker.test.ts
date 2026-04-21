@@ -97,4 +97,32 @@ describe("runOnce", () => {
       expect(hist.rows[0].n).toBe(1);
     } finally { await close(); }
   });
+
+  it("marks is_sale=TRUE when the new price is below the trailing-180d max", async () => {
+    const { client, close } = await makeTestDb();
+    try {
+      const filmId = await upsertFilm(client, {
+        itunes_id: 1468845007, title: "Midsommar", director: "Ari Aster",
+        year: 2019, runtime_min: 147, genre_primary: "Horror",
+        description: "", content_advisory: "R", artwork_url: "", itunes_url: "",
+        price_usd: 14.99, hd_price_usd: null,
+      });
+      // Seed a historical high: $14.99 a few weeks ago.
+      await client.query(
+        `INSERT INTO price_history (film_id, price_usd, captured_at) VALUES ($1, 14.99, now() - INTERVAL '20 days')`,
+        [filmId]
+      );
+      server.use(http.get("https://itunes.apple.com/lookup", () =>
+        HttpResponse.json({ resultCount: 1, results: [{ ...midsommarResult, trackPrice: 4.99 }] })
+      ));
+
+      await runOnce(client, { batchSize: 10 });
+
+      const r = await client.query(
+        `SELECT is_sale FROM price_history WHERE film_id = $1 ORDER BY captured_at DESC LIMIT 1`,
+        [filmId]
+      );
+      expect(r.rows[0].is_sale).toBe(true);
+    } finally { await close(); }
+  });
 });

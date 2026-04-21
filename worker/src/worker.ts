@@ -4,6 +4,7 @@ import { computeDiff, shouldAlert } from "./diff.js";
 import {
   selectFilmsToRefresh, latestPriceHistory, findWatchlistsForFilm,
   insertPriceHistory, updateLastChecked, markUnavailable, createAlertAndMark,
+  maxPriceInWindow,
 } from "./db.js";
 import { Digest } from "./digest.js";
 
@@ -27,7 +28,7 @@ export async function runOnce(client: Client, opts: RunOnceOptions = {}): Promis
     const byItunesId = new Map(lookup.results.map(r => [r.trackId, r]));
 
     for (const film of films) {
-      const raw = byItunesId.get(Number(film.itunes_id));
+      const raw = byItunesId.get(film.itunes_id);
 
       if (!raw) {
         // iTunes returned nothing for this id — the film was removed.
@@ -56,12 +57,7 @@ export async function runOnce(client: Client, opts: RunOnceOptions = {}): Promis
       }
 
       // Compute is_sale by comparing against max observed over trailing 180 days.
-      const maxRow = await client.query<{ max_price: string }>(
-        `SELECT MAX(price_usd) AS max_price FROM price_history
-         WHERE film_id = $1 AND captured_at > now() - INTERVAL '180 days'`,
-        [film.id]
-      );
-      const maxPrice = Number(maxRow.rows[0]?.max_price ?? parsed.price_usd);
+      const maxPrice = (await maxPriceInWindow(client, film.id, 180)) ?? parsed.price_usd;
       const is_sale = parsed.price_usd < maxPrice;
 
       await insertPriceHistory(client, film.id, parsed.price_usd, parsed.hd_price_usd, is_sale);
