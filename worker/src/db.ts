@@ -54,3 +54,89 @@ export async function findWatchlistsForFilm(
     max_price_usd: numOrNull(row.max_price_usd),
   })) as WatchlistRow[];
 }
+
+export async function upsertFilm(client: Client, f: ParsedFilm): Promise<string> {
+  const r = await client.query<{ id: string }>(
+    `INSERT INTO films (
+       itunes_id, title, director, year, runtime_min, genre_primary,
+       description, content_advisory, artwork_url, itunes_url
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+     ON CONFLICT (itunes_id) DO UPDATE SET
+       title = EXCLUDED.title,
+       director = EXCLUDED.director,
+       year = EXCLUDED.year,
+       runtime_min = EXCLUDED.runtime_min,
+       genre_primary = EXCLUDED.genre_primary,
+       description = EXCLUDED.description,
+       content_advisory = EXCLUDED.content_advisory,
+       artwork_url = EXCLUDED.artwork_url,
+       itunes_url = EXCLUDED.itunes_url
+     RETURNING id`,
+    [
+      f.itunes_id, f.title, f.director, f.year, f.runtime_min, f.genre_primary,
+      f.description, f.content_advisory, f.artwork_url, f.itunes_url,
+    ]
+  );
+  return r.rows[0].id;
+}
+
+export async function insertPriceHistory(
+  client: Client,
+  filmId: string,
+  price_usd: number,
+  hd_price_usd: number | null,
+  is_sale: boolean
+): Promise<void> {
+  await client.query("BEGIN");
+  try {
+    await client.query(
+      `INSERT INTO price_history (film_id, price_usd, hd_price_usd, is_sale)
+       VALUES ($1, $2, $3, $4)`,
+      [filmId, price_usd, hd_price_usd, is_sale]
+    );
+    await client.query(
+      `UPDATE films SET last_checked_at = now(), last_priced_at = now() WHERE id = $1`,
+      [filmId]
+    );
+    await client.query("COMMIT");
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  }
+}
+
+export async function updateLastChecked(client: Client, filmId: string): Promise<void> {
+  await client.query(`UPDATE films SET last_checked_at = now() WHERE id = $1`, [filmId]);
+}
+
+export async function markUnavailable(client: Client, filmId: string): Promise<void> {
+  await client.query(
+    `UPDATE films SET tracking = FALSE, available = FALSE, last_checked_at = now() WHERE id = $1`,
+    [filmId]
+  );
+}
+
+export async function createAlertAndMark(
+  client: Client,
+  watchlistId: string,
+  filmId: string,
+  oldPrice: number,
+  newPrice: number
+): Promise<void> {
+  await client.query("BEGIN");
+  try {
+    await client.query(
+      `INSERT INTO price_alerts (watchlist_id, film_id, old_price_usd, new_price_usd)
+       VALUES ($1, $2, $3, $4)`,
+      [watchlistId, filmId, oldPrice, newPrice]
+    );
+    await client.query(
+      `UPDATE watchlists SET last_alerted_at = now() WHERE id = $1`,
+      [watchlistId]
+    );
+    await client.query("COMMIT");
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  }
+}
