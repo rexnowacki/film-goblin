@@ -1,4 +1,4 @@
-import type { ITunesResult, ParsedFilm } from "./types.js";
+import type { ITunesResult, ITunesLookupResponse, ParsedFilm } from "./types.js";
 
 const MIN_VALID_PRICE = 0.5;
 
@@ -30,4 +30,43 @@ export function parseFilm(raw: ITunesResult): ParsedFilm | null {
     price_usd: price,
     hd_price_usd: raw.trackHdPrice ?? null,
   };
+}
+
+interface FetchOptions {
+  maxAttempts?: number;
+  backoffMs?: number;
+  fetchImpl?: typeof fetch;
+}
+
+export async function fetchPrices(
+  iTunesIds: number[],
+  opts: FetchOptions = {}
+): Promise<ITunesLookupResponse> {
+  const max = opts.maxAttempts ?? 3;
+  const backoff = opts.backoffMs ?? 500;
+  const fetchImpl = opts.fetchImpl ?? fetch;
+
+  const url = new URL("https://itunes.apple.com/lookup");
+  url.searchParams.set("id", iTunesIds.join(","));
+  url.searchParams.set("country", "US");
+  url.searchParams.set("entity", "movie");
+
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= max; attempt++) {
+    try {
+      const res = await fetchImpl(url.toString());
+      if (res.ok) return (await res.json()) as ITunesLookupResponse;
+      if (res.status === 429 || res.status >= 500) {
+        lastError = new Error(`itunes lookup ${res.status}`);
+      } else {
+        throw new Error(`itunes lookup ${res.status}`);
+      }
+    } catch (err) {
+      lastError = err;
+    }
+    if (attempt < max) {
+      await new Promise(r => setTimeout(r, backoff * Math.pow(2, attempt - 1)));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
