@@ -89,6 +89,10 @@ Aesthetic lock-ins that should not drift without user buy-in:
 - **Storefront labeling:** user-facing strings say "Apple TV" only. Internal identifiers (`itunes_id`, `itunes_url`, `itunes.apple.com/lookup`) stay because those are the API's names.
 - No faked illustrations. Posters are colored `bg`/`accent`/`fg` blocks with a shape primitive plus halftone + SVG grain.
 
+## Production stack
+
+Committed direction (Next.js + Supabase + Vercel Cron, etc.) lives in **`docs/superpowers/stack.md`** — read it before proposing tech choices, and update it there (not here) when decisions change.
+
 ## Sub-project decomposition (production rebuild)
 
 The production rebuild is sequenced as six independent sub-projects, each with its own spec → plan → implementation cycle under `docs/superpowers/`:
