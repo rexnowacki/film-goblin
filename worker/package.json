@@ -1,0 +1,29 @@
+{
+  "name": "film-goblin-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "migrate": "tsx scripts/run-migrate.ts",
+    "seed": "tsx scripts/run-seed.ts",
+    "worker": "tsx scripts/run-worker.ts",
+    "add-film": "tsx scripts/add-film.ts"
+  },
+  "dependencies": {
+    "@sentry/node": "^8.47.0",
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "@types/pg": "^8.11.10",
+    "msw": "^2.7.0",
+    "pg-mem": "^3.0.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
