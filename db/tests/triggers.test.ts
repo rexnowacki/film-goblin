@@ -184,3 +184,71 @@ describe("trigger: activity fan-out", () => {
     } finally { await rollback(db.client); }
   });
 });
+
+describe("trigger: review draft→published", () => {
+  it("emits review_published activity on transition", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    try {
+      const r = await db.client.query<{ id: string }>(
+        `INSERT INTO reviews (film_id, author_user_id, title, body) VALUES ($1, $2, 'T', 'B') RETURNING id`,
+        [fx.filmId, fx.staffS.id]
+      );
+      // No activity yet (draft insert)
+      const a1 = await db.client.query(
+        `SELECT count(*)::int AS n FROM activity WHERE kind = 'review_published' AND actor_user_id = $1`,
+        [fx.staffS.id]
+      );
+      expect(a1.rows[0].n).toBe(0);
+
+      await db.client.query(
+        `UPDATE reviews SET status = 'published', published_at = now() WHERE id = $1`,
+        [r.rows[0].id]
+      );
+
+      const a2 = await db.client.query(
+        `SELECT actor_user_id, payload FROM activity WHERE kind = 'review_published' AND actor_user_id = $1`,
+        [fx.staffS.id]
+      );
+      expect(a2.rowCount).toBe(1);
+      expect(a2.rows[0].actor_user_id).toBe(fx.staffS.id);
+      expect(a2.rows[0].payload.review_id).toBe(r.rows[0].id);
+    } finally { await rollback(db.client); }
+  });
+
+  it("does NOT emit when updating a draft (status stays draft)", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    try {
+      const r = await db.client.query<{ id: string }>(
+        `INSERT INTO reviews (film_id, author_user_id, title, body) VALUES ($1, $2, 'T', 'B') RETURNING id`,
+        [fx.filmId, fx.staffS.id]
+      );
+      await db.client.query(`UPDATE reviews SET body = 'edited' WHERE id = $1`, [r.rows[0].id]);
+      const a = await db.client.query(
+        `SELECT count(*)::int AS n FROM activity WHERE kind = 'review_published' AND actor_user_id = $1`,
+        [fx.staffS.id]
+      );
+      expect(a.rows[0].n).toBe(0);
+    } finally { await rollback(db.client); }
+  });
+
+  it("does NOT emit when editing an already-published review", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    try {
+      const r = await db.client.query<{ id: string }>(
+        `INSERT INTO reviews (film_id, author_user_id, title, body, status, published_at)
+         VALUES ($1, $2, 'T', 'B', 'published', now()) RETURNING id`,
+        [fx.filmId, fx.staffS.id]
+      );
+      // Initial published insert doesn't fire the trigger (UPDATE trigger, not INSERT)
+      await db.client.query(`UPDATE reviews SET body = 'edited' WHERE id = $1`, [r.rows[0].id]);
+      const a = await db.client.query(
+        `SELECT count(*)::int AS n FROM activity WHERE kind = 'review_published' AND actor_user_id = $1`,
+        [fx.staffS.id]
+      );
+      expect(a.rows[0].n).toBe(0);
+    } finally { await rollback(db.client); }
+  });
+});
