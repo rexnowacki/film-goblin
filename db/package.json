@@ -1,0 +1,27 @@
+{
+  "name": "film-goblin-db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run tests/migrations.smoke.test.ts",
+    "test:rls": "vitest run tests/rls tests/triggers.test.ts",
+    "test:all": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "migrate": "tsx scripts/run-migrate.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "^10.16.0",
+    "@types/node": "^20.17.10",
+    "@types/pg": "^8.11.10",
+    "pg-mem": "^3.0.4",
+    "testcontainers": "^10.16.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
