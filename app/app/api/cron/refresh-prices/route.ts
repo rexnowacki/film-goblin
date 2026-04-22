@@ -5,7 +5,7 @@ import { runOnce } from "film-goblin-worker";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 900; // 15 min on Vercel Pro; harmless on Hobby.
+export const maxDuration = 300; // Hobby plan cap. Bump to 900 on Pro if needed.
 
 function unauthorized() {
   return NextResponse.json({ error: "unauthorized" }, { status: 401 });
