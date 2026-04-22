@@ -99,3 +99,88 @@ describe("trigger: coven_requests accept → coven_members + activity", () => {
     } finally { await rollback(db.client); }
   });
 });
+
+describe("trigger: activity fan-out", () => {
+  it("lists insert emits list_created activity", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    try {
+      const r = await db.client.query<{ id: string }>(
+        `INSERT INTO lists (owner_user_id, title) VALUES ($1, 'Grimoire') RETURNING id`,
+        [fx.userA.id]
+      );
+      const a = await db.client.query(
+        `SELECT kind, payload FROM activity WHERE actor_user_id = $1`, [fx.userA.id]
+      );
+      expect(a.rowCount).toBe(1);
+      expect(a.rows[0].kind).toBe("list_created");
+      expect(a.rows[0].payload.list_id).toBe(r.rows[0].id);
+    } finally { await rollback(db.client); }
+  });
+
+  it("list_films insert emits list_film_added with list owner as actor", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    try {
+      const list = await db.client.query<{ id: string }>(
+        `INSERT INTO lists (owner_user_id, title) VALUES ($1, 'G') RETURNING id`, [fx.userA.id]
+      );
+      await db.client.query(
+        `INSERT INTO list_films (list_id, film_id, position) VALUES ($1, $2, 0)`,
+        [list.rows[0].id, fx.filmId]
+      );
+      const r = await db.client.query(
+        `SELECT actor_user_id FROM activity WHERE kind = 'list_film_added' AND actor_user_id = $1`,
+        [fx.userA.id]
+      );
+      expect(r.rowCount).toBe(1);
+      expect(r.rows[0].actor_user_id).toBe(fx.userA.id);
+    } finally { await rollback(db.client); }
+  });
+
+  it("recommendations insert emits recommendation_sent", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    try {
+      await db.client.query(
+        `INSERT INTO recommendations (from_user_id, to_user_id, film_id, note) VALUES ($1, $2, $3, 'rec')`,
+        [fx.userA.id, fx.userB.id, fx.filmId]
+      );
+      const r = await db.client.query(
+        `SELECT kind, payload FROM activity WHERE actor_user_id = $1 AND kind = 'recommendation_sent'`,
+        [fx.userA.id]
+      );
+      expect(r.rowCount).toBe(1);
+      expect(r.rows[0].payload.to_user_id).toBe(fx.userB.id);
+    } finally { await rollback(db.client); }
+  });
+
+  it("watchlist insert with broadcast=false does NOT emit activity", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    try {
+      // broadcast defaults to FALSE
+      await db.client.query(`INSERT INTO watchlists (user_id, film_id) VALUES ($1, $2)`, [fx.userA.id, fx.filmId]);
+      const r = await db.client.query(
+        `SELECT count(*)::int AS n FROM activity WHERE actor_user_id = $1 AND kind = 'watchlist_added'`,
+        [fx.userA.id]
+      );
+      expect(r.rows[0].n).toBe(0);
+    } finally { await rollback(db.client); }
+  });
+
+  it("watchlist insert with broadcast=true emits activity", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    try {
+      await db.client.query(`UPDATE profiles SET broadcast_watchlist_adds = TRUE WHERE id = $1`, [fx.userA.id]);
+      await db.client.query(`INSERT INTO watchlists (user_id, film_id) VALUES ($1, $2)`, [fx.userA.id, fx.filmId]);
+      const r = await db.client.query(
+        `SELECT kind, payload FROM activity WHERE actor_user_id = $1 AND kind = 'watchlist_added'`,
+        [fx.userA.id]
+      );
+      expect(r.rowCount).toBe(1);
+      expect(r.rows[0].payload.film_id).toBe(fx.filmId);
+    } finally { await rollback(db.client); }
+  });
+});
