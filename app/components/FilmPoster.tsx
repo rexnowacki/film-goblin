@@ -5,6 +5,7 @@ export interface Film {
   title: string;
   director: string;
   year: number;
+  artwork_url?: string | null;
   bg?: string;
   fg?: string;
   accent?: string;
@@ -34,6 +35,7 @@ export default function FilmPoster({ film, size = "md", className = "", style = 
   const bg = film.bg || "#1a1a1a";
   const fg = film.fg || "#f3ecd8";
   const accent = film.accent || "#ff2d88";
+  const hasArt = Boolean(film.artwork_url);
 
   return (
     <div
@@ -51,24 +53,39 @@ export default function FilmPoster({ film, size = "md", className = "", style = 
         ...style,
       }}
     >
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: `radial-gradient(${accent} 1.4px, transparent 1.6px)`,
-          backgroundSize: "8px 8px",
-          opacity: film.halftoneOpacity ?? 0.35,
-          mixBlendMode: "screen",
-        }}
-      />
-      {film.shape === "triangle" && (
+      {hasArt && (
+        <img
+          src={film.artwork_url!}
+          alt={film.title}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+          }}
+        />
+      )}
+      {!hasArt && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: `radial-gradient(${accent} 1.4px, transparent 1.6px)`,
+            backgroundSize: "8px 8px",
+            opacity: film.halftoneOpacity ?? 0.35,
+            mixBlendMode: "screen",
+          }}
+        />
+      )}
+      {!hasArt && film.shape === "triangle" && (
         <div style={{
           position: "absolute", left: "10%", top: "14%", width: "80%", height: "48%",
           background: accent,
           clipPath: "polygon(50% 0, 100% 100%, 0 100%)",
         }} />
       )}
-      {film.shape === "circle" && (
+      {!hasArt && film.shape === "circle" && (
         <div style={{
           position: "absolute", left: "20%", top: "18%", width: "60%",
           aspectRatio: "1 / 1",
@@ -76,13 +93,13 @@ export default function FilmPoster({ film, size = "md", className = "", style = 
           borderRadius: "50%",
         }} />
       )}
-      {film.shape === "bars" && (
+      {!hasArt && film.shape === "bars" && (
         <div style={{
           position: "absolute", left: 0, top: "20%", right: 0, height: "40%",
           background: `repeating-linear-gradient(0deg, ${accent} 0 ${s.h*0.04}px, transparent ${s.h*0.04}px ${s.h*0.09}px)`,
         }} />
       )}
-      {film.shape === "eye" && (
+      {!hasArt && film.shape === "eye" && (
         <div style={{
           position: "absolute", left: "25%", top: "22%", width: "50%", aspectRatio: "2/1",
           background: accent,
@@ -95,13 +112,13 @@ export default function FilmPoster({ film, size = "md", className = "", style = 
           }} />
         </div>
       )}
-      {film.shape === "cross" && (
+      {!hasArt && film.shape === "cross" && (
         <>
           <div style={{ position: "absolute", left: "46%", top: "12%", width: "8%", height: "56%", background: accent }} />
           <div style={{ position: "absolute", left: "30%", top: "26%", width: "40%", height: "8%", background: accent }} />
         </>
       )}
-      {film.shape === "skull" && (
+      {!hasArt && film.shape === "skull" && (
         <div style={{
           position: "absolute", left: "22%", top: "16%", width: "56%", aspectRatio: "1/1.1",
           background: accent,
@@ -120,7 +137,7 @@ export default function FilmPoster({ film, size = "md", className = "", style = 
         opacity: 0.5,
       }} />
 
-      <div style={{
+      {!hasArt && <div style={{
         position: "absolute",
         bottom: 0, left: 0, right: 0,
         padding: s.w > 100 ? "10px 12px 12px" : "6px 6px 8px",
@@ -149,7 +166,7 @@ export default function FilmPoster({ film, size = "md", className = "", style = 
             {film.director || film.year}
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

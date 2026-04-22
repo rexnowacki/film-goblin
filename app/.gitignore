@@ -5,3 +5,5 @@ out
 .env*.local
 coverage
 next-env.d.ts
+.env.staging
+.vercel
