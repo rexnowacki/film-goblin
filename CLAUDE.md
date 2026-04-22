@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Remote
+
+Private repo at [rexnowacki/film-goblin](https://github.com/rexnowacki/film-goblin). `origin/master` is the default branch. Vercel is the planned deploy target (see `docs/superpowers/stack.md`); no Vercel project is linked yet.
+
 ## Two packages, one repo
 
 This repo contains two independent packages that are deployed separately and share nothing at runtime:
