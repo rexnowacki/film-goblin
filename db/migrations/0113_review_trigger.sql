@@ -19,7 +19,7 @@ BEGIN
 END;
 $$;
 
-CREATE TRIGGER on_review_published
+CREATE OR REPLACE TRIGGER on_review_published
 AFTER UPDATE ON reviews
 FOR EACH ROW
 EXECUTE FUNCTION public.activity_on_review_published();

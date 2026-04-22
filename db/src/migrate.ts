@@ -15,8 +15,17 @@ export async function applyMigrations(client: Client, migrationsDir: string): Pr
     const r = await client.query(`SELECT 1 FROM _migrations WHERE name = $1`, [file]);
     if (r.rowCount && r.rowCount > 0) continue;
     const sql = readFileSync(join(migrationsDir, file), "utf8");
-    await client.query(sql);
-    await client.query(`INSERT INTO _migrations (name) VALUES ($1)`, [file]);
+    // Wrap each migration + its tracking insert in a single transaction so a
+    // partial failure leaves no half-applied state.
+    await client.query("BEGIN");
+    try {
+      await client.query(sql);
+      await client.query(`INSERT INTO _migrations (name) VALUES ($1)`, [file]);
+      await client.query("COMMIT");
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    }
     applied.push(file);
   }
   return applied;

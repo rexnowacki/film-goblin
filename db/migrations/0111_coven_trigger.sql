@@ -28,7 +28,7 @@ BEGIN
 END;
 $$;
 
-CREATE TRIGGER on_coven_request_accepted
+CREATE OR REPLACE TRIGGER on_coven_request_accepted
 AFTER UPDATE ON coven_requests
 FOR EACH ROW
 EXECUTE FUNCTION public.handle_coven_request_accepted();
