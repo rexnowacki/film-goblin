@@ -49,7 +49,6 @@ export async function fetchPrices(
   const url = new URL("https://itunes.apple.com/lookup");
   url.searchParams.set("id", iTunesIds.join(","));
   url.searchParams.set("country", "US");
-  url.searchParams.set("entity", "movie");
 
   let lastError: unknown;
   for (let attempt = 1; attempt <= max; attempt++) {
@@ -79,7 +78,6 @@ export async function searchFilms(
   const url = new URL("https://itunes.apple.com/search");
   url.searchParams.set("term", term);
   url.searchParams.set("country", "US");
-  url.searchParams.set("entity", "movie");
   url.searchParams.set("limit", String(opts.limit ?? 25));
   const res = await fetchImpl(url.toString());
   if (!res.ok) throw new Error(`itunes search ${res.status}`);

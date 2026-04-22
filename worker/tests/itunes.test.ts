@@ -96,7 +96,7 @@ describe("fetchPrices", () => {
     await fetchPrices([111, 222, 333]);
     expect(capturedUrl).toContain("id=111%2C222%2C333");
     expect(capturedUrl).toContain("country=US");
-    expect(capturedUrl).toContain("entity=movie");
+    expect(capturedUrl).not.toContain("entity=movie");
   });
 
   it("retries on 429 with backoff and eventually succeeds", async () => {
