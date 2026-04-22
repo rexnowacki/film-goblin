@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: worker/package-lock.json
+      - run: npm ci
+        working-directory: worker
+      - run: npm test
+        working-directory: worker
+      - run: npm run typecheck
+        working-directory: worker
+
+  db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: db/package-lock.json
+      - run: npm ci
+        working-directory: db
+      - run: npm test
+        working-directory: db
+      - run: npm run test:rls
+        working-directory: db
+      - run: npm run typecheck
+        working-directory: db
+
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase start
+      - name: Get local Supabase keys
+        id: supabase
+        run: |
+          KEYS=$(supabase status -o json)
+          echo "anon_key=$(echo $KEYS | jq -r '.api.anon_key')" >> $GITHUB_OUTPUT
+          echo "service_role_key=$(echo $KEYS | jq -r '.api.service_role_key')" >> $GITHUB_OUTPUT
+          echo "url=$(echo $KEYS | jq -r '.api.url')" >> $GITHUB_OUTPUT
+      - name: Apply migrations
+        run: |
+          cd worker && npm ci && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" npm run migrate
+          cd ../db && npm ci && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" npm run migrate
+      - name: Grant PostgREST role access
+        run: |
+          CONTAINER=$(docker ps --format '{{.Names}}' | grep supabase_db)
+          docker exec -i "$CONTAINER" psql -U postgres -d postgres -c \
+            "GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role; \
+             GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role; \
+             GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role; \
+             GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated; \
+             GRANT INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated; \
+             GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated; \
+             ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO service_role; \
+             ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO anon, authenticated; \
+             ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT INSERT, UPDATE, DELETE ON TABLES TO authenticated; \
+             ALTER TABLE films ENABLE ROW LEVEL SECURITY; \
+             ALTER TABLE price_history ENABLE ROW LEVEL SECURITY; \
+             DROP POLICY IF EXISTS films_public_read ON films; \
+             CREATE POLICY films_public_read ON films FOR SELECT TO anon, authenticated USING (true); \
+             DROP POLICY IF EXISTS price_history_public_read ON price_history; \
+             CREATE POLICY price_history_public_read ON price_history FOR SELECT TO anon, authenticated USING (true); \
+             NOTIFY pgrst, 'reload schema';"
+      - run: npm ci
+        working-directory: app
+      - env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.url }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.supabase.outputs.anon_key }}
+          TEST_SUPABASE_SERVICE_ROLE_KEY: ${{ steps.supabase.outputs.service_role_key }}
+        run: npm test
+        working-directory: app
+      - env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.url }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.supabase.outputs.anon_key }}
+        run: npm run typecheck && npm run build
+        working-directory: app
