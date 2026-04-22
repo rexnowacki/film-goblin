@@ -42,3 +42,4 @@ END $$;
 
 GRANT USAGE ON SCHEMA auth TO anon, authenticated, service_role;
 GRANT SELECT ON auth.users TO anon, authenticated, service_role;
+GRANT INSERT, UPDATE, DELETE ON auth.users TO service_role;

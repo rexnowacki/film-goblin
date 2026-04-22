@@ -35,12 +35,9 @@ export async function seedFixtures(client: Client): Promise<Fixtures> {
 
   for (const u of [userA, userB, userC, staffS, adminA]) {
     await client.query(`INSERT INTO auth.users (id, email) VALUES ($1, $2)`, [u.id, u.email]);
-    // Profiles row is normally created by a trigger (Task 15); until that migration is
-    // applied, insert directly. After the trigger lands, this INSERT is redundant but harmless
-    // because ON CONFLICT is added in that task's version of seedFixtures.
+    // Trigger created a profiles row; overwrite handle/display_name for deterministic test values
     await client.query(
-      `INSERT INTO profiles (id, handle, display_name) VALUES ($1, $2, $3)
-       ON CONFLICT (id) DO NOTHING`,
+      `UPDATE profiles SET handle = $2, display_name = $3 WHERE id = $1`,
       [u.id, u.handle, u.handle]
     );
   }
