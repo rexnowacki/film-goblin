@@ -35,3 +35,67 @@ describe("trigger: auth.users → profiles bootstrap", () => {
     } finally { await rollback(db.client); }
   });
 });
+
+describe("trigger: coven_requests accept → coven_members + activity", () => {
+  it("inserts coven_members with canonicalized pair on accept", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    try {
+      await db.client.query(
+        `INSERT INTO coven_requests (from_user_id, to_user_id) VALUES ($1, $2)`,
+        [fx.userA.id, fx.userB.id]
+      );
+      await db.client.query(
+        `UPDATE coven_requests SET status = 'accepted', responded_at = now()
+         WHERE from_user_id = $1 AND to_user_id = $2`,
+        [fx.userA.id, fx.userB.id]
+      );
+      const lo = fx.userA.id < fx.userB.id ? fx.userA.id : fx.userB.id;
+      const hi = fx.userA.id < fx.userB.id ? fx.userB.id : fx.userA.id;
+      const r = await db.client.query(
+        `SELECT user_a_id, user_b_id FROM coven_members WHERE user_a_id = $1 AND user_b_id = $2`,
+        [lo, hi]
+      );
+      expect(r.rowCount).toBe(1);
+    } finally { await rollback(db.client); }
+  });
+
+  it("emits exactly two 'coven_joined' activity rows on accept", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    try {
+      await db.client.query(`INSERT INTO coven_requests (from_user_id, to_user_id) VALUES ($1, $2)`, [fx.userA.id, fx.userB.id]);
+      await db.client.query(
+        `UPDATE coven_requests SET status = 'accepted' WHERE from_user_id = $1 AND to_user_id = $2`,
+        [fx.userA.id, fx.userB.id]
+      );
+      const r = await db.client.query(
+        `SELECT actor_user_id FROM activity WHERE kind = 'coven_joined' AND actor_user_id IN ($1, $2)`,
+        [fx.userA.id, fx.userB.id]
+      );
+      expect(r.rowCount).toBe(2);
+    } finally { await rollback(db.client); }
+  });
+
+  it("does NOT emit on decline", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    try {
+      await db.client.query(`INSERT INTO coven_requests (from_user_id, to_user_id) VALUES ($1, $2)`, [fx.userA.id, fx.userB.id]);
+      await db.client.query(
+        `UPDATE coven_requests SET status = 'declined' WHERE from_user_id = $1 AND to_user_id = $2`,
+        [fx.userA.id, fx.userB.id]
+      );
+      const members = await db.client.query(
+        `SELECT count(*)::int AS n FROM coven_members WHERE user_a_id IN ($1, $2) OR user_b_id IN ($1, $2)`,
+        [fx.userA.id, fx.userB.id]
+      );
+      const activityRows = await db.client.query(
+        `SELECT count(*)::int AS n FROM activity WHERE kind = 'coven_joined' AND actor_user_id IN ($1, $2)`,
+        [fx.userA.id, fx.userB.id]
+      );
+      expect(members.rows[0].n).toBe(0);
+      expect(activityRows.rows[0].n).toBe(0);
+    } finally { await rollback(db.client); }
+  });
+});
