@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { updateProfile, changePassword } from "@/lib/actions/profile";
 import { signOut } from "@/lib/actions/auth";
+import Avatar from "@/components/Avatar";
 
 export default function SettingsForm() {
   const [profile, setProfile] = useState<any>(null);
@@ -14,6 +15,33 @@ export default function SettingsForm() {
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSuccess, setPwSuccess] = useState(false);
   const [pwPending, setPwPending] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
+  async function uploadAvatar(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    setAvatarError(null);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setAvatarError("Not signed in."); return; }
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { cacheControl: "3600", upsert: true, contentType: file.type });
+      if (uploadErr) { setAvatarError(uploadErr.message); return; }
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      await updateProfile({ avatar_url: pub.publicUrl });
+      setProfile({ ...profile, avatar_url: pub.publicUrl });
+    } catch (err: any) {
+      setAvatarError(err?.message ?? "Upload failed.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -57,6 +85,17 @@ export default function SettingsForm() {
 
   return (
     <>
+    <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 24 }}>
+      <Avatar name={profile.display_name ?? profile.handle ?? "You"} color="var(--accent)" size={72} url={profile.avatar_url} />
+      <div>
+        <div className="caps" style={{ fontSize: 11, marginBottom: 6, color: "var(--accent)" }}>Profile picture</div>
+        <label style={{ display: "inline-block", cursor: "pointer", padding: "8px 14px", border: "2px solid var(--bone)", color: "var(--bone)", fontFamily: "var(--font-ui)", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          {avatarUploading ? "Uploading…" : (profile.avatar_url ? "Replace" : "Upload")}
+          <input type="file" accept="image/*" onChange={uploadAvatar} disabled={avatarUploading} style={{ display: "none" }} />
+        </label>
+        {avatarError && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 12, marginTop: 6 }}>{avatarError}</div>}
+      </div>
+    </div>
     <form action={save} style={{ display: "grid", gap: 16, maxWidth: 540 }}>
       <label>
         <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Handle</div>
