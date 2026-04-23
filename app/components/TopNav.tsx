@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import Avatar from "./Avatar";
+import UserMenu from "./UserMenu";
 
 interface TopNavProps {
   current?: string;
@@ -9,6 +10,16 @@ interface TopNavProps {
 export default async function TopNav({ current }: TopNavProps) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+
+  let profile: { handle: string; display_name: string | null; avatar_url: string | null } | null = null;
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("handle, display_name, avatar_url")
+      .eq("id", user.id)
+      .single();
+    profile = data;
+  }
 
   const items = user
     ? [
@@ -43,9 +54,11 @@ export default async function TopNav({ current }: TopNavProps) {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           {user ? (
-            <Link href="/settings" style={{ cursor: "pointer" }}>
-              <Avatar name={user.email ?? "You Goblin"} color="var(--accent)" size={34} />
-            </Link>
+            <UserMenu
+              handle={profile?.handle ?? "you"}
+              displayName={profile?.display_name ?? profile?.handle ?? "You"}
+              avatarUrl={profile?.avatar_url}
+            />
           ) : (
             <Link href="/auth/signin" className="btn btn-dark btn-sm" style={{ textDecoration: "none" }}>
               Sign In

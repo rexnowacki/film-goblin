@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { updateProfile } from "@/lib/actions/profile";
+import { signOut } from "@/lib/actions/auth";
 
 export default function SettingsForm() {
   const [profile, setProfile] = useState<any>(null);
@@ -40,6 +41,7 @@ export default function SettingsForm() {
   if (!profile) return <div style={{ padding: 40 }}>Not signed in.</div>;
 
   return (
+    <>
     <form action={save} style={{ display: "grid", gap: 16, maxWidth: 540 }}>
       <label>
         <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Handle</div>
@@ -72,5 +74,25 @@ export default function SettingsForm() {
         </div>
       </div>
     </form>
+    <form action={signOut} style={{ marginTop: 32 }}>
+      <button
+        type="submit"
+        style={{
+          background: "transparent",
+          color: "var(--blood)",
+          border: "2px solid var(--blood)",
+          padding: "10px 18px",
+          fontFamily: "var(--font-ui)",
+          fontWeight: 700,
+          fontSize: 11,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          cursor: "pointer",
+        }}
+      >
+        Sign out
+      </button>
+    </form>
+    </>
   );
 }
