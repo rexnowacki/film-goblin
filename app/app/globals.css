@@ -62,9 +62,9 @@
    Mobile = ≤720px. Desktop = >720px. Single breakpoint for MVP; revisit
    with a tablet tier when needed. */
 .mobile-only { display: none; }
-.desktop-only { display: initial; }
+.desktop-only { display: revert; }
 @media (max-width: 720px) {
-  .mobile-only { display: initial; }
+  .mobile-only { display: revert; }
   .desktop-only { display: none !important; }
 }
 .mobile-only-flex { display: none; }

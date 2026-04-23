@@ -75,7 +75,6 @@ export default function TopNavChrome({ items, current, user, profile }: Props) {
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             style={{
-              display: "none",
               background: "transparent", border: 0, padding: 6, cursor: "pointer",
               color: "var(--bone)",
             }}
@@ -89,7 +88,6 @@ export default function TopNavChrome({ items, current, user, profile }: Props) {
         <div
           className="mobile-only"
           style={{
-            display: "none",
             borderTop: "1px solid #2a2a2a",
             background: "var(--void-2)",
             padding: "8px 20px 16px",
