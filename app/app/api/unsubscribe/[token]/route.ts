@@ -22,11 +22,26 @@ function pageHtml(title: string, heading: string, body: string): string {
 </html>`;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function notFound(): Response {
+  return new Response(
+    pageHtml(
+      "Link expired",
+      "Link no longer valid",
+      "This unsubscribe link is no longer valid. It may have been rotated after you re-enabled email notifications.",
+    ),
+    { status: 404, headers: { "content-type": "text/html; charset=utf-8" } },
+  );
+}
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ token: string }> },
 ): Promise<Response> {
   const { token } = await context.params;
+
+  if (!UUID_RE.test(token)) return notFound();
 
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
@@ -44,16 +59,7 @@ export async function GET(
       `UPDATE profiles SET email_notifications_enabled = FALSE WHERE unsubscribe_token = $1 RETURNING handle`,
       [token],
     );
-    if (result.rowCount === 0) {
-      return new Response(
-        pageHtml(
-          "Link expired",
-          "Link no longer valid",
-          "This unsubscribe link is no longer valid. It may have been rotated after you re-enabled email notifications.",
-        ),
-        { status: 404, headers: { "content-type": "text/html; charset=utf-8" } },
-      );
-    }
+    if (result.rowCount === 0) return notFound();
     return new Response(
       pageHtml(
         "Unsubscribed",
