@@ -48,7 +48,7 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
             <div className="eyebrow" style={{ marginBottom: 10, opacity: 0.8 }}>
               {film.genre_primary}
             </div>
-            <h1 className="display" style={{ fontSize: "clamp(72px, 8vw, 128px)", margin: 0, lineHeight: 0.86 }}>
+            <h1 className="head" style={{ fontSize: "clamp(40px, 10vw, 96px)", margin: 0, lineHeight: 0.92 }}>
               {film.title}
             </h1>
             <div style={{ display: "flex", gap: 18, marginTop: 16, flexWrap: "wrap" }} className="caps">
