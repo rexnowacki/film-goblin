@@ -24,7 +24,7 @@ export default async function CovenPage() {
       <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "44px 0 32px" }} className="grain-light">
         <div className="container-wide">
           <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 10 }}>Chapter V</div>
-          <h1 className="display" style={{ fontSize: 112, margin: 0, lineHeight: 0.88 }}>The <em style={{ color: "var(--accent)" }}>Coven</em>.</h1>
+          <h1 className="h-display">The <em style={{ color: "var(--accent)" }}>Coven</em>.</h1>
         </div>
       </section>
 
