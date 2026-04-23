@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { updateProfile } from "@/lib/actions/profile";
+import { updateProfile, changePassword } from "@/lib/actions/profile";
 import { signOut } from "@/lib/actions/auth";
 
 export default function SettingsForm() {
@@ -10,12 +10,17 @@ export default function SettingsForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [hasPasswordIdentity, setHasPasswordIdentity] = useState(true);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [pwPending, setPwPending] = useState(false);
 
   useEffect(() => {
     (async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setHasPasswordIdentity((user.identities ?? []).some((i: any) => i.provider === "email"));
       const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       setProfile(data);
       setLoading(false);
@@ -35,6 +40,16 @@ export default function SettingsForm() {
       });
       setSaved(true);
     } finally { setSaving(false); }
+  }
+
+  async function handleChangePassword(formData: FormData) {
+    setPwPending(true);
+    setPwError(null);
+    setPwSuccess(false);
+    const res = await changePassword(formData);
+    setPwPending(false);
+    if (res?.error) setPwError(res.error);
+    if (res?.ok) setPwSuccess(true);
   }
 
   if (loading) return <div style={{ padding: 40 }}>Loading…</div>;
@@ -74,6 +89,38 @@ export default function SettingsForm() {
         </div>
       </div>
     </form>
+    <div style={{ marginTop: 40, borderTop: "1px solid #333", paddingTop: 24 }}>
+      <div className="caps" style={{ fontSize: 11, marginBottom: 12, color: "var(--accent)" }}>Change Password</div>
+      {!hasPasswordIdentity && (
+        <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, marginBottom: 16, opacity: 0.8 }}>
+          You signed up with Google. Set a password to also sign in with email.
+        </p>
+      )}
+      <form action={handleChangePassword} style={{ display: "grid", gap: 12, maxWidth: 420 }}>
+        {hasPasswordIdentity && (
+          <label>
+            <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Current password</div>
+            <input name="current_password" type="password" required minLength={6} autoComplete="current-password"
+              style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "1px solid #333", color: "var(--bone)" }} />
+          </label>
+        )}
+        <label>
+          <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>New password</div>
+          <input name="new_password" type="password" required minLength={6} autoComplete="new-password"
+            style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "1px solid #333", color: "var(--bone)" }} />
+        </label>
+        <label>
+          <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Confirm new password</div>
+          <input name="confirm" type="password" required minLength={6} autoComplete="new-password"
+            style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "1px solid #333", color: "var(--bone)" }} />
+        </label>
+        {pwError && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{pwError}</div>}
+        {pwSuccess && <div style={{ color: "var(--accent)", fontStyle: "italic", fontSize: 13 }}>Password updated.</div>}
+        <button type="submit" disabled={pwPending} className="btn" style={{ justifySelf: "start" }}>
+          {pwPending ? "Updating…" : "Update Password"}
+        </button>
+      </form>
+    </div>
     <form action={signOut} style={{ marginTop: 32 }}>
       <button
         type="submit"
