@@ -29,6 +29,14 @@
   --font-ui: "IBM Plex Sans", system-ui, sans-serif;
   --font-serif: "IBM Plex Serif", Georgia, serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Responsive tokens — swapped at @media (max-width: 720px) below. */
+  --container-pad: 32px;
+  --grid-gap: 20px;
+  --card-shadow-offset: 12px;
+  --modal-pad: 32px;
+  --card-rotation: -0.5deg;
+  --film-hero-poster-size: 340px;
 }
 
 /* accent variants, applied at app root */
@@ -36,6 +44,17 @@
 [data-accent="yellow"] { --accent: #f5d300; --accent-deep: #d4b700; --accent-ink: #0a0a0a; }
 [data-accent="orange"] { --accent: #ff6a1f; --accent-deep: #c74d0f; --accent-ink: #0a0a0a; }
 [data-accent="blood"]  { --accent: #d93a2e; --accent-deep: #8e1e15; --accent-ink: #f3ecd8; }
+
+@media (max-width: 720px) {
+  :root {
+    --container-pad: 16px;
+    --grid-gap: 14px;
+    --card-shadow-offset: 6px;
+    --modal-pad: 20px;
+    --card-rotation: 0deg;
+    --film-hero-poster-size: clamp(200px, 60vw, 280px);
+  }
+}
 
 * { box-sizing: border-box; }
 
@@ -131,6 +150,21 @@ a { color: inherit; text-decoration: none; }
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+/* Fluid display typography — use on pages where big headers should scale. */
+.h-display {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 9vw, 112px);
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.h-head {
+  font-family: var(--font-head);
+  font-size: clamp(32px, 5vw, 72px);
+  line-height: 1;
+  margin: 0;
 }
 
 /* ---------- buttons ---------- */
@@ -229,34 +263,27 @@ a { color: inherit; text-decoration: none; }
 .container {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 0 32px;
+  padding: 0 var(--container-pad);
 }
 .container-wide {
   max-width: 1600px;
   margin: 0 auto;
-  padding: 0 32px;
-}
-@media (max-width: 720px) {
-  .container, .container-wide { padding: 0 16px; }
+  padding: 0 var(--container-pad);
 }
 
-/* Fluid card grid. Pages override --grid-min with inline style to tune the
-   minimum column width; default ~180px. */
+/* Fluid card grids. Override --grid-min inline to tune the minimum column width. */
 .grid-auto {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--grid-min, 180px), 1fr));
-  gap: var(--grid-gap, 20px);
-}
-@media (max-width: 720px) {
-  .grid-auto { gap: var(--grid-gap-mobile, 14px); }
+  gap: var(--grid-gap);
 }
 
-/* Stack multi-column layouts below the breakpoint. Pages set
-   --stack-template on their grid and get the mobile-stack for free. */
+/* Stackable multi-column layouts. Override --stack-template inline for desktop;
+   mobile forces 1fr regardless. */
 .stackable {
   display: grid;
   grid-template-columns: var(--stack-template, 1fr);
-  gap: var(--stack-gap, 20px);
+  gap: var(--stack-gap, var(--grid-gap));
 }
 @media (max-width: 720px) {
   .stackable { grid-template-columns: 1fr !important; }
