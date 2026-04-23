@@ -57,3 +57,15 @@ export async function signInWithGoogle(nextPath?: string): Promise<{ url: string
   if (error || !data?.url) throw new Error(friendlyError(error ?? "OAuth provider unreachable"));
   return { url: data.url };
 }
+
+export async function sendPasswordReset(formData: FormData): Promise<{ message: string }> {
+  const email = String(formData.get("email") || "").trim();
+  const origin = String(formData.get("origin") || "");
+  if (!email) return { message: "Enter your email." };
+  const supabase = await createClient();
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/reset`,
+  });
+  // Don't leak whether the email exists (no email-enumeration).
+  return { message: "If an account with that email exists, we've sent a reset link. Check your inbox." };
+}
