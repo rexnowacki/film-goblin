@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
+import { friendlyError } from "@/lib/auth/friendly-errors";
 
 type Client = SupabaseClient<Database>;
 
@@ -43,4 +44,30 @@ export async function updateProfile(fields: ProfileFields) {
   const c = await createClient();
   await _updateProfile(c, fields);
   revalidatePath("/settings");
+}
+
+export async function changePassword(formData: FormData): Promise<{ error?: string; ok?: boolean }> {
+  const currentPassword = String(formData.get("current_password") || "");
+  const newPassword = String(formData.get("new_password") || "");
+  const confirm = String(formData.get("confirm") || "");
+  if (newPassword.length < 6) return { error: "New password must be at least 6 characters." };
+  if (newPassword !== confirm) return { error: "New passwords don't match." };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) return { error: "Not signed in." };
+
+  // OAuth-only user (no password identity): skip re-auth.
+  const hasPasswordIdentity = (user.identities ?? []).some(i => i.provider === "email");
+  if (hasPasswordIdentity) {
+    const reauth = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+    if (reauth.error) return { error: "Current password is incorrect." };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) return { error: friendlyError(error) };
+  return { ok: true };
 }
