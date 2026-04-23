@@ -131,11 +131,11 @@ export default function SettingsForm() {
 
   return (
     <>
-    <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 24 }}>
+    <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 24, flexWrap: "wrap" }}>
       <Avatar name={profile.display_name ?? profile.handle ?? "You"} color="var(--accent)" size={72} url={profile.avatar_url} />
       <div>
         <div className="caps" style={{ fontSize: 11, marginBottom: 6, color: "var(--accent)" }}>Profile picture</div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <label style={{ display: "inline-block", cursor: avatarUploading ? "default" : "pointer", padding: "8px 14px", border: "2px solid var(--bone)", color: "var(--bone)", fontFamily: "var(--font-ui)", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>
             {avatarUploading ? "Uploading…" : (profile.avatar_url ? "Replace" : "Upload")}
             <input type="file" accept="image/*" onChange={pickFile} disabled={avatarUploading} style={{ display: "none" }} />
