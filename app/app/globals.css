@@ -331,3 +331,17 @@ a { color: inherit; text-decoration: none; }
 
 /* selection */
 ::selection { background: var(--accent); color: var(--accent-ink); }
+
+/* Landing hero posters — on mobile, drop the absolute positioning and rotations. */
+@media (max-width: 720px) {
+  .hero-posters { min-height: auto !important; }
+  .hero-posters .hero-poster {
+    position: static !important;
+    transform: none !important;
+    margin: 0 auto 20px !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+  }
+}
