@@ -50,9 +50,6 @@ export default function FeedTabs({ items }: Props) {
             fontFamily: "var(--font-ui)", fontWeight: 700,
           }}>{t}</button>
         ))}
-        <button onClick={() => router.refresh()} className="caps" style={{ marginLeft: "auto", background: "transparent", color: "var(--muted)", border: "1px solid #333", padding: "6px 12px", fontSize: 10, cursor: "pointer", fontFamily: "var(--font-ui)", fontWeight: 700 }}>
-          Refresh
-        </button>
       </div>
       <div style={{ display: "grid", gap: 0 }}>
         {filtered.length === 0 ? (
