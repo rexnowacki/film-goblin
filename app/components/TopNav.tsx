@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getPendingInviteCount } from "@/lib/queries/coven";
-import Avatar from "./Avatar";
-import UserMenu from "./UserMenu";
+import TopNavChrome from "./TopNavChrome";
 
 interface TopNavProps {
   current?: string;
@@ -27,7 +25,7 @@ export default async function TopNav({ current }: TopNavProps) {
     pendingInviteCount = await getPendingInviteCount(supabase, user.id);
   }
 
-  const items: { id: string; label: string; href: string; badge?: number }[] = user
+  const items = user
     ? [
         { id: "home", label: "Home", href: "/home" },
         { id: "films", label: "Films", href: "/films" },
@@ -42,46 +40,11 @@ export default async function TopNav({ current }: TopNavProps) {
       ];
 
   return (
-    <div style={{ borderBottom: "1px solid #2a2a2a", background: "var(--void-2)", position: "sticky", top: 0, zIndex: 20 }}>
-      <div className="container-wide" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 32px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
-          <Link href={user ? "/home" : "/"} style={{ fontFamily: "var(--font-display)", fontSize: 26, lineHeight: 1, color: "var(--bone)", textDecoration: "none" }}>
-            Film<span style={{ color: "var(--accent)" }}>Goblin</span>
-          </Link>
-          <nav style={{ display: "flex", gap: 22 }}>
-            {items.map(it => (
-              <Link key={it.id} href={it.href} className="caps" style={{
-                fontSize: 11,
-                color: current === it.id ? "var(--accent)" : "var(--bone)",
-                borderBottom: current === it.id ? "2px solid var(--accent)" : "2px solid transparent",
-                paddingBottom: 4,
-                textDecoration: "none",
-                position: "relative",
-              }}>
-                {it.label}
-                {it.badge && it.badge > 0 ? (
-                  <span style={{ marginLeft: 6, padding: "1px 6px", background: "var(--accent)", color: "var(--accent-ink)", fontSize: 9, fontWeight: 700, borderRadius: 999 }}>
-                    {it.badge}
-                  </span>
-                ) : null}
-              </Link>
-            ))}
-          </nav>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          {user ? (
-            <UserMenu
-              handle={profile?.handle ?? "you"}
-              displayName={profile?.display_name ?? profile?.handle ?? "You"}
-              avatarUrl={profile?.avatar_url}
-            />
-          ) : (
-            <Link href="/auth/signin" className="btn btn-dark btn-sm" style={{ textDecoration: "none" }}>
-              Sign In
-            </Link>
-          )}
-        </div>
-      </div>
-    </div>
+    <TopNavChrome
+      items={items}
+      current={current}
+      user={Boolean(user)}
+      profile={profile}
+    />
   );
 }

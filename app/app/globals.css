@@ -39,6 +39,20 @@
 
 * { box-sizing: border-box; }
 
+/* Responsive helpers.
+   Mobile = ≤720px. Desktop = >720px. Single breakpoint for MVP; revisit
+   with a tablet tier when needed. */
+.mobile-only { display: none; }
+.desktop-only { display: initial; }
+@media (max-width: 720px) {
+  .mobile-only { display: initial; }
+  .desktop-only { display: none !important; }
+}
+.mobile-only-flex { display: none; }
+@media (max-width: 720px) {
+  .mobile-only-flex { display: flex; }
+}
+
 html, body, #root {
   margin: 0; padding: 0;
   background: var(--void);
@@ -221,6 +235,31 @@ a { color: inherit; text-decoration: none; }
   max-width: 1600px;
   margin: 0 auto;
   padding: 0 32px;
+}
+@media (max-width: 720px) {
+  .container, .container-wide { padding: 0 16px; }
+}
+
+/* Fluid card grid. Pages override --grid-min with inline style to tune the
+   minimum column width; default ~180px. */
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-min, 180px), 1fr));
+  gap: var(--grid-gap, 20px);
+}
+@media (max-width: 720px) {
+  .grid-auto { gap: var(--grid-gap-mobile, 14px); }
+}
+
+/* Stack multi-column layouts below the breakpoint. Pages set
+   --stack-template on their grid and get the mobile-stack for free. */
+.stackable {
+  display: grid;
+  grid-template-columns: var(--stack-template, 1fr);
+  gap: var(--stack-gap, 20px);
+}
+@media (max-width: 720px) {
+  .stackable { grid-template-columns: 1fr !important; }
 }
 
 /* ink stamp effect */
