@@ -106,7 +106,7 @@ export default async function LandingPage() {
           <h2 className="display" style={{ fontSize: 80, margin: "0 0 40px", lineHeight: 0.88 }}>
             The Curated <em style={{ color: "var(--accent)" }}>Grimoires</em>
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "var(--grid-gap)" }}>
             {featuredLists.map((list, i) => (
               <div key={list.id} style={{
                 background: "var(--void)",

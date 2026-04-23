@@ -73,7 +73,7 @@ export default async function PublicProfilePage({
           {bundle.lists.length === 0 ? (
             <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>No public lists.</div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "var(--grid-gap)" }}>
               {bundle.lists.map(l => (
                 <div key={l.id} style={{ border: "2px solid var(--void)", padding: 20 }}>
                   {l.is_official && <span className="stamp" style={{ background: "var(--accent)", color: "var(--accent-ink)", marginBottom: 12, display: "inline-block" }}>✦ Official</span>}
