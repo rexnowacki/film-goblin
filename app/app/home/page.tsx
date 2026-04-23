@@ -12,8 +12,8 @@ export default async function HomePage() {
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100vh" }}>
       <TopNav current="home" />
 
-      <div className="container-wide" style={{ padding: 32, display: "grid", gridTemplateColumns: "220px 1fr 320px", gap: 32 }}>
-        <aside>
+      <div className="container-wide stackable" style={{ padding: "32px 0", "--stack-template": "220px 1fr 320px", "--stack-gap": "32px" } as React.CSSProperties}>
+        <aside className="desktop-only">
           <div className="eyebrow" style={{ color: "var(--muted)", marginBottom: 12 }}>Your Ledger</div>
           <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13 }}>
             Your watchlist and deals summary land here in a later sub-project.
@@ -23,7 +23,7 @@ export default async function HomePage() {
           <h2 className="display" style={{ fontSize: 42, margin: "0 0 16px" }}>The Feed</h2>
           <FeedTabs items={feed} />
         </main>
-        <aside>
+        <aside className="desktop-only">
           <div className="eyebrow" style={{ color: "var(--muted)", marginBottom: 12 }}>Popular Grimoires</div>
           <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13 }}>
             Lives in a later sub-project.
