@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "workspaces": ["app", "worker", "db"],
+  "workspaces": ["app", "worker", "db", "notifier"],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
