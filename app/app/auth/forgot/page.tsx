@@ -19,9 +19,9 @@ export default function ForgotPasswordPage() {
     <main style={{ background: "var(--bone)", color: "var(--void)", minHeight: "100vh", display: "grid", placeItems: "center", padding: 40 }}>
       <div style={{
         background: "var(--bone)", color: "var(--void)",
-        border: "3px solid var(--void)", padding: "40px 32px",
-        boxShadow: "12px 12px 0 var(--accent)",
-        transform: "rotate(-0.5deg)",
+        border: "3px solid var(--void)", padding: "clamp(24px, 6vw, 40px) clamp(20px, 5vw, 32px)",
+        boxShadow: "var(--card-shadow-offset) var(--card-shadow-offset) 0 var(--accent)",
+        transform: "rotate(var(--card-rotation))",
         maxWidth: 420, width: "100%",
       }} className="grain-light">
         <div className="eyebrow" style={{ marginBottom: 8 }}>✦ Recovery</div>
