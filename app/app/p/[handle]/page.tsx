@@ -54,7 +54,7 @@ export default async function PublicProfilePage({
           </div>
           <div>
             <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 8 }}>Profile</div>
-            <h1 className="display" style={{ fontSize: 72, margin: 0, lineHeight: 0.9 }}>
+            <h1 className="h-display">
               {bundle.profile.display_name ?? bundle.profile.handle}
             </h1>
             <div className="caps" style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>@{bundle.profile.handle}</div>

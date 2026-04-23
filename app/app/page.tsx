@@ -84,7 +84,7 @@ export default async function LandingPage() {
       <section style={{ background: "var(--void)", color: "var(--bone)", borderBottom: "2px solid var(--void)", padding: "40px 0", overflow: "hidden" }}>
         <div className="container-wide" style={{ marginBottom: 20 }}>
           <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 6 }}>Chapter I</div>
-          <h2 className="display" style={{ fontSize: 72, margin: 0, lineHeight: 0.9 }}>
+          <h2 className="h-display">
             Deals, Fresh <span style={{ color: "var(--accent)", fontStyle: "italic" }}>From The Pit</span>
           </h2>
         </div>
@@ -103,7 +103,7 @@ export default async function LandingPage() {
       <section style={{ background: "var(--bone)", color: "var(--void)", padding: "72px 0", borderBottom: "2px solid var(--void)" }} className="grain-light">
         <div className="container-wide">
           <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 6 }}>Chapter II</div>
-          <h2 className="display" style={{ fontSize: 80, margin: "0 0 40px", lineHeight: 0.88 }}>
+          <h2 className="h-display" style={{ marginBottom: 40 }}>
             The Curated <em style={{ color: "var(--accent)" }}>Grimoires</em>
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "var(--grid-gap)" }}>
