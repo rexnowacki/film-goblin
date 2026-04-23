@@ -24,7 +24,7 @@ export default async function ListsPage() {
 
       <section style={{ padding: "36px 0 60px" }}>
         <div className="container-wide">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "var(--grid-gap)" }}>
             {lists.map((l) => (
               <div key={l.id} style={{ border: "2px solid var(--bone)", padding: 20 }}>
                 {l.is_official && (

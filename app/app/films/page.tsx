@@ -38,7 +38,7 @@ export default async function FilmsPage({
               No films match. The void returned nothing.
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "var(--grid-gap)" }}>
               {films.map(f => (
                 <Link key={f.id} href={`/film/${f.id}`} style={{ cursor: "pointer", textDecoration: "none", color: "inherit" }}>
                   <FilmPoster film={f as any} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
