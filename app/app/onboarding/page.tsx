@@ -248,7 +248,7 @@ function ChapterGenres({ selected, onToggle }: { selected: string[]; onToggle: (
     <section style={{ padding: "48px 0", position: "relative" }}>
       <div className="container-wide">
         <ChapterHeader n="I" title="Declare Thy Poisons" quote="What flavour of dread? Pick three. Or twelve. We are not a jealous system." />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, maxWidth: 980, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: "var(--grid-gap)", maxWidth: 980, margin: "0 auto" }}>
           {GENRES.map((g, i) => {
             const on = selected.includes(g.id);
             return (
@@ -404,7 +404,7 @@ function ChapterWatchlist({ selected, onToggle }: { selected: string[]; onToggle
             Loading the grimoire…
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 14, maxWidth: 1080, margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "var(--grid-gap)", maxWidth: 1080, margin: "0 auto" }}>
             {results.slice(0, 18).map(f => {
               const on = selected.includes(f.id);
               return (
@@ -622,7 +622,7 @@ function ChapterOath({
                 did formally swear to watch with intention, to pay no more than necessary, and to be disturbed only when a film they love drops by <b>{threshold}% or more</b>.
               </p>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, margin: "14px 0", fontSize: 11 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: "var(--grid-gap)", margin: "14px 0", fontSize: 11 }}>
                 <CertStat big={genres.length} small="Poisons" />
                 <CertStat big={stores.length} small="Storefronts" />
                 <CertStat big={watchlist.length} small="Films Sown" />
