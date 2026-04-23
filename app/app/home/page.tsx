@@ -20,7 +20,7 @@ export default async function HomePage() {
           </div>
         </aside>
         <main>
-          <h2 className="display" style={{ fontSize: 42, margin: "0 0 16px" }}>The Feed</h2>
+          <h2 className="h-display" style={{ marginBottom: 16 }}>The Feed</h2>
           <FeedTabs items={feed} />
         </main>
         <aside className="desktop-only">
