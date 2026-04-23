@@ -43,3 +43,17 @@ export async function signOut(): Promise<void> {
   await supabase.auth.signOut();
   redirect("/");
 }
+
+export async function signInWithGoogle(nextPath?: string): Promise<{ url: string }> {
+  const origin = process.env.APP_BASE_URL || "http://localhost:3000";
+  const next = safeRedirect(nextPath ?? null);
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${origin}/api/auth/callback?next=${encodeURIComponent(next)}`,
+    },
+  });
+  if (error || !data?.url) throw new Error(friendlyError(error ?? "OAuth provider unreachable"));
+  return { url: data.url };
+}
