@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getPendingInviteCount } from "@/lib/queries/coven";
 import Avatar from "./Avatar";
+import UserMenu from "./UserMenu";
 
 interface TopNavProps {
   current?: string;
@@ -10,11 +12,28 @@ export default async function TopNav({ current }: TopNavProps) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const items = user
+  let profile: { handle: string; display_name: string | null; avatar_url: string | null } | null = null;
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("handle, display_name, avatar_url")
+      .eq("id", user.id)
+      .single();
+    profile = data;
+  }
+
+  let pendingInviteCount = 0;
+  if (user) {
+    pendingInviteCount = await getPendingInviteCount(supabase, user.id);
+  }
+
+  const items: { id: string; label: string; href: string; badge?: number }[] = user
     ? [
         { id: "home", label: "Home", href: "/home" },
         { id: "films", label: "Films", href: "/films" },
         { id: "lists", label: "Lists", href: "/lists" },
+        { id: "people", label: "People", href: "/people" },
+        { id: "coven", label: "Coven", href: "/coven", badge: pendingInviteCount },
         { id: "settings", label: "Settings", href: "/settings" },
       ]
     : [
@@ -37,15 +56,25 @@ export default async function TopNav({ current }: TopNavProps) {
                 borderBottom: current === it.id ? "2px solid var(--accent)" : "2px solid transparent",
                 paddingBottom: 4,
                 textDecoration: "none",
-              }}>{it.label}</Link>
+                position: "relative",
+              }}>
+                {it.label}
+                {it.badge && it.badge > 0 ? (
+                  <span style={{ marginLeft: 6, padding: "1px 6px", background: "var(--accent)", color: "var(--accent-ink)", fontSize: 9, fontWeight: 700, borderRadius: 999 }}>
+                    {it.badge}
+                  </span>
+                ) : null}
+              </Link>
             ))}
           </nav>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           {user ? (
-            <Link href="/settings" style={{ cursor: "pointer" }}>
-              <Avatar name={user.email ?? "You Goblin"} color="var(--accent)" size={34} />
-            </Link>
+            <UserMenu
+              handle={profile?.handle ?? "you"}
+              displayName={profile?.display_name ?? profile?.handle ?? "You"}
+              avatarUrl={profile?.avatar_url}
+            />
           ) : (
             <Link href="/auth/signin" className="btn btn-dark btn-sm" style={{ textDecoration: "none" }}>
               Sign In

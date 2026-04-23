@@ -2,7 +2,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const AUTH_PAGES = ["/auth/signin", "/auth/signup"];
-const AUTH_REQUIRED = ["/home", "/onboarding", "/settings"];
+const AUTH_REQUIRED = ["/home", "/onboarding", "/settings", "/coven"];
 
 /**
  * Pure redirect decision — exported for testing.
