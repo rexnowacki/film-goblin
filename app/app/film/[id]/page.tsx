@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getFilm, getLatestPriceHistory } from "@/lib/queries/films";
 import { isOnWatchlist } from "@/lib/queries/watchlists";
 import { getPublishedReviewsForFilm } from "@/lib/queries/reviews";
+import { getMyCovenMembers } from "@/lib/queries/coven";
 import FilmPoster from "@/components/FilmPoster";
 import Stars from "@/components/Stars";
 import TopNav from "@/components/TopNav";
@@ -15,6 +16,7 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
   const history = await getLatestPriceHistory(supabase, id, 180);
   const reviews = await getPublishedReviewsForFilm(supabase, id);
   const { data: { user } } = await supabase.auth.getUser();
+  const covenMembers = user ? await getMyCovenMembers(supabase, user.id) : [];
   const onList = user ? await isOnWatchlist(supabase, id) : false;
 
   const currentPrice = history[history.length - 1]?.price_usd ?? 0;
@@ -52,7 +54,7 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
             </p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
               {user && <WatchlistButton filmId={film.id} initialOnList={onList} />}
-              {user && <RecommendModal filmId={film.id} filmTitle={film.title} />}
+              {user && <RecommendModal filmId={film.id} filmTitle={film.title} covenMembers={covenMembers.map(m => ({ id: m.id, handle: m.handle, display_name: m.display_name }))} />}
               {film.itunes_url && (
                 <a href={film.itunes_url} target="_blank" rel="noreferrer" className="btn btn-lg">
                   Buy on Apple TV →
