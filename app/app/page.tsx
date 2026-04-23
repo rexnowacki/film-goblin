@@ -38,7 +38,7 @@ export default async function LandingPage() {
       {/* HERO */}
       <section style={{ borderBottom: "2px solid var(--void)", position: "relative", overflow: "hidden" }} className="grain-light">
         <div className="container-wide" style={{ padding: "48px 32px 32px", position: "relative" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 40, alignItems: "stretch" }}>
+          <div className="stackable" style={{ "--stack-template": "1.4fr 1fr", "--stack-gap": "40px", alignItems: "stretch" } as React.CSSProperties}>
             <div>
               <div className="stamp" style={{ background: "var(--void)", color: "var(--yellow)", borderColor: "var(--void)", marginBottom: 20 }}>
                 ✦ A Field Guide To Cheap Movies ✦
@@ -59,9 +59,9 @@ export default async function LandingPage() {
                 <Link href="/films" className="btn btn-outline btn-lg" style={{ textDecoration: "none" }}>Browse Films</Link>
               </div>
             </div>
-            <div style={{ position: "relative", minHeight: 560 }}>
+            <div className="hero-posters" style={{ position: "relative", minHeight: 560 }}>
               {marqueeFilms.slice(0, 3).map((f, i) => (
-                <div key={f.id} style={{
+                <div key={f.id} className="hero-poster" style={{
                   position: "absolute",
                   top: i === 0 ? 20 : i === 1 ? 180 : "auto",
                   right: i === 0 ? 40 : i === 2 ? 0 : "auto",
@@ -106,7 +106,7 @@ export default async function LandingPage() {
           <h2 className="display" style={{ fontSize: 80, margin: "0 0 40px", lineHeight: 0.88 }}>
             The Curated <em style={{ color: "var(--accent)" }}>Grimoires</em>
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "var(--grid-gap)" }}>
             {featuredLists.map((list, i) => (
               <div key={list.id} style={{
                 background: "var(--void)",

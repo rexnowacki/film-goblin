@@ -74,8 +74,8 @@ export default function AvatarEditor({ file, onCancel, onSave }: Props) {
       <div onClick={e => e.stopPropagation()} style={{
         background: "var(--bone)", color: "var(--void)",
         border: "3px solid var(--void)",
-        boxShadow: "12px 12px 0 var(--accent)",
-        maxWidth: 520, width: "100%", padding: "24px",
+        boxShadow: "var(--card-shadow-offset) var(--card-shadow-offset) 0 var(--accent)",
+        maxWidth: 520, width: "100%", padding: "var(--modal-pad)",
       }} className="grain-light">
         <div className="eyebrow" style={{ marginBottom: 8 }}>✦ Frame the Portrait</div>
         <h2 className="display" style={{ fontSize: 36, margin: "0 0 14px", lineHeight: 0.9 }}>Crop and zoom</h2>

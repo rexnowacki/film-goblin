@@ -38,7 +38,7 @@ export default async function PeoplePage({
               No souls match your search.
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "var(--grid-gap)" }}>
               {profiles.map(p => (
                 <Link key={p.id} href={`/p/${encodeURIComponent(p.handle)}`} style={{ display: "block", textDecoration: "none", color: "inherit", border: "2px solid var(--bone)", padding: 20 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>

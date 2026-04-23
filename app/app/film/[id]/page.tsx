@@ -31,9 +31,18 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
         borderBottom: "3px solid var(--void)",
         position: "relative", overflow: "hidden",
       }}>
-        <div className="container-wide" style={{ padding: "48px 32px", display: "grid", gridTemplateColumns: "340px 1fr", gap: 48, alignItems: "start" }}>
-          <div style={{ transform: "rotate(-2deg)" }}>
-            <FilmPoster film={film as any} size="xl" />
+        <div className="container-wide stackable" style={{ padding: "48px 0", "--stack-template": "340px 1fr", "--stack-gap": "48px", alignItems: "start" } as React.CSSProperties}>
+          <div style={{
+            transform: "rotate(-2deg)",
+            width: "100%",
+            maxWidth: "var(--film-hero-poster-size)",
+            margin: "0 auto",
+          }}>
+            <FilmPoster
+              film={film as any}
+              size="xl"
+              style={{ width: "100%", height: "auto", aspectRatio: "2 / 3" }}
+            />
           </div>
           <div>
             <div className="eyebrow" style={{ marginBottom: 10, opacity: 0.8 }}>

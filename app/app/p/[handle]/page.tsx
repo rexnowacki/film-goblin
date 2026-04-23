@@ -48,8 +48,10 @@ export default async function PublicProfilePage({
       <TopNav />
 
       <section style={{ background: "var(--void-2)", borderBottom: "3px solid var(--void)", padding: "48px 0" }}>
-        <div className="container-wide" style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: 32, alignItems: "center" }}>
-          <Avatar name={bundle.profile.display_name ?? bundle.profile.handle} color="var(--accent)" size={140} url={bundle.profile.avatar_url} />
+        <div className="container-wide stackable" style={{ "--stack-template": "140px 1fr", "--stack-gap": "32px", alignItems: "center" } as React.CSSProperties}>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <Avatar name={bundle.profile.display_name ?? bundle.profile.handle} color="var(--accent)" size={140} url={bundle.profile.avatar_url} />
+          </div>
           <div>
             <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 8 }}>Profile</div>
             <h1 className="display" style={{ fontSize: 72, margin: 0, lineHeight: 0.9 }}>
@@ -58,7 +60,7 @@ export default async function PublicProfilePage({
             <div className="caps" style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>@{bundle.profile.handle}</div>
             {bundle.profile.bio && <p style={{ fontFamily: "var(--font-serif)", fontSize: 18, fontStyle: "italic", marginTop: 20, maxWidth: 560 }}>{bundle.profile.bio}</p>}
             {user && user.id !== bundle.profile.id && (
-              <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+              <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
                 <FollowButton userId={bundle.profile.id} handle={bundle.profile.handle} initialFollowing={amFollowing} />
                 <CovenButton targetUserId={bundle.profile.id} targetHandle={bundle.profile.handle} initialState={coven.state} initialRequestId={coven.requestId} />
               </div>
@@ -73,7 +75,7 @@ export default async function PublicProfilePage({
           {bundle.lists.length === 0 ? (
             <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>No public lists.</div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "var(--grid-gap)" }}>
               {bundle.lists.map(l => (
                 <div key={l.id} style={{ border: "2px solid var(--void)", padding: 20 }}>
                   {l.is_official && <span className="stamp" style={{ background: "var(--accent)", color: "var(--accent-ink)", marginBottom: 12, display: "inline-block" }}>✦ Official</span>}
