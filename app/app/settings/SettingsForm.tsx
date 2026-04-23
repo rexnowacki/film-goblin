@@ -159,15 +159,15 @@ export default function SettingsForm() {
     <form action={save} style={{ display: "grid", gap: 16, maxWidth: 540 }}>
       <label>
         <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Handle</div>
-        <input name="handle" defaultValue={profile.handle} required style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "1px solid #333", color: "var(--bone)" }} />
+        <input name="handle" defaultValue={profile.handle} required style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)" }} />
       </label>
       <label>
         <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Display Name</div>
-        <input name="display_name" defaultValue={profile.display_name} required style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "1px solid #333", color: "var(--bone)" }} />
+        <input name="display_name" defaultValue={profile.display_name} required style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)" }} />
       </label>
       <label>
         <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Bio</div>
-        <textarea name="bio" defaultValue={profile.bio} rows={4} style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "1px solid #333", color: "var(--bone)", fontFamily: "var(--font-serif)", fontStyle: "italic" }} />
+        <textarea name="bio" defaultValue={profile.bio} rows={4} style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)", fontFamily: "var(--font-serif)", fontStyle: "italic" }} />
       </label>
       <label className="check-zine">
         <input type="checkbox" name="broadcast" defaultChecked={profile.broadcast_watchlist_adds} />
@@ -202,18 +202,18 @@ export default function SettingsForm() {
           <label>
             <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Current password</div>
             <input name="current_password" type="password" required minLength={6} autoComplete="current-password"
-              style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "1px solid #333", color: "var(--bone)" }} />
+              style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)" }} />
           </label>
         )}
         <label>
           <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>New password</div>
           <input name="new_password" type="password" required minLength={6} autoComplete="new-password"
-            style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "1px solid #333", color: "var(--bone)" }} />
+            style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)" }} />
         </label>
         <label>
           <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Confirm new password</div>
           <input name="confirm" type="password" required minLength={6} autoComplete="new-password"
-            style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "1px solid #333", color: "var(--bone)" }} />
+            style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)" }} />
         </label>
         {pwError && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{pwError}</div>}
         {pwSuccess && <div style={{ color: "var(--accent)", fontStyle: "italic", fontSize: 13 }}>Password updated.</div>}
