@@ -29,4 +29,17 @@ describe("middleware decideRedirect", () => {
   it("authed visit to /home is allowed", () => {
     expect(decideRedirect({ id: "u1" }, "/home")).toBeNull();
   });
+
+  it("unauth visit to /coven redirects to /auth/signin with preserved path", () => {
+    const r = decideRedirect(null, "/coven");
+    expect(r).toEqual({ target: "/auth/signin", preserveRedirect: true });
+  });
+
+  it("unauth visit to /people is allowed (public route)", () => {
+    expect(decideRedirect(null, "/people")).toBeNull();
+  });
+
+  it("unauth visit to /p/moss.witch is allowed (public profile)", () => {
+    expect(decideRedirect(null, "/p/moss.witch")).toBeNull();
+  });
 });
