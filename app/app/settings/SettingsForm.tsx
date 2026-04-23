@@ -169,12 +169,14 @@ export default function SettingsForm() {
         <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Bio</div>
         <textarea name="bio" defaultValue={profile.bio} rows={4} style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "1px solid #333", color: "var(--bone)", fontFamily: "var(--font-serif)", fontStyle: "italic" }} />
       </label>
-      <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <label className="check-zine">
         <input type="checkbox" name="broadcast" defaultChecked={profile.broadcast_watchlist_adds} />
+        <span className="check-zine__box" aria-hidden="true" />
         <span className="caps" style={{ fontSize: 11 }}>Broadcast watchlist adds to followers</span>
       </label>
-      <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <label className="check-zine">
         <input type="checkbox" name="email_notifications" defaultChecked={profile.email_notifications_enabled} />
+        <span className="check-zine__box" aria-hidden="true" />
         <span className="caps" style={{ fontSize: 11 }}>Email me when a watchlist film drops in price</span>
       </label>
       <button type="submit" disabled={saving} className="btn">
