@@ -1,11 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
-import { getFeed } from "@/lib/queries/activity";
+import { getEnrichedFeed } from "@/lib/queries/activity";
 import TopNav from "@/components/TopNav";
 import FeedTabs from "@/components/FeedTabs";
 
 export default async function HomePage() {
   const supabase = await createClient();
-  const feed = await getFeed(supabase, 50);
+  const { data: { user } } = await supabase.auth.getUser();
+  const feed = user ? await getEnrichedFeed(supabase, user.id, 50) : [];
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100vh" }}>
@@ -20,7 +21,7 @@ export default async function HomePage() {
         </aside>
         <main>
           <h2 className="display" style={{ fontSize: 42, margin: "0 0 16px" }}>The Feed</h2>
-          <FeedTabs items={feed as any} />
+          <FeedTabs items={feed} />
         </main>
         <aside>
           <div className="eyebrow" style={{ color: "var(--muted)", marginBottom: 12 }}>Popular Grimoires</div>
