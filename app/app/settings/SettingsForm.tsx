@@ -30,6 +30,7 @@ export default function SettingsForm() {
         display_name: String(fd.get("display_name")),
         bio: String(fd.get("bio") || ""),
         broadcast_watchlist_adds: fd.get("broadcast") === "on",
+        email_notifications_enabled: fd.get("email_notifications") === "on",
       });
       setSaved(true);
     } finally { setSaving(false); }
@@ -55,6 +56,10 @@ export default function SettingsForm() {
       <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <input type="checkbox" name="broadcast" defaultChecked={profile.broadcast_watchlist_adds} />
         <span className="caps" style={{ fontSize: 11 }}>Broadcast watchlist adds to followers</span>
+      </label>
+      <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <input type="checkbox" name="email_notifications" defaultChecked={profile.email_notifications_enabled} />
+        <span className="caps" style={{ fontSize: 11 }}>Email me when a watchlist film drops in price</span>
       </label>
       <button type="submit" disabled={saving} className="btn">
         {saving ? "Saving…" : "Save"}

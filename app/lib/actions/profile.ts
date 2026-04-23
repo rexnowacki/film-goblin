@@ -13,12 +13,29 @@ export interface ProfileFields {
   bio?: string;
   avatar_url?: string;
   broadcast_watchlist_adds?: boolean;
+  email_notifications_enabled?: boolean;
 }
+
+type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
 export async function _updateProfile(client: Client, fields: ProfileFields): Promise<void> {
   const { data: { user } } = await client.auth.getUser();
   if (!user) throw new Error("unauthenticated");
-  const { error } = await client.from("profiles").update(fields).eq("id", user.id);
+
+  const patch: ProfileUpdate = { ...fields };
+  if (fields.email_notifications_enabled === true) {
+    const { data: current } = await client
+      .from("profiles")
+      .select("email_notifications_enabled")
+      .eq("id", user.id)
+      .single();
+    if (current && current.email_notifications_enabled === false) {
+      const { randomUUID } = await import("node:crypto");
+      patch.unsubscribe_token = randomUUID();
+    }
+  }
+
+  const { error } = await client.from("profiles").update(patch).eq("id", user.id);
   if (error) throw error;
 }
 

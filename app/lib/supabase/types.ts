@@ -294,6 +294,7 @@ export type Database = {
           film_id: string
           id: string
           new_price_usd: number
+          notified_at: string | null
           old_price_usd: number
           watchlist_id: string
         }
@@ -302,6 +303,7 @@ export type Database = {
           film_id: string
           id?: string
           new_price_usd: number
+          notified_at?: string | null
           old_price_usd: number
           watchlist_id: string
         }
@@ -310,6 +312,7 @@ export type Database = {
           film_id?: string
           id?: string
           new_price_usd?: number
+          notified_at?: string | null
           old_price_usd?: number
           watchlist_id?: string
         }
@@ -372,8 +375,10 @@ export type Database = {
           broadcast_watchlist_adds: boolean
           created_at: string
           display_name: string
+          email_notifications_enabled: boolean
           handle: string
           id: string
+          unsubscribe_token: string
           updated_at: string
         }
         Insert: {
@@ -382,8 +387,10 @@ export type Database = {
           broadcast_watchlist_adds?: boolean
           created_at?: string
           display_name: string
+          email_notifications_enabled?: boolean
           handle: string
           id: string
+          unsubscribe_token?: string
           updated_at?: string
         }
         Update: {
@@ -392,8 +399,10 @@ export type Database = {
           broadcast_watchlist_adds?: boolean
           created_at?: string
           display_name?: string
+          email_notifications_enabled?: boolean
           handle?: string
           id?: string
+          unsubscribe_token?: string
           updated_at?: string
         }
         Relationships: []
