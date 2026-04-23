@@ -404,3 +404,19 @@ a { color: inherit; text-decoration: none; }
     left: auto !important;
   }
 }
+
+/* Film detail hero text — on mobile, promote action buttons above the
+   synopsis so watchlist + recommend fit above the fold at 375×667.
+   Desktop order is unchanged (buttons land below synopsis, which is
+   acceptable on a two-column layout with plenty of vertical room). */
+@media (max-width: 720px) {
+  .film-hero-text {
+    display: flex;
+    flex-direction: column;
+  }
+  .film-hero-text > .eyebrow { order: 1; }
+  .film-hero-text > h1 { order: 2; }
+  .film-hero-text > .caps-row { order: 3; }
+  .film-hero-text > .hero-actions { order: 4; }
+  .film-hero-text > p { order: 5; }
+}
