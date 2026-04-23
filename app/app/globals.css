@@ -52,7 +52,7 @@
     --card-shadow-offset: 6px;
     --modal-pad: 20px;
     --card-rotation: 0deg;
-    --film-hero-poster-size: clamp(200px, 60vw, 280px);
+    --film-hero-poster-size: clamp(160px, 50vw, 240px);
   }
 }
 
@@ -173,7 +173,11 @@ a { color: inherit; text-decoration: none; }
   margin: 0;
 }
 
-/* ---------- buttons ---------- */
+/* ---------- buttons ----------
+   Secondary-button rule:
+   - Destructive actions (Remove, Sign out, Leave, Desanctify): 2px solid var(--blood) outline, color var(--blood).
+   - Non-destructive actions (Replace, Cancel): 2px solid var(--bone) outline, color var(--bone).
+   - Primary CTAs: .btn family (accent-filled). */
 .btn {
   display: inline-flex; align-items: center; gap: 10px;
   font-family: var(--font-ui);
