@@ -212,6 +212,55 @@ a { color: inherit; text-decoration: none; }
 .btn-sm { padding: 8px 14px; font-size: 11px; }
 .btn-lg { padding: 18px 28px; font-size: 15px; }
 
+/* ---------- custom checkbox (zine palette) ----------
+   Usage: wrap a native <input type="checkbox"> in <label class="check-zine">.
+   The native input stays in the accessibility tree (keyboard focus, label
+   association, screen readers). The .check-zine__box span renders the
+   visual square + tick; the native input is visually hidden but tabbable. */
+.check-zine {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.check-zine input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.check-zine__box {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  background: var(--bone);
+  border: 2px solid var(--void);
+  position: relative;
+  flex-shrink: 0;
+}
+.check-zine__box::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 0px;
+  width: 6px;
+  height: 11px;
+  border: solid var(--accent);
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+  opacity: 0;
+  transition: opacity 80ms ease;
+}
+.check-zine input[type="checkbox"]:checked + .check-zine__box::after {
+  opacity: 1;
+}
+.check-zine input[type="checkbox"]:focus-visible + .check-zine__box {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* ---------- chips / badges ---------- */
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
