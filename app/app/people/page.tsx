@@ -21,7 +21,7 @@ export default async function PeoplePage({
       <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "44px 0 32px" }} className="grain-light">
         <div className="container-wide">
           <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 10 }}>Chapter IV · The Covenfolk</div>
-          <h1 className="display" style={{ fontSize: 112, margin: 0, lineHeight: 0.88 }}>
+          <h1 className="h-display">
             Find Your <em style={{ color: "var(--accent)" }}>People</em>.
           </h1>
           <div style={{ display: "flex", border: "3px solid var(--void)", background: "var(--bone)", boxShadow: "6px 6px 0 var(--accent)", marginTop: 24 }}>
@@ -38,7 +38,7 @@ export default async function PeoplePage({
               No souls match your search.
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "var(--grid-gap)" }}>
               {profiles.map(p => (
                 <Link key={p.id} href={`/p/${encodeURIComponent(p.handle)}`} style={{ display: "block", textDecoration: "none", color: "inherit", border: "2px solid var(--bone)", padding: 20 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>

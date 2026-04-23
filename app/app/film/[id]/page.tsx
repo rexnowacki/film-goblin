@@ -31,18 +31,27 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
         borderBottom: "3px solid var(--void)",
         position: "relative", overflow: "hidden",
       }}>
-        <div className="container-wide" style={{ padding: "48px 32px", display: "grid", gridTemplateColumns: "340px 1fr", gap: 48, alignItems: "start" }}>
-          <div style={{ transform: "rotate(-2deg)" }}>
-            <FilmPoster film={film as any} size="xl" />
+        <div className="container-wide stackable" style={{ padding: "48px 0", "--stack-template": "340px 1fr", "--stack-gap": "48px", alignItems: "start" } as React.CSSProperties}>
+          <div style={{
+            transform: "rotate(-2deg)",
+            width: "100%",
+            maxWidth: "var(--film-hero-poster-size)",
+            margin: "0 auto",
+          }}>
+            <FilmPoster
+              film={film as any}
+              size="xl"
+              style={{ width: "100%", height: "auto", aspectRatio: "2 / 3" }}
+            />
           </div>
-          <div>
+          <div className="film-hero-text">
             <div className="eyebrow" style={{ marginBottom: 10, opacity: 0.8 }}>
               {film.genre_primary}
             </div>
-            <h1 className="display" style={{ fontSize: "clamp(72px, 8vw, 128px)", margin: 0, lineHeight: 0.86 }}>
+            <h1 className="head" style={{ fontSize: "clamp(40px, 10vw, 96px)", margin: 0, lineHeight: 0.92 }}>
               {film.title}
             </h1>
-            <div style={{ display: "flex", gap: 18, marginTop: 16, flexWrap: "wrap" }} className="caps">
+            <div style={{ display: "flex", gap: 18, marginTop: 16, flexWrap: "wrap" }} className="caps caps-row">
               <span>Dir. {film.director}</span>
               <span>·</span>
               <span>{film.year}</span>
@@ -52,7 +61,7 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
             <p style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontStyle: "italic", lineHeight: 1.35, margin: "28px 0", maxWidth: 620 }}>
               "{film.description}"
             </p>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
+            <div className="hero-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
               {user && <WatchlistButton filmId={film.id} initialOnList={onList} />}
               {user && <RecommendModal filmId={film.id} filmTitle={film.title} covenMembers={covenMembers.map(m => ({ id: m.id, handle: m.handle, display_name: m.display_name }))} />}
               {film.itunes_url && (

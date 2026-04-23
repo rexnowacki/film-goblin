@@ -43,7 +43,7 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers }: Prop
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(10,10,10,0.82)", display: "grid", placeItems: "center", zIndex: 100, padding: 20 }} onClick={() => setOpen(false)}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "var(--bone)", color: "var(--void)", border: "3px solid var(--void)", boxShadow: "12px 12px 0 var(--accent)", maxWidth: 560, width: "100%", padding: "32px 32px 24px", transform: "rotate(-0.5deg)" }} className="grain-light">
+      <div onClick={e => e.stopPropagation()} style={{ background: "var(--bone)", color: "var(--void)", border: "3px solid var(--void)", boxShadow: "var(--card-shadow-offset) var(--card-shadow-offset) 0 var(--accent)", maxWidth: 560, width: "100%", padding: "var(--modal-pad) var(--modal-pad) calc(var(--modal-pad) - 8px)", transform: "rotate(var(--card-rotation))" }} className="grain-light">
         <div className="eyebrow" style={{ marginBottom: 8 }}>✦ Cast The Rune ✦</div>
         <h2 className="display" style={{ fontSize: 44, margin: "0 0 16px", lineHeight: 0.9 }}>
           Recommend <em style={{ color: "var(--accent)" }}>{filmTitle}</em>

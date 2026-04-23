@@ -21,7 +21,7 @@ export default async function FilmsPage({
       <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "44px 0 32px" }} className="grain-light">
         <div className="container-wide">
           <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 10 }}>Chapter II · The Archive</div>
-          <h1 className="display" style={{ fontSize: 112, margin: 0, lineHeight: 0.88 }}>
+          <h1 className="h-display">
             Every Film, <em style={{ color: "var(--accent)" }}>Indexed</em>.
           </h1>
           <div style={{ display: "flex", gap: 0, border: "3px solid var(--void)", background: "var(--bone)", boxShadow: "6px 6px 0 var(--accent)", marginTop: 24 }}>
@@ -38,7 +38,7 @@ export default async function FilmsPage({
               No films match. The void returned nothing.
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "var(--grid-gap)" }}>
               {films.map(f => (
                 <Link key={f.id} href={`/film/${f.id}`} style={{ cursor: "pointer", textDecoration: "none", color: "inherit" }}>
                   <FilmPoster film={f as any} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
