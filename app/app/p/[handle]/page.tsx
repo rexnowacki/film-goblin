@@ -1,0 +1,156 @@
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getPublicProfileBundle } from "@/lib/queries/profiles";
+import { getCovenStateBetween } from "@/lib/queries/coven";
+import TopNav from "@/components/TopNav";
+import Avatar from "@/components/Avatar";
+import FollowButton from "@/components/FollowButton";
+import CovenButton from "@/components/CovenButton";
+import ActivityRow from "@/components/activity/ActivityRow";
+import Link from "next/link";
+
+export default async function PublicProfilePage({
+  params,
+}: {
+  params: Promise<{ handle: string }>;
+}) {
+  const { handle } = await params;
+  const supabase = await createClient();
+  const bundle = await getPublicProfileBundle(supabase, handle);
+  if (!bundle) notFound();
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let amFollowing = false;
+  let coven: { state: "none" | "pending_outbound" | "pending_inbound" | "member"; requestId: string | null } =
+    { state: "none", requestId: null };
+  if (user && user.id !== bundle.profile.id) {
+    const { data: follow } = await supabase
+      .from("follows")
+      .select("follower_user_id")
+      .eq("follower_user_id", user.id)
+      .eq("followed_user_id", bundle.profile.id)
+      .maybeSingle();
+    amFollowing = !!follow;
+    coven = await getCovenStateBetween(supabase, user.id, bundle.profile.id);
+  }
+
+  const { data: ownActivity } = await supabase
+    .from("activity")
+    .select("id, kind, payload, created_at, actor_user_id")
+    .eq("actor_user_id", bundle.profile.id)
+    .order("created_at", { ascending: false })
+    .limit(10);
+  const enrichedOwn = await enrichOwnActivity(supabase, ownActivity ?? [], bundle.profile);
+
+  return (
+    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100vh" }}>
+      <TopNav />
+
+      <section style={{ background: "var(--void-2)", borderBottom: "3px solid var(--void)", padding: "48px 0" }}>
+        <div className="container-wide" style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: 32, alignItems: "center" }}>
+          <Avatar name={bundle.profile.display_name ?? bundle.profile.handle} color="var(--accent)" size={140} />
+          <div>
+            <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 8 }}>Profile</div>
+            <h1 className="display" style={{ fontSize: 72, margin: 0, lineHeight: 0.9 }}>
+              {bundle.profile.display_name ?? bundle.profile.handle}
+            </h1>
+            <div className="caps" style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>@{bundle.profile.handle}</div>
+            {bundle.profile.bio && <p style={{ fontFamily: "var(--font-serif)", fontSize: 18, fontStyle: "italic", marginTop: 20, maxWidth: 560 }}>{bundle.profile.bio}</p>}
+            {user && user.id !== bundle.profile.id && (
+              <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+                <FollowButton userId={bundle.profile.id} handle={bundle.profile.handle} initialFollowing={amFollowing} />
+                <CovenButton targetUserId={bundle.profile.id} targetHandle={bundle.profile.handle} initialState={coven.state} initialRequestId={coven.requestId} />
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section style={{ background: "var(--bone)", color: "var(--void)", padding: "48px 0", borderBottom: "3px solid var(--void)" }} className="grain-light">
+        <div className="container-wide">
+          <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 10 }}>Their Grimoires</div>
+          {bundle.lists.length === 0 ? (
+            <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>No public lists.</div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+              {bundle.lists.map(l => (
+                <div key={l.id} style={{ border: "2px solid var(--void)", padding: 20 }}>
+                  {l.is_official && <span className="stamp" style={{ background: "var(--accent)", color: "var(--accent-ink)", marginBottom: 12, display: "inline-block" }}>✦ Official</span>}
+                  <div className="head" style={{ fontSize: 22, lineHeight: 1.1, marginBottom: 8 }}>{l.title}</div>
+                  {l.description && <div style={{ fontFamily: "var(--font-serif)", fontSize: 13, opacity: 0.8 }}>{l.description}</div>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section style={{ padding: "48px 0", borderBottom: "3px solid var(--void)" }}>
+        <div className="container-wide">
+          <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 10 }}>Their Coven</div>
+          {bundle.coven.length === 0 ? (
+            <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>No coven yet.</div>
+          ) : (
+            <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+              {bundle.coven.map(m => (
+                <Link key={m.id} href={`/p/${encodeURIComponent(m.handle)}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "inherit", textDecoration: "none" }}>
+                  <Avatar name={m.display_name ?? m.handle} color="var(--accent)" size={56} />
+                  <div className="caps" style={{ fontSize: 10 }}>@{m.handle}</div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section style={{ padding: "48px 0" }}>
+        <div className="container-wide">
+          <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 10 }}>Recent Activity</div>
+          {enrichedOwn.length === 0 ? (
+            <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>Nothing yet.</div>
+          ) : (
+            <div style={{ display: "grid", gap: 0 }}>
+              {enrichedOwn.map((item: any) => <ActivityRow key={item.id} item={item} />)}
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+async function enrichOwnActivity(supabase: any, rows: any[], profile: any) {
+  if (rows.length === 0) return [];
+  const filmIds = Array.from(new Set(rows.map(r => r.payload?.film_id).filter(Boolean)));
+  const recipientIds = Array.from(new Set(rows.map(r => r.payload?.to_user_id).filter(Boolean)));
+  const listIds = Array.from(new Set(rows.map(r => r.payload?.list_id).filter(Boolean)));
+
+  const [films, recipients, lists] = await Promise.all([
+    filmIds.length ? supabase.from("films").select("id, title, director, year, artwork_url, itunes_url").in("id", filmIds) : Promise.resolve({ data: [] }),
+    recipientIds.length ? supabase.from("profiles").select("id, handle, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] }),
+    listIds.length ? supabase.from("lists").select("id, title").in("id", listIds) : Promise.resolve({ data: [] }),
+  ]);
+
+  const filmMap = new Map((films.data ?? []).map((r: any) => [r.id, r]));
+  const recipMap = new Map((recipients.data ?? []).map((r: any) => [r.id, r]));
+  const listMap = new Map((lists.data ?? []).map((r: any) => [r.id, r]));
+
+  const actor = { id: profile.id, handle: profile.handle, display_name: profile.display_name, avatar_url: profile.avatar_url };
+  const out: any[] = [];
+  for (const r of rows) {
+    const base = { id: r.id, created_at: r.created_at, actor };
+    const film = r.payload?.film_id ? filmMap.get(r.payload.film_id) : undefined;
+    const recipient = r.payload?.to_user_id ? recipMap.get(r.payload.to_user_id) : undefined;
+    const list = r.payload?.list_id ? listMap.get(r.payload.list_id) : undefined;
+    switch (r.kind) {
+      case "recommendation_sent": if (film && recipient) out.push({ ...base, kind: "recommendation_sent", film, recipient, note: r.payload.note ?? "" }); break;
+      case "review_published":   if (film) out.push({ ...base, kind: "review_published", film, title: r.payload.title ?? "", pullquote: r.payload.pullquote ?? null }); break;
+      case "watchlist_added":    if (film) out.push({ ...base, kind: "watchlist_added", film }); break;
+      case "list_created":       if (list) out.push({ ...base, kind: "list_created", list }); break;
+      case "list_film_added":    if (list && film) out.push({ ...base, kind: "list_film_added", list, film }); break;
+      case "coven_joined":       if (recipient) out.push({ ...base, kind: "coven_joined", other: recipient }); break;
+    }
+  }
+  return out;
+}
