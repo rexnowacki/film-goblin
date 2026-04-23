@@ -37,7 +37,7 @@ export default async function CovenPage() {
             <div style={{ display: "grid", gap: 16 }}>
               {invites.map(inv => (
                 <div key={inv.id} style={{ display: "flex", alignItems: "center", gap: 20, padding: 18, border: "1px solid var(--muted)" }}>
-                  <Avatar name={inv.from.display_name ?? inv.from.handle} color="var(--accent)" size={48} />
+                  <Avatar name={inv.from.display_name ?? inv.from.handle} color="var(--accent)" size={48} url={inv.from.avatar_url} />
                   <div style={{ flex: 1 }}>
                     <div className="head" style={{ fontSize: 18, lineHeight: 1 }}>
                       <Link href={`/p/${encodeURIComponent(inv.from.handle)}`} style={{ color: "var(--bone)", textDecoration: "none" }}>
@@ -66,7 +66,7 @@ export default async function CovenPage() {
               {members.map(m => (
                 <div key={m.id} style={{ border: "1px solid var(--muted)", padding: 20 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    <Avatar name={m.display_name ?? m.handle} color="var(--accent)" size={48} />
+                    <Avatar name={m.display_name ?? m.handle} color="var(--accent)" size={48} url={m.avatar_url} />
                     <div style={{ flex: 1 }}>
                       <Link href={`/p/${encodeURIComponent(m.handle)}`} style={{ color: "var(--bone)", textDecoration: "none" }}>
                         <div className="head" style={{ fontSize: 18, lineHeight: 1 }}>{m.display_name ?? m.handle}</div>

@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { updateProfile, changePassword } from "@/lib/actions/profile";
 import { signOut } from "@/lib/actions/auth";
 import Avatar from "@/components/Avatar";
+import AvatarEditor from "@/components/AvatarEditor";
 
 export default function SettingsForm() {
   const [profile, setProfile] = useState<any>(null);
@@ -17,29 +19,73 @@ export default function SettingsForm() {
   const [pwPending, setPwPending] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [removingAvatar, setRemovingAvatar] = useState(false);
+  const router = useRouter();
 
-  async function uploadAvatar(e: React.ChangeEvent<HTMLInputElement>) {
+  function pickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    setAvatarError(null);
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setAvatarError("Please pick an image file.");
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      setAvatarError("That image is too large (max 15MB before crop).");
+      return;
+    }
+    setPendingFile(file);
+    e.target.value = ""; // reset so picking the same file again re-fires
+  }
+
+  async function uploadCropped(blob: Blob) {
     setAvatarUploading(true);
+    setAvatarError(null);
+    setPendingFile(null);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setAvatarError("Not signed in."); return; }
+      const path = `${user.id}/avatar-${Date.now()}.jpg`;
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, blob, { cacheControl: "3600", upsert: true, contentType: "image/jpeg" });
+      if (uploadErr) { setAvatarError(uploadErr.message); return; }
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      await updateProfile({ avatar_url: pub.publicUrl });
+      setProfile({ ...profile, avatar_url: pub.publicUrl });
+      router.refresh();
+    } catch (err: any) {
+      setAvatarError(err?.message ?? "Upload failed.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
+  async function removeAvatar() {
+    if (!profile?.avatar_url) return;
+    if (!confirm("Remove your profile picture?")) return;
+    setRemovingAvatar(true);
     setAvatarError(null);
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setAvatarError("Not signed in."); return; }
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
-      const { error: uploadErr } = await supabase.storage
-        .from("avatars")
-        .upload(path, file, { cacheControl: "3600", upsert: true, contentType: file.type });
-      if (uploadErr) { setAvatarError(uploadErr.message); return; }
-      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      await updateProfile({ avatar_url: pub.publicUrl });
-      setProfile({ ...profile, avatar_url: pub.publicUrl });
+      // Best-effort: delete the blob at the stored URL's object path.
+      const marker = "/avatars/";
+      const idx = profile.avatar_url.indexOf(marker);
+      if (idx >= 0) {
+        const path = profile.avatar_url.slice(idx + marker.length);
+        await supabase.storage.from("avatars").remove([path]);
+      }
+      await updateProfile({ avatar_url: null as unknown as string });
+      setProfile({ ...profile, avatar_url: null });
+      router.refresh();
     } catch (err: any) {
-      setAvatarError(err?.message ?? "Upload failed.");
+      setAvatarError(err?.message ?? "Remove failed.");
     } finally {
-      setAvatarUploading(false);
+      setRemovingAvatar(false);
     }
   }
 
@@ -89,13 +135,27 @@ export default function SettingsForm() {
       <Avatar name={profile.display_name ?? profile.handle ?? "You"} color="var(--accent)" size={72} url={profile.avatar_url} />
       <div>
         <div className="caps" style={{ fontSize: 11, marginBottom: 6, color: "var(--accent)" }}>Profile picture</div>
-        <label style={{ display: "inline-block", cursor: "pointer", padding: "8px 14px", border: "2px solid var(--bone)", color: "var(--bone)", fontFamily: "var(--font-ui)", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-          {avatarUploading ? "Uploading…" : (profile.avatar_url ? "Replace" : "Upload")}
-          <input type="file" accept="image/*" onChange={uploadAvatar} disabled={avatarUploading} style={{ display: "none" }} />
-        </label>
+        <div style={{ display: "flex", gap: 8 }}>
+          <label style={{ display: "inline-block", cursor: avatarUploading ? "default" : "pointer", padding: "8px 14px", border: "2px solid var(--bone)", color: "var(--bone)", fontFamily: "var(--font-ui)", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            {avatarUploading ? "Uploading…" : (profile.avatar_url ? "Replace" : "Upload")}
+            <input type="file" accept="image/*" onChange={pickFile} disabled={avatarUploading} style={{ display: "none" }} />
+          </label>
+          {profile.avatar_url && (
+            <button onClick={removeAvatar} disabled={removingAvatar || avatarUploading} style={{ padding: "8px 14px", background: "transparent", color: "var(--blood)", border: "2px solid var(--blood)", fontFamily: "var(--font-ui)", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", cursor: removingAvatar ? "default" : "pointer" }}>
+              {removingAvatar ? "Removing…" : "Remove"}
+            </button>
+          )}
+        </div>
         {avatarError && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 12, marginTop: 6 }}>{avatarError}</div>}
       </div>
     </div>
+    {pendingFile && (
+      <AvatarEditor
+        file={pendingFile}
+        onCancel={() => setPendingFile(null)}
+        onSave={uploadCropped}
+      />
+    )}
     <form action={save} style={{ display: "grid", gap: 16, maxWidth: 540 }}>
       <label>
         <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Handle</div>

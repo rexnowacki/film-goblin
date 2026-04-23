@@ -42,7 +42,7 @@ export default async function PeoplePage({
               {profiles.map(p => (
                 <Link key={p.id} href={`/p/${encodeURIComponent(p.handle)}`} style={{ display: "block", textDecoration: "none", color: "inherit", border: "2px solid var(--bone)", padding: 20 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
-                    <Avatar name={p.display_name ?? p.handle} color="var(--accent)" size={48} />
+                    <Avatar name={p.display_name ?? p.handle} color="var(--accent)" size={48} url={p.avatar_url} />
                     <div>
                       <div className="head" style={{ fontSize: 20, lineHeight: 1 }}>{p.display_name ?? p.handle}</div>
                       <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>@{p.handle}</div>

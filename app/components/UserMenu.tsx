@@ -31,7 +31,7 @@ export default function UserMenu({ handle, displayName, avatarUrl }: Props) {
         aria-label="Open account menu"
         style={{ background: "transparent", border: 0, padding: 0, cursor: "pointer" }}
       >
-        <Avatar name={displayName || handle} color="var(--accent)" size={36} />
+        <Avatar name={displayName || handle} color="var(--accent)" size={36} url={avatarUrl} />
       </button>
       {open && (
         <div style={{

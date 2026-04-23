@@ -49,7 +49,7 @@ export default async function PublicProfilePage({
 
       <section style={{ background: "var(--void-2)", borderBottom: "3px solid var(--void)", padding: "48px 0" }}>
         <div className="container-wide" style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: 32, alignItems: "center" }}>
-          <Avatar name={bundle.profile.display_name ?? bundle.profile.handle} color="var(--accent)" size={140} />
+          <Avatar name={bundle.profile.display_name ?? bundle.profile.handle} color="var(--accent)" size={140} url={bundle.profile.avatar_url} />
           <div>
             <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 8 }}>Profile</div>
             <h1 className="display" style={{ fontSize: 72, margin: 0, lineHeight: 0.9 }}>
@@ -95,7 +95,7 @@ export default async function PublicProfilePage({
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
               {bundle.coven.map(m => (
                 <Link key={m.id} href={`/p/${encodeURIComponent(m.handle)}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "inherit", textDecoration: "none" }}>
-                  <Avatar name={m.display_name ?? m.handle} color="var(--accent)" size={56} />
+                  <Avatar name={m.display_name ?? m.handle} color="var(--accent)" size={56} url={m.avatar_url} />
                   <div className="caps" style={{ fontSize: 10 }}>@{m.handle}</div>
                 </Link>
               ))}
