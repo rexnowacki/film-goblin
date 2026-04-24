@@ -108,11 +108,16 @@ export async function adminLookupItunes(urlOrId: string): Promise<
 > {
   const supabase = await createClient();
   await requireAdmin(supabase);
-  let id = parseIdFromUrlOrId(urlOrId);
-  if (id === null) {
-    id = await resolveAdamIdFromAppleTvUrl(urlOrId.trim());
+  const trimmed = urlOrId.trim();
+  let id = parseIdFromUrlOrId(trimmed);
+  const isAppleTvUrl = /tv\.apple\.com\/.*\/umc\.cmc\./i.test(trimmed);
+  if (id === null && isAppleTvUrl) {
+    id = await resolveAdamIdFromAppleTvUrl(trimmed);
+    if (id === null) {
+      return { ok: false, error: "That Apple TV page doesn't link to an iTunes purchase — the film is probably streaming-only (e.g. via Hulu/Max/MUBI through Apple TV). Try the 'Enter manually' option, or paste a different Apple TV URL that has Buy/Rent options (tap Share → Copy Link from the film's detail page in your iOS Apple TV app)." };
+    }
   }
-  if (id === null) return { ok: false, error: "Could not extract an iTunes trackId from that input. Expected an iTunes URL (…/id<digits>), an Apple TV URL (…/movie/<slug>/umc.cmc.<hash>), or a bare numeric trackId." };
+  if (id === null) return { ok: false, error: "Could not extract an iTunes trackId. Expected a legacy iTunes URL (…/id<digits>), an Apple TV URL (…/movie/<slug>/umc.cmc.<hash>), or a bare numeric trackId." };
   const res = await fetchPrices([id]);
   if (res.resultCount === 0) return { ok: false, error: `No iTunes result for trackId ${id}.` };
   const parsed = parseFilm(res.results[0]);
