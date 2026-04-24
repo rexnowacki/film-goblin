@@ -3,7 +3,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import {
-  searchFilms,
   parseFilm,
   fetchPrices,
   type ParsedFilm,
@@ -18,27 +17,12 @@ const APPLE_TV_URL_RE = new RegExp(
   `^https://tv\\.apple\\.com/${APPLE_TV_SEARCH_REGION}/movie/[a-z0-9-]+/umc\\.cmc\\.[a-z0-9]+$`
 );
 
-export interface SearchCandidate extends ITunesSearchHit {
-  via: "itunes" | "apple-tv-search";
-}
+export type SearchCandidate = ITunesSearchHit;
 
 export type SearchResult =
   | { ok: true; candidates: SearchCandidate[] }
   | { ok: false; reason: "brave-empty" | "all-streaming-only" | "brave-error"; message: string };
 
-
-async function tryItunesSearch(term: string): Promise<SearchCandidate[]> {
-  try {
-    const res = await searchFilms(term, { limit: 10 });
-    return res.results
-      .map(r => parseFilm(r))
-      .filter((p): p is ParsedFilm => p !== null)
-      .map(p => ({ ...toHit(p), via: "itunes" as const }));
-  } catch (e) {
-    console.warn("apple-tv-search: iTunes search threw:", e);
-    return [];
-  }
-}
 
 interface BraveResponse {
   web?: { results?: { url?: string }[] };
@@ -97,7 +81,7 @@ async function fetchCandidateFromUrl(url: string): Promise<SearchCandidate | nul
       console.log(`apple-tv-search: parseFilm null for adamId ${adamId}`);
       return null;
     }
-    return { ...toHit(parsed), via: "apple-tv-search" as const };
+    return toHit(parsed);
   } catch (e) {
     console.log(`apple-tv-search: candidate fetch threw for ${url}:`, e);
     return null;
@@ -138,9 +122,6 @@ export async function adminSearchAppleTv(term: string): Promise<SearchResult> {
   await requireAdmin(supabase);
   const trimmed = term.trim();
   if (!trimmed) return { ok: true, candidates: [] };
-
-  const itunesCandidates = await tryItunesSearch(trimmed);
-  if (itunesCandidates.length > 0) return { ok: true, candidates: itunesCandidates };
 
   return await tryBraveSearch(trimmed);
 }

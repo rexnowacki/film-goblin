@@ -70,16 +70,13 @@ export default function AppleTvSearchBox({ onPick }: Props) {
               key={c.itunes_id}
               type="button"
               onClick={() => onPick(c)}
-              style={{ textAlign: "left", display: "grid", gridTemplateColumns: "48px 1fr auto auto", gap: 12, alignItems: "center", padding: 10, background: "var(--void-2)", border: "1px solid #333", color: "var(--bone)", cursor: "pointer", fontFamily: "inherit" }}
+              style={{ textAlign: "left", display: "grid", gridTemplateColumns: "48px 1fr auto", gap: 12, alignItems: "center", padding: 10, background: "var(--void-2)", border: "1px solid #333", color: "var(--bone)", cursor: "pointer", fontFamily: "inherit" }}
             >
               {c.artwork_url ? <img src={c.artwork_url} alt="" width={48} height={72} style={{ objectFit: "cover" }} /> : <div style={{ width: 48, height: 72, background: "#222" }} />}
               <div>
                 <div style={{ fontFamily: "var(--font-head)", fontSize: 16 }}>{c.title}</div>
                 <div style={{ fontSize: 11, opacity: 0.7 }}>{c.director || "—"} · {c.year || "—"}</div>
               </div>
-              <span className="caps" style={{ fontSize: 10, opacity: 0.5 }}>
-                {c.via === "itunes" ? "via iTunes" : "via Apple TV search"}
-              </span>
               <span className="caps" style={{ fontSize: 10, opacity: 0.6 }}>Pick →</span>
             </button>
           ))}

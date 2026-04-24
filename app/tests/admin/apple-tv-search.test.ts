@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 // Hoisted mocks — constructed before the server action module loads.
 const requireAdminMock = vi.fn();
 const createClientMock = vi.fn();
-const searchFilmsMock = vi.fn();
 const parseFilmMock = vi.fn();
 const fetchPricesMock = vi.fn();
 
@@ -17,7 +16,6 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 vi.mock("film-goblin-worker", () => ({
-  searchFilms: searchFilmsMock,
   parseFilm: parseFilmMock,
   fetchPrices: fetchPricesMock,
 }));
@@ -29,7 +27,6 @@ describe("adminSearchAppleTv", () => {
   beforeEach(() => {
     requireAdminMock.mockReset().mockResolvedValue(undefined);
     createClientMock.mockReset().mockResolvedValue({});
-    searchFilmsMock.mockReset();
     parseFilmMock.mockReset();
     fetchPricesMock.mockReset();
     process.env.BRAVE_SEARCH_API_KEY = "test-brave-key";
@@ -39,7 +36,6 @@ describe("adminSearchAppleTv", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const result = await adminSearchAppleTv("   ");
     expect(result).toEqual({ ok: true, candidates: [] });
-    expect(searchFilmsMock).not.toHaveBeenCalled();
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });
@@ -48,70 +44,9 @@ describe("adminSearchAppleTv", () => {
     const err = new Error("admin role required");
     requireAdminMock.mockRejectedValue(err);
     await expect(adminSearchAppleTv("midsommar")).rejects.toThrow("admin role required");
-    expect(searchFilmsMock).not.toHaveBeenCalled();
-  });
-
-  it("returns iTunes candidates without hitting Brave when iTunes has results", async () => {
-    const raw = [{ trackId: 111, trackName: "The Thing" }];
-    searchFilmsMock.mockResolvedValue({ resultCount: 1, results: raw });
-    parseFilmMock.mockReturnValue({
-      itunes_id: 111,
-      title: "The Thing",
-      director: "John Carpenter",
-      year: 1982,
-      runtime_min: 109,
-      genre_primary: "Horror",
-      description: "...",
-      content_advisory: "R",
-      artwork_url: "https://example.com/a.jpg",
-      itunes_url: "https://itunes.apple.com/us/movie/id111",
-      price_usd: 9.99,
-    });
-    const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-    const result = await adminSearchAppleTv("The Thing");
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.candidates).toHaveLength(1);
-      expect(result.candidates[0].via).toBe("itunes");
-      expect(result.candidates[0].itunes_id).toBe(111);
-    }
-    expect(searchFilmsMock).toHaveBeenCalledWith("The Thing", { limit: 10 });
-    expect(fetchSpy).not.toHaveBeenCalled();
-    fetchSpy.mockRestore();
-  });
-
-  it("treats iTunes results that fail to parse as zero hits and falls through (no Brave key set yet)", async () => {
-    searchFilmsMock.mockResolvedValue({ resultCount: 1, results: [{ trackId: 222 }] });
-    parseFilmMock.mockReturnValue(null);
-    delete process.env.BRAVE_SEARCH_API_KEY;
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-    const result = await adminSearchAppleTv("junk");
-
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.reason).toBe("brave-error");
-    errorSpy.mockRestore();
-  });
-
-  it("treats a thrown searchFilms as zero hits and falls through to Brave path", async () => {
-    searchFilmsMock.mockRejectedValue(new Error("iTunes 503"));
-    delete process.env.BRAVE_SEARCH_API_KEY;
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-    const result = await adminSearchAppleTv("midsommar");
-
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.reason).toBe("brave-error");
-    expect(warnSpy).toHaveBeenCalled();
-    warnSpy.mockRestore();
-    errorSpy.mockRestore();
   });
 
   it("returns brave-empty when Brave returns zero web.results", async () => {
-    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ web: { results: [] } }), { status: 200 })
     );
@@ -128,7 +63,6 @@ describe("adminSearchAppleTv", () => {
   });
 
   it("returns brave-empty when all Brave URLs fail the candidate regex (noise only)", async () => {
-    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({
         web: {
@@ -151,7 +85,6 @@ describe("adminSearchAppleTv", () => {
   });
 
   it("sends the subscription token header and site-restricted query", async () => {
-    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ web: { results: [] } }), { status: 200 })
     );
@@ -167,7 +100,6 @@ describe("adminSearchAppleTv", () => {
   });
 
   it("returns 5 apple-tv-search candidates when Brave and all page fetches succeed", async () => {
-    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
     const validHtml = `<html><body><script>{"adamId":"__ADAM__"}</script></body></html>`;
     const mkHtml = (id: string) => validHtml.replace("__ADAM__", id);
 
@@ -220,7 +152,6 @@ describe("adminSearchAppleTv", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.candidates).toHaveLength(5);
-      expect(result.candidates.every(c => c.via === "apple-tv-search")).toBe(true);
       const ids = result.candidates.map(c => c.itunes_id).sort();
       expect(ids).toEqual([100000001, 100000002, 100000003, 100000004, 100000005]);
     }
@@ -235,7 +166,6 @@ describe("adminSearchAppleTv", () => {
   });
 
   it("drops streaming-only candidates and logs dropped count on partial success", async () => {
-    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
     const validHtml = (id: string) => `<html><body><script>{"adamId":"${id}"}</script></body></html>`;
     const streamingOnlyHtml = `<html><body><script>{"title":"no adam id"}</script></body></html>`;
 
@@ -293,7 +223,6 @@ describe("adminSearchAppleTv", () => {
   });
 
   it("returns all-streaming-only when every candidate page fails adamId extraction", async () => {
-    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
     const streamingOnlyHtml = `<html><body><script>{"title":"no adam id"}</script></body></html>`;
     const urls = [
       "https://tv.apple.com/us/movie/a/umc.cmc.aa",
@@ -320,7 +249,6 @@ describe("adminSearchAppleTv", () => {
   });
 
   it("returns brave-error on Brave HTTP 500", async () => {
-    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response("internal error", { status: 500 })
     );
@@ -338,7 +266,6 @@ describe("adminSearchAppleTv", () => {
   });
 
   it("returns brave-error on Brave HTTP 401 (same admin-facing copy as 500)", async () => {
-    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response("unauthorized", { status: 401 })
     );
@@ -358,7 +285,6 @@ describe("adminSearchAppleTv", () => {
 
   it("returns brave-error when BRAVE_SEARCH_API_KEY is unset", async () => {
     delete process.env.BRAVE_SEARCH_API_KEY;
-    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
