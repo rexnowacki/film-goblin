@@ -4,17 +4,14 @@ Prioritized list of post-rebuild work. Tiers are intent, not commitment —
 shuffle freely as the product finds its shape. When something graduates
 into an actual build, it becomes a spec under `docs/superpowers/specs/`.
 
-See `docs/backlog.md` for unprioritized ideas. The six-sub-project
-production rebuild (apple data source, schema + RLS, Next.js app, worker
-cron, notifications, social features) plus the auth-polish sub-project
-are shipped — see `git log` on master.
+See `docs/backlog.md` for unprioritized ideas. Shipped sub-projects as
+of 2026-04-23: Apple data source, schema + RLS, Next.js app, worker
+cron mount, notifications pipeline, social features, auth polish,
+mobile responsive (Tier-A), mobile polish. Full list with spec paths
+in `CLAUDE.md` → "Sub-project history".
 
 ## High
 
-- **Mobile responsiveness.** Audit every route at 375px width. Nav
-  collapses sensibly, buttons don't overflow, film-detail + onboarding +
-  settings + /p/[handle] + /coven all readable. Biggest user-visible
-  debt today.
 - **Film admin dashboard — search and add.** Staff-only
   (`staff.role = 'admin'`), search iTunes by title, pick a result,
   confirm, upsert. The "I want to add Ravenous to the catalog" workflow.
@@ -62,8 +59,6 @@ are shipped — see `git log` on master.
 
 ## Medium-low
 
-- **Profile picture upload.** Avatar image in Supabase Storage;
-  currently abstract-color-only.
 - **Change email flow.** `updateUser({email})` with re-confirmation
   round trip.
 - **Password strength meter + show-password toggle** on signin/signup.

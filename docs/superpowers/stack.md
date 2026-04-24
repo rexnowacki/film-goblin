@@ -1,13 +1,13 @@
 # Film Goblin — Production Stack
 
-The stack Film Goblin is being rebuilt on. Committed direction as of 2026-04-20. Individual sub-project specs (`docs/superpowers/specs/`) may re-validate decisions in context, but default to this unless a spec overrides it.
+The stack Film Goblin runs on. Most of the rebuild is shipped as of 2026-04-23; individual sub-project specs (`docs/superpowers/specs/`) capture the per-decision reasoning. This file is the evergreen reference — if a future decision supersedes one here, update this file too.
 
 ## Frontend
 
-- **Next.js 15 (App Router) + React + TypeScript**
-- **Styling:** taste call between Tailwind and keeping the existing zine-CSS from `src/styles.css`. No commitment yet. Tailwind gives utility parity with the current design tokens; zine-CSS is already written and coherent. Decide at sub-project 3.
-- SSR matters for SEO on film pages ("midsommar cheap apple tv" should rank).
-- API routes for internal-only endpoints (cron, webhooks).
+- **Next.js 15 (App Router) + React 19 + TypeScript.** Shipped, deployed at https://film-goblin.vercel.app.
+- **Styling: zine-CSS** (ported to `app/app/globals.css`). Decided at sub-project 3; Tailwind rejected. Custom properties + utility classes (`.h-display`, `.stackable`, `.grid-auto`, `.check-zine`, `.btn` family) over a framework. Single 720px mobile breakpoint.
+- SSR on film pages for SEO ("midsommar cheap apple tv" should rank).
+- API routes for internal-only endpoints (cron, auth callback, unsubscribe).
 
 ## Backend
 
@@ -20,14 +20,14 @@ The stack Film Goblin is being rebuilt on. Committed direction as of 2026-04-20.
 
 ## Price-tracking worker
 
-- Decided in sub-project 1: **iTunes Search API** (US storefront only, 4h cadence, no affiliate, no scraping). See `specs/2026-04-20-apple-data-source-design.md`.
-- Currently runs as a standalone TypeScript CLI at `worker/`. Next step (sub-project 3/4): HTTP-mount at `/api/cron/refresh-prices` behind **Vercel Cron**.
+- **iTunes Search API** (US storefront only, 4h cadence, no affiliate, no scraping). Decided in sub-project 1. See `specs/2026-04-20-apple-data-source-design.md`.
+- Runs in two shapes: CLI (`worker/ npm run worker`) for local admin/debug, and a **Vercel Cron** route at `app/app/api/cron/refresh-prices/` for production. The cron route imports the worker's `runOnce` via a `file:` dependency.
 - Migration path if Vercel's serverless time limits bite: **Cloudflare Workers** (cron triggers, cheaper at scale) or a **Fly.io** machine for long-running Node.
 
 ## Notifications
 
-- **Resend** for transactional email. Developer-friendly, good deliverability.
-- **Web push** via the standard Push API + VAPID — free, works in Chrome/Firefox/Edge/Safari 16+. iOS 16+ requires Add-to-Home-Screen first; flag this as real friction in the design.
+- **Resend** for transactional email. Shipped in sub-project 5; price-drop digests go through the `notifier/` package, fired from `app/app/api/cron/send-notifications/`. Real sender domain is queued in the roadmap — currently in Resend's sandbox (limited to account-holder inbox).
+- **Web push** via the standard Push API + VAPID — free, works in Chrome/Firefox/Edge/Safari 16+. **Not shipped yet;** queued in the roadmap. iOS 16+ requires Add-to-Home-Screen first.
 
 No SMS (Twilio), no native push, no React Native / Expo at launch. Web push closes ~80% of the "feels like an app" gap without the native build surface.
 
@@ -59,5 +59,5 @@ Expected cost: $0–$25/mo pre-traffic, $50–$150/mo once real users land.
 
 ## Non-negotiables
 
-- **TypeScript, not JavaScript.** Nine+ relational entities (users, films, watchlists, friendships, lists, DMs, reviews, price_history, price_alerts) pays TypeScript back within a week. Supabase CLI generates types from the schema, so the frontend knows about the DB without a duplicate.
-- **Schema-first.** SQL migrations under version control, starting at sub-project 2. Easiest thing to regret skipping at month six.
+- **TypeScript, not JavaScript.** Nine+ relational entities pay TypeScript back within a week. `app/ npm run gen:types` regenerates `lib/supabase/types.ts` from the local Supabase so the frontend knows about the DB without a duplicate.
+- **Schema-first.** SQL migrations under version control at `db/migrations/`. Canonical for the production app — `worker/migrations/` is a legacy stub that `0100_drop_watchlists_stub.sql` retires.
