@@ -585,42 +585,30 @@ a { color: inherit; text-decoration: none; }
   min-width: 80px;
   text-align: right;
 }
-.watchlist-row-dropped .watchlist-row-price {
+.watchlist-row-dropped .watchlist-row-price > :first-child {
   color: var(--accent);
 }
-.watchlist-row-threshold {
-  min-width: 110px;
-}
-.watchlist-threshold-display,
-.watchlist-threshold-set {
-  background: none;
-  border: 1px dashed var(--muted-dark);
-  color: var(--bone);
-  font-family: var(--font-ui);
-  font-size: 13px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-.watchlist-threshold-set {
-  color: var(--muted);
-  font-style: italic;
-}
-.watchlist-threshold-display:hover,
-.watchlist-threshold-set:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.watchlist-threshold-editor {
-  background: var(--void);
-  color: var(--bone);
-  border: 2px solid var(--accent);
-  padding: 6px 8px;
-  width: 90px;
-  font-family: var(--font-ui);
+.watchlist-row-was-price {
+  font-family: var(--font-head);
   font-size: 14px;
+  color: var(--muted);
+  text-decoration: line-through;
+  margin-top: 2px;
 }
-.watchlist-threshold-editor:focus {
-  outline: none;
+.watchlist-row-buy {
+  min-width: 140px;
+  text-align: right;
+}
+.watchlist-row-buy-link {
+  font-size: 11px;
+  color: var(--bone);
+  border-bottom: 1px solid var(--muted-dark);
+  padding-bottom: 2px;
+  transition: color 80ms ease, border-color 80ms ease;
+}
+.watchlist-row-buy-link:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 .watchlist-remove {
   background: none;
@@ -654,16 +642,16 @@ a { color: inherit; text-decoration: none; }
     gap: 12px;
     padding: 14px;
   }
-  .watchlist-row-poster   { grid-column: 1; grid-row: 1 / span 2; }
-  .watchlist-row-title    { grid-column: 2; grid-row: 1; }
+  .watchlist-row-poster { grid-column: 1; grid-row: 1 / span 2; }
+  .watchlist-row-title  { grid-column: 2; grid-row: 1; }
   .watchlist-row-price,
-  .watchlist-row-threshold,
+  .watchlist-row-buy,
   .watchlist-remove {
     grid-column: 2;
     grid-row: 2;
     align-self: center;
   }
-  .watchlist-row-price     { justify-self: start; align-items: flex-start; text-align: left; }
-  .watchlist-row-threshold { justify-self: center; min-width: 0; }
-  .watchlist-remove        { justify-self: end; }
+  .watchlist-row-price { justify-self: start; align-items: flex-start; text-align: left; }
+  .watchlist-row-buy   { justify-self: center; min-width: 0; text-align: center; }
+  .watchlist-remove    { justify-self: end; }
 }

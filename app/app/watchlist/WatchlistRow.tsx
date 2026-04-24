@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
-import { setWatchlistThreshold, removeFromWatchlist } from "@/lib/actions/watchlists";
+import { useTransition } from "react";
+import { removeFromWatchlist } from "@/lib/actions/watchlists";
 import { computeDropPct } from "@/lib/queries/sort-watchlist";
 import type { WatchlistRowData } from "@/lib/queries/watchlists";
 
@@ -14,51 +14,8 @@ function formatPrice(n: number | null): string {
 }
 
 export default function WatchlistRow({ row }: Props) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState<string>(
-    row.max_price_usd != null ? row.max_price_usd.toFixed(2) : ""
-  );
-  const [editError, setEditError] = useState<string | null>(null);
-  const [pendingEdit, startEdit] = useTransition();
   const [pendingRemove, startRemove] = useTransition();
-  const submittingRef = useRef(false);
-  const cancelledRef = useRef(false);
-
   const dropped = computeDropPct(row) != null;
-
-  function submitThreshold() {
-    if (cancelledRef.current) {
-      cancelledRef.current = false;
-      return;
-    }
-    if (submittingRef.current) return;
-    submittingRef.current = true;
-    setEditError(null);
-    startEdit(async () => {
-      try {
-        const trimmed = draft.trim();
-        const value = trimmed === "" ? null : Number(trimmed);
-        if (value != null && (!Number.isFinite(value) || value <= 0 || value > 1000)) {
-          setEditError("Must be between $0.01 and $1000.");
-          return;
-        }
-        await setWatchlistThreshold(row.film_id, value);
-        setEditing(false);
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "Couldn't save — try again.";
-        setEditError(msg === "invalid threshold" ? "Must be between $0.01 and $1000." : "Couldn't save — try again.");
-      } finally {
-        submittingRef.current = false;
-      }
-    });
-  }
-
-  function cancelEdit() {
-    cancelledRef.current = true;
-    setEditing(false);
-    setDraft(row.max_price_usd != null ? row.max_price_usd.toFixed(2) : "");
-    setEditError(null);
-  }
 
   function onRemove() {
     startRemove(async () => {
@@ -86,40 +43,22 @@ export default function WatchlistRow({ row }: Props) {
         </a>
       </div>
       <div className="watchlist-row-price">
-        <div style={{ fontFamily: "var(--font-head)", fontSize: 22 }}>{formatPrice(row.film.latest_price)}</div>
-        {dropped && <span className="caps" style={{ fontSize: 10, opacity: 0.8, marginTop: 2 }}>▼ DROP</span>}
-      </div>
-      <div className="watchlist-row-threshold">
-        {editing ? (
-          <div>
-            <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              max="1000"
-              value={draft}
-              onChange={e => setDraft(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === "Enter") submitThreshold();
-                if (e.key === "Escape") cancelEdit();
-              }}
-              onBlur={submitThreshold}
-              disabled={pendingEdit}
-              autoFocus
-              className="watchlist-threshold-editor"
-              placeholder="0.00"
-            />
-            {editError && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 11, marginTop: 4 }}>{editError}</div>}
-          </div>
-        ) : row.max_price_usd != null ? (
-          <button type="button" onClick={() => setEditing(true)} className="watchlist-threshold-display">
-            ≤ ${row.max_price_usd.toFixed(2)} <span style={{ opacity: 0.5, marginLeft: 4 }}>✎</span>
-          </button>
-        ) : (
-          <button type="button" onClick={() => setEditing(true)} className="watchlist-threshold-set">
-            + Set alert
-          </button>
+        <span style={{ fontFamily: "var(--font-head)", fontSize: 22 }}>{formatPrice(row.film.latest_price)}</span>
+        {dropped && row.max_price_usd != null && (
+          <span className="watchlist-row-was-price">{formatPrice(row.max_price_usd)}</span>
         )}
+      </div>
+      <div className="watchlist-row-buy">
+        {row.film.itunes_url ? (
+          <a
+            href={row.film.itunes_url}
+            target="_blank"
+            rel="noreferrer"
+            className="caps watchlist-row-buy-link"
+          >
+            Buy on Apple TV →
+          </a>
+        ) : null}
       </div>
       <button
         type="button"

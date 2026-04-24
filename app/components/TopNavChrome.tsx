@@ -101,7 +101,6 @@ export default function TopNavChrome({ items, current, user, profile, isAdmin }:
                 key={it.id}
                 href={it.href}
                 className="caps"
-                onClick={() => setOpen(false)}
                 style={{
                   padding: "14px 6px",
                   fontSize: 14,
