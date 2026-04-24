@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Remote
 
-Private repo at [rexnowacki/film-goblin](https://github.com/rexnowacki/film-goblin). `origin/master` is the default branch. Deployed to Vercel as project `film-goblin` (skulldrinker team) at https://film-goblin.vercel.app. Vercel is linked via CLI — `.vercel/project.json` is checked in at the repo root; deploys from `.worktrees/<name>/` need that file copied into the worktree root before `npx vercel deploy`.
+Private repo at [rexnowacki/film-goblin](https://github.com/rexnowacki/film-goblin). `origin/master` is the default branch. Deployed to Vercel as project `film-goblin` (skulldrinker team) at https://film-goblin.vercel.app. Vercel is linked via CLI — `.vercel/project.json` is checked in at the repo root.
+
+**Deploy rule: always run `npx vercel deploy --prod --yes` from the repo root.** See the Vercel gotcha in the Gotchas section before deploying from anywhere else.
 
 ## Packages in this repo
 
@@ -58,7 +60,7 @@ npm run test          # vitest run (if any tests exist; currently none)
 npm run gen:types     # regen lib/supabase/types.ts from local Supabase
 ```
 
-UI changes: `npm run dev` and hit http://localhost:3000. A real Supabase instance is required for auth-gated pages — expects env in `app/.env.local`. Deploy via `npx vercel deploy --prod --yes` from the repo root (or from a worktree that has `.vercel/project.json`).
+UI changes: `npm run dev` and hit http://localhost:3000. A real Supabase instance is required for auth-gated pages — expects env in `app/.env.local`. Deploy via `npx vercel deploy --prod --yes` **from the repo root only** — see Gotchas.
 
 ### Database (`db/`)
 
@@ -191,3 +193,7 @@ Queued:
 - **pg-mem 3.0.4 does NOT silently no-op `CREATE EXTENSION`** — it throws on unknown extensions. The test helper `worker/tests/helpers/db.ts` uses `mem.registerExtension("pgcrypto", ...)` to bridge this so the real-Postgres migration text stays unchanged.
 - **Vite dev server needs Node ≥ 18** — Node 16 fails with `crypto$2.getRandomValues is not a function`. Always `nvm use 20` first.
 - **Worktrees live under `.worktrees/`** (gitignored). The `superpowers:finishing-a-development-branch` skill cleans them up automatically on merge.
+- **Vercel deploys must run from the repo root. Never from `app/` and never from `<worktree>/app/`.** The Vercel CLI resolves `.vercel/project.json` from CWD only — it does NOT walk up the directory tree. The real project `film-goblin` is configured with `rootDirectory: app` in the Vercel dashboard, so building from the repo root is correct; Vercel applies that setting on top of the uploaded tree.
+  - If you run `vercel deploy --yes` from `app/` without a pre-populated `app/.vercel/project.json`, it silently **creates a new project** named after the CWD (e.g. `skulldrinker/app`) — a garbage project linked to a garbage URL. Delete with `npx vercel project rm <name>`.
+  - If you copy the root's `.vercel/project.json` into `app/.vercel/` and deploy from there, Vercel uses the correct project but then applies `rootDirectory: app` on top of CWD `app/`, so it tries to build `app/app/` and fails with "Couldn't find any `pages` or `app` directory".
+  - **For worktrees**, copy the root's `.vercel/project.json` into the **worktree root** (`.worktrees/<name>/.vercel/project.json`), then deploy from the worktree root — NOT from `<worktree>/app/`. A quick sanity grep before deploying: `ls -la .vercel/project.json && pwd` — the path should end in the worktree root or the repo root, never in `/app`.
