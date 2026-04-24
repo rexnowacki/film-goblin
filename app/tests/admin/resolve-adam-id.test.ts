@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { extractAdamIdFromHtml } from "@/lib/apple-tv/resolve-adam-id";
 
 const fixturesDir = fileURLToPath(new URL("../fixtures/", import.meta.url));
-const validHtml = readFileSync(fixturesDir + "apple-tv-page-valid.html", "utf8");
-const streamingOnlyHtml = readFileSync(fixturesDir + "apple-tv-page-streaming-only.html", "utf8");
+const validHtml = readFileSync(join(fixturesDir, "apple-tv-page-valid.html"), "utf8");
+const streamingOnlyHtml = readFileSync(join(fixturesDir, "apple-tv-page-streaming-only.html"), "utf8");
 
 describe("extractAdamIdFromHtml", () => {
   it("returns the adamId as a number from a valid Apple TV page", () => {
@@ -20,10 +21,7 @@ describe("extractAdamIdFromHtml", () => {
     expect(extractAdamIdFromHtml("")).toBeNull();
   });
 
-  it("returns null when the adamId match payload is non-numeric", () => {
-    // Defensive: the regex forbids non-digits but this proves the Number.isFinite guard.
-    // Simulate a shape the regex accepts but Number() rejects — not actually possible
-    // with /\d+/ but we keep the guard, so assert the obvious: no match → null.
+  it("returns null when the regex does not match (non-digit payload)", () => {
     expect(extractAdamIdFromHtml('{"adamId":"not-a-number"}')).toBeNull();
   });
 });
