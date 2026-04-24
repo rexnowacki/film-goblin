@@ -59,12 +59,12 @@ export default function AddFilmClient() {
           </section>
 
           <section>
-            <h2 className="head" style={{ fontSize: 22, marginBottom: 10 }}>Option 2 — Paste Apple TV URL or iTunes ID</h2>
+            <h2 className="head" style={{ fontSize: 22, marginBottom: 10 }}>Option 2 — Paste Apple TV URL or trackId</h2>
             <ITunesPasteBox onPick={prefillFromHit} />
           </section>
 
           <section>
-            <h2 className="head" style={{ fontSize: 22, marginBottom: 10 }}>Option 3 — No iTunes match?</h2>
+            <h2 className="head" style={{ fontSize: 22, marginBottom: 10 }}>Option 3 — No Apple TV match?</h2>
             <button type="button" className="btn btn-outline" onClick={startManual}>
               Enter manually
             </button>
