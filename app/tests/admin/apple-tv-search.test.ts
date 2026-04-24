@@ -318,4 +318,58 @@ describe("adminSearchAppleTv", () => {
     }
     fetchSpy.mockRestore();
   });
+
+  it("returns brave-error on Brave HTTP 500", async () => {
+    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("internal error", { status: 500 })
+    );
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await adminSearchAppleTv("midsommar");
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("brave-error");
+    expect(errorSpy).toHaveBeenCalled();
+    expect(errorSpy.mock.calls.some(args => args.some(a => typeof a === "string" && a.includes("500")))).toBe(true);
+
+    errorSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
+
+  it("returns brave-error on Brave HTTP 401 (same admin-facing copy as 500)", async () => {
+    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("unauthorized", { status: 401 })
+    );
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await adminSearchAppleTv("midsommar");
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe("brave-error");
+      expect(result.message).toBe("Search unavailable — try again in a moment.");
+    }
+
+    errorSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
+
+  it("returns brave-error when BRAVE_SEARCH_API_KEY is unset", async () => {
+    delete process.env.BRAVE_SEARCH_API_KEY;
+    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await adminSearchAppleTv("midsommar");
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("brave-error");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(errorSpy.mock.calls.some(args => args.some(a => typeof a === "string" && a.includes("BRAVE_SEARCH_API_KEY")))).toBe(true);
+
+    errorSpy.mockRestore();
+    fetchSpy.mockRestore();
+  });
 });
