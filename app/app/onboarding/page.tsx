@@ -195,7 +195,7 @@ function Prologue({ onNext }: { onNext: () => void }) {
         <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 20 }}>
           ✦ Chapter Zero · The Prologue ✦
         </div>
-        <h1 className="display" style={{ fontSize: 156, lineHeight: 0.85, margin: "0 0 28px" }}>
+        <h1 className="h-display" style={{ marginBottom: 28 }}>
           Join The<br /><span style={{ color: "var(--accent)" }}>Coven</span>.
         </h1>
         <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 22, lineHeight: 1.45, maxWidth: 640, margin: "0 auto 22px" }}>
@@ -710,7 +710,7 @@ function ChapterHeader({ n, title, quote }: { n: string; title: string; quote: s
       <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 8 }}>
         ✦ Chapter {n} ✦
       </div>
-      <h2 className="display" style={{ fontSize: 88, lineHeight: 0.9, margin: "0 0 14px" }}>
+      <h2 className="h-display" style={{ marginBottom: 14 }}>
         {title}
       </h2>
       <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 18, lineHeight: 1.4, maxWidth: 620, margin: "0 auto", opacity: 0.8 }}>
