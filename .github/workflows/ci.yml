@@ -14,9 +14,8 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: worker/package-lock.json
+          cache-dependency-path: package-lock.json
       - run: npm ci
-        working-directory: worker
       - run: npm test
         working-directory: worker
       - run: npm run typecheck
@@ -30,9 +29,8 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: db/package-lock.json
+          cache-dependency-path: package-lock.json
       - run: npm ci
-        working-directory: db
       - run: npm test
         working-directory: db
       - run: npm run test:rls
@@ -48,7 +46,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: app/package-lock.json
+          cache-dependency-path: package-lock.json
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -60,10 +58,11 @@ jobs:
           echo "anon_key=$(echo $KEYS | jq -r '.api.anon_key')" >> $GITHUB_OUTPUT
           echo "service_role_key=$(echo $KEYS | jq -r '.api.service_role_key')" >> $GITHUB_OUTPUT
           echo "url=$(echo $KEYS | jq -r '.api.url')" >> $GITHUB_OUTPUT
+      - run: npm ci
       - name: Apply migrations
         run: |
-          cd worker && npm ci && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" npm run migrate
-          cd ../db && npm ci && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" npm run migrate
+          cd worker && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" npm run migrate
+          cd ../db && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" npm run migrate
       - name: Grant PostgREST role access
         run: |
           CONTAINER=$(docker ps --format '{{.Names}}' | grep supabase_db)
@@ -84,8 +83,6 @@ jobs:
              DROP POLICY IF EXISTS price_history_public_read ON price_history; \
              CREATE POLICY price_history_public_read ON price_history FOR SELECT TO anon, authenticated USING (true); \
              NOTIFY pgrst, 'reload schema';"
-      - run: npm ci
-        working-directory: app
       - env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.url }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.supabase.outputs.anon_key }}
