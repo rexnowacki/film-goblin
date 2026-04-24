@@ -8,8 +8,17 @@ beforeAll(async () => { db = await makeTestDb(); });
 afterAll(async () => { await db.close(); });
 
 describe("RLS: recommendations", () => {
-  it("A can recommend a film to B", async () => {
+  it("A can recommend a film to B (when coven-bound)", async () => {
     const fx = await seedFixtures(db.client);
+    // Migration 0116 requires sender + recipient to be coven-bound.
+    await beginAs(db.client, null, "service_role");
+    await db.client.query(
+      `INSERT INTO coven_members (user_a_id, user_b_id)
+       VALUES (LEAST($1::uuid, $2::uuid), GREATEST($1::uuid, $2::uuid))`,
+      [fx.userA.id, fx.userB.id]
+    );
+    await commit(db.client);
+
     await beginAs(db.client, fx.userA.id, "authenticated");
     try {
       const r = await db.client.query(
