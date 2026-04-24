@@ -4,7 +4,7 @@ import { computeDiff, shouldAlert } from "./diff.js";
 import {
   selectFilmsToRefresh, latestPriceHistory, findWatchlistsForFilm,
   insertPriceHistory, updateLastChecked, markUnavailable, createAlertAndMark,
-  maxPriceInWindow,
+  maxPriceInWindow, upsertFilm, insertManualFilm,
 } from "./db.js";
 import { Digest } from "./digest.js";
 
@@ -82,3 +82,10 @@ export async function runOnce(client: Client, opts: RunOnceOptions = {}): Promis
 
   return digest;
 }
+
+// Re-exports for the Next.js admin dashboard — do not break these without updating
+// app/lib/actions/admin/films.ts.
+export { searchFilms, parseFilm, fetchPrices } from "./itunes.js";
+export type { ParsedFilm } from "./types.js";
+export { upsertFilm, insertManualFilm } from "./db.js";
+export type { ManualFilmFields } from "./db.js";
