@@ -7,7 +7,7 @@ import {
   parseFilm,
   type ParsedFilm,
 } from "film-goblin-worker";
-import type { ITunesSearchHit } from "./films";
+import { toHit, type ITunesSearchHit } from "./itunes-hit";
 
 const APPLE_TV_SEARCH_REGION = "us";
 const BRAVE_ENDPOINT = "https://api.search.brave.com/res/v1/web/search";
@@ -24,21 +24,6 @@ export type SearchResult =
   | { ok: true; candidates: SearchCandidate[] }
   | { ok: false; reason: "brave-empty" | "all-streaming-only" | "brave-error"; message: string };
 
-function toHit(p: ParsedFilm): ITunesSearchHit {
-  return {
-    itunes_id: p.itunes_id,
-    title: p.title,
-    director: p.director,
-    year: p.year,
-    runtime_min: p.runtime_min,
-    genre_primary: p.genre_primary,
-    description: p.description,
-    content_advisory: p.content_advisory,
-    artwork_url: p.artwork_url,
-    itunes_url: p.itunes_url,
-    price_usd: p.price_usd,
-  };
-}
 
 async function tryItunesSearch(term: string): Promise<SearchCandidate[]> {
   try {
