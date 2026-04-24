@@ -31,8 +31,12 @@ export async function makeTestDb(): Promise<TestDb> {
     await client.query(readFileSync(join(WORKER_MIGRATIONS, f), "utf8"));
   }
 
-  // Then our migrations via the applyMigrations runner so _migrations gets populated
-  await applyMigrations(client, DB_MIGRATIONS);
+  // Then our migrations via the applyMigrations runner so _migrations gets populated.
+  // Skip 0117_avatars_bucket — it references Supabase's `storage` schema which is only
+  // provisioned on real Supabase, not on vanilla Postgres. RLS tests don't cover storage.
+  await applyMigrations(client, DB_MIGRATIONS, {
+    skip: f => f.includes("avatars_bucket"),
+  });
 
   // Allow cross-schema access for test roles (they need to read everything the policies permit).
   // Mirror Supabase's real grant structure: anon gets SELECT only; authenticated gets full DML

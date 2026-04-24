@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { Client } from "pg";
 
-export async function applyMigrations(client: Client, migrationsDir: string): Promise<string[]> {
+export async function applyMigrations(client: Client, migrationsDir: string, opts?: { skip?: (filename: string) => boolean }): Promise<string[]> {
   await client.query(`
     CREATE TABLE IF NOT EXISTS _migrations (
       name TEXT PRIMARY KEY,
@@ -12,6 +12,7 @@ export async function applyMigrations(client: Client, migrationsDir: string): Pr
   const files = readdirSync(migrationsDir).filter(f => f.endsWith(".sql")).sort();
   const applied: string[] = [];
   for (const file of files) {
+    if (opts?.skip?.(file)) continue;
     const r = await client.query(`SELECT 1 FROM _migrations WHERE name = $1`, [file]);
     if (r.rowCount && r.rowCount > 0) continue;
     const sql = readFileSync(join(migrationsDir, file), "utf8");
