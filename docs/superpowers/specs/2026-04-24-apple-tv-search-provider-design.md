@@ -22,7 +22,7 @@ iTunes Search is tried first (free, no quota). Brave is the fallback only when i
 - **Caching:** None. At admin volume (single-digit searches per day) the Brave quota math is a non-issue. Caching is complexity on spec.
 - **Error posture:** Server-side `console.*` logs for extraction failures; admin sees only working candidates. Zero-survivor case distinguishes "Brave returned nothing" (`brave-empty`) from "Brave returned results but all streaming-only" (`all-streaming-only`) from "Brave unreachable" (`brave-error`) — each gets specific admin-facing copy.
 - **Env var:** `BRAVE_SEARCH_API_KEY`, app-only, pushed to Vercel with `--sensitive`. Rotation note added to `CLAUDE.md` Gotchas.
-- **Testing:** Vitest + MSW in `app/` (establishes the pattern — no tests exist in `app/` today). Pure functions and server action only. No React component testing.
+- **Testing:** Vitest in `app/` following the existing `vi.mock` pattern used by `tests/routes/cron-refresh-prices.test.ts` and other admin/action tests. Global `fetch` is stubbed per-test via `vi.spyOn(globalThis, "fetch")`; `film-goblin-worker` is mocked via `vi.mock("film-goblin-worker")`. No MSW dependency — the existing codebase doesn't use it and adding it would be inconsistent. Pure functions and server action only. No React component testing.
 - **Code organization:** New `app/lib/apple-tv/resolve-adam-id.ts` (extracted from `films.ts`, shared between URL-paste flow and Brave flow). New `app/lib/actions/admin/apple-tv-search.ts` for the server action.
 
 ## Out of scope
@@ -53,7 +53,7 @@ app/app/admin/films/
   new/AddFilmClient.tsx             (EDIT — swap widget, update copy)
 
 app/tests/admin/
-  apple-tv-search.test.ts           (NEW — Vitest + MSW, 10 tests)
+  apple-tv-search.test.ts           (NEW — Vitest + vi.mock, 10 tests)
   resolve-adam-id.test.ts           (NEW — pure-function tests, 4 tests)
 
 app/tests/fixtures/
@@ -62,8 +62,7 @@ app/tests/fixtures/
   brave-search-response.json        (NEW)
   brave-search-empty.json           (NEW)
 
-app/vitest.config.ts                (NEW — first Vitest config in app/)
-app/package.json                    (EDIT — add vitest, msw, @types/node if absent)
+(Existing — no changes needed: app/vitest.config.ts, vitest devDep)
 
 Environment:
   BRAVE_SEARCH_API_KEY              (NEW — app/.env.local + Vercel, sensitive)
@@ -235,11 +234,11 @@ Admin types "Midsommar"
 
 ## Testing
 
-### Runtime setup (first Vitest in `app/`)
+### Runtime setup
 
-- `app/vitest.config.ts` — Node environment, `globals: true`, path alias `@` → `./` matching `tsconfig.json`.
-- Dev deps added if absent: `vitest`, `msw`, `@types/node`.
-- Tests under `app/tests/` (mirrors `worker/` and `notifier/`).
+- `app/vitest.config.ts` already exists (Node env, `@` alias, dotenv loading, 20s timeout) — no changes.
+- Vitest 2.1.8 already in devDeps — no new installs.
+- Tests under `app/tests/admin/` mirroring existing `tests/admin/require-admin.test.ts` and `tests/admin/layout-guard.test.ts`.
 
 ### Fixtures (`app/tests/fixtures/`)
 
@@ -255,20 +254,25 @@ Admin types "Midsommar"
 3. `extractAdamIdFromHtml` returns `null` from empty string.
 4. `extractAdamIdFromHtml` returns `null` when regex match payload is non-numeric (defensive).
 
-### `app/tests/admin/apple-tv-search.test.ts` (10 tests, MSW + `vi.mock` for auth only)
+### `app/tests/admin/apple-tv-search.test.ts` (10 tests)
 
 **Mocking strategy:**
 
-- MSW handlers stub all HTTP endpoints the code touches: `api.search.brave.com/res/v1/web/search`, `tv.apple.com/*`, `itunes.apple.com/search`, `itunes.apple.com/lookup`. The worker's `searchFilms` / `fetchPrices` run for real against MSW — no module mocking for the worker. This matches how `worker/tests/` already uses MSW and keeps the real parsing logic in play.
-- `vi.mock("@/lib/auth/require-admin")` and `vi.mock("@/lib/supabase/server")` to no-op the auth/DB plumbing (not what we're testing, and pulls in server-only runtime).
-- Per-test control over iTunes results: adjust the MSW `itunes.apple.com/search` handler's response (empty vs. populated) per test using MSW's `server.use(...)`.
+Follows the established pattern from `tests/routes/cron-refresh-prices.test.ts` and other admin tests:
+
+- `vi.mock("film-goblin-worker", ...)` with hoisted mocks for `searchFilms`, `parseFilm`, `fetchPrices`. Per-test control via `searchFilmsMock.mockResolvedValue(...)` etc.
+- `vi.mock("@/lib/auth/require-admin", ...)` — `requireAdmin` becomes a no-op.
+- `vi.mock("@/lib/supabase/server", ...)` — `createClient` returns a stub object (never dereferenced past `requireAdmin`).
+- `vi.spyOn(globalThis, "fetch")` with a per-test implementation that branches on URL prefix: Brave endpoint → fixture JSON response, `tv.apple.com/us/movie/...` → fixture HTML by URL, else throws (unexpected URL caught).
+- `vi.spyOn(console, "log")` / `vi.spyOn(console, "error")` where log-emission is asserted.
+- Import the server action AFTER `vi.mock` calls using `await import(...)`.
 
 **Test cases:**
 
-1. **iTunes happy path.** MSW `itunes.apple.com/search` returns 3 valid iTunes results. Assert Brave handler *never* called (MSW spy on the Brave endpoint records zero requests). Result `ok: true`, 3 candidates, all `via: "itunes"`.
-2. **Brave happy path.** MSW iTunes Search returns `[]`. Brave returns 8-URL fixture. `tv.apple.com/*` pages stub valid HTML. `itunes.apple.com/lookup` returns a parsed-film-shaped response for each adamId. Assert 5 candidates, all `via: "apple-tv-search"`.
-3. **URL filter drops noise.** Same as #2; assert the 3 noise URLs (TV show / category / non-US) are absent from candidates and their `tv.apple.com` pages were not fetched.
-4. **Partial streaming-only.** 5 URLs; 3 pages valid HTML, 2 streaming-only HTML. Assert `ok: true` with 3 candidates + `console.log` called with `"apple-tv-search: dropped 2/5"` substring.
+1. **iTunes happy path.** `searchFilmsMock` returns 3 results that `parseFilmMock` parses cleanly. Assert `fetch` is *not* called (no Brave hit). Result `ok: true`, 3 candidates, all `via: "itunes"`.
+2. **Brave happy path.** `searchFilmsMock` returns `[]`. Fetch spy returns the 8-URL Brave fixture for the Brave endpoint, valid HTML for 5 `tv.apple.com` URLs, and `fetchPricesMock` returns a parsed film per adamId. Assert 5 candidates, all `via: "apple-tv-search"`.
+3. **URL filter drops noise.** Same as #2; assert the 3 noise URLs (TV show / category / non-US) are absent from candidates and `fetch` was not called for their URLs.
+4. **Partial streaming-only.** 5 URLs; 3 return valid HTML, 2 return streaming-only HTML. Assert `ok: true` with 3 candidates + `console.log` called with `"apple-tv-search: dropped 2/5"` substring.
 5. **All streaming-only.** 5 URLs; all 5 return streaming-only HTML. Assert `{ ok: false, reason: "all-streaming-only" }`.
 6. **Brave empty.** `web.results: []`. Assert `{ ok: false, reason: "brave-empty" }` + no `tv.apple.com` fetches.
 7. **Brave filter-zero.** Only noise URLs. Assert `brave-empty`.
