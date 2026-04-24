@@ -4,18 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Remote
 
-Private repo at [rexnowacki/film-goblin](https://github.com/rexnowacki/film-goblin). `origin/master` is the default branch. Vercel is the planned deploy target (see `docs/superpowers/stack.md`); no Vercel project is linked yet.
+Private repo at [rexnowacki/film-goblin](https://github.com/rexnowacki/film-goblin). `origin/master` is the default branch. Deployed to Vercel as project `film-goblin` (skulldrinker team) at https://film-goblin.vercel.app. Vercel is linked via CLI — `.vercel/project.json` is checked in at the repo root; deploys from `.worktrees/<name>/` need that file copied into the worktree root before `npx vercel deploy`.
 
-## Two packages, one repo
+## Packages in this repo
 
-This repo contains two independent packages that are deployed separately and share nothing at runtime:
+Five packages, deployed/run independently:
 
-- **`src/`** — the Vite + React **frontend prototype**. Ported from a Claude Design HTML/JS handoff bundle. All data is mocked in `src/data.js`. Twelve routes in a single-page app with a built-in route switcher. This is a design artifact, not production code yet; the production rebuild is tracked as sub-projects in `docs/superpowers/`.
-- **`worker/`** — the **price-tracking worker** (TypeScript, Node). Standalone package with its own `package.json`, migrations, tests, and CLI scripts. Polls the iTunes Search API for Apple TV movie prices, writes `price_history` rows, creates `price_alerts` for watchlisting users. Implements the spec at `docs/superpowers/specs/2026-04-20-apple-data-source-design.md`. This is sub-project 1 of the production rebuild.
+- **`app/`** — the **production Next.js 15 app** (App Router, TS, Supabase SSR). The thing users touch. Owns UI, auth, server actions, API routes including cron endpoints. Deployed to Vercel. When a request says "the app" / "the UI" — it's this.
+- **`worker/`** — the **price-tracking worker** (TypeScript, Node). Polls iTunes Search API, writes `price_history`, emits `price_alerts`. Invocable as a CLI (`npm run worker`) or via the Next.js cron route at `app/app/api/cron/refresh-prices`. Has its own tests using pg-mem + MSW.
+- **`db/`** — the **schema package**. Owns all migrations (`db/migrations/0100_*` onward), RLS policies, triggers, DB-side tests. Migrations apply to the Supabase Postgres instance.
+- **`notifier/`** — the **notifications package**. Email via Resend + web push. Consumed by `app/app/api/cron/send-notifications`.
+- **`src/`** — the original Vite + React **design prototype**. Legacy reference material — mocked data, the zine look preserved intact for visual comparison. Don't make feature changes here; the production app is `app/`.
 
-When a request touches "the app" / "the UI" / "the design" it's `src/`. When it touches prices, alerts, the database, or anything scheduled it's `worker/`. Do not merge them.
+Plus one top-level reference dir:
 
-`film-goblin/` is the original Claude Design handoff bundle (prototype HTML/JSX + chat transcripts). Read-only reference material; don't edit it.
+- **`film-goblin/`** — the original Claude Design handoff bundle (HTML/JSX + chat transcripts). Read-only; don't edit.
+
+Routing rule: "UI / user-facing behavior" → `app/`. "Prices, iTunes, scheduled jobs" → `worker/` + the app's cron route. "Schema / RLS / triggers" → `db/migrations/`. "Email / push" → `notifier/`.
 
 ## Node version
 
@@ -40,6 +45,46 @@ npm run preview    # serve the production build
 
 No test suite — this is a visual prototype. Verify UI changes by running the dev server and tabbing through the route switcher (top-left of every page).
 
+### Production app (`app/`)
+
+From `app/`:
+
+```
+npm run dev           # next dev on :3000
+npm run build         # next build (also runs during Vercel deploy)
+npm run start         # serve production build locally
+npm run typecheck     # tsc --noEmit
+npm run test          # vitest run (if any tests exist; currently none)
+npm run gen:types     # regen lib/supabase/types.ts from local Supabase
+```
+
+UI changes: `npm run dev` and hit http://localhost:3000. A real Supabase instance is required for auth-gated pages — expects env in `app/.env.local`. Deploy via `npx vercel deploy --prod --yes` from the repo root (or from a worktree that has `.vercel/project.json`).
+
+### Database (`db/`)
+
+From `db/`:
+
+```
+npm test              # migrations smoke (pg-mem)
+npm run test:rls      # RLS policy + trigger suite (testcontainers Postgres)
+npm run test:all      # both
+npm run typecheck
+npm run migrate       # apply db/migrations/*.sql against DATABASE_URL
+```
+
+`test:rls` spins up a real Postgres via Docker (testcontainers) so RLS, triggers, and JSON aggregates execute for real. `test` uses pg-mem and is fast but does NOT exercise RLS.
+
+### Notifier (`notifier/`)
+
+From `notifier/`:
+
+```
+npm test              # vitest run
+npm run typecheck
+```
+
+Library code only — no CLI. Consumed by `app/app/api/cron/send-notifications/` via the `film-goblin-notifier` file: dependency.
+
 ### Worker (`worker/`)
 
 From `worker/`:
@@ -58,7 +103,16 @@ npm run add-film -- 1468845007      # admin: upsert a single film by iTunes trac
 
 Tests use pg-mem (in-memory Postgres) and MSW (HTTP mocking). No real DB or network required for `npm test`.
 
-The migrate/seed/worker/add-film scripts expect a real `DATABASE_URL` in `worker/.env`. The HTTP cron mount (`/api/cron/refresh-prices`) is deferred to the Next.js scaffold in a future sub-project; for now the worker is invoked via `npm run worker`.
+The seed/worker/add-film scripts expect a real `DATABASE_URL` in `worker/.env`. Production refresh runs via the Vercel Cron hitting `app/app/api/cron/refresh-prices/` — the worker package's `runOnce` is imported as a file: dependency by the app. `npm run worker` is still a valid local-invocation path.
+
+### Gotcha: `npm run migrate` lives in two places
+
+Both `worker/` and `db/` have a `migrate` script. They are NOT the same.
+
+- `db/ npm run migrate` applies `db/migrations/0100_*` onward — the **canonical schema** for the production app (profiles, follows, coven, watchlists, lists, reviews, recommendations, activity, notifications, avatars).
+- `worker/ npm run migrate` applies `worker/migrations/` — the worker's own legacy stub schema (films, price_history, price_alerts, watchlists stub). Migration `0100_drop_watchlists_stub.sql` in `db/` drops the stub and hands over to the real schema.
+
+Run `db/` migrations against the production Supabase; run `worker/` migrations only when bootstrapping a fresh local worker DB.
 
 ## Architecture
 
@@ -76,13 +130,28 @@ Each module has one responsibility — do not blur the boundaries:
 
 Scripts under `worker/scripts/` are thin CLI adapters — no business logic.
 
-### Frontend prototype (`src/`)
+### Production app (`app/`)
 
-- `App.jsx` — renders the route switcher (top-left), tweaks panel (bottom-right ✦), and picks one page by route id from localStorage. Twelve routes.
-- `data.js` — all mocked data (`FILMS`, `LISTS`, `USERS`, `ACTIVITY`, `genPriceHistory`). Every page imports from here.
-- `components/` — six reusable primitives (`FilmPoster`, `PriceDrop`, `Stars`, `Avatar`, `HalftoneBar`, `TopNav`, `IOSFrame`). `TopNav` is the logged-in 7-item nav; `IOSFrame` is just the iPhone bezel used by `MobilePage`.
-- `pages/` — one file per route. `MobilePage` is a single-page showcase of 10 mobile artboards; the pan/zoom design-canvas wrapper from the original bundle was intentionally dropped.
-- `styles.css` — the whole design system (color tokens, `.display`/`.eyebrow`/`.stamp`/`.btn` utilities, grain/halftone effects). Single CSS file, ported verbatim from the design bundle.
+Next.js 15 App Router, TypeScript, Supabase SSR. The file map:
+
+- `app/app/` — routes. One folder per route (`home/`, `films/`, `film/[id]/`, `lists/`, `people/`, `coven/`, `p/[handle]/`, `settings/`, `onboarding/`, `auth/{signin,signup,forgot,reset}/`, `api/{auth/callback,cron/*,unsubscribe/[token]}/`). Plus the landing page at `app/app/page.tsx`.
+- `app/app/globals.css` — single CSS file, the entire design system. Tokens at `:root`, responsive overrides at `@media (max-width: 720px)`, utilities (`.h-display`, `.container`, `.stackable`, `.grid-auto`, `.check-zine`, `.btn` family), grain/halftone effects, hero overrides. **Font-usage rule lives here in a comment block above `.h-display`** — Rubik Wet Paint for chrome/page titles; DM Serif Display for content titles. Secondary-button rule (destructive blood-outline vs non-destructive bone-outline) is documented above `.btn`.
+- `app/components/` — client components (`TopNavChrome`, `FeedTabs`, `FilmPoster`, `UserMenu`, `RecommendModal`, `AvatarEditor`, `WatchlistButton`, `FollowButton`, `CovenButton`, etc.). `TopNav.tsx` is a thin server shim that calls the client-side `TopNavChrome`.
+- `app/lib/supabase/` — SSR + client Supabase factories. Use `createClient()` from `server.ts` in server components and route handlers; from `client.ts` in `"use client"` components.
+- `app/lib/queries/` — read-side DB helpers, one file per aggregate (`films`, `watchlists`, `reviews`, `activity`, `coven`, `profiles`, `lists`). Import a Supabase client and return shaped data.
+- `app/lib/actions/` — server actions (form submits, mutations). `auth`, `profile`, `watchlists`, `lists`, `recommendations`, `follows`, `coven`, `onboarding`.
+
+The single 720px mobile breakpoint is set in `globals.css`'s `@media (max-width: 720px)` blocks and the `.mobile-only` / `.desktop-only` / `.mobile-only-flex` helpers. `.stackable` grids force `grid-template-columns: 1fr` at ≤720px regardless of `--stack-template`.
+
+### Design prototype (`src/`) — legacy
+
+Kept as a visual reference for the zine aesthetic. Vite + React, no auth, all mocked data. If you're changing UI, change it in `app/` — `src/` is not deployed and does not reflect production behavior. Architecture (for historical context only):
+
+- `App.jsx` — route switcher (top-left), tweaks panel (bottom-right ✦), picks one page by route id from localStorage. Twelve routes.
+- `data.js` — all mocked data.
+- `components/` — six reusable primitives (`FilmPoster`, `PriceDrop`, `Stars`, `Avatar`, `HalftoneBar`, `TopNav`, `IOSFrame`).
+- `pages/` — one file per route. `MobilePage` is a single-page showcase of 10 mobile artboards.
+- `styles.css` — the original design system, ported verbatim from the Claude Design handoff bundle. `app/app/globals.css` is the evolved version.
 
 ### Design system
 
@@ -97,18 +166,23 @@ Aesthetic lock-ins that should not drift without user buy-in:
 
 Committed direction (Next.js + Supabase + Vercel Cron, etc.) lives in **`docs/superpowers/stack.md`** — read it before proposing tech choices, and update it there (not here) when decisions change.
 
-## Sub-project decomposition (production rebuild)
+## Sub-project history
 
-The production rebuild is sequenced as six independent sub-projects, each with its own spec → plan → implementation cycle under `docs/superpowers/`:
+Every sub-project gets a spec + plan under `docs/superpowers/` before implementation. Shipped sub-projects in order:
 
-1. **Apple data source** — ✅ Done. See `specs/2026-04-20-apple-data-source-design.md`.
-2. **Database schema + RLS policies** — not started. Owns the full `users`, `watchlists` (beyond the stub in migration 0003), `friendships`, `lists`, `reviews`, `recommendations` schema.
-3. **Next.js scaffold + auth + UI port** — not started. Replaces the Vite prototype with an App Router + TS + Supabase-backed app.
-4. **Price-tracking worker HTTP mount** — glue; lands when sub-project 3 exists.
-5. **Notifications pipeline** — email via Resend + web push. Consumes `price_alerts`.
-6. **Social features** — friends, recommendations, realtime activity feed.
+1. **Apple data source** — ✅ `specs/2026-04-20-apple-data-source-design.md`. The `worker/` package. Lives at `worker/src/*.ts`.
+2. **Database schema + RLS** — ✅ `specs/2026-04-21-schema-rls-design.md`. Migrations `db/migrations/0100_drop_watchlists_stub.sql` through `0117_avatars_bucket.sql`. RLS policies, triggers (profile creation, coven broadcast, activity fan-out).
+3. **Next.js scaffold + auth + UI port** — ✅ `specs/2026-04-21-nextjs-app-design.md`. The `app/` package. App Router, Supabase SSR auth, server actions, all 12 routes from the prototype.
+4. **Price-tracking worker HTTP mount** — ✅ `specs/2026-04-22-worker-cron-mount-design.md`. Route at `app/app/api/cron/refresh-prices/`. Uses Vercel Cron.
+5. **Notifications pipeline** — ✅ `specs/2026-04-22-notifications-pipeline-design.md`. The `notifier/` package. Route at `app/app/api/cron/send-notifications/` + `app/app/api/unsubscribe/[token]/`. Email via Resend.
+6. **Social features** — ✅ `specs/2026-04-23-social-features-design.md`. Coven (friends with a name), follows, recommendations, activity feed.
+7. **Auth polish** — ✅ `specs/2026-04-23-auth-polish-design.md`. Password reset, email verification, Google sign-in, settings password change.
+8. **Mobile responsive (Tier-A "usable")** — ✅ `specs/2026-04-23-mobile-responsive-design.md`. Responsive tokens at 720px breakpoint, hamburger nav, grid reflow, hero restack.
+9. **Mobile polish** — ✅ `specs/2026-04-23-mobile-polish-design.md`. Feed filter row cleanup, film detail reorder, `.h-display` clamp tuning, custom `.check-zine` checkboxes, input contrast bump, font-usage rule (Rubik Wet Paint for chrome; DM Serif Display for content titles).
 
-The worker's `watchlists` table is intentionally a stub — sub-project 2 owns the real schema. Migration `0003_watchlists_stub.sql` header flags this.
+Queued:
+
+- No queued sub-projects as of 2026-04-23. Roadmap-level next work is open — see `docs/superpowers/stack.md` and ask the user before starting anything new.
 
 ## Gotchas
 
