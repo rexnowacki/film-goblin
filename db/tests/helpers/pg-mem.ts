@@ -56,16 +56,19 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
     await client.query(readFileSync(join(WORKER_MIGRATIONS, f), "utf8"));
   }
 
-  // Apply db migrations EXCEPT trigger files (pg-mem can't parse SECURITY DEFINER reliably).
-  // Also strip RLS statements (ENABLE ROW LEVEL SECURITY, CREATE POLICY) — pg-mem doesn't
-  // support them and the smoke test only checks DDL shape, not policy enforcement.
+  // Apply db migrations EXCEPT trigger files (pg-mem can't parse SECURITY DEFINER reliably)
+  // and storage bucket files (pg-mem has no Supabase `storage` schema).
+  // Also strip RLS statements (ENABLE ROW LEVEL SECURITY, CREATE POLICY, DROP POLICY) — pg-mem
+  // doesn't support them and the smoke test only checks DDL shape, not policy enforcement.
   for (const f of listSqlFiles(DB_MIGRATIONS)) {
     if (f.includes("_trigger")) continue;
+    if (f.includes("avatars_bucket")) continue;
     const raw = readFileSync(join(DB_MIGRATIONS, f), "utf8");
     const stripped = raw
       .split(/;\s*\n/)
       .filter(stmt => !/ALTER\s+TABLE\s+\S+\s+ENABLE\s+ROW\s+LEVEL\s+SECURITY/i.test(stmt))
       .filter(stmt => !/CREATE\s+POLICY\b/i.test(stmt))
+      .filter(stmt => !/DROP\s+POLICY\b/i.test(stmt))
       .join(";\n");
     if (stripped.trim()) await client.query(stripped);
   }
