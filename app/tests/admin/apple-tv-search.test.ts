@@ -109,4 +109,60 @@ describe("adminSearchAppleTv", () => {
     warnSpy.mockRestore();
     errorSpy.mockRestore();
   });
+
+  it("returns brave-empty when Brave returns zero web.results", async () => {
+    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ web: { results: [] } }), { status: 200 })
+    );
+
+    const result = await adminSearchAppleTv("midsommar");
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("brave-empty");
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [url] = fetchSpy.mock.calls[0];
+    expect(String(url)).toContain("api.search.brave.com/res/v1/web/search");
+    expect(String(url)).toContain("site%3Atv.apple.com%2Fus%2Fmovie");
+    fetchSpy.mockRestore();
+  });
+
+  it("returns brave-empty when all Brave URLs fail the candidate regex (noise only)", async () => {
+    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({
+        web: {
+          results: [
+            { url: "https://tv.apple.com/us/show/severance/umc.cmc.aa" },
+            { url: "https://tv.apple.com/gb/movie/midsommar/umc.cmc.bb" },
+            { url: "https://tv.apple.com/us/genre/horror/umc.cmc.cc" },
+          ],
+        },
+      }), { status: 200 })
+    );
+
+    const result = await adminSearchAppleTv("junk");
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("brave-empty");
+    // Only the Brave call happened — no tv.apple.com page fetches, because all URLs were noise.
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    fetchSpy.mockRestore();
+  });
+
+  it("sends the subscription token header and site-restricted query", async () => {
+    searchFilmsMock.mockResolvedValue({ resultCount: 0, results: [] });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ web: { results: [] } }), { status: 200 })
+    );
+
+    await adminSearchAppleTv("midsommar");
+
+    const [url, init] = fetchSpy.mock.calls[0];
+    expect(String(url)).toContain('%22midsommar%22'); // quoted phrase match
+    const headers = new Headers(init?.headers);
+    expect(headers.get("X-Subscription-Token")).toBe("test-brave-key");
+    expect(headers.get("Accept")).toBe("application/json");
+    fetchSpy.mockRestore();
+  });
 });

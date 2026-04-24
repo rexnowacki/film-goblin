@@ -38,14 +38,53 @@ async function tryItunesSearch(term: string): Promise<SearchCandidate[]> {
   }
 }
 
-async function tryBraveSearch(_term: string): Promise<SearchResult> {
-  // Full implementation added in Task 4. For now, treat as unavailable so
-  // the iTunes-first branch can be tested without requiring a real Brave key.
-  if (!process.env.BRAVE_SEARCH_API_KEY) {
+interface BraveResponse {
+  web?: { results?: { url?: string }[] };
+}
+
+async function callBraveSearch(term: string): Promise<string[] | null> {
+  const key = process.env.BRAVE_SEARCH_API_KEY;
+  if (!key) {
     console.error("apple-tv-search: BRAVE_SEARCH_API_KEY not set");
+    return null;
+  }
+  const query = `site:tv.apple.com/${APPLE_TV_SEARCH_REGION}/movie "${term}"`;
+  const url = `${BRAVE_ENDPOINT}?q=${encodeURIComponent(query)}`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "X-Subscription-Token": key,
+        Accept: "application/json",
+      },
+    });
+    if (!res.ok) {
+      console.error(`apple-tv-search: Brave returned HTTP ${res.status}`);
+      return null;
+    }
+    const body = (await res.json()) as BraveResponse;
+    const urls = body.web?.results?.map(r => r.url).filter((u): u is string => !!u) ?? [];
+    return urls;
+  } catch (e) {
+    console.error("apple-tv-search: Brave fetch threw:", e);
+    return null;
+  }
+}
+
+async function tryBraveSearch(term: string): Promise<SearchResult> {
+  const urls = await callBraveSearch(term);
+  if (urls === null) {
     return { ok: false, reason: "brave-error", message: "Search unavailable — try again in a moment." };
   }
-  return { ok: false, reason: "brave-error", message: "Search unavailable — try again in a moment." };
+  const candidateUrls = urls.filter(u => APPLE_TV_URL_RE.test(u)).slice(0, CANDIDATE_LIMIT);
+  if (candidateUrls.length === 0) {
+    return {
+      ok: false,
+      reason: "brave-empty",
+      message: `No Apple TV results for "${term}". Try a different spelling or use manual entry.`,
+    };
+  }
+  // Page fetches + adamId extraction added in Task 5.
+  return { ok: false, reason: "brave-empty", message: "unreachable-until-task-5" };
 }
 
 export async function adminSearchAppleTv(term: string): Promise<SearchResult> {
