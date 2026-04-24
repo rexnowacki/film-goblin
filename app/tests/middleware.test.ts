@@ -42,4 +42,13 @@ describe("middleware decideRedirect", () => {
   it("unauth visit to /p/moss.witch is allowed (public profile)", () => {
     expect(decideRedirect(null, "/p/moss.witch")).toBeNull();
   });
+
+  it("unauth visit to /watchlist redirects to /auth/signin with preserved path", () => {
+    const r = decideRedirect(null, "/watchlist");
+    expect(r).toEqual({ target: "/auth/signin", preserveRedirect: true });
+  });
+
+  it("authed visit to /watchlist is allowed", () => {
+    expect(decideRedirect({ id: "u1" }, "/watchlist")).toBeNull();
+  });
 });
