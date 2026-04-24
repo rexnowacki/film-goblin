@@ -16,6 +16,10 @@ function errorMessage(result: Extract<SearchResult, { ok: false }>, term: string
       return `Apple TV has results for "${term}" but none are buyable (all streaming-only).`;
     case "brave-error":
       return "Search unavailable — try again in a moment.";
+    default: {
+      const _exhaustive: never = result.reason;
+      return _exhaustive;
+    }
   }
 }
 
