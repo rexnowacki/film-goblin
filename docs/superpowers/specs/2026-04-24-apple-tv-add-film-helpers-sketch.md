@@ -12,7 +12,7 @@ Admins need a fast way to add films to Film Goblin with correct metadata + a wor
 
 The root cause: Apple is slowly migrating iTunes Store → Apple TV, and the public APIs (`itunes.apple.com/search`, tv.apple.com's anonymous search) lag the real catalog. The iOS Apple TV app's `uts/v3/*` endpoints have the current data but require auth we can't reliably spoof server-side.
 
-## Option A — Chrome extension (user-initiated, per-film)
+## Lane A — Chrome extension (user-initiated, per-film)
 
 A toolbar extension runs on `tv.apple.com/*/movie/*`. User finds the film however they want (iOS app share link, Google search, browsing Apple TV); once they're on the film's page, they click the extension button and Film Goblin opens prefilled.
 
@@ -75,7 +75,78 @@ A toolbar extension runs on `tv.apple.com/*/movie/*`. User finds the film howeve
 
 ---
 
-## Option B — Apple EPF (Enterprise Partner Feed)
+## Lane B — Search provider API → Apple TV UMC page → adamId
+
+Admin types a title in Film Goblin's Add Film page. Server queries a proper search API (Brave Search, Google Custom Search, SerpAPI) with a `site:`-restricted query, harvests the matching `tv.apple.com/us/movie/*/umc.cmc.*` URLs, fetches the top candidate's HTML, extracts both the `umc.cmc.*` ID (from the URL) and the `adamId` (from the embedded JSON). Returns candidates with title + year + poster for admin to pick from.
+
+**Important:** use a real search provider API with signed requests. Do NOT scrape Google/DDG HTML — datacenter IPs get blocked (confirmed empirically: both refused during today's investigation).
+
+### Design
+
+**Server action (`adminSearchAppleTv(term: string)`):**
+
+1. Build query: `site:tv.apple.com/us/movie "<term>"` (quotes force phrase match on the title slug).
+2. Call search API with key stored in a server-only env var. Options:
+   - **Brave Search API** — free tier 2000 queries/month, 1 req/sec; paid tiers beyond. Signup requires credit card. Probably our first pick.
+   - **Google Custom Search JSON API** — 100 queries/day free, restricts via a CSE configured for `tv.apple.com/us/movie/*`. More setup, lower daily cap.
+   - **SerpAPI or similar wrapper** — per-call pricing, easier onboarding, more expensive at scale.
+3. Parse response, extract URLs matching `^https://tv\.apple\.com/us/movie/[a-z0-9-]+/umc\.cmc\.[a-z0-9]+$`.
+4. For the top N candidates (say 5), in parallel:
+   - Fetch the page HTML server-side
+   - Extract `"adamId":"(\d+)"` — same regex `resolveAdamIdFromAppleTvUrl` uses today
+   - Extract title/year/poster from embedded metadata for display
+   - Store the `umc.cmc.*` from the URL as a candidate-side ID (useful if we ever want to link back to the Apple TV page for admins)
+5. Return candidates with `{ adamId, umcId, title, year, posterUrl, appleTvUrl }`. Skip any candidate where adamId extraction failed (those are the metadata-only / streaming-only pages we discovered today).
+6. Admin picks one → UI calls the existing `adminCreateFilm` flow, prefilled from the candidate + live iTunes Lookup for the latest price.
+
+**Candidate shape:**
+
+```ts
+interface AppleTvCandidate {
+  adamId: number;           // iTunes trackId — drives price tracking
+  umcId: string;            // e.g. "umc.cmc.6jn7uh12ith6d3hmfw80xczki"
+  appleTvUrl: string;       // e.g. "https://tv.apple.com/us/movie/picnic-at-hanging-rock/umc.cmc.6jn7uh..."
+  title: string;
+  year: number;
+  posterUrl: string;
+}
+```
+
+**UX in Add Film:**
+
+Replace (or add alongside) the broken iTunes search widget. "Search Apple TV" box → type title → hit API → render 3-5 candidate cards → click one → prefilled form.
+
+### Pros
+
+- Works for films iTunes Search can't find (Suspiria, Midsommar, Send Help were the motivating cases) because Google/Brave happily index the Apple TV site
+- Server-side automation — admin never leaves Film Goblin
+- Graceful degradation: candidates where `adamId` extraction fails get filtered out, so we only surface purchasable-on-iTunes options
+- Works for both purchase-on-Apple-TV films AND gracefully excludes the streaming-only `umc.cmc.*` pages (like today's Suspiria 1977 trap)
+
+### Cons
+
+- **Runtime cost.** Brave's paid tier kicks in past 2000 req/mo. At small admin-volume this is a non-issue; at scale it could matter.
+- **External dependency.** Google CSE and Brave APIs can rate-limit, change pricing, or have outages. Fallback behavior matters.
+- **Search quality depends on Google/Brave's index.** Mostly fine for Apple TV URLs (Apple allows indexing and the site has good crawl coverage), but very-recent releases may not have been indexed yet.
+- **Multiple results problem.** Searching `"Ravenous"` on Apple TV might return the 1999 feature + a 2017 Netflix film + a Canadian documentary. The candidate list has to disambiguate visually (poster + year).
+- **Env var + signup.** New `BRAVE_SEARCH_API_KEY` or `GOOGLE_CSE_KEY` + CSE ID, set via `vercel env add`. Non-trivial first-time setup for Brave (credit card), simpler for Google CSE (just an API key + CSE config at programmablesearchengine.google.com).
+
+### Estimate
+
+- Search provider signup + env var — 30 min
+- `adminSearchAppleTv` server action + candidate fetch pipeline — ~3-4 hrs
+- UI component (replace the iTunes search widget in `AddFilmClient`) — ~1 hr
+- Error handling + fallback when provider is down — ~30 min
+- **Total: ~half day to a full day**
+
+### Config hygiene
+
+- Store provider keys with `--sensitive` (default) — they shouldn't be in `vercel env pull` output. These don't need to be readable after setting.
+- Add a 1-line comment in `CLAUDE.md` → Gotchas: which search provider we picked, where the key lives, how to rotate.
+
+---
+
+## Lane C — Apple EPF (Enterprise Partner Feed)
 
 `https://performance-partners.apple.com/epf` — Apple's affiliate program gives partners access to bulk catalog dumps (tab-separated files), including a "Video" feed with the entire Apple TV movies+TV catalog.
 
@@ -140,25 +211,35 @@ A toolbar extension runs on `tv.apple.com/*/movie/*`. User finds the film howeve
 
 ---
 
-## How A and B compose
+## How A, B, C compose
 
-Not substitutes — they attack different slices:
+Not substitutes — three slices of the same problem:
 
-- **Extension (A)** = "I'm on the Apple TV page for a film right now, put it in Film Goblin." Per-film, user-initiated, zero catalog coverage in Film Goblin itself.
-- **EPF (B)** = "Film Goblin's Add Film search actually knows every film on Apple TV." Whole-catalog, typing a title finds the right one.
+- **Extension (A)** = "I'm on the Apple TV page for a film right now, put it in Film Goblin." Per-film, user-initiated, zero catalog coverage in Film Goblin itself. Zero runtime cost.
+- **Search API (B)** = "I type a title in Film Goblin, it finds the Apple TV page for me." Per-film, server-initiated, relies on Google/Brave index. Small runtime cost (free tier generally covers admin-volume use).
+- **EPF (C)** = "Film Goblin itself knows every film on Apple TV, searchable locally." Whole-catalog, no runtime API dependency, weekly refresh cadence. Large one-time build cost + ongoing storage.
 
-Having both would be ideal long-term. Short-term:
+Having all three would be overkill — they overlap. Realistic combinations:
+
+- **A + B:** ship quickly. Extension handles "I'm already on the page." Search API handles "I know the title, do the hunting for me." Covers 95% of admin workflow with no approval gates. Total build time ~1 dev day.
+- **A + C:** clean but EPF has an unknown approval lead time and ~5-6 dev days of work. Extension covers admin urgency while waiting.
+- **B + C:** C eventually replaces B (local catalog is always better than a live search API). If EPF is guaranteed to land, B is throwaway work.
+- **All three:** layered fallback — EPF search by default, Brave when EPF is stale, extension when user is already browsing. Long-term ideal but way over-engineered for v1.
+
+### Short-term plan
 
 - **Build A tomorrow.** Half a day, big UX win, no external dependencies.
-- **Apply for EPF now (separate tab, 2 min to submit).** Even if we don't use it immediately, the calendar time is running whether we wait or not. If approved, it becomes the next major sub-project and supersedes everything else about "how do we search Apple TV."
-- **Defer TMDB / Brave / Google Custom Search.** The extension covers Apple TV directly; if approved for EPF, it covers Apple TV even better. TMDB remains relevant only for the "broader catalog beyond Apple TV" use case (films that aren't sellable on Apple TV at all) — a separate product question to revisit once A and/or B land.
+- **Build B immediately after (same day or next).** Half-day more, unblocks the "type a title" flow. Brave API is the recommended provider.
+- **Apply for EPF now (2-minute form).** Calendar time is running whether we wait or not. If approved within a week, fold it in as sub-project 2 and C supersedes B. If approval is slow or denied, A + B is our steady state.
+- **Defer TMDB entirely for now.** The previously-raised "broader catalog with films not on Apple TV" use case is a separate product question; revisit only after A and B ship and we see what admin workflow actually misses.
 
 ---
 
 ## Tomorrow's decision points
 
-1. Build Option A as specced above? (Yes unless something better surfaces.)
-2. Apply for EPF today to start the approval clock?
-3. Where does the extension package live — monorepo or separate repo?
-4. Chrome Web Store submission now, or load-unpacked-only for the first few weeks?
-5. Do we tag "Buy on Apple TV" links with affiliate params (`at=<token>&ct=film-goblin`) while we're at it? EPF approval prefers to see active affiliate usage.
+1. Build Lane A (Chrome extension) as specced above? (Yes unless something better surfaces.)
+2. Build Lane B (search provider API) immediately after? Which provider — Brave, Google CSE, or SerpAPI?
+3. Apply for EPF today to start the approval clock?
+4. Where does the extension package live — monorepo (`/extension`) or separate repo?
+5. Chrome Web Store submission now, or load-unpacked-only for the first few weeks?
+6. Do we tag "Buy on Apple TV" links with affiliate params (`at=<token>&ct=film-goblin`) while we're at it? EPF approval prefers to see active affiliate usage, and Brave/Google CSE signup is agnostic to it.
