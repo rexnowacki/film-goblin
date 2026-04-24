@@ -120,7 +120,7 @@ export default function OnboardingFlow() {
         position: "sticky", top: 0, zIndex: 20,
         background: "var(--bone)", borderBottom: "2px solid var(--void)",
       }}>
-        <div className="container-wide" style={{ padding: "14px 32px", display: "flex", alignItems: "center", gap: 20 }}>
+        <div className="container-wide" style={{ padding: "14px var(--container-pad)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 28, lineHeight: 1, cursor: "pointer" }} onClick={() => router.push("/")}>
             Film<span style={{ color: "var(--accent)" }}>Goblin</span>
           </div>
@@ -171,7 +171,7 @@ export default function OnboardingFlow() {
           position: "sticky", bottom: 0, zIndex: 20,
           background: "var(--bone)", borderTop: "2px solid var(--void)",
         }}>
-          <div className="container-wide" style={{ padding: "14px 32px", display: "flex", alignItems: "center", gap: 14 }}>
+          <div className="container-wide" style={{ padding: "14px var(--container-pad)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
             <button className="btn btn-outline" onClick={back}>← Previous Chapter</button>
             <div style={{ flex: 1, textAlign: "center", fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12, opacity: 0.65 }}>
               {chapter === 1 && `Select at least three. Chosen: ${genres.length}.`}
@@ -295,7 +295,7 @@ function ChapterStores({ selected, onToggle }: { selected: string[]; onToggle: (
           {STORES.map((s, i) => {
             const on = selected.includes(s.id);
             return (
-              <label key={s.id} style={{
+              <label key={s.id} className="onboarding-store-row" style={{
                 display: "grid", gridTemplateColumns: "64px 56px 1fr 110px", alignItems: "center",
                 borderBottom: i < STORES.length - 1 ? "1.5px solid var(--void)" : "none",
                 background: on ? "var(--accent)" : "var(--bone-2)",
@@ -322,7 +322,7 @@ function ChapterStores({ selected, onToggle }: { selected: string[]; onToggle: (
                   <div className="head" style={{ fontSize: 22, lineHeight: 1, marginBottom: 2 }}>{s.label}</div>
                   <div style={{ fontFamily: "var(--font-serif)", fontSize: 12, fontStyle: "italic", opacity: 0.7 }}>{s.sub}</div>
                 </div>
-                <div style={{ textAlign: "right", padding: "0 20px", fontSize: 11 }} className="caps">
+                <div className="caps onboarding-store-cta" style={{ textAlign: "right", padding: "0 20px", fontSize: 11 }}>
                   {on ? "Bound" : "Bind"}
                 </div>
                 <input type="checkbox" checked={on} onChange={() => onToggle(s.id)} style={{ display: "none" }} />
@@ -511,7 +511,7 @@ function ChapterOath({
       <div className="container-wide">
         <ChapterHeader n="IV" title="Swear The Oath" quote="Name thyself. Declare thy threshold. Sign." />
 
-        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 40, maxWidth: 1100, margin: "0 auto" }}>
+        <div className="onboarding-oath" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 40, maxWidth: 1100, margin: "0 auto" }}>
           <div>
             <div style={{ marginBottom: 32 }}>
               <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 10 }}>✦ Your Coven Name</div>
@@ -566,7 +566,7 @@ function ChapterOath({
                   No souls to seed yet. You'll find your coven later.
                 </div>
               ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <div className="onboarding-coven-seed" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   {covenSeeds.map(u => {
                     const on = follows.includes(u.id);
                     const displayName = u.display_name || u.handle;
