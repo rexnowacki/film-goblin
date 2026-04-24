@@ -20,6 +20,16 @@ export default async function TopNav({ current }: TopNavProps) {
     profile = data;
   }
 
+  let isAdmin = false;
+  if (user) {
+    const { data: staffRow } = await supabase
+      .from("staff")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    isAdmin = staffRow?.role === "admin";
+  }
+
   let pendingInviteCount = 0;
   if (user) {
     pendingInviteCount = await getPendingInviteCount(supabase, user.id);
@@ -45,6 +55,7 @@ export default async function TopNav({ current }: TopNavProps) {
       current={current}
       user={Boolean(user)}
       profile={profile}
+      isAdmin={isAdmin}
     />
   );
 }

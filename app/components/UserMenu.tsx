@@ -9,9 +9,10 @@ interface Props {
   handle: string;
   displayName: string;
   avatarUrl?: string | null;
+  isAdmin?: boolean;
 }
 
-export default function UserMenu({ handle, displayName, avatarUrl }: Props) {
+export default function UserMenu({ handle, displayName, avatarUrl, isAdmin }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -48,6 +49,15 @@ export default function UserMenu({ handle, displayName, avatarUrl }: Props) {
           <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--void)", fontFamily: "var(--font-ui)", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>
             @{handle}
           </div>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setOpen(false)}
+              style={{ display: "block", padding: "10px 14px", color: "var(--accent-deep)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: "1px solid var(--void)" }}
+            >
+              Admin
+            </Link>
+          )}
           <Link
             href="/settings"
             onClick={() => setOpen(false)}

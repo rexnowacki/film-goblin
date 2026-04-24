@@ -97,6 +97,36 @@ export async function upsertFilm(client: Client, f: ParsedFilm): Promise<string>
   return r.rows[0].id;
 }
 
+export interface ManualFilmFields {
+  title: string;
+  director: string;
+  year: number;
+  runtime_min: number;
+  genre_primary: string;
+  description: string;
+  content_advisory: string;
+  artwork_url: string;
+  itunes_url: string;
+  tracking: boolean;
+  available: boolean;
+}
+
+export async function insertManualFilm(client: Client, f: ManualFilmFields): Promise<string> {
+  const r = await client.query<{ id: string }>(
+    `INSERT INTO films (
+       itunes_id, title, director, year, runtime_min, genre_primary,
+       description, content_advisory, artwork_url, itunes_url, tracking, available
+     ) VALUES (NULL,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+     RETURNING id`,
+    [
+      f.title, f.director, f.year, f.runtime_min, f.genre_primary,
+      f.description, f.content_advisory, f.artwork_url, f.itunes_url,
+      f.tracking, f.available,
+    ]
+  );
+  return r.rows[0].id;
+}
+
 export async function insertPriceHistory(
   client: Client,
   filmId: string,

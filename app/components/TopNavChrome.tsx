@@ -13,9 +13,10 @@ interface Props {
   current?: string;
   user: boolean;
   profile: ProfileShape | null;
+  isAdmin: boolean;
 }
 
-export default function TopNavChrome({ items, current, user, profile }: Props) {
+export default function TopNavChrome({ items, current, user, profile, isAdmin }: Props) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -63,6 +64,7 @@ export default function TopNavChrome({ items, current, user, profile }: Props) {
               handle={profile?.handle ?? "you"}
               displayName={profile?.display_name ?? profile?.handle ?? "You"}
               avatarUrl={profile?.avatar_url}
+              isAdmin={isAdmin}
             />
           ) : (
             <Link href="/auth/signin" className="btn btn-dark btn-sm" style={{ textDecoration: "none" }}>
