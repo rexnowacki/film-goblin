@@ -55,9 +55,9 @@ jobs:
         id: supabase
         run: |
           KEYS=$(supabase status -o json)
-          echo "anon_key=$(echo $KEYS | jq -r '.api.anon_key')" >> $GITHUB_OUTPUT
-          echo "service_role_key=$(echo $KEYS | jq -r '.api.service_role_key')" >> $GITHUB_OUTPUT
-          echo "url=$(echo $KEYS | jq -r '.api.url')" >> $GITHUB_OUTPUT
+          echo "anon_key=$(echo $KEYS | jq -r '.ANON_KEY')" >> $GITHUB_OUTPUT
+          echo "service_role_key=$(echo $KEYS | jq -r '.SERVICE_ROLE_KEY')" >> $GITHUB_OUTPUT
+          echo "url=$(echo $KEYS | jq -r '.API_URL')" >> $GITHUB_OUTPUT
       - run: npm ci
       - name: Apply migrations
         run: |
