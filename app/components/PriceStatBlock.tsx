@@ -39,12 +39,12 @@ export default function PriceStatBlock({ history }: Props) {
       {hasRange && (
         <div className="price-stat-history">
           <div className="price-stat-peak">
-            <div className="price-stat-label price-stat-label-history">PEAK:</div>
+            <div className="price-stat-label price-stat-label-history">HIGHEST PRICE:</div>
             <div className="price-stat-history-price">{formatPrice(peak.price)}</div>
             <div className="price-stat-date">{formatMonth(peak.captured_at)}</div>
           </div>
           <div className="price-stat-steal">
-            <div className="price-stat-label price-stat-label-history">STEAL:</div>
+            <div className="price-stat-label price-stat-label-history">LOWEST PRICE:</div>
             <div className="price-stat-history-price">{formatPrice(steal.price)}</div>
             <div className="price-stat-date">{formatMonth(steal.captured_at)}</div>
           </div>

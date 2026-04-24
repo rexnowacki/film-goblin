@@ -475,7 +475,7 @@ a { color: inherit; text-decoration: none; }
   color: var(--accent);
 }
 .price-stat-label-history {
-  font-size: clamp(18px, 2vw, 22px);
+  font-size: clamp(15px, 1.8vw, 20px);
   color: var(--bone);
 }
 .price-stat-now-price {
