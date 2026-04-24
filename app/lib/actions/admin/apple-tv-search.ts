@@ -84,7 +84,7 @@ async function tryBraveSearch(term: string): Promise<SearchResult> {
     };
   }
   // Page fetches + adamId extraction added in Task 5.
-  return { ok: false, reason: "brave-empty", message: "unreachable-until-task-5" };
+  throw new Error(`apple-tv-search: page-fetch pipeline not yet implemented (${candidateUrls.length} candidate URLs pending)`);
 }
 
 export async function adminSearchAppleTv(term: string): Promise<SearchResult> {
