@@ -25,20 +25,65 @@ export async function getFilm(client: Client, id: string) {
   return data;
 }
 
-export async function getFilms(client: Client, opts: { q?: string; limit?: number } = {}) {
-  let query = client
-    .from("films")
-    .select("id, itunes_id, title, director, year, runtime_min, genre_primary, artwork_url")
+export type FilmsSort = "added" | "release" | "title" | "watchlisted" | "price_low" | "price_high";
+
+export const FILMS_PAGE_SIZE = 60;
+
+export async function getFilms(
+  client: Client,
+  opts: { q?: string; sort?: FilmsSort; page?: number } = {},
+): Promise<{
+  rows: Array<{
+    id: string; itunes_id: number | null; title: string; director: string;
+    year: number; runtime_min: number; genre_primary: string; artwork_url: string;
+    latest_price: number | null; watchlist_count: number;
+  }>;
+  total: number;
+  pageSize: number;
+}> {
+  const sort: FilmsSort = opts.sort ?? "release";
+  const page = Math.max(1, opts.page ?? 1);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query: any = (client as unknown as { from: (t: string) => any })
+    .from("films_with_stats")
+    .select(
+      "id, itunes_id, title, director, year, runtime_min, genre_primary, artwork_url, latest_price, watchlist_count",
+      { count: "exact" },
+    )
     .eq("tracking", true)
-    .eq("available", true)
-    .order("year", { ascending: false })
-    .limit(opts.limit ?? 60);
+    .eq("available", true);
+
   if (opts.q && opts.q.trim()) {
     query = query.or(`title.ilike.%${opts.q}%,director.ilike.%${opts.q}%`);
   }
-  const { data, error } = await query;
+
+  switch (sort) {
+    case "added":
+      query = query.order("first_seen_at", { ascending: false });
+      break;
+    case "release":
+      query = query.order("year", { ascending: false });
+      break;
+    case "title":
+      query = query.order("title", { ascending: true });
+      break;
+    case "watchlisted":
+      query = query.order("watchlist_count", { ascending: false, nullsFirst: false });
+      break;
+    case "price_low":
+      query = query.order("latest_price", { ascending: true, nullsFirst: false });
+      break;
+    case "price_high":
+      query = query.order("latest_price", { ascending: false, nullsFirst: false });
+      break;
+  }
+
+  const from = (page - 1) * FILMS_PAGE_SIZE;
+  const to = from + FILMS_PAGE_SIZE - 1;
+  const { data, error, count } = await query.range(from, to);
   if (error) throw error;
-  return data ?? [];
+  return { rows: (data ?? []) as never, total: count ?? 0, pageSize: FILMS_PAGE_SIZE };
 }
 
 export async function getLatestPriceHistory(client: Client, filmId: string, days = 180) {
