@@ -46,9 +46,33 @@ function parseIdFromUrlOrId(raw: string): number | null {
     const n = Number(trimmed);
     return Number.isFinite(n) ? n : null;
   }
+  // Legacy iTunes URL format: ...id<digits>
   const m = trimmed.match(/id(\d+)/i);
   if (m) return Number(m[1]);
   return null;
+}
+
+/**
+ * Apple TV URLs use the format https://tv.apple.com/us/movie/<slug>/umc.cmc.<hash>.
+ * The `umc.cmc.*` token is NOT the iTunes trackId — iTunes Lookup can't resolve it.
+ * But the rendered Apple TV page embeds the trackId as `"adamId":"<digits>"` in its
+ * server-side JSON. Fetching the page and extracting adamId gives us the trackId.
+ */
+async function resolveAdamIdFromAppleTvUrl(url: string): Promise<number | null> {
+  if (!/tv\.apple\.com\/.*\/umc\.cmc\./i.test(url)) return null;
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html" },
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const m = html.match(/"adamId":"(\d+)"/);
+    if (!m) return null;
+    const n = Number(m[1]);
+    return Number.isFinite(n) ? n : null;
+  } catch {
+    return null;
+  }
 }
 
 function toHit(p: ParsedFilm): ITunesSearchHit {
@@ -84,8 +108,11 @@ export async function adminLookupItunes(urlOrId: string): Promise<
 > {
   const supabase = await createClient();
   await requireAdmin(supabase);
-  const id = parseIdFromUrlOrId(urlOrId);
-  if (id === null) return { ok: false, error: "Could not extract an iTunes trackId from that input." };
+  let id = parseIdFromUrlOrId(urlOrId);
+  if (id === null) {
+    id = await resolveAdamIdFromAppleTvUrl(urlOrId.trim());
+  }
+  if (id === null) return { ok: false, error: "Could not extract an iTunes trackId from that input. Expected an iTunes URL (…/id<digits>), an Apple TV URL (…/movie/<slug>/umc.cmc.<hash>), or a bare numeric trackId." };
   const res = await fetchPrices([id]);
   if (res.resultCount === 0) return { ok: false, error: `No iTunes result for trackId ${id}.` };
   const parsed = parseFilm(res.results[0]);
