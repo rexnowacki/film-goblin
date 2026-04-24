@@ -1,25 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { sortWatchlist, computeDropPct, type WatchlistSort } from "@/lib/queries/sort-watchlist";
-
-// Task 2 moves this type to @/lib/queries/watchlists and imports it properly.
-interface WatchlistRowData {
-  id: string;
-  film_id: string;
-  max_price_usd: number | null;
-  last_alerted_at: string | null;
-  created_at: string;
-  film: {
-    id: string;
-    title: string;
-    director: string;
-    year: number;
-    artwork_url: string;
-    itunes_url: string | null;
-    genre_primary: string;
-    runtime_min: number;
-    latest_price: number | null;
-  };
-}
+import type { WatchlistRowData } from "@/lib/queries/watchlists";
 
 function row(overrides: Partial<WatchlistRowData> & { id: string; title?: string; latest_price?: number | null; max_price_usd?: number | null; created_at?: string }): WatchlistRowData {
   return {
