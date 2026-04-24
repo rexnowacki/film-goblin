@@ -49,24 +49,47 @@ export async function getEnrichedFeed(
     .select("followed_user_id")
     .eq("follower_user_id", followerUserId);
   const followedIds = (followsRows ?? []).map(r => r.followed_user_id);
-  if (followedIds.length === 0) return [];
 
-  const { data: raw, error } = await client
-    .from("activity")
-    .select("id, kind, payload, created_at, actor_user_id")
-    .in("actor_user_id", followedIds)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  if (!raw || raw.length === 0) return [];
+  // Activity surfaces that show in the feed:
+  //   - Followed users' public activity (reviews, watchlist adds, lists, coven joins, recs they sent).
+  //   - My own activity (so I can see what I broadcast).
+  //   - Recs sent TO me regardless of whether I follow the sender.
+  // `activity` RLS already allows reads; we filter application-side.
+  const actorIds = Array.from(new Set([followerUserId, ...followedIds]));
 
-  const actorIds = Array.from(new Set(raw.map(r => r.actor_user_id)));
+  const [byActor, recsToMe] = await Promise.all([
+    client
+      .from("activity")
+      .select("id, kind, payload, created_at, actor_user_id")
+      .in("actor_user_id", actorIds)
+      .order("created_at", { ascending: false })
+      .limit(limit),
+    client
+      .from("activity")
+      .select("id, kind, payload, created_at, actor_user_id")
+      .eq("kind", "recommendation_sent")
+      .filter("payload->>to_user_id", "eq", followerUserId)
+      .order("created_at", { ascending: false })
+      .limit(limit),
+  ]);
+  if (byActor.error) throw byActor.error;
+  if (recsToMe.error) throw recsToMe.error;
+
+  const merged = new Map<string, any>();
+  for (const row of byActor.data ?? []) merged.set(row.id, row);
+  for (const row of recsToMe.data ?? []) merged.set(row.id, row);
+  const raw = Array.from(merged.values())
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+    .slice(0, limit);
+  if (raw.length === 0) return [];
+
+  const rawActorIds = Array.from(new Set(raw.map(r => r.actor_user_id)));
   const filmIds = Array.from(new Set(raw.map(r => (r.payload as any)?.film_id).filter(Boolean)));
   const recipientIds = Array.from(new Set(raw.map(r => (r.payload as any)?.to_user_id).filter(Boolean)));
   const listIds = Array.from(new Set(raw.map(r => (r.payload as any)?.list_id).filter(Boolean)));
 
   const [actors, films, recipients, lists] = await Promise.all([
-    actorIds.length ? client.from("profiles").select("id, handle, display_name, avatar_url").in("id", actorIds) : Promise.resolve({ data: [] as any }),
+    rawActorIds.length ? client.from("profiles").select("id, handle, display_name, avatar_url").in("id", rawActorIds) : Promise.resolve({ data: [] as any }),
     filmIds.length ? client.from("films").select("id, title, director, year, artwork_url, itunes_url").in("id", filmIds) : Promise.resolve({ data: [] as any }),
     recipientIds.length ? client.from("profiles").select("id, handle, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] as any }),
     listIds.length ? client.from("lists").select("id, title").in("id", listIds) : Promise.resolve({ data: [] as any }),

@@ -12,7 +12,7 @@ export default async function HomePage() {
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100vh" }}>
       <TopNav current="home" />
 
-      <div className="container-wide stackable" style={{ padding: "32px 0", "--stack-template": "220px 1fr 320px", "--stack-gap": "32px" } as React.CSSProperties}>
+      <div className="container-wide stackable" style={{ padding: "32px var(--container-pad)", "--stack-template": "220px 1fr 320px", "--stack-gap": "32px" } as React.CSSProperties}>
         <aside className="desktop-only">
           <div className="eyebrow" style={{ color: "var(--muted)", marginBottom: 12 }}>Your Ledger</div>
           <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13 }}>
