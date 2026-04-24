@@ -5,9 +5,11 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import {
   searchFilms,
   parseFilm,
+  fetchPrices,
   type ParsedFilm,
 } from "film-goblin-worker";
 import { toHit, type ITunesSearchHit } from "./itunes-hit";
+import { extractAdamIdFromHtml } from "@/lib/apple-tv/resolve-adam-id";
 
 const APPLE_TV_SEARCH_REGION = "us";
 const BRAVE_ENDPOINT = "https://api.search.brave.com/res/v1/web/search";
@@ -70,6 +72,38 @@ async function callBraveSearch(term: string): Promise<string[] | null> {
   }
 }
 
+async function fetchCandidateFromUrl(url: string): Promise<SearchCandidate | null> {
+  try {
+    const pageRes = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html" },
+    });
+    if (!pageRes.ok) {
+      console.log(`apple-tv-search: page fetch failed (${pageRes.status}): ${url}`);
+      return null;
+    }
+    const html = await pageRes.text();
+    const adamId = extractAdamIdFromHtml(html);
+    if (adamId === null) {
+      console.log(`apple-tv-search: no adamId (streaming-only): ${url}`);
+      return null;
+    }
+    const priceRes = await fetchPrices([adamId]);
+    if (priceRes.resultCount === 0) {
+      console.log(`apple-tv-search: iTunes Lookup empty for adamId ${adamId}`);
+      return null;
+    }
+    const parsed = parseFilm(priceRes.results[0]);
+    if (!parsed) {
+      console.log(`apple-tv-search: parseFilm null for adamId ${adamId}`);
+      return null;
+    }
+    return { ...toHit(parsed), via: "apple-tv-search" as const };
+  } catch (e) {
+    console.log(`apple-tv-search: candidate fetch threw for ${url}:`, e);
+    return null;
+  }
+}
+
 async function tryBraveSearch(term: string): Promise<SearchResult> {
   const urls = await callBraveSearch(term);
   if (urls === null) {
@@ -83,8 +117,20 @@ async function tryBraveSearch(term: string): Promise<SearchResult> {
       message: `No Apple TV results for "${term}". Try a different spelling or use manual entry.`,
     };
   }
-  // Page fetches + adamId extraction added in Task 5.
-  throw new Error(`apple-tv-search: page-fetch pipeline not yet implemented (${candidateUrls.length} candidate URLs pending)`);
+  const settled = await Promise.all(candidateUrls.map(fetchCandidateFromUrl));
+  const candidates = settled.filter((c): c is SearchCandidate => c !== null);
+  const dropped = candidateUrls.length - candidates.length;
+  if (dropped > 0) {
+    console.log(`apple-tv-search: dropped ${dropped}/${candidateUrls.length} candidates`);
+  }
+  if (candidates.length === 0) {
+    return {
+      ok: false,
+      reason: "all-streaming-only",
+      message: `Apple TV has results for "${term}" but none are buyable (all streaming-only).`,
+    };
+  }
+  return { ok: true, candidates };
 }
 
 export async function adminSearchAppleTv(term: string): Promise<SearchResult> {
