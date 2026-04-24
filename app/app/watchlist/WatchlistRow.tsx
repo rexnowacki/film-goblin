@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { setWatchlistThreshold, removeFromWatchlist } from "@/lib/actions/watchlists";
 import { computeDropPct } from "@/lib/queries/sort-watchlist";
 import type { WatchlistRowData } from "@/lib/queries/watchlists";
@@ -21,10 +21,18 @@ export default function WatchlistRow({ row }: Props) {
   const [editError, setEditError] = useState<string | null>(null);
   const [pendingEdit, startEdit] = useTransition();
   const [pendingRemove, startRemove] = useTransition();
+  const submittingRef = useRef(false);
+  const cancelledRef = useRef(false);
 
   const dropped = computeDropPct(row) != null;
 
   function submitThreshold() {
+    if (cancelledRef.current) {
+      cancelledRef.current = false;
+      return;
+    }
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setEditError(null);
     startEdit(async () => {
       try {
@@ -39,11 +47,14 @@ export default function WatchlistRow({ row }: Props) {
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : "Couldn't save — try again.";
         setEditError(msg === "invalid threshold" ? "Must be between $0.01 and $1000." : "Couldn't save — try again.");
+      } finally {
+        submittingRef.current = false;
       }
     });
   }
 
   function cancelEdit() {
+    cancelledRef.current = true;
     setEditing(false);
     setDraft(row.max_price_usd != null ? row.max_price_usd.toFixed(2) : "");
     setEditError(null);
