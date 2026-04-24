@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import FilmForm from "../FilmForm";
-import ITunesSearchBox from "../iTunesSearchBox";
+import AppleTvSearchBox from "../AppleTvSearchBox";
 import ITunesPasteBox from "../iTunesPasteBox";
 import type { ITunesSearchHit } from "@/lib/actions/admin/films";
 import type { FilmFormFields } from "@/lib/actions/admin/films";
@@ -54,8 +54,8 @@ export default function AddFilmClient() {
       {!initial && (
         <>
           <section>
-            <h2 className="head" style={{ fontSize: 22, marginBottom: 10 }}>Option 1 — Search iTunes</h2>
-            <ITunesSearchBox onPick={prefillFromHit} />
+            <h2 className="head" style={{ fontSize: 22, marginBottom: 10 }}>Option 1 — Search Apple TV</h2>
+            <AppleTvSearchBox onPick={prefillFromHit} />
           </section>
 
           <section>
