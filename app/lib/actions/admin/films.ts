@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { resolveAdamIdFromAppleTvUrl } from "@/lib/apple-tv/resolve-adam-id";
 import {
-  searchFilms,
   parseFilm,
   fetchPrices,
   type ParsedFilm,
@@ -40,18 +39,6 @@ function parseIdFromUrlOrId(raw: string): number | null {
   const m = trimmed.match(/id(\d+)/i);
   if (m) return Number(m[1]);
   return null;
-}
-
-
-export async function adminSearchItunes(term: string): Promise<ITunesSearchHit[]> {
-  const supabase = await createClient();
-  await requireAdmin(supabase);
-  if (!term.trim()) return [];
-  const res = await searchFilms(term, { limit: 10 });
-  return res.results
-    .map(r => parseFilm(r))
-    .filter((p): p is ParsedFilm => p !== null)
-    .map(toHit);
 }
 
 export async function adminLookupItunes(urlOrId: string): Promise<

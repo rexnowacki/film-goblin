@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **⚠ Post-ship note (2026-04-24):** Tasks 3 and the iTunes-first cascade described below were superseded mid-branch. Integration testing revealed iTunes Search returns irrelevant near-matches (e.g. "You Can't Run Forever" for "the thing carpenter") rather than zero results, so the fallback-on-zero trigger never fired. Lane B shipped as **Brave-only** — see commit `d613dd2` for the pivot and the spec at `docs/superpowers/specs/2026-04-24-apple-tv-search-provider-design.md` for the canonical shipped design. The plan below is kept for historical context; do not treat it as a source of truth for current behavior.
+
 **Goal:** Replace the broken `iTunesSearchBox` in admin Add Film with a Brave-backed "Search Apple TV" widget that falls back from iTunes Search → Brave Search → `tv.apple.com` page → `adamId` extraction.
 
 **Architecture:** New shared helper `app/lib/apple-tv/resolve-adam-id.ts` (extracted from `films.ts`). New server action `app/lib/actions/admin/apple-tv-search.ts` that tries iTunes Search first and falls back to Brave Search + parallel `tv.apple.com` page fetches. New client component `AppleTvSearchBox.tsx` mirroring the current widget UX with a `via` badge per candidate.
