@@ -8,6 +8,7 @@ import Stars from "@/components/Stars";
 import TopNav from "@/components/TopNav";
 import WatchlistButton from "@/components/WatchlistButton";
 import RecommendModal from "@/components/RecommendModal";
+import PriceStatBlock from "@/components/PriceStatBlock";
 
 export default async function FilmDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,9 +19,6 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
   const { data: { user } } = await supabase.auth.getUser();
   const covenMembers = user ? await getMyCovenMembers(supabase, user.id) : [];
   const onList = user ? await isOnWatchlist(supabase, id) : false;
-
-  const currentPrice = history[history.length - 1]?.price_usd ?? 0;
-  const maxPrice = history.reduce((max, p) => Math.max(max, Number(p.price_usd)), 0);
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100vh" }}>
@@ -81,23 +79,7 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
             What it <em style={{ color: "var(--accent)", fontStyle: "italic" }}>has been worth</em>.
           </h3>
           {history.length > 0 ? (
-            <div style={{ border: "2px solid var(--void)", padding: 16 }}>
-              <svg viewBox="0 0 680 280" style={{ width: "100%", height: "auto", display: "block" }}>
-                <path
-                  d={history.map((p, i) => {
-                    const x = 40 + (i / (history.length - 1)) * 620;
-                    const y = 20 + (1 - (Number(p.price_usd) - 0) / maxPrice) * 230;
-                    return `${i === 0 ? "M" : "L"} ${x} ${y}`;
-                  }).join(" ")}
-                  stroke="var(--void)" strokeWidth={2.5} fill="none"
-                />
-              </svg>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 10, fontFamily: "var(--font-ui)", fontWeight: 700 }}>
-                <span>◆ Low ${Math.min(...history.map(p => Number(p.price_usd))).toFixed(2)}</span>
-                <span>◆ High ${Math.max(...history.map(p => Number(p.price_usd))).toFixed(2)}</span>
-                <span style={{ color: "var(--accent-deep)" }}>◆ Now ${Number(currentPrice).toFixed(2)}</span>
-              </div>
-            </div>
+            <PriceStatBlock history={history} />
           ) : (
             <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>
               No price history yet. Check back after the first worker run.
