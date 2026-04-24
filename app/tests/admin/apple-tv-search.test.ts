@@ -44,7 +44,7 @@ describe("adminSearchAppleTv", () => {
     fetchSpy.mockRestore();
   });
 
-  it("calls requireAdmin before doing any work", async () => {
+  it("rejects and skips downstream work when requireAdmin throws", async () => {
     const err = new Error("admin role required");
     requireAdminMock.mockRejectedValue(err);
     await expect(adminSearchAppleTv("midsommar")).rejects.toThrow("admin role required");
