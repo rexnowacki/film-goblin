@@ -12,12 +12,12 @@ Today's admin Add Film flow has three options: Search iTunes (broken for the abo
 
 Route around iTunes Search by using Brave Search as an index of the Apple TV website. Admin types a title; server queries Brave with a `site:`-restricted search; harvests `tv.apple.com/us/movie/*/umc.cmc.*` URLs from the top results; fetches each candidate page server-side; extracts the `adamId` (iTunes trackId) from the embedded JSON. Returns candidates with the same shape the existing iTunes search flow uses.
 
-iTunes Search is tried first (free, no quota). Brave is the fallback only when iTunes returns zero. Partial-success candidates (some extract cleanly, some are streaming-only) surface only the working ones.
+Brave is the sole search provider. An iTunes-first cascade was designed but removed during integration testing: iTunes Search rarely returns zero for missing films — it returns irrelevant near-matches (e.g. "You Can't Run Forever" for "the thing carpenter"), so the fallback-on-zero trigger never fired and Brave was never reached. Partial-success candidates (some extract cleanly, some are streaming-only) surface only the working ones.
 
 ## Decisions
 
 - **Provider:** Brave Search API (2000 free queries/month, 1 req/sec free-tier limit). Signup requires a credit card even on the free tier. Selected over Google CSE (100/day hard cap, more setup) and SerpAPI (per-call paid from the start).
-- **UI:** Single search widget replacing today's `iTunesSearchBox`. Backend tries iTunes first, falls back to Brave. Each candidate card shows a `via iTunes` or `via Apple TV search` badge.
+- **UI:** Single search widget replacing today's `iTunesSearchBox`. Backend goes straight to Brave after auth and empty-input checks. Candidate cards have no source badge — there is only one source.
 - **Region:** US only, hardcoded via `APPLE_TV_SEARCH_REGION = "us"` constant at the top of the server-action file.
 - **Caching:** None. At admin volume (single-digit searches per day) the Brave quota math is a non-issue. Caching is complexity on spec.
 - **Error posture:** Server-side `console.*` logs for extraction failures; admin sees only working candidates. Zero-survivor case distinguishes "Brave returned nothing" (`brave-empty`) from "Brave returned results but all streaming-only" (`all-streaming-only`) from "Brave unreachable" (`brave-error`) — each gets specific admin-facing copy.
@@ -74,8 +74,8 @@ CLAUDE.md
 ### Module boundaries
 
 - `app/lib/apple-tv/resolve-adam-id.ts` — pure utilities. Exports `extractAdamIdFromHtml(html)` (sync, pure) and `resolveAdamIdFromAppleTvUrl(url)` (fetch + extract). No auth, no DB, no Brave.
-- `app/lib/actions/admin/apple-tv-search.ts` — server action + orchestration. Exports `adminSearchAppleTv(term)`. Internal helpers: iTunes-first call (via `film-goblin-worker`'s `searchFilms`), Brave fallback, URL filter, parallel page fetches, error categorization.
-- `app/app/admin/films/AppleTvSearchBox.tsx` — client component. Mirrors today's `iTunesSearchBox` UX. Adds per-candidate `via` badge. Differentiates error copy by `reason` code.
+- `app/lib/actions/admin/apple-tv-search.ts` — server action + orchestration. Exports `adminSearchAppleTv(term)`. Internal helpers: Brave search, URL filter, parallel page fetches, error categorization.
+- `app/app/admin/films/AppleTvSearchBox.tsx` — client component. Mirrors today's `iTunesSearchBox` UX. Differentiates error copy by `reason` code. No `via` badge (single source).
 
 ## Components
 
@@ -110,7 +110,7 @@ Migration: `films.ts` loses its inline copy of the helper and imports from `@/li
 
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { searchFilms, parseFilm, fetchPrices, type ParsedFilm } from "film-goblin-worker";
+import { parseFilm, fetchPrices, type ParsedFilm } from "film-goblin-worker";
 import { extractAdamIdFromHtml } from "@/lib/apple-tv/resolve-adam-id";
 import type { ITunesSearchHit } from "./films";
 
@@ -121,9 +121,7 @@ const APPLE_TV_URL_RE = new RegExp(
   `^https://tv\\.apple\\.com/${APPLE_TV_SEARCH_REGION}/movie/[a-z0-9-]+/umc\\.cmc\\.[a-z0-9]+$`
 );
 
-export interface SearchCandidate extends ITunesSearchHit {
-  via: "itunes" | "apple-tv-search";
-}
+export type SearchCandidate = ITunesSearchHit;
 
 export type SearchResult =
   | { ok: true; candidates: SearchCandidate[] }
@@ -134,9 +132,6 @@ export async function adminSearchAppleTv(term: string): Promise<SearchResult> {
   await requireAdmin(supabase);
   const trimmed = term.trim();
   if (!trimmed) return { ok: true, candidates: [] };
-
-  const itunesCandidates = await tryItunesSearch(trimmed);
-  if (itunesCandidates.length > 0) return { ok: true, candidates: itunesCandidates };
 
   return await tryBraveSearch(trimmed);
 }
@@ -153,20 +148,19 @@ Internal pipeline for `tryBraveSearch`:
 7. `Promise.all` over candidates: fetch page, extract adamId; if adamId present, call `fetchPrices([adamId])` + `parseFilm` to build `ITunesSearchHit`. Drop nulls at every stage.
 8. `console.log` count of drops (`"apple-tv-search: dropped N/M candidates"`) if any.
 9. Zero survivors after page-fetch → return `all-streaming-only`.
-10. Otherwise tag each candidate `via: "apple-tv-search"` and return `{ ok: true, candidates }`.
-
-`tryItunesSearch` wraps the existing `searchFilms` + `parseFilm` pipeline and tags hits `via: "itunes"`. Throws from `searchFilms` are caught, logged, and treated as zero results (so Brave still runs).
+10. Otherwise return `{ ok: true, candidates }`.
 
 ### `app/app/admin/films/AppleTvSearchBox.tsx`
 
-Mirrors today's `iTunesSearchBox` verbatim (input styling, candidate card grid, `onPick` shape). Three UX deltas:
+Mirrors today's `iTunesSearchBox` verbatim (input styling, candidate card grid, `onPick` shape). Two UX deltas:
 
 - Placeholder: `"Search Apple TV (title)…"`
-- Each candidate card gets a tiny `caps`-styled badge with `opacity: 0.5` near the "Pick →" label: `via iTunes` or `via Apple TV search`.
 - Error rendering switches on `result.reason`:
   - `brave-empty` → `"No Apple TV results for '<term>'. Try a different spelling or use manual entry."`
   - `all-streaming-only` → `"Apple TV has results for '<term>' but none are buyable (all streaming-only)."`
   - `brave-error` → `"Search unavailable — try again in a moment."`
+
+No `via` badge on candidate cards — there is only one source (Brave → Apple TV page).
 
 ### `AddFilmClient.tsx` edits
 
@@ -176,33 +170,20 @@ Mirrors today's `iTunesSearchBox` verbatim (input styling, candidate card grid, 
 
 ## Data flow
 
-### Happy path (iTunes hits)
-
-```
-Admin types "The Thing"
-  → adminSearchAppleTv("The Thing")
-      → requireAdmin
-      → searchFilms("The Thing", { limit: 10 })
-      → parseFilm(...) × results, drop nulls
-      → ≥1 parsed → tag via: "itunes", return { ok: true, candidates }
-  → Cards render with "via iTunes" badge. Zero Brave quota burned.
-```
-
-### Fallback path (iTunes blind, Brave rescues)
+### Happy path (Brave rescues)
 
 ```
 Admin types "Midsommar"
   → adminSearchAppleTv("Midsommar")
       → requireAdmin
-      → searchFilms("Midsommar") → []
       → tryBraveSearch:
           → GET brave /res/v1/web/search?q=site:tv.apple.com/us/movie "Midsommar"
           → 200 OK, 8 URLs
           → filter by APPLE_TV_URL_RE → 5 match
           → Promise.all: fetch 5 pages, extract adamId, lookup price
           → 3 survive (2 streaming-only dropped silently + logged)
-          → return { ok: true, candidates: [3, via: "apple-tv-search"] }
-  → 3 cards render with "via Apple TV search" badge.
+          → return { ok: true, candidates: [3] }
+  → 3 cards render (no via badge).
 ```
 
 ### Failure matrix
@@ -210,17 +191,16 @@ Admin types "Midsommar"
 | Trigger | Server returns | Admin sees |
 |---|---|---|
 | Empty input | `{ ok: true, candidates: [] }` | Form unchanged |
-| iTunes has hits | `{ ok: true, candidates: [...itunes] }` | Cards, "via iTunes" badge |
-| iTunes empty, Brave 2xx + valid candidates | `{ ok: true, candidates: [...brave] }` | Cards, "via Apple TV search" badge |
-| iTunes empty, Brave 2xx, filter-zero | `{ ok: false, reason: "brave-empty" }` | "No Apple TV results for '<term>'…" |
-| iTunes empty, Brave 2xx, all `adamId` extraction fails | `{ ok: false, reason: "all-streaming-only" }` | "Results exist but all streaming-only." |
-| iTunes empty, Brave 401/429/5xx/network | `{ ok: false, reason: "brave-error" }` | "Search unavailable — try again." |
+| Brave 2xx + valid candidates | `{ ok: true, candidates: [...] }` | Candidate cards (no via badge) |
+| Brave 2xx, filter-zero | `{ ok: false, reason: "brave-empty" }` | "No Apple TV results for '<term>'…" |
+| Brave 2xx, all `adamId` extraction fails | `{ ok: false, reason: "all-streaming-only" }` | "Results exist but all streaming-only." |
+| Brave 401/429/5xx/network | `{ ok: false, reason: "brave-error" }` | "Search unavailable — try again." |
 
 ## Error handling
 
 - **Auth:** `requireAdmin` throws through to Next.js (redirect to sign-in). Not caught.
 - **Empty input:** server returns `{ ok: true, candidates: [] }` defensively.
-- **iTunes `searchFilms` throws:** caught, `console.warn`, treated as zero results, falls through to Brave.
+- **iTunes:** not called. Brave is the sole provider.
 - **Missing `BRAVE_SEARCH_API_KEY`:** `console.error`, return `brave-error`. Do not leak "key missing" to admin.
 - **Brave HTTP error (401 / 429 / 5xx / network / timeout / malformed JSON):** single catch, `console.error` with status, return `brave-error`. No differentiation of 429 vs 500 in admin copy (same action: retry later).
 - **Brave empty or filter-zero:** return `brave-empty`.
@@ -254,13 +234,13 @@ Admin types "Midsommar"
 3. `extractAdamIdFromHtml` returns `null` from empty string.
 4. `extractAdamIdFromHtml` returns `null` when regex match payload is non-numeric (defensive).
 
-### `app/tests/admin/apple-tv-search.test.ts` (10 tests)
+### `app/tests/admin/apple-tv-search.test.ts` (11 tests)
 
 **Mocking strategy:**
 
 Follows the established pattern from `tests/routes/cron-refresh-prices.test.ts` and other admin tests:
 
-- `vi.mock("film-goblin-worker", ...)` with hoisted mocks for `searchFilms`, `parseFilm`, `fetchPrices`. Per-test control via `searchFilmsMock.mockResolvedValue(...)` etc.
+- `vi.mock("film-goblin-worker", ...)` with hoisted mocks for `parseFilm`, `fetchPrices`. Per-test control via `parseFilmMock.mockImplementation(...)` etc. `searchFilms` is not mocked — it is no longer imported.
 - `vi.mock("@/lib/auth/require-admin", ...)` — `requireAdmin` becomes a no-op.
 - `vi.mock("@/lib/supabase/server", ...)` — `createClient` returns a stub object (never dereferenced past `requireAdmin`).
 - `vi.spyOn(globalThis, "fetch")` with a per-test implementation that branches on URL prefix: Brave endpoint → fixture JSON response, `tv.apple.com/us/movie/...` → fixture HTML by URL, else throws (unexpected URL caught).
@@ -269,16 +249,17 @@ Follows the established pattern from `tests/routes/cron-refresh-prices.test.ts` 
 
 **Test cases:**
 
-1. **iTunes happy path.** `searchFilmsMock` returns 3 results that `parseFilmMock` parses cleanly. Assert `fetch` is *not* called (no Brave hit). Result `ok: true`, 3 candidates, all `via: "itunes"`.
-2. **Brave happy path.** `searchFilmsMock` returns `[]`. Fetch spy returns the 8-URL Brave fixture for the Brave endpoint, valid HTML for 5 `tv.apple.com` URLs, and `fetchPricesMock` returns a parsed film per adamId. Assert 5 candidates, all `via: "apple-tv-search"`.
-3. **URL filter drops noise.** Same as #2; assert the 3 noise URLs (TV show / category / non-US) are absent from candidates and `fetch` was not called for their URLs.
-4. **Partial streaming-only.** 5 URLs; 3 return valid HTML, 2 return streaming-only HTML. Assert `ok: true` with 3 candidates + `console.log` called with `"apple-tv-search: dropped 2/5"` substring.
-5. **All streaming-only.** 5 URLs; all 5 return streaming-only HTML. Assert `{ ok: false, reason: "all-streaming-only" }`.
-6. **Brave empty.** `web.results: []`. Assert `{ ok: false, reason: "brave-empty" }` + no `tv.apple.com` fetches.
-7. **Brave filter-zero.** Only noise URLs. Assert `brave-empty`.
-8. **Brave 500.** Assert `brave-error` + `console.error` with status.
-9. **Brave 401.** Assert `brave-error` (no differentiation).
-10. **Missing env var.** Unset `BRAVE_SEARCH_API_KEY` for the test. Assert `brave-error` + `console.error`. Restore after.
+1. **Empty input.** Assert `fetch` is not called. Result `{ ok: true, candidates: [] }`.
+2. **requireAdmin throws.** Assert the error propagates; no downstream work.
+3. **Brave empty.** `web.results: []`. Assert `{ ok: false, reason: "brave-empty" }` + no `tv.apple.com` fetches.
+4. **Brave filter-zero.** Only noise URLs. Assert `brave-empty`.
+5. **Subscription token + query format.** Assert correct `X-Subscription-Token` header and quoted phrase in query string.
+6. **Brave happy path (5 candidates).** Fetch spy returns the 8-URL Brave fixture for the Brave endpoint, valid HTML for 5 `tv.apple.com` URLs, and `fetchPricesMock` returns a parsed film per adamId. Assert 5 candidates with correct sorted ids; noise URLs not fetched.
+7. **Partial streaming-only.** 5 URLs; 3 return valid HTML, 2 return streaming-only HTML. Assert `ok: true` with 3 candidates + `console.log` called with `"apple-tv-search: dropped 2/5"` substring.
+8. **All streaming-only.** 5 URLs; all 5 return streaming-only HTML. Assert `{ ok: false, reason: "all-streaming-only" }`.
+9. **Brave 500.** Assert `brave-error` + `console.error` with status.
+10. **Brave 401.** Assert `brave-error` (no differentiation from 500 in admin copy).
+11. **Missing env var.** Unset `BRAVE_SEARCH_API_KEY` for the test. Assert `brave-error` + `console.error` containing "BRAVE_SEARCH_API_KEY". Restore after.
 
 ### Not tested (and why)
 
@@ -288,7 +269,7 @@ Follows the established pattern from `tests/routes/cron-refresh-prices.test.ts` 
 
 ### Total
 
-14 tests (4 + 10), all hermetic, <1s runtime.
+15 tests (4 + 11), all hermetic, <1s runtime.
 
 ## Operational
 
