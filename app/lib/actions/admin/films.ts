@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import {
@@ -106,7 +105,8 @@ export async function adminCreateFilm(fields: FilmFormFields): Promise<
   const err = validateForm(fields);
   if (err) return { ok: false, error: err };
 
-  const payload: any = {
+  const payload = {
+    itunes_id: fields.itunes_id,
     title: fields.title.trim(),
     director: fields.director.trim(),
     year: fields.year,
@@ -119,13 +119,13 @@ export async function adminCreateFilm(fields: FilmFormFields): Promise<
     tracking: fields.tracking,
     available: fields.available,
   };
-  if (fields.itunes_id !== null) {
-    payload.itunes_id = fields.itunes_id;
-  }
 
+  // Cast needed because lib/supabase/types.ts pre-dates migration 0118 which
+  // made films.itunes_id nullable. Regenerate types with `npm run gen:types`
+  // after running migrations to drop this cast.
   const { data, error } = await supabase
     .from("films")
-    .insert(payload)
+    .insert(payload as never)
     .select("id")
     .single();
   if (error) return { ok: false, error: error.message };
@@ -143,7 +143,8 @@ export async function adminUpdateFilm(id: string, fields: FilmFormFields): Promi
   const err = validateForm(fields);
   if (err) return { ok: false, error: err };
 
-  const updatePayload: any = {
+  const updatePayload = {
+    itunes_id: fields.itunes_id,
     title: fields.title.trim(),
     director: fields.director.trim(),
     year: fields.year,
@@ -156,13 +157,10 @@ export async function adminUpdateFilm(id: string, fields: FilmFormFields): Promi
     tracking: fields.tracking,
     available: fields.available,
   };
-  if (fields.itunes_id !== null) {
-    updatePayload.itunes_id = fields.itunes_id;
-  }
 
   const { error } = await supabase
     .from("films")
-    .update(updatePayload)
+    .update(updatePayload as never)
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
 
