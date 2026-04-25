@@ -711,7 +711,7 @@ a { color: inherit; text-decoration: none; }
 .bottom-sheet-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(10, 10, 10, 0.6);
+  background-color: rgba(10, 10, 10, 0.92);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   z-index: 100;
