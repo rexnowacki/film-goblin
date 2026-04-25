@@ -69,17 +69,18 @@ ALTER TABLE library ENABLE ROW LEVEL SECURITY;
 
 -- Owner always sees their own. Coven members see fellow members' rows
 -- when the target has broadcast_library = TRUE.
+-- coven_members is a graph-edge table: each row stores one undirected
+-- coven relationship as (user_a_id, user_b_id) with user_a_id < user_b_id.
+-- "I am in the same coven as X" = "there's an edge between auth.uid() and X".
 CREATE POLICY library_select ON library
   FOR SELECT TO authenticated
   USING (
     auth.uid() = user_id
     OR (
       EXISTS (
-        SELECT 1
-        FROM coven_members cm_self
-        JOIN coven_members cm_other ON cm_self.coven_id = cm_other.coven_id
-        WHERE cm_self.user_id = auth.uid()
-          AND cm_other.user_id = library.user_id
+        SELECT 1 FROM coven_members cm
+        WHERE (cm.user_a_id = auth.uid() AND cm.user_b_id = library.user_id)
+           OR (cm.user_a_id = library.user_id AND cm.user_b_id = auth.uid())
       )
       AND (SELECT broadcast_library FROM profiles WHERE id = library.user_id) IS TRUE
     )
@@ -116,7 +117,7 @@ GRANT SELECT ON films_with_stats TO anon, authenticated;
 - **No UPDATE policy.** Rows are immutable; toggle = INSERT/DELETE.
 - **No fan-out trigger** (Q5 lock).
 - **Auto-remove from watchlist** lives in the server action, not a DB trigger — debuggable, reversible, doesn't couple library and watchlists at the DB layer.
-- **`coven_members` table:** existing table from migration `0104_coven.sql`. Plan will verify exact column names (`coven_id`, `user_id`).
+- **`coven_members` table:** existing table from migration `0104_coven.sql`. Verified: graph-edge model with columns `(user_a_id, user_b_id, created_at)` and a `user_a_id < user_b_id` CHECK constraint. RLS clause uses an OR'd EXISTS over both directions of the edge.
 
 ## Section 2 — Server actions + queries
 
@@ -351,4 +352,4 @@ Nine tasks, suitable for subagent-driven execution given the schema + multi-laye
 - **`films_with_stats` view drops + recreates.** Production migration is single-transaction so atomic, but it's the first view modification since `0119` — keep deploy window quiet.
 - **`films_with_stats` consumers** (`getFilms`, `_addToWatchlist` fallback) use explicit column lists, not `SELECT *`. Adding `owned_count` is additive; verified during exploration.
 - **Discovery filter cost.** `getFilms` adds one extra `library` SELECT per `/films` request, indexed `(user_id, created_at DESC)`. Practical worst case: a few hundred owned films, expanding to a few KB of `.not("id", "in", "(…)")` clause. Acceptable.
-- **`coven_members` exact column names** must be verified during plan-writing; if they don't match `(coven_id, user_id)`, the RLS SELECT clause adapts.
+- **`coven_members` exact column names**: verified during plan-writing — graph-edge model `(user_a_id, user_b_id)` with `user_a < user_b` invariant. RLS clause adapted accordingly.
