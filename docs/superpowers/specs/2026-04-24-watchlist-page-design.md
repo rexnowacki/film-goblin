@@ -384,3 +384,20 @@ User clicks "Watchlist" in top-nav
 - Manual browser smoke + visual tuning — 1 hr.
 
 **Total: ~7-8 hours** — well within a single focused dev day.
+
+---
+
+## Addendum — 2026-04-24 post-ship pivot
+
+The body of this spec describes a per-row **inline threshold editor** with a `setWatchlistThreshold` server action, Enter/Escape/blur save semantics, and `.watchlist-threshold-*` CSS classes. **That design was removed during integration.** See commits `5f4cdd7` (initial editor), `0f93ca6` (Enter/blur dedup), and **`6266cd2` (pivot)** for the full history.
+
+The shipped feature differs from the body of this spec as follows:
+
+1. **No threshold editor.** User feedback reframed the mental model: "being on your watchlist should imply the alert threshold — alert me if it drops below where I added it." `_addToWatchlist` now auto-captures the current iTunes Lookup price at add time and stores it as `max_price_usd`. There is no user-facing UI for editing the threshold.
+2. **No `setWatchlistThreshold` action.** Deleted. Its 5 tests were deleted with it.
+3. **Per-row "Buy on Apple TV →" link** (spec originally said "no per-row Buy button, that path stays on the film detail page"). Replaces the editor cell. Pulls from `film.itunes_url`, opens in a new tab.
+4. **"▼ DROP" badge → struck-through "was" price.** When `latest_price ≤ max_price_usd`, the row renders the current price in accent color with the add-time price (from `max_price_usd`) line-through beneath it — A24-retail "was/now" pattern.
+5. **Fresh iTunes lookup at add time** (commit `c371d15`). `_addToWatchlist` calls `fetchPrices([itunes_id])` to get a fresh price (instead of the stale last-swept price from `films_with_stats`). Falls back to the last-swept price on any iTunes failure. Watchlist inserts never break on transient upstream issues.
+6. **Backfill migration `0120`** (commit `ae2f2d1`) lit up the sale indicator on pre-existing watchlist rows by filling their null `max_price_usd` with the most recent `price_history.price_usd`. Applied in production on 2026-04-24.
+
+See `docs/superpowers/plans/2026-04-24-watchlist-page.md` for the matching plan-side addendum.

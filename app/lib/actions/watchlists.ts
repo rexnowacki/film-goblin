@@ -9,16 +9,20 @@ import { fetchPrices, parseFilm } from "film-goblin-worker";
 type Client = SupabaseClient<Database>;
 
 /**
- * Adds a film to the user's watchlist. On add we:
- *   1. Hit iTunes Lookup for a fresh current price.
- *   2. Log a new price_history row with that price (authoritative user-action
- *      timestamp alongside the worker's periodic sweeps).
- *   3. Store the same price as the row's max_price_usd — the watchlist IS the
- *      alert: drop below the add-time price and the user gets notified.
+ * Adds a film to the user's watchlist. On add we hit iTunes Lookup for a
+ * fresh current price and store it as `max_price_usd` — the watchlist IS
+ * the alert: drop below the add-time price and the user gets notified.
+ * The row's `created_at` + `max_price_usd` together form the "price at
+ * which this user added the film" record.
  *
  * On any iTunes failure (rate limit, network, missing itunes_id, 0 results),
  * fall back to the last-swept price from films_with_stats.latest_price so
  * watchlist adds never break on transient upstream issues.
+ *
+ * We intentionally do NOT insert a price_history row here. price_history is
+ * the worker's domain (no client-side RLS policy today); the worker's
+ * periodic sweeps are the source of truth for per-film price movement.
+ * Users writing to price_history would open a view-poisoning vector.
  *
  * Callers may override the threshold via `maxPriceUsd` (skips the fresh-fetch
  * path entirely). In practice, the UI doesn't.
@@ -36,7 +40,7 @@ export async function _addToWatchlist(
   if (maxPriceUsd != null) {
     threshold = maxPriceUsd;
   } else {
-    // Step 1: fresh iTunes Lookup. Capture the film's itunes_id first.
+    // Fresh iTunes Lookup. Capture the film's itunes_id first.
     const { data: filmMeta } = await client
       .from("films")
       .select("itunes_id")
@@ -50,17 +54,6 @@ export async function _addToWatchlist(
         const parsed = res.resultCount > 0 ? parseFilm(res.results[0]) : null;
         if (parsed && parsed.price_usd != null) {
           threshold = parsed.price_usd;
-          // Step 2: log a price_history row. Best-effort — a failure here
-          // (e.g. RLS, transient DB error) shouldn't abort the watchlist add.
-          try {
-            await client.from("price_history").insert({
-              film_id: filmId,
-              price_usd: parsed.price_usd,
-              hd_price_usd: parsed.hd_price_usd ?? null,
-            });
-          } catch (e) {
-            console.warn("_addToWatchlist: price_history log failed", e);
-          }
         }
       } catch (e) {
         console.warn("_addToWatchlist: fresh iTunes fetch failed, falling back", e);

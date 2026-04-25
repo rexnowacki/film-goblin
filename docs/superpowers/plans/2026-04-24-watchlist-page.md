@@ -1468,3 +1468,20 @@ No commit — this task doesn't modify the repo.
 - RLS is the authoritative scoping mechanism; the `.eq("user_id", user.id)` in actions is belt-and-suspenders defensive, not the primary boundary.
 - All new logs (none at the moment for this feature) would prefix `watchlist:` if added.
 - Colocated page-specific components under `app/app/watchlist/` — don't drift toward `app/components/`.
+
+---
+
+## Addendum — 2026-04-24 post-ship pivot
+
+Tasks 3 and 6 in this plan built a `setWatchlistThreshold` action + inline threshold editor in `WatchlistRow`. **That design was removed during integration** — see the companion spec's addendum for the full rationale. Short version: the user's mental model reframed the feature as "the watchlist IS the alert, threshold = price at add time," and the editor UI became unnecessary friction.
+
+The shipped feature replaces Task 6's threshold editor with a **"Buy on Apple TV →" external link**, replaces the `▼ DROP` badge with a **struck-through "was" price**, auto-captures `max_price_usd` at add time via a fresh iTunes Lookup, and dropped Task 3's action + its 5 tests. The nav link in Task 9 works as planned on desktop + mobile (one early bug — a redundant `onClick` on the mobile drawer `<Link>` — was fixed in the same pivot commit).
+
+Commits to trace the pivot:
+- `5f4cdd7` — original Task 6 editor
+- `0f93ca6` — Enter/blur dedup on the editor (rendered irrelevant by the pivot)
+- `6266cd2` — **THE PIVOT** (remove editor, add Buy link, strikethrough, mobile nav fix, auto-capture in `_addToWatchlist`)
+- `ae2f2d1` — DB migration backfilling the threshold on pre-existing watchlist rows
+- `c371d15` — fresh iTunes Lookup at add time (tightens the auto-capture; falls back to last-swept price on iTunes failure)
+
+The plan above is historical; treat the spec addendum + these commits as the source of truth for shipped behavior.

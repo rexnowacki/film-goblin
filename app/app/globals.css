@@ -542,11 +542,13 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ===== WATCHLIST PAGE =====
-   /watchlist — editorial list, drop-first default sort, inline
-   threshold editor per row. Desktop: single-line row via grid.
-   Mobile (≤720px): two-row card (poster+title on top, price +
-   threshold + remove below). Dropped rows get accent-colored
-   price + ▼ DROP badge. */
+   /watchlist — editorial list, drop-first default sort. Each row
+   shows poster · title · current price · Buy-on-Apple-TV link ·
+   remove ×. Desktop: single-line row via grid. Mobile (≤720px):
+   poster spans two rows left, title on top right, price + buy +
+   remove share the bottom right cell via justify-self start/
+   center/end. Dropped rows show the current price in accent
+   color with the add-time price strikethrough beneath. */
 .watchlist-toolbar {
   display: flex;
   align-items: center;
