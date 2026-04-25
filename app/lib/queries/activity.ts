@@ -46,6 +46,21 @@ export type EnrichedActivity = (
   reactions: ReactionSummary;
 };
 
+export type FeedItem =
+  | { type: "single"; activity: EnrichedActivity }
+  | { type: "group"; group: ActivityGroup };
+
+export interface ActivityGroup {
+  // Stable composite key for React. Anchored on the OLDEST event in the run
+  // so the key doesn't shift if newer events join the run on subsequent reads.
+  key: string;
+  actor: ActorLite;
+  kind: "watchlist_added"; // narrow union; widens when C2 / future actions register
+  items: EnrichedActivity[]; // newest-first, length >= 3
+  count: number; // = items.length
+  latestAt: string; // = items[0].created_at
+}
+
 export async function getEnrichedFeed(
   client: Client,
   followerUserId: string,
