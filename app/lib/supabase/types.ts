@@ -73,6 +73,32 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_reactions: {
+        Row: {
+          activity_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_reactions_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activity"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coven_members: {
         Row: {
           created_at: string
@@ -128,7 +154,7 @@ export type Database = {
           first_seen_at: string
           genre_primary: string
           id: string
-          itunes_id: number
+          itunes_id: number | null
           itunes_url: string
           last_checked_at: string | null
           last_priced_at: string | null
@@ -146,7 +172,7 @@ export type Database = {
           first_seen_at?: string
           genre_primary?: string
           id?: string
-          itunes_id: number
+          itunes_id?: number | null
           itunes_url?: string
           last_checked_at?: string | null
           last_priced_at?: string | null
@@ -164,7 +190,7 @@ export type Database = {
           first_seen_at?: string
           genre_primary?: string
           id?: string
-          itunes_id?: number
+          itunes_id?: number | null
           itunes_url?: string
           last_checked_at?: string | null
           last_priced_at?: string | null
@@ -193,6 +219,39 @@ export type Database = {
         }
         Relationships: []
       }
+      library: {
+        Row: {
+          created_at: string
+          film_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          film_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          film_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films_with_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       list_films: {
         Row: {
           added_at: string
@@ -218,6 +277,13 @@ export type Database = {
             columns: ["film_id"]
             isOneToOne: false
             referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "list_films_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films_with_stats"
             referencedColumns: ["id"]
           },
           {
@@ -325,6 +391,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "price_alerts_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films_with_stats"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "price_alerts_watchlist_id_fkey"
             columns: ["watchlist_id"]
             isOneToOne: false
@@ -366,12 +439,20 @@ export type Database = {
             referencedRelation: "films"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "price_history_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films_with_stats"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
         Row: {
           avatar_url: string
           bio: string
+          broadcast_library: boolean
           broadcast_watchlist_adds: boolean
           created_at: string
           display_name: string
@@ -384,6 +465,7 @@ export type Database = {
         Insert: {
           avatar_url?: string
           bio?: string
+          broadcast_library?: boolean
           broadcast_watchlist_adds?: boolean
           created_at?: string
           display_name: string
@@ -396,6 +478,7 @@ export type Database = {
         Update: {
           avatar_url?: string
           bio?: string
+          broadcast_library?: boolean
           broadcast_watchlist_adds?: boolean
           created_at?: string
           display_name?: string
@@ -438,6 +521,13 @@ export type Database = {
             columns: ["film_id"]
             isOneToOne: false
             referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recommendations_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films_with_stats"
             referencedColumns: ["id"]
           },
         ]
@@ -494,6 +584,13 @@ export type Database = {
             referencedRelation: "films"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "reviews_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films_with_stats"
+            referencedColumns: ["id"]
+          },
         ]
       }
       staff: {
@@ -547,11 +644,83 @@ export type Database = {
             referencedRelation: "films"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "watchlists_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films_with_stats"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      films_with_stats: {
+        Row: {
+          artwork_url: string | null
+          available: boolean | null
+          content_advisory: string | null
+          description: string | null
+          director: string | null
+          first_seen_at: string | null
+          genre_primary: string | null
+          id: string | null
+          itunes_id: number | null
+          itunes_url: string | null
+          last_checked_at: string | null
+          last_priced_at: string | null
+          latest_price: number | null
+          owned_count: number | null
+          runtime_min: number | null
+          title: string | null
+          tracking: boolean | null
+          watchlist_count: number | null
+          year: number | null
+        }
+        Insert: {
+          artwork_url?: string | null
+          available?: boolean | null
+          content_advisory?: string | null
+          description?: string | null
+          director?: string | null
+          first_seen_at?: string | null
+          genre_primary?: string | null
+          id?: string | null
+          itunes_id?: number | null
+          itunes_url?: string | null
+          last_checked_at?: string | null
+          last_priced_at?: string | null
+          latest_price?: never
+          owned_count?: never
+          runtime_min?: number | null
+          title?: string | null
+          tracking?: boolean | null
+          watchlist_count?: never
+          year?: number | null
+        }
+        Update: {
+          artwork_url?: string | null
+          available?: boolean | null
+          content_advisory?: string | null
+          description?: string | null
+          director?: string | null
+          first_seen_at?: string | null
+          genre_primary?: string | null
+          id?: string | null
+          itunes_id?: number | null
+          itunes_url?: string | null
+          last_checked_at?: string | null
+          last_priced_at?: string | null
+          latest_price?: never
+          owned_count?: never
+          runtime_min?: number | null
+          title?: string | null
+          tracking?: boolean | null
+          watchlist_count?: never
+          year?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

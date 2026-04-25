@@ -340,7 +340,7 @@ function ChapterStores({ selected, onToggle }: { selected: string[]; onToggle: (
 
 interface DbFilm {
   id: string;
-  itunes_id: number;
+  itunes_id: number | null;
   title: string;
   director: string;
   year: number;
