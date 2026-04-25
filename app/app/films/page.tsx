@@ -3,7 +3,7 @@ import { getFilms, type FilmsSort } from "@/lib/queries/films";
 import TopNav from "@/components/TopNav";
 import FilmPoster from "@/components/FilmPoster";
 import FilmsSearch from "@/components/FilmsSearch";
-import FilmsSortSelect from "./FilmsSortSelect";
+import FilmsSortChips from "./FilmsSortChips";
 import Link from "next/link";
 
 const VALID_SORTS: FilmsSort[] = ["added", "release", "title", "watchlisted", "price_low", "price_high"];
@@ -40,7 +40,6 @@ export default async function FilmsPage({
 
       <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
         <div className="container-wide">
-          <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 6 }}>Chapter II · The Archive</div>
           <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
             Every Film, <em style={{ color: "var(--accent)" }}>Indexed</em>.
           </h1>
@@ -58,11 +57,9 @@ export default async function FilmsPage({
 
       <section style={{ padding: "24px 0 60px" }}>
         <div className="container-wide">
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-            <div style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--muted)" }}>
-              {total} {total === 1 ? "film" : "films"}{q ? ` matching "${q}"` : ""}
-            </div>
-            <FilmsSortSelect currentSort={sort} currentQ={q} />
+          <FilmsSortChips currentSort={sort} currentQ={q} />
+          <div style={{ marginBottom: 20, fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--muted)" }}>
+            {total} {total === 1 ? "film" : "films"}{q ? ` matching "${q}"` : ""}
           </div>
 
           {films.length === 0 ? (
