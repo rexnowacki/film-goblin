@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 
 interface Props {
   open: boolean;
@@ -11,6 +11,7 @@ interface Props {
 
 export default function BottomSheet({ open, onClose, title, children }: Props) {
   const sheetRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
   // Lock body scroll while the sheet is open.
   useEffect(() => {
@@ -36,7 +37,7 @@ export default function BottomSheet({ open, onClose, title, children }: Props) {
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="bottom-sheet-title"
+      aria-labelledby={titleId}
     >
       <div
         ref={sheetRef}
@@ -46,7 +47,7 @@ export default function BottomSheet({ open, onClose, title, children }: Props) {
       >
         <div className="bottom-sheet-handle" aria-hidden="true" />
         <div className="bottom-sheet-header">
-          <h2 id="bottom-sheet-title" className="head" style={{ fontSize: 22, margin: 0 }}>
+          <h2 id={titleId} className="head" style={{ fontSize: 22, margin: 0 }}>
             {title}
           </h2>
           <button

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicProfileBundle } from "@/lib/queries/profiles";
 import { getCovenStateBetween } from "@/lib/queries/coven";
+import { getReactionsForActivities } from "@/lib/queries/activity-reactions";
 import TopNav from "@/components/TopNav";
 import Avatar from "@/components/Avatar";
 import FollowButton from "@/components/FollowButton";
@@ -41,7 +42,7 @@ export default async function PublicProfilePage({
     .eq("actor_user_id", bundle.profile.id)
     .order("created_at", { ascending: false })
     .limit(10);
-  const enrichedOwn = await enrichOwnActivity(supabase, ownActivity ?? [], bundle.profile);
+  const enrichedOwn = await enrichOwnActivity(supabase, ownActivity ?? [], bundle.profile, user?.id ?? null);
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100vh" }}>
@@ -113,7 +114,7 @@ export default async function PublicProfilePage({
             <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>Nothing yet.</div>
           ) : (
             <div style={{ display: "grid", gap: 0 }}>
-              {enrichedOwn.map((item: any) => <ActivityRow key={item.id} item={item} />)}
+              {enrichedOwn.map(item => <ActivityRow key={item.id} item={item} />)}
             </div>
           )}
         </div>
@@ -122,16 +123,17 @@ export default async function PublicProfilePage({
   );
 }
 
-async function enrichOwnActivity(supabase: any, rows: any[], profile: any) {
+async function enrichOwnActivity(supabase: any, rows: any[], profile: any, viewerId: string | null) {
   if (rows.length === 0) return [];
   const filmIds = Array.from(new Set(rows.map(r => r.payload?.film_id).filter(Boolean)));
   const recipientIds = Array.from(new Set(rows.map(r => r.payload?.to_user_id).filter(Boolean)));
   const listIds = Array.from(new Set(rows.map(r => r.payload?.list_id).filter(Boolean)));
 
-  const [films, recipients, lists] = await Promise.all([
+  const [films, recipients, lists, reactionsMap] = await Promise.all([
     filmIds.length ? supabase.from("films").select("id, title, director, year, artwork_url, itunes_url").in("id", filmIds) : Promise.resolve({ data: [] }),
     recipientIds.length ? supabase.from("profiles").select("id, handle, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] }),
     listIds.length ? supabase.from("lists").select("id, title").in("id", listIds) : Promise.resolve({ data: [] }),
+    getReactionsForActivities(supabase, rows.map(r => r.id), viewerId),
   ]);
 
   const filmMap = new Map((films.data ?? []).map((r: any) => [r.id, r]));
@@ -141,7 +143,11 @@ async function enrichOwnActivity(supabase: any, rows: any[], profile: any) {
   const actor = { id: profile.id, handle: profile.handle, display_name: profile.display_name, avatar_url: profile.avatar_url };
   const out: any[] = [];
   for (const r of rows) {
-    const base = { id: r.id, created_at: r.created_at, actor };
+    const reactions = reactionsMap.get(r.id) ?? { count: 0, likedByMe: false };
+    // On a profile page, every row's actor IS the profile owner. isOwnRow is
+    // true when the viewer is looking at their own profile.
+    const isOwnRow = viewerId === profile.id;
+    const base = { id: r.id, created_at: r.created_at, actor, reactions, isOwnRow };
     const film = r.payload?.film_id ? filmMap.get(r.payload.film_id) : undefined;
     const recipient = r.payload?.to_user_id ? recipMap.get(r.payload.to_user_id) : undefined;
     const list = r.payload?.list_id ? listMap.get(r.payload.list_id) : undefined;
