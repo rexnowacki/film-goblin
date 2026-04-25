@@ -4,12 +4,26 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Film Goblin — A Field Guide To Cheap Movies",
   description: "Hunt price drops on Apple TV movies. Join the coven.",
+  icons: {
+    icon: [
+      { url: "/icons/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: "/icons/apple-touch-icon.png",
+    shortcut: "/favicon.ico",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Film Goblin",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#0A0A0A",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
