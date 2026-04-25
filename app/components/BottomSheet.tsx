@@ -13,11 +13,33 @@ export default function BottomSheet({ open, onClose, title, children }: Props) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
-  // Lock body scroll while the sheet is open.
+  // Lock page scroll while the sheet is open. The robust pattern below works on
+  // iOS Safari, where `body { overflow: hidden }` alone leaves the page able to
+  // rubber-band scroll. We capture the scroll position, pin the body via
+  // position: fixed (preserving the visual scroll offset via negative top), and
+  // restore on close so the page lands back where the user was.
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (!open) return;
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const prev = {
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    };
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+    return () => {
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.width = prev.width;
+      body.style.overflow = prev.overflow;
+      window.scrollTo(0, scrollY);
+    };
   }, [open]);
 
   // Escape to close + focus the sheet panel on open.
