@@ -74,7 +74,10 @@ export default async function FilmsPage({
                   <div style={{ marginTop: 10 }}>
                     <div className="head" style={{ fontSize: 16, lineHeight: 1.1 }}>{f.title}</div>
                     <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
-                      {sort === "release" && f.director ? f.director : f.year}
+                      {f.year}
+                      {(sort === "release" || sort === "added") && f.director ? (
+                        <span> · {f.director}</span>
+                      ) : null}
                       {sort === "price_low" || sort === "price_high" ? (
                         <span style={{ marginLeft: 6, color: "var(--accent)" }}>
                           {f.latest_price != null ? `· $${Number(f.latest_price).toFixed(2)}` : ""}
