@@ -13,6 +13,10 @@ export default function WatchlistButton({ filmId, initialOnList, onChange }: Pro
   const [onList, setOnList] = useState(initialOnList);
   const [pending, start] = useTransition();
 
+  // Mirror parent-driven changes to initialOnList. FilmActions flips this
+  // to false when OwnedButton's onAdded fires (server silently deletes the
+  // watchlist row when the film is added to library). Loop-safe: onChange
+  // is only invoked from inside toggle() (user click), never from this effect.
   useEffect(() => {
     setOnList(initialOnList);
   }, [initialOnList]);

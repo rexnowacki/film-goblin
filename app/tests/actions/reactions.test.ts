@@ -3,12 +3,15 @@ import { _toggleReaction } from "../../lib/actions/reactions";
 import { createTestUser, deleteTestUser, adminClient, type TestUser } from "../helpers/users";
 import { signedInClient } from "../helpers/supabase";
 
+const hasEnv = !!process.env.TEST_SUPABASE_SERVICE_ROLE_KEY && !!process.env.TEST_SUPABASE_URL;
+
 let userA: TestUser;
 let userB: TestUser;
 let filmId: string;
 let activityId: string;
 
 beforeAll(async () => {
+  if (!hasEnv) return;
   userA = await createTestUser();
   userB = await createTestUser();
 
@@ -32,13 +35,14 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  if (!hasEnv) return;
   if (activityId) await adminClient().from("activity").delete().eq("id", activityId);
   if (filmId) await adminClient().from("films").delete().eq("id", filmId);
   if (userA?.id) await deleteTestUser(userA.id);
   if (userB?.id) await deleteTestUser(userB.id);
 });
 
-describe("_toggleReaction", () => {
+describe.skipIf(!hasEnv)("_toggleReaction", () => {
   it("toggle-on: returns { liked: true } and inserts a row", async () => {
     const c = await signedInClient(userB.email, userB.password);
     const res = await _toggleReaction(c as any, activityId);

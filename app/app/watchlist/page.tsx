@@ -41,16 +41,16 @@ export default async function WatchlistPage({
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav />
-      <section style={{ padding: "48px 0" }}>
+      <section style={{ padding: "22px 0 18px" }}>
         <div className="container-wide">
-          <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 10 }}>
+          <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 6 }}>
             Films you're tracking
           </div>
           <h1
             className="display"
             style={{
-              fontSize: "clamp(48px, 8vw, 96px)",
-              margin: "0 0 32px",
+              fontSize: "clamp(28px, 5vw, 64px)",
+              margin: "0 0 16px",
               lineHeight: 0.9,
             }}
           >

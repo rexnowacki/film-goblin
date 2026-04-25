@@ -3,10 +3,13 @@ import { _addToLibrary, _removeFromLibrary } from "../../lib/actions/library";
 import { createTestUser, deleteTestUser, adminClient, type TestUser } from "../helpers/users";
 import { signedInClient } from "../helpers/supabase";
 
+const hasEnv = !!process.env.TEST_SUPABASE_SERVICE_ROLE_KEY && !!process.env.TEST_SUPABASE_URL;
+
 let userA: TestUser;
 let filmId: string;
 
 beforeAll(async () => {
+  if (!hasEnv) return;
   userA = await createTestUser();
 
   const admin = adminClient();
@@ -20,17 +23,19 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  if (!hasEnv) return;
   if (filmId) await adminClient().from("films").delete().eq("id", filmId);
   if (userA?.id) await deleteTestUser(userA.id);
 });
 
 beforeEach(async () => {
+  if (!hasEnv) return;
   const admin = adminClient();
   await admin.from("library").delete().eq("user_id", userA.id);
   await admin.from("watchlists").delete().eq("user_id", userA.id);
 });
 
-describe("actions/library", () => {
+describe.skipIf(!hasEnv)("actions/library", () => {
   it("addToLibrary inserts the row and deletes any matching watchlist row", async () => {
     const admin = adminClient();
     // Pre-seed a watchlist row.

@@ -28,8 +28,7 @@ export async function getLibrary(client: Client, userId: string) {
     .select(`
       created_at,
       film:films!inner(
-        id, itunes_id, title, director, year, runtime_min,
-        genre_primary, artwork_url
+        id, itunes_id, title, director, year, artwork_url
       )
     `)
     .eq("user_id", userId)
