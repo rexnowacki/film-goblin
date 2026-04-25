@@ -22,7 +22,8 @@ export default async function FilmsPage({
   const sort = parseSort(sp.sort);
   const page = Math.max(1, Number(sp.page ?? 1));
   const supabase = await createClient();
-  const { rows: films, total, pageSize } = await getFilms(supabase, { q, sort, page });
+  const { data: { user } } = await supabase.auth.getUser();
+  const { rows: films, total, pageSize } = await getFilms(supabase, { q, sort, page, viewerUserId: user?.id ?? null });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   function pageHref(p: number) {

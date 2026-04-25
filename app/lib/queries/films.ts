@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
+import { getOwnedFilmIds } from "./library";
 
 type Client = SupabaseClient<Database>;
 
@@ -31,7 +32,7 @@ export const FILMS_PAGE_SIZE = 60;
 
 export async function getFilms(
   client: Client,
-  opts: { q?: string; sort?: FilmsSort; page?: number } = {},
+  opts: { q?: string; sort?: FilmsSort; page?: number; viewerUserId?: string | null } = {},
 ): Promise<{
   rows: Array<{
     id: string; itunes_id: number | null; title: string; director: string;
@@ -56,6 +57,13 @@ export async function getFilms(
 
   if (opts.q && opts.q.trim()) {
     query = query.or(`title.ilike.%${opts.q}%,director.ilike.%${opts.q}%`);
+  }
+
+  if (opts.viewerUserId) {
+    const ownedIds = await getOwnedFilmIds(client, opts.viewerUserId);
+    if (ownedIds.length > 0) {
+      query = query.not("id", "in", `(${ownedIds.map(id => `"${id}"`).join(",")})`);
+    }
   }
 
   switch (sort) {
