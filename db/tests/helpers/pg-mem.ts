@@ -58,17 +58,26 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
 
   // Apply db migrations EXCEPT trigger files (pg-mem can't parse SECURITY DEFINER reliably)
   // and storage bucket files (pg-mem has no Supabase `storage` schema).
-  // Also strip RLS statements (ENABLE ROW LEVEL SECURITY, CREATE POLICY, DROP POLICY) — pg-mem
-  // doesn't support them and the smoke test only checks DDL shape, not policy enforcement.
+  // Strip statements pg-mem can't handle and the smoke doesn't need:
+  //   - RLS (ENABLE ROW LEVEL SECURITY, CREATE/DROP POLICY)
+  //   - GRANT (no role machinery)
+  //   - CREATE/DROP VIEW (films_with_stats uses correlated subqueries pg-mem can't execute;
+  //     the smoke only asserts tables, not views)
   for (const f of listSqlFiles(DB_MIGRATIONS)) {
     if (f.includes("_trigger")) continue;
     if (f.includes("avatars_bucket")) continue;
+    // Pure-DML backfills aren't DDL the smoke cares about, and pg-mem chokes on
+    // their UPDATE … FROM (subquery) shape.
+    if (f.includes("backfill")) continue;
     const raw = readFileSync(join(DB_MIGRATIONS, f), "utf8");
     const stripped = raw
       .split(/;\s*\n/)
       .filter(stmt => !/ALTER\s+TABLE\s+\S+\s+ENABLE\s+ROW\s+LEVEL\s+SECURITY/i.test(stmt))
       .filter(stmt => !/CREATE\s+POLICY\b/i.test(stmt))
       .filter(stmt => !/DROP\s+POLICY\b/i.test(stmt))
+      .filter(stmt => !/^\s*GRANT\b/im.test(stmt))
+      .filter(stmt => !/CREATE\s+(OR\s+REPLACE\s+)?VIEW\b/i.test(stmt))
+      .filter(stmt => !/DROP\s+VIEW\b/i.test(stmt))
       .join(";\n");
     if (stripped.trim()) await client.query(stripped);
   }

@@ -3,12 +3,15 @@ import { _subscribeToList, _unsubscribeFromList } from "../../lib/actions/lists"
 import { createTestUser, deleteTestUser, adminClient, type TestUser } from "../helpers/users";
 import { signedInClient } from "../helpers/supabase";
 
+const hasEnv = !!process.env.TEST_SUPABASE_SERVICE_ROLE_KEY && !!process.env.TEST_SUPABASE_URL;
+
 let user: TestUser;
 let publicListId: string;
 let privateListId: string;
 let ownerId: string;
 
 beforeAll(async () => {
+  if (!hasEnv) return;
   user = await createTestUser();
   const owner = await createTestUser();
   ownerId = owner.id;
@@ -20,6 +23,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  if (!hasEnv) return;
   const admin = adminClient();
   await admin.from("list_subscriptions").delete().eq("user_id", user.id);
   await admin.from("lists").delete().in("id", [publicListId, privateListId]);
@@ -27,7 +31,7 @@ afterAll(async () => {
   await deleteTestUser(ownerId);
 });
 
-describe("actions/lists", () => {
+describe.skipIf(!hasEnv)("actions/lists", () => {
   it("can subscribe to a public list", async () => {
     const c = await signedInClient(user.email, user.password);
     await _subscribeToList(c, publicListId);

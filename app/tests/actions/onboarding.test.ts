@@ -3,12 +3,15 @@ import { _completeOnboarding } from "../../lib/actions/onboarding";
 import { createTestUser, deleteTestUser, adminClient, type TestUser } from "../helpers/users";
 import { signedInClient } from "../helpers/supabase";
 
+const hasEnv = !!process.env.TEST_SUPABASE_SERVICE_ROLE_KEY && !!process.env.TEST_SUPABASE_URL;
+
 let user: TestUser;
 let filmA: string;
 let filmB: string;
 let otherUser: TestUser;
 
 beforeAll(async () => {
+  if (!hasEnv) return;
   user = await createTestUser();
   otherUser = await createTestUser();
   const admin = adminClient();
@@ -21,6 +24,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  if (!hasEnv) return;
   const admin = adminClient();
   await admin.from("watchlists").delete().eq("user_id", user.id);
   await admin.from("follows").delete().eq("follower_user_id", user.id);
@@ -30,7 +34,7 @@ afterAll(async () => {
   await deleteTestUser(otherUser.id);
 });
 
-describe("actions/onboarding", () => {
+describe.skipIf(!hasEnv)("actions/onboarding", () => {
   it("completeOnboarding sets profile + inserts watchlists + follows", async () => {
     const c = await signedInClient(user.email, user.password);
     await _completeOnboarding(c, {

@@ -3,16 +3,20 @@ import { createClient as createSbClient } from "@supabase/supabase-js";
 import { checkAdminAccess } from "../../lib/auth/require-admin";
 import { createTestUser, deleteTestUser, adminClient, type TestUser } from "../helpers/users";
 
+const hasEnv = !!process.env.TEST_SUPABASE_SERVICE_ROLE_KEY && !!process.env.TEST_SUPABASE_URL;
+
 let nonStaff: TestUser;
 let admin: TestUser;
 
 beforeAll(async () => {
+  if (!hasEnv) return;
   nonStaff = await createTestUser();
   admin = await createTestUser();
   await adminClient().from("staff").insert({ user_id: admin.id, role: "admin" });
 });
 
 afterAll(async () => {
+  if (!hasEnv) return;
   await adminClient().from("staff").delete().eq("user_id", admin.id);
   await deleteTestUser(nonStaff.id);
   await deleteTestUser(admin.id);
@@ -29,7 +33,7 @@ async function asUser(user: TestUser) {
   return sb;
 }
 
-describe("checkAdminAccess (layout-guard decision logic)", () => {
+describe.skipIf(!hasEnv)("checkAdminAccess (layout-guard decision logic)", () => {
   it("returns 'not-authed' when signed-out", async () => {
     expect(await checkAdminAccess(anonSb())).toBe("not-authed");
   });

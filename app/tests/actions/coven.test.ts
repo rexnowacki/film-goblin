@@ -8,15 +8,19 @@ import {
 import { createTestUser, deleteTestUser, adminClient, type TestUser } from "../helpers/users";
 import { signedInClient } from "../helpers/supabase";
 
+const hasEnv = !!process.env.TEST_SUPABASE_SERVICE_ROLE_KEY && !!process.env.TEST_SUPABASE_URL;
+
 let alice: TestUser;
 let bob: TestUser;
 
 beforeAll(async () => {
+  if (!hasEnv) return;
   alice = await createTestUser();
   bob = await createTestUser();
 });
 
 afterAll(async () => {
+  if (!hasEnv) return;
   const admin = adminClient();
   await admin.from("coven_requests").delete().in("from_user_id", [alice.id, bob.id]);
   await admin.from("coven_members").delete()
@@ -25,7 +29,7 @@ afterAll(async () => {
   await deleteTestUser(bob.id);
 });
 
-describe("actions/coven", () => {
+describe.skipIf(!hasEnv)("actions/coven", () => {
   it("sendCovenRequest inserts a pending row", async () => {
     const c = await signedInClient(alice.email, alice.password);
     const { id } = await _sendCovenRequest(c, bob.id);

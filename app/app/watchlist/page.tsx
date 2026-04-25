@@ -41,21 +41,17 @@ export default async function WatchlistPage({
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav />
-      <section style={{ padding: "22px 0 18px" }}>
+
+      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
         <div className="container-wide">
-          <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 6 }}>
-            Films you're tracking
-          </div>
-          <h1
-            className="display"
-            style={{
-              fontSize: "clamp(28px, 5vw, 64px)",
-              margin: "0 0 16px",
-              lineHeight: 0.9,
-            }}
-          >
-            The Scroll
+          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
+            The <em style={{ color: "var(--accent)" }}>Scroll</em>.
           </h1>
+        </div>
+      </section>
+
+      <section style={{ padding: "24px 0 60px" }}>
+        <div className="container-wide">
           {rows.length === 0 ? (
             <WatchlistEmpty />
           ) : (

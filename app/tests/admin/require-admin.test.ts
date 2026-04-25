@@ -3,11 +3,14 @@ import { requireAdmin, NotAdminError } from "../../lib/auth/require-admin";
 import { createTestUser, deleteTestUser, adminClient, type TestUser } from "../helpers/users";
 import { createClient as createSbClient } from "@supabase/supabase-js";
 
+const hasEnv = !!process.env.TEST_SUPABASE_SERVICE_ROLE_KEY && !!process.env.TEST_SUPABASE_URL;
+
 let nonStaff: TestUser;
 let reviewer: TestUser;
 let admin: TestUser;
 
 beforeAll(async () => {
+  if (!hasEnv) return;
   nonStaff = await createTestUser();
   reviewer = await createTestUser();
   admin = await createTestUser();
@@ -17,6 +20,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  if (!hasEnv) return;
   const ac = adminClient();
   await ac.from("staff").delete().in("user_id", [reviewer.id, admin.id]);
   await deleteTestUser(nonStaff.id);
@@ -35,7 +39,7 @@ async function asUser(user: TestUser) {
   return sb;
 }
 
-describe("requireAdmin", () => {
+describe.skipIf(!hasEnv)("requireAdmin", () => {
   it("throws NotAdminError when signed out", async () => {
     const sb = anonSb();
     await expect(requireAdmin(sb)).rejects.toBeInstanceOf(NotAdminError);

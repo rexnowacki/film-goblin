@@ -3,12 +3,14 @@ import { _updateProfile } from "../../lib/actions/profile";
 import { createTestUser, deleteTestUser, adminClient, type TestUser } from "../helpers/users";
 import { signedInClient } from "../helpers/supabase";
 
+const hasEnv = !!process.env.TEST_SUPABASE_SERVICE_ROLE_KEY && !!process.env.TEST_SUPABASE_URL;
+
 let user: TestUser;
 
-beforeAll(async () => { user = await createTestUser(); });
-afterAll(async () => { await deleteTestUser(user.id); });
+beforeAll(async () => { if (!hasEnv) return; user = await createTestUser(); });
+afterAll(async () => { if (!hasEnv) return; await deleteTestUser(user.id); });
 
-describe("actions/profile", () => {
+describe.skipIf(!hasEnv)("actions/profile", () => {
   it("updateProfile changes handle and bio", async () => {
     const c = await signedInClient(user.email, user.password);
     await _updateProfile(c, { handle: "newhandle", bio: "a new bio" });

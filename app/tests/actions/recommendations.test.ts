@@ -3,12 +3,15 @@ import { _recommendFilm } from "../../lib/actions/recommendations";
 import { createTestUser, deleteTestUser, adminClient, type TestUser } from "../helpers/users";
 import { signedInClient } from "../helpers/supabase";
 
+const hasEnv = !!process.env.TEST_SUPABASE_SERVICE_ROLE_KEY && !!process.env.TEST_SUPABASE_URL;
+
 let sender: TestUser;
 let receiver: TestUser;
 let stranger: TestUser;
 let filmId: string;
 
 beforeAll(async () => {
+  if (!hasEnv) return;
   sender = await createTestUser();
   receiver = await createTestUser();
   stranger = await createTestUser();
@@ -28,6 +31,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  if (!hasEnv) return;
   const admin = adminClient();
   await admin.from("recommendations").delete().eq("film_id", filmId);
   await admin.from("films").delete().eq("id", filmId);
@@ -39,7 +43,7 @@ afterAll(async () => {
   await deleteTestUser(stranger.id);
 });
 
-describe("actions/recommendations", () => {
+describe.skipIf(!hasEnv)("actions/recommendations", () => {
   it("sender can recommend a film to a coven member", async () => {
     const c = await signedInClient(sender.email, sender.password);
     const { id } = await _recommendFilm(c, filmId, receiver.id, "watch this");

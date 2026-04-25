@@ -3,10 +3,13 @@ import { _addToWatchlist, _removeFromWatchlist } from "../../lib/actions/watchli
 import { createTestUser, deleteTestUser, adminClient, type TestUser } from "../helpers/users";
 import { signedInClient } from "../helpers/supabase";
 
+const hasEnv = !!process.env.TEST_SUPABASE_SERVICE_ROLE_KEY && !!process.env.TEST_SUPABASE_URL;
+
 let user: TestUser;
 let filmId: string;
 
 beforeAll(async () => {
+  if (!hasEnv) return;
   user = await createTestUser();
   const admin = adminClient();
   const { data, error } = await admin
@@ -19,13 +22,14 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  if (!hasEnv) return;
   if (user?.id) await deleteTestUser(user.id);
   if (filmId) {
     await adminClient().from("films").delete().eq("id", filmId);
   }
 });
 
-describe("actions/watchlists", () => {
+describe.skipIf(!hasEnv)("actions/watchlists", () => {
   it("addToWatchlist inserts a row owned by the caller", async () => {
     const c = await signedInClient(user.email, user.password);
     const { id } = await _addToWatchlist(c, filmId, 6.00);
