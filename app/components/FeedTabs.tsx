@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import ActivityRow from "./activity/ActivityRow";
-import type { EnrichedActivity } from "@/lib/queries/activity";
+import FeedRow from "./activity/FeedRow";
+import type { EnrichedActivity, FeedItem } from "@/lib/queries/activity";
 
 type Tab = "all" | "reviews" | "recs" | "lists";
 
@@ -14,7 +14,15 @@ const MATCHERS: Record<Tab, (k: EnrichedActivity["kind"]) => boolean> = {
   lists: (k) => k === "list_created" || k === "list_film_added",
 };
 
-interface Props { items: EnrichedActivity[]; }
+// FeedItem matcher: a single matches if its activity.kind matches; a group
+// matches if its group.kind matches. In v1 only watchlist_added groups
+// exist, so groups never appear in non-"all" tabs.
+function feedItemMatches(item: FeedItem, matcher: (k: EnrichedActivity["kind"]) => boolean): boolean {
+  if (item.type === "single") return matcher(item.activity.kind);
+  return matcher(item.group.kind);
+}
+
+interface Props { items: FeedItem[]; }
 
 export default function FeedTabs({ items }: Props) {
   const router = useRouter();
@@ -36,7 +44,7 @@ export default function FeedTabs({ items }: Props) {
     router.push(`/home?${p.toString()}`);
   }
 
-  const filtered = items.filter(i => MATCHERS[tab](i.kind));
+  const filtered = items.filter(i => feedItemMatches(i, MATCHERS[tab]));
 
   return (
     <div>
@@ -57,7 +65,12 @@ export default function FeedTabs({ items }: Props) {
             No activity yet. Visit <a href="/people" style={{ color: "var(--accent)" }}>/people</a> to follow someone.
           </div>
         ) : (
-          filtered.map(item => <ActivityRow key={item.id} item={item} />)
+          filtered.map(item => (
+            <FeedRow
+              key={item.type === "group" ? item.group.key : item.activity.id}
+              item={item}
+            />
+          ))
         )}
       </div>
     </div>

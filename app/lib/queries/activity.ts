@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
 import { getReactionsForActivities, type ReactionSummary } from "./activity-reactions";
+import { groupFeed } from "./group-activity";
 
 type Client = SupabaseClient<Database>;
 
@@ -65,7 +66,7 @@ export async function getEnrichedFeed(
   client: Client,
   followerUserId: string,
   limit = 50,
-): Promise<EnrichedActivity[]> {
+): Promise<FeedItem[]> {
   const { data: followsRows } = await client
     .from("follows")
     .select("followed_user_id")
@@ -156,12 +157,11 @@ export async function getEnrichedFeed(
         break;
     }
   }
-  return out;
+  return groupFeed(out);
 }
 
-// Back-compat wrapper so home/page.tsx continues to compile pre-Task 14.
-// Task 14 will replace callers with getEnrichedFeed directly.
-export async function getFeed(client: Client, limit = 50): Promise<EnrichedActivity[]> {
+// Back-compat wrapper. Returns FeedItem[] now that getEnrichedFeed groups internally.
+export async function getFeed(client: Client, limit = 50): Promise<FeedItem[]> {
   const { data: { user } } = await client.auth.getUser();
   if (!user) return [];
   return getEnrichedFeed(client, user.id, limit);
