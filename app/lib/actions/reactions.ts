@@ -92,20 +92,34 @@ export async function fetchLikersForActivity(activityId: string): Promise<Likers
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("unauthenticated");
 
+  // activity_reactions isn't in the generated Supabase types yet; cast pattern.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const c = supabase as unknown as { from: (t: string) => any };
 
-  // Likers + their profile info in one shot.
-  const { data: likersRaw, error } = await c
+  // Step 1: who liked this activity?
+  const { data: reactionRows, error: rxErr } = await c
     .from("activity_reactions")
-    .select("user_id, profile:profiles!inner(id, handle, display_name, avatar_url)")
+    .select("user_id")
     .eq("activity_id", activityId);
-  if (error) throw error;
+  if (rxErr) throw rxErr;
+  const likerIds: string[] = (reactionRows ?? []).map((r: { user_id: string }) => r.user_id);
+  if (likerIds.length === 0) return { coven: [], others: [] };
 
-  const allLikers: LikerProfile[] = (likersRaw ?? []).map((r: any) => r.profile).filter(Boolean);
+  // Step 2: hydrate profile info for those user_ids.
+  // Note the indirect path: activity_reactions.user_id → auth.users.id, and
+  // profiles.id → auth.users.id. PostgREST can't infer the chain, so we hydrate
+  // explicitly via a second query (matches getEnrichedFeed's actor/recipient
+  // hydration pattern).
+  const { data: profileRows, error: pErr } = await supabase
+    .from("profiles")
+    .select("id, handle, display_name, avatar_url")
+    .in("id", likerIds);
+  if (pErr) throw pErr;
+  const allLikers: LikerProfile[] = (profileRows ?? []) as LikerProfile[];
+
   if (allLikers.length === 0) return { coven: [], others: [] };
 
-  // Viewer's coven membership.
+  // Step 3: viewer's coven membership.
   const { data: covenRows } = await supabase
     .from("coven_members")
     .select("user_a_id, user_b_id")
@@ -115,7 +129,7 @@ export async function fetchLikersForActivity(activityId: string): Promise<Likers
     covenIds.add(r.user_a_id === user.id ? r.user_b_id : r.user_a_id);
   }
 
-  // Partition (drop the viewer themselves from the list).
+  // Step 4: partition (drop the viewer themselves from the list).
   const coven: LikerProfile[] = [];
   const others: LikerProfile[] = [];
   for (const p of allLikers) {
