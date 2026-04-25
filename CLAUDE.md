@@ -2,6 +2,24 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Current state
+
+> **Convention:** This section is updated before each session close so the next session can pick up cold. Update it at the end of every session — what just shipped, what's next, any open threads worth carrying forward.
+
+**Last updated:** 2026-04-25 (end of session that shipped B1, C1, D1)
+
+**Last shipped:** D1 — Activity Feed Grouping (#52). Watchlist-adds groups of 3+ in a 30-min window collapse to a single expandable row on the home/coven feed; profile pages stay individual. Spec `2026-04-25-activity-feed-grouping-design.md`, plan `2026-04-25-activity-feed-grouping.md`. Live at https://film-goblin.vercel.app.
+
+**Next up (queue locked in "Queued sub-projects" below):**
+1. Optional pre-C2 tier-zero hygiene sweep (~half a day): fix `0119_films_with_stats_view.sql` so pg-mem smoke passes, retrofit remaining `app/tests/actions/*.test.ts` files with `describe.skipIf` for clean green-skipped on missing env, align `/watchlist` hero with the post-B1 compressed shape that `/films` and `/library` use.
+2. **C2 — Watched action.** Event-stream `watched` table + `/watched` page; D1's grouping picks up `watch_logged` events automatically once registered.
+3. **B2 — Social signal on posters.** Coven-watchlist/owned/(eventually)watched/reviewed badges on `/films` Archive cards. Reads from `films_with_stats`.
+
+**Open threads worth knowing about:**
+- pg-mem migration smoke is broken on master (pre-existing, since `0119`). 9 `app/tests/actions/*.test.ts` files report red because they crash in `beforeAll` when `TEST_SUPABASE_SERVICE_ROLE_KEY` is unset. Both addressed by tier-zero hygiene above. Until then, "tests pass" is a noisy signal — check whether failing files match library/reactions/admin/follows/coven shape (pre-existing) or are new.
+- `passwords.txt` at repo root holds the Supabase prod pooler URL + password (gitignored). See the "Passwords scratchpad" auto-memory.
+- D1 deferred: 2-event natural-language "X added A and B" rendering (v1.1 polish), group-level likes (would force a write-time concept of group), analytics infra (own future sub-project).
+
 ## Remote
 
 Private repo at [rexnowacki/film-goblin](https://github.com/rexnowacki/film-goblin). `origin/master` is the default branch. Deployed to Vercel as project `film-goblin` (skulldrinker team) at https://film-goblin.vercel.app. Vercel is linked via CLI — `.vercel/project.json` is checked in at the repo root.
