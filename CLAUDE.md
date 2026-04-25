@@ -111,7 +111,7 @@ The seed/worker/add-film scripts expect a real `DATABASE_URL` in `worker/.env`. 
 
 Both `worker/` and `db/` have a `migrate` script. They are NOT the same.
 
-- `db/ npm run migrate` applies `db/migrations/0100_*` onward — the **canonical schema** for the production app (profiles, follows, coven, watchlists, lists, reviews, recommendations, activity, notifications, avatars).
+- `db/ npm run migrate` applies `db/migrations/0100_*` onward — the **canonical schema** for the production app (profiles, follows, coven, watchlists, lists, reviews, recommendations, activity, activity_reactions, library, notifications, avatars).
 - `worker/ npm run migrate` applies `worker/migrations/` — the worker's own legacy stub schema (films, price_history, price_alerts, watchlists stub). Migration `0100_drop_watchlists_stub.sql` in `db/` drops the stub and hands over to the real schema.
 
 Run `db/` migrations against the production Supabase; run `worker/` migrations only when bootstrapping a fresh local worker DB.
@@ -136,12 +136,21 @@ Scripts under `worker/scripts/` are thin CLI adapters — no business logic.
 
 Next.js 15 App Router, TypeScript, Supabase SSR. The file map:
 
-- `app/app/` — routes. One folder per route (`home/`, `films/`, `film/[id]/`, `lists/`, `people/`, `coven/`, `p/[handle]/`, `settings/`, `onboarding/`, `auth/{signin,signup,forgot,reset}/`, `api/{auth/callback,cron/*,unsubscribe/[token]}/`). Plus the landing page at `app/app/page.tsx`.
-- `app/app/globals.css` — single CSS file, the entire design system. Tokens at `:root`, responsive overrides at `@media (max-width: 720px)`, utilities (`.h-display`, `.container`, `.stackable`, `.grid-auto`, `.check-zine`, `.btn` family), grain/halftone effects, hero overrides. **Font-usage rule lives here in a comment block above `.h-display`** — Rubik Wet Paint for chrome/page titles; DM Serif Display for content titles. Secondary-button rule (destructive blood-outline vs non-destructive bone-outline) is documented above `.btn`.
-- `app/components/` — client components (`TopNavChrome`, `FeedTabs`, `FilmPoster`, `UserMenu`, `RecommendModal`, `AvatarEditor`, `WatchlistButton`, `FollowButton`, `CovenButton`, etc.). `TopNav.tsx` is a thin server shim that calls the client-side `TopNavChrome`.
-- `app/lib/supabase/` — SSR + client Supabase factories. Use `createClient()` from `server.ts` in server components and route handlers; from `client.ts` in `"use client"` components.
-- `app/lib/queries/` — read-side DB helpers, one file per aggregate (`films`, `watchlists`, `reviews`, `activity`, `coven`, `profiles`, `lists`). Import a Supabase client and return shaped data.
-- `app/lib/actions/` — server actions (form submits, mutations). `auth`, `profile`, `watchlists`, `lists`, `recommendations`, `follows`, `coven`, `onboarding`.
+- `app/app/` — routes. One folder per route (`home/`, `films/`, `film/[id]/`, `watchlist/`, `library/`, `lists/`, `people/`, `coven/`, `p/[handle]/`, `settings/`, `onboarding/`, `admin/`, `auth/{signin,signup,forgot,reset}/`, `api/{auth/callback,cron/*,unsubscribe/[token]}/`). Plus the landing page at `app/app/page.tsx` and the typed PWA manifest at `app/app/manifest.ts` (Next 15 manifest route).
+- `app/app/globals.css` — single CSS file, the entire design system. Tokens at `:root`, responsive overrides at `@media (max-width: 720px)`, utilities (`.h-display`, `.container`, `.stackable`, `.grid-auto`, `.check-zine`, `.btn` family, `.films-sort-chip`, `.heart-*`, `.bottom-sheet-*`, `.likers-*`), grain/halftone effects, hero overrides. **Font-usage rule lives here in a comment block above `.h-display`** — Rubik Wet Paint for chrome/page titles; DM Serif Display for content titles. Secondary-button rule (destructive blood-outline vs non-destructive bone-outline) is documented above `.btn`.
+- `app/components/` — client components (`TopNavChrome`, `FeedTabs`, `FilmPoster`, `UserMenu`, `RecommendModal`, `AvatarEditor`, `WatchlistButton`, `OwnedButton`, `FilmActions`, `FollowButton`, `CovenButton`, `HeartButton`, `BottomSheet`, `LikersBottomSheet`, `Avatar`, etc.). `TopNav.tsx` is a thin server shim that calls the client-side `TopNavChrome`. **`TopNavChrome` pads itself with `env(safe-area-inset-top)`** so iOS standalone PWA mode doesn't overlap the notch.
+- `app/lib/supabase/` — SSR + client Supabase factories. Use `createClient()` from `server.ts` in server components and route handlers; from `client.ts` in `"use client"` components. `types.ts` is generated via `npm run gen:types`; regenerate after every migration.
+- `app/lib/queries/` — read-side DB helpers, one file per aggregate (`films`, `watchlists`, `library`, `reviews`, `activity`, `activity-reactions`, `coven`, `profiles`, `lists`, `sort-watchlist`). Import a Supabase client and return shaped data.
+- `app/lib/actions/` — server actions (form submits, mutations). `auth`, `profile`, `watchlists`, `library`, `lists`, `recommendations`, `reactions`, `follows`, `coven`, `onboarding`.
+
+**Conventions to follow** when adding to any of the above:
+- **Composite PK on join tables.** `activity_reactions` and `library` both use `(user_id, target_id)` as the natural unique key — no surrogate `id` column. Saves a SELECT-then-INSERT race on toggles.
+- **Private-action + public-wrapper.** Server actions split into `_doThing(client, …)` (Supabase client injected, testable) and `doThing(…)` (creates the server client, calls the private form, calls `revalidatePath`). Mirrors `_addToLibrary` / `addToLibrary` and `_toggleReaction` / `toggleReaction`.
+- **`films_with_stats` view extends additively.** Migrations that change the view use `DROP VIEW IF EXISTS … CREATE VIEW …` and add new columns at the END of the select list. All consumers pick explicit column lists, never `select("*")`, so additive extensions can't break callers.
+- **PostgREST nested embeds may type as array-vs-object.** When using `films:films!inner(…)` selects, the generated types occasionally emit the embed as `T[]` even though it's always one row. The established workaround is `as never` on the prop boundary (e.g. `<FilmPoster film={r.film as never} />`); see `/films` and `/library` page templates.
+- **RLS test bootstrap.** New RLS suites copy `db/tests/rls/library.test.ts`'s shape: `seedFixtures` once in `beforeAll` for `userA/B/C + filmId`, `beforeEach` resets state via service_role, `bond()` helper for `coven_members` edges respecting the `user_a_id < user_b_id` invariant.
+- **Env-blocked action tests.** Integration tests that need a real Supabase use `describe.skipIf(!hasEnv)(…)` plus `if (!hasEnv) return;` guards on lifecycle hooks so the file reports green-skipped instead of red-crashed when `TEST_SUPABASE_SERVICE_ROLE_KEY` is unset. See `app/tests/actions/library.test.ts`.
+- **iOS standalone PWA quirks.** Use `100dvh` (not `100vh`) on top-level page wrappers, set `viewportFit: "cover"` and `themeColor` on the `Viewport` export in `layout.tsx`, set `appleWebApp.statusBarStyle: "black-translucent"` on the metadata, and pad the sticky TopNav with `paddingTop: "env(safe-area-inset-top)"` so the goblin wordmark sits below the iOS status bar.
 
 The single 720px mobile breakpoint is set in `globals.css`'s `@media (max-width: 720px)` blocks and the `.mobile-only` / `.desktop-only` / `.mobile-only-flex` helpers. `.stackable` grids force `grid-template-columns: 1fr` at ≤720px regardless of `--stack-template`.
 
@@ -170,21 +179,30 @@ Committed direction (Next.js + Supabase + Vercel Cron, etc.) lives in **`docs/su
 
 ## Sub-project history
 
-Every sub-project gets a spec + plan under `docs/superpowers/` before implementation. Shipped sub-projects in order:
+Every sub-project gets a spec + plan under `docs/superpowers/specs/` and `docs/superpowers/plans/` before implementation. Read the spec when working on related areas — it's the canonical record of design decisions and why they were made. Shipped to date (chronological):
 
-1. **Apple data source** — ✅ `specs/2026-04-20-apple-data-source-design.md`. The `worker/` package. Lives at `worker/src/*.ts`.
-2. **Database schema + RLS** — ✅ `specs/2026-04-21-schema-rls-design.md`. Migrations `db/migrations/0100_drop_watchlists_stub.sql` through `0117_avatars_bucket.sql`. RLS policies, triggers (profile creation, coven broadcast, activity fan-out).
-3. **Next.js scaffold + auth + UI port** — ✅ `specs/2026-04-21-nextjs-app-design.md`. The `app/` package. App Router, Supabase SSR auth, server actions, all 12 routes from the prototype.
-4. **Price-tracking worker HTTP mount** — ✅ `specs/2026-04-22-worker-cron-mount-design.md`. Route at `app/app/api/cron/refresh-prices/`. Uses Vercel Cron.
-5. **Notifications pipeline** — ✅ `specs/2026-04-22-notifications-pipeline-design.md`. The `notifier/` package. Route at `app/app/api/cron/send-notifications/` + `app/app/api/unsubscribe/[token]/`. Email via Resend.
-6. **Social features** — ✅ `specs/2026-04-23-social-features-design.md`. Coven (friends with a name), follows, recommendations, activity feed.
-7. **Auth polish** — ✅ `specs/2026-04-23-auth-polish-design.md`. Password reset, email verification, Google sign-in, settings password change.
-8. **Mobile responsive (Tier-A "usable")** — ✅ `specs/2026-04-23-mobile-responsive-design.md`. Responsive tokens at 720px breakpoint, hamburger nav, grid reflow, hero restack.
-9. **Mobile polish** — ✅ `specs/2026-04-23-mobile-polish-design.md`. Feed filter row cleanup, film detail reorder, `.h-display` clamp tuning, custom `.check-zine` checkboxes, input contrast bump, font-usage rule (Rubik Wet Paint for chrome; DM Serif Display for content titles).
+| # | Name | Spec |
+|---|---|---|
+| 1 | Apple data source — the `worker/` package | `2026-04-20-apple-data-source-design.md` |
+| 2 | Database schema + RLS — migrations `0100`–`0117` | `2026-04-21-schema-rls-design.md` |
+| 3 | Next.js scaffold + auth + UI port — the `app/` package | `2026-04-21-nextjs-app-design.md` |
+| 4 | Price-tracking worker HTTP mount (Vercel Cron) | `2026-04-22-worker-cron-mount-design.md` |
+| 5 | Notifications pipeline — `notifier/` + Resend | `2026-04-22-notifications-pipeline-design.md` |
+| 6 | Social features — coven, follows, recommendations, activity | `2026-04-23-social-features-design.md` |
+| 7 | Auth polish — password reset, email verification, Google sign-in | `2026-04-23-auth-polish-design.md` |
+| 8 | Mobile responsive (Tier-A) — 720px breakpoint, hamburger nav | `2026-04-23-mobile-responsive-design.md` |
+| 9 | Mobile polish — filter rows, `.h-display` tuning, `.check-zine`, font-usage rule | `2026-04-23-mobile-polish-design.md` |
+| 10 | Coven feed hearts (sub-project A) — `activity_reactions` table, `HeartButton`, `LikersBottomSheet`, universal heart on every Activity\* row | `2026-04-24-coven-feed-hearts-design.md` |
+| 11 | Discovery chrome polish (B1) — chip-row sort on `/films`, dropped Chapter II eyebrow, installable PWA shell with goblin-skull glyph | `2026-04-25-discovery-chrome-polish-design.md` |
+| 12 | Library — Owned (C1) — new `library` table + RLS, `/library` route, `OwnedButton` + `FilmActions` wrapper, auto-watchlist-cleanup on add, `films_with_stats.owned_count` exposed for B2 | `2026-04-25-library-owned-design.md` |
 
-Queued:
+## Queued sub-projects
 
-- No queued sub-projects as of 2026-04-23. Roadmap-level next work is open — see `docs/superpowers/stack.md` and ask the user before starting anything new.
+Three pieces of follow-on work, in suggested execution order. Brainstorm + spec each before implementation. Order is suggested, not locked — talk to the user before starting.
+
+1. **B2 — Social signal on posters.** Surface coven-watchlist / coven-owned / coven-reviewed counts as small badges on `/films` Archive cards. Reads from `films_with_stats` (already exposes `watchlist_count` and `owned_count` via C1's view extension; reviews count would need a similar additive extension). No new schema for the read path. Originally deferred to ship after Library so the signal vocabulary could include "owned" — that's now true. Open design questions: which signals matter most, how to render badges at small card sizes without crowding, whether to surface row-level "Sarah owns this" or stick to aggregate counts only.
+2. **C2 — Watched action.** Track when a user watches a film (timestamps + counts). Builds directly on C1's data model. Needs a new `watched` event-stream table (event-shaped, not flag-shaped — multiple watch entries per `(user, film)`), a server action distinct from `addToLibrary` (logging an event vs setting a flag), a `/watched` page with history view + per-film count + most-watched stats. Bigger surface than C1 because of the temporal dimension. Likely also gets a `watched_at` activity event for the coven feed.
+3. **#52 — Coven feed grouping.** Originally sub-project B of the hearts work; deferred because the hearts side grew. Collapse consecutive `watchlist_added` rows from the same actor into one feed item (and apply similar grouping to future high-volume event kinds — e.g., bulk library-add when C2 ships might want this too). Touches activity enrichment + feed render only — no schema work.
 
 ## Gotchas
 
@@ -198,3 +216,10 @@ Queued:
   - If you copy the root's `.vercel/project.json` into `app/.vercel/` and deploy from there, Vercel uses the correct project but then applies `rootDirectory: app` on top of CWD `app/`, so it tries to build `app/app/` and fails with "Couldn't find any `pages` or `app` directory".
   - **For worktrees**, copy the root's `.vercel/project.json` into the **worktree root** (`.worktrees/<name>/.vercel/project.json`), then deploy from the worktree root — NOT from `<worktree>/app/`. A quick sanity grep before deploying: `ls -la .vercel/project.json && pwd` — the path should end in the worktree root or the repo root, never in `/app`.
 - **`BRAVE_SEARCH_API_KEY` lives in Vercel env (Production, Preview, Development — all sensitive) and `app/.env.local` for local dev.** Used only by `app/lib/actions/admin/apple-tv-search.ts` (the admin "Search Apple TV" widget on `/admin/films/new`). To rotate: regenerate at https://brave.com/search/api/ → `npx vercel env rm BRAVE_SEARCH_API_KEY <env>` + `npx vercel env add BRAVE_SEARCH_API_KEY <env>` for each of production/preview/development → update `app/.env.local` with the new key → redeploy with `npx vercel deploy --prod --yes` from the repo root.
+- **Supabase prod DB is reached via the session-mode pooler, not the direct host.** `db.<project>.supabase.co:5432` is IPv6-only and unreachable from this machine. The migrate runner connects through `aws-1-us-west-1.pooler.supabase.com:5432` with user `postgres.<project-ref>`. The full connection string + password live in `passwords.txt` at the repo root (gitignored — see the "Passwords scratchpad" auto-memory). Source the URL via `set -a; source app/.env.local; set +a` before `npm run migrate`.
+- **pg-mem (used by `db/ npm test`) does not support `CREATE OR REPLACE VIEW`.** Migration `0119_films_with_stats_view.sql` uses that statement, which makes the pg-mem migration smoke fail on `master` even before any new work. Newer migrations that touch views (e.g. `0122_library.sql`) use `DROP VIEW IF EXISTS … CREATE VIEW …` — copy that pattern. The smoke breakage is pre-existing; eventual fix is to split `0119` similarly, or register a pg-mem extension shim for the OR-REPLACE form.
+- **`coven_members` is a graph-edge table**, not a (coven_id, user_id) membership table. Schema is `(user_a_id, user_b_id, created_at)` with a `user_a_id < user_b_id` CHECK constraint. To check "are A and B coven mates", query both directions: `(cm.user_a_id = A AND cm.user_b_id = B) OR (cm.user_a_id = B AND cm.user_b_id = A)`. Tests should use a `bond(client, x, y)` helper that swaps args to respect the invariant — see `db/tests/rls/library.test.ts`.
+- **PostgREST nested embed types may emit as array even when a single object is returned.** A `.select(\`film:films!inner(…)\`)` query is always one row per parent (FK guarantees it), but the generated `Database` types model it as `T[]` in some cases. The established workaround is `as never` on the consumer boundary (e.g. `<FilmPoster film={r.film as never} />`) — see `/films` and `/library` page templates. Don't sprinkle `as any`; the cast belongs at one location.
+- **iOS Safari standalone PWA needs both `100dvh` and safe-area padding.** Plain `100vh` on iOS includes the URL bar's reserved space and breaks layouts; `100dvh` (dynamic viewport height) sizes correctly. Body min-height + page-level wrappers all use `100dvh`. With `appleWebApp.statusBarStyle: "black-translucent"`, content extends behind the notch — `TopNavChrome` adds `paddingTop: "env(safe-area-inset-top)"` so the wordmark sits below the iOS status bar. New pages with their own sticky chrome should do the same.
+- **`describe.skipIf` plus per-hook env guards** — env-blocked integration tests (e.g. `app/tests/actions/library.test.ts`, `reactions.test.ts`) need both `describe.skipIf(!hasEnv)(…)` AND `if (!hasEnv) return;` early-returns inside `beforeAll` / `beforeEach` / `afterAll`. Without the hook guards, the lifecycle crashes on missing env BEFORE the describe gets to skip, and the file reports red. New integration tests should follow the library file as the template.
+- **Adding a new `profiles` field is automatic via the `{ ...fields }` spread.** `_updateProfile` in `app/lib/actions/profile.ts` does `const patch: ProfileUpdate = { ...fields };` — any field added to the `ProfileFields` interface flows through to the UPDATE. To wire a new profile column end-to-end: add the column in a migration, regenerate types (`npm run gen:types`), add the field to `ProfileFields`, add the form input + `save()` field-extraction in `SettingsForm.tsx`. No new server action needed.
