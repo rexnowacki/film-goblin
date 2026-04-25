@@ -18,7 +18,7 @@ export default async function CovenPage() {
   ]);
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100vh" }}>
+    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav current="coven" />
 
       <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "44px 0 32px" }} className="grain-light">

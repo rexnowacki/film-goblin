@@ -21,7 +21,7 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
   const onList = user ? await isOnWatchlist(supabase, id) : false;
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100vh" }}>
+    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav />
 
       <section style={{

@@ -24,7 +24,7 @@ export default function FilmsSortSelect({ currentSort, currentQ }: Props) {
   function onChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const value = e.target.value as FilmsSort;
     const p = new URLSearchParams(params);
-    if (value === "release") p.delete("sort"); else p.set("sort", value);
+    if (value === "added") p.delete("sort"); else p.set("sort", value);
     if (currentQ) p.set("q", currentQ); else p.delete("q");
     p.delete("page"); // reset pagination when sort changes
     const s = p.toString();

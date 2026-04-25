@@ -39,7 +39,7 @@ export default async function WatchlistPage({
   const sorted = sortWatchlist(rows, sort);
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100vh" }}>
+    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav />
       <section style={{ padding: "48px 0" }}>
         <div className="container-wide">

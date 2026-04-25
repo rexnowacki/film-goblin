@@ -11,7 +11,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   if (result === "not-admin") redirect("/home");
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100vh" }}>
+    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav current="admin" />
       <div className="container-wide" style={{ padding: "32px var(--container-pad)" }}>
         <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 6 }}>✦ Internal ✦</div>

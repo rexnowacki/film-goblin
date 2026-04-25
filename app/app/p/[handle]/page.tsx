@@ -45,7 +45,7 @@ export default async function PublicProfilePage({
   const enrichedOwn = await enrichOwnActivity(supabase, ownActivity ?? [], bundle.profile, user?.id ?? null);
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100vh" }}>
+    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav />
 
       <section style={{ background: "var(--void-2)", borderBottom: "3px solid var(--void)", padding: "48px 0" }}>

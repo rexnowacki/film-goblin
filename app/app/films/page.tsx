@@ -9,7 +9,7 @@ import Link from "next/link";
 const VALID_SORTS: FilmsSort[] = ["added", "release", "title", "watchlisted", "price_low", "price_high"];
 
 function parseSort(raw: string | undefined): FilmsSort {
-  return VALID_SORTS.includes(raw as FilmsSort) ? (raw as FilmsSort) : "release";
+  return VALID_SORTS.includes(raw as FilmsSort) ? (raw as FilmsSort) : "added";
 }
 
 export default async function FilmsPage({
@@ -28,24 +28,29 @@ export default async function FilmsPage({
   function pageHref(p: number) {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
-    if (sort !== "release") params.set("sort", sort);
+    if (sort !== "added") params.set("sort", sort);
     if (p !== 1) params.set("page", String(p));
     const s = params.toString();
     return s ? `/films?${s}` : "/films";
   }
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100vh" }}>
+    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav current="films" />
 
-      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "44px 0 32px" }} className="grain-light">
+      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
         <div className="container-wide">
-          <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 10 }}>Chapter II · The Archive</div>
-          <h1 className="h-display">
+          <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 6 }}>Chapter II · The Archive</div>
+          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
             Every Film, <em style={{ color: "var(--accent)" }}>Indexed</em>.
           </h1>
-          <div style={{ display: "flex", gap: 0, border: "3px solid var(--void)", background: "var(--bone)", boxShadow: "6px 6px 0 var(--accent)", marginTop: 24 }}>
-            <span style={{ padding: "16px 18px", fontFamily: "var(--font-display)", fontSize: 28, color: "var(--accent)", lineHeight: 1 }}>✦</span>
+          <div style={{ display: "flex", gap: 0, border: "1px solid var(--muted)", background: "var(--bone)", boxShadow: "6px 6px 0 var(--accent)", marginTop: 16 }}>
+            <span style={{ padding: "14px 16px", color: "var(--accent-deep)", lineHeight: 1, display: "inline-flex", alignItems: "center" }} aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="7" />
+                <line x1="21" y1="21" x2="16.5" y2="16.5" />
+              </svg>
+            </span>
             <FilmsSearch />
           </div>
         </div>
@@ -72,7 +77,7 @@ export default async function FilmsPage({
                   <div style={{ marginTop: 10 }}>
                     <div className="head" style={{ fontSize: 16, lineHeight: 1.1 }}>{f.title}</div>
                     <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
-                      {f.year}
+                      {sort === "release" && f.director ? f.director : f.year}
                       {sort === "price_low" || sort === "price_high" ? (
                         <span style={{ marginLeft: 6, color: "var(--accent)" }}>
                           {f.latest_price != null ? `· $${Number(f.latest_price).toFixed(2)}` : ""}

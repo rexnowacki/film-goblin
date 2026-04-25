@@ -9,7 +9,7 @@ export default async function HomePage() {
   const feed = user ? await getEnrichedFeed(supabase, user.id, 50) : [];
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100vh" }}>
+    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav current="home" />
 
       <div className="container-wide stackable" style={{ padding: "32px var(--container-pad)", "--stack-template": "220px 1fr 320px", "--stack-gap": "32px" } as React.CSSProperties}>

@@ -109,7 +109,7 @@ export default function OnboardingFlow() {
   };
 
   return (
-    <div style={{ background: "var(--bone)", color: "var(--void)", minHeight: "100vh", position: "relative" }}>
+    <div style={{ background: "var(--bone)", color: "var(--void)", minHeight: "100dvh", position: "relative" }}>
       <div style={{
         position: "fixed", inset: 0, pointerEvents: "none", opacity: 0.18,
         backgroundImage: "radial-gradient(var(--void) 0.8px, transparent 1px)",

@@ -10,7 +10,7 @@ export default async function ListsPage() {
   const mySubs = user ? new Set(await getMySubscribedLists(supabase, user.id)) : new Set<string>();
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100vh" }}>
+    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav current="lists" />
 
       <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "48px 0 32px" }} className="grain-light">

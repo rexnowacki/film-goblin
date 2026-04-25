@@ -17,7 +17,7 @@ export default async function LandingPage() {
   const marqueeStrip = [...marqueeFilms, ...marqueeFilms];
 
   return (
-    <div style={{ background: "var(--bone)", color: "var(--void)", minHeight: "100vh", fontFamily: "var(--font-ui)" }}>
+    <div style={{ background: "var(--bone)", color: "var(--void)", minHeight: "100dvh", fontFamily: "var(--font-ui)" }}>
       {/* Top bar */}
       <div style={{ borderBottom: "2px solid var(--void)", background: "var(--bone)", position: "relative" }} className="grain-light">
         <div className="container-wide" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 32px" }}>

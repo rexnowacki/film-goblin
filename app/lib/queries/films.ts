@@ -41,7 +41,7 @@ export async function getFilms(
   total: number;
   pageSize: number;
 }> {
-  const sort: FilmsSort = opts.sort ?? "release";
+  const sort: FilmsSort = opts.sort ?? "added";
   const page = Math.max(1, opts.page ?? 1);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
