@@ -48,6 +48,7 @@ export async function addToLibrary(filmId: string) {
   await _addToLibrary(supabase, filmId);
   revalidatePath("/library");
   revalidatePath("/watchlist");
+  revalidatePath("/home");
   revalidatePath("/films");
   revalidatePath(`/film/${filmId}`);
 }
