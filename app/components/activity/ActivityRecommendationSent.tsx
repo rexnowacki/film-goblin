@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Avatar from "../Avatar";
-import { relativeTime } from "./relativeTime";
+import ActivityFooter from "./ActivityFooter";
 import type { EnrichedActivity } from "@/lib/queries/activity";
 
 type Item = Extract<EnrichedActivity, { kind: "recommendation_sent" }>;
@@ -18,7 +18,7 @@ export default function ActivityRecommendationSent({ item }: { item: Item }) {
           <Link href={`/p/${encodeURIComponent(item.recipient.handle)}`} style={{ color: "var(--bone)", fontWeight: 700 }}>{item.recipient.display_name ?? item.recipient.handle}</Link>.
         </div>
         {item.note && <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, marginTop: 4, color: "var(--muted)" }}>&ldquo;{item.note}&rdquo;</div>}
-        <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 6 }}>{relativeTime(item.created_at)}</div>
+        <ActivityFooter item={item} />
       </div>
       <Link href={`/film/${item.film.id}`}>
         <img src={item.film.artwork_url} alt={item.film.title} width={40} height={60} style={{ display: "block", objectFit: "cover", border: "1px solid var(--void)" }} />

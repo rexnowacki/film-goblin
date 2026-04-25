@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Avatar from "../Avatar";
-import { relativeTime } from "./relativeTime";
+import ActivityFooter from "./ActivityFooter";
 import type { EnrichedActivity } from "@/lib/queries/activity";
 
 type Item = Extract<EnrichedActivity, { kind: "review_published" }>;
@@ -16,7 +16,7 @@ export default function ActivityReviewPublished({ item }: { item: Item }) {
           <Link href={`/film/${item.film.id}`} style={{ color: "var(--accent)", fontStyle: "italic" }}>{item.film.title}</Link>.
         </div>
         {item.pullquote && <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, marginTop: 4, color: "var(--bone)", borderLeft: "2px solid var(--accent)", paddingLeft: 10 }}>&ldquo;{item.pullquote}&rdquo;</div>}
-        <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 6 }}>{relativeTime(item.created_at)}</div>
+        <ActivityFooter item={item} />
       </div>
       <Link href={`/film/${item.film.id}`}>
         <img src={item.film.artwork_url} alt={item.film.title} width={40} height={60} style={{ display: "block", objectFit: "cover", border: "1px solid var(--void)" }} />

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Avatar from "../Avatar";
-import { relativeTime } from "./relativeTime";
+import ActivityFooter from "./ActivityFooter";
 import type { EnrichedActivity } from "@/lib/queries/activity";
 
 type Item = Extract<EnrichedActivity, { kind: "watchlist_added" }>;
@@ -16,7 +16,7 @@ export default function ActivityWatchlistAdded({ item }: { item: Item }) {
           <Link href={`/film/${item.film.id}`} style={{ color: "var(--accent)", fontStyle: "italic" }}>{item.film.title}</Link>
           {" to their watchlist."}
         </div>
-        <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 6 }}>{relativeTime(item.created_at)}</div>
+        <ActivityFooter item={item} />
       </div>
       <Link href={`/film/${item.film.id}`}>
         <img src={item.film.artwork_url} alt={item.film.title} width={40} height={60} style={{ display: "block", objectFit: "cover", border: "1px solid var(--void)" }} />

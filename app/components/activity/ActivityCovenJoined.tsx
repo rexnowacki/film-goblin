@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Avatar from "../Avatar";
-import { relativeTime } from "./relativeTime";
+import ActivityFooter from "./ActivityFooter";
 import type { EnrichedActivity } from "@/lib/queries/activity";
 
 type Item = Extract<EnrichedActivity, { kind: "coven_joined" }>;
@@ -16,7 +16,7 @@ export default function ActivityCovenJoined({ item }: { item: Item }) {
           <Link href={`/p/${encodeURIComponent(item.other.handle)}`} style={{ color: "var(--accent)", fontWeight: 700 }}>{item.other.display_name ?? item.other.handle}</Link>
           {"'s coven."}
         </div>
-        <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 6 }}>{relativeTime(item.created_at)}</div>
+        <ActivityFooter item={item} />
       </div>
     </div>
   );
