@@ -144,10 +144,7 @@ async function enrichOwnActivity(supabase: any, rows: any[], profile: any, viewe
   const out: any[] = [];
   for (const r of rows) {
     const reactions = reactionsMap.get(r.id) ?? { count: 0, likedByMe: false };
-    // On a profile page, every row's actor IS the profile owner. isOwnRow is
-    // true when the viewer is looking at their own profile.
-    const isOwnRow = viewerId === profile.id;
-    const base = { id: r.id, created_at: r.created_at, actor, reactions, isOwnRow };
+    const base = { id: r.id, created_at: r.created_at, actor, reactions };
     const film = r.payload?.film_id ? filmMap.get(r.payload.film_id) : undefined;
     const recipient = r.payload?.to_user_id ? recipMap.get(r.payload.to_user_id) : undefined;
     const list = r.payload?.list_id ? listMap.get(r.payload.list_id) : undefined;

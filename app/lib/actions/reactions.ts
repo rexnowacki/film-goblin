@@ -21,10 +21,10 @@ export interface LikersResponse {
 
 /**
  * Toggle the current user's reaction on an activity row. Insert if absent,
- * delete if present. Self-likes blocked via a lookup against
- * activity.actor_user_id. Concurrent duplicate inserts (race between two
- * tabs) are swallowed at code 23505 — the final state matches the user's
- * intent either way.
+ * delete if present. Self-likes are allowed — any authenticated user can like
+ * any activity. Concurrent duplicate inserts (race between two tabs) are
+ * swallowed at code 23505 — the final state matches the user's intent either
+ * way.
  */
 export async function _toggleReaction(
   client: Client,
@@ -32,18 +32,6 @@ export async function _toggleReaction(
 ): Promise<{ liked: boolean }> {
   const { data: { user }, error: userErr } = await client.auth.getUser();
   if (userErr || !user) throw new Error("unauthenticated");
-
-  // Self-like prevention.
-  const { data: activityRow, error: actErr } = await client
-    .from("activity")
-    .select("actor_user_id")
-    .eq("id", activityId)
-    .maybeSingle();
-  if (actErr) throw actErr;
-  if (!activityRow) throw new Error("activity not found");
-  if (activityRow.actor_user_id === user.id) {
-    throw new Error("cannot like own activity");
-  }
 
   // activity_reactions isn't in the generated types yet (post-types.ts migration).
   // Cast pattern from app/lib/actions/admin/films.ts.
@@ -129,11 +117,10 @@ export async function fetchLikersForActivity(activityId: string): Promise<Likers
     covenIds.add(r.user_a_id === user.id ? r.user_b_id : r.user_a_id);
   }
 
-  // Step 4: partition (drop the viewer themselves from the list).
+  // Step 4: partition all likers (including the viewer) by coven membership.
   const coven: LikerProfile[] = [];
   const others: LikerProfile[] = [];
   for (const p of allLikers) {
-    if (p.id === user.id) continue;
     (covenIds.has(p.id) ? coven : others).push(p);
   }
   return { coven, others };

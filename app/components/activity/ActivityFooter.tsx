@@ -14,7 +14,6 @@ export default function ActivityFooter({ item }: Props) {
         activityId={item.id}
         initialCount={item.reactions.count}
         initialLikedByMe={item.reactions.likedByMe}
-        isOwnRow={item.isOwnRow}
       />
     </div>
   );

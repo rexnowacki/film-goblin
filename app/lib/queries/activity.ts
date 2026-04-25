@@ -44,7 +44,6 @@ export type EnrichedActivity = (
   created_at: string;
   actor: ActorLite;
   reactions: ReactionSummary;
-  isOwnRow: boolean;
 };
 
 export async function getEnrichedFeed(
@@ -119,8 +118,7 @@ export async function getEnrichedFeed(
     const list = payload?.list_id ? (listMap.get(payload.list_id) as ListLite | undefined) : undefined;
 
     const reactions = reactionsMap.get(r.id) ?? { count: 0, likedByMe: false };
-    const isOwnRow = r.actor_user_id === followerUserId;
-    const base = { id: r.id, created_at: r.created_at, actor, reactions, isOwnRow };
+    const base = { id: r.id, created_at: r.created_at, actor, reactions };
 
     switch (r.kind) {
       case "recommendation_sent":

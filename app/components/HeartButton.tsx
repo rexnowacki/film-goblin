@@ -8,7 +8,6 @@ interface Props {
   activityId: string;
   initialCount: number;
   initialLikedByMe: boolean;
-  isOwnRow: boolean;
 }
 
 function HeartIcon({ filled }: { filled: boolean }) {
@@ -31,7 +30,6 @@ export default function HeartButton({
   activityId,
   initialCount,
   initialLikedByMe,
-  isOwnRow,
 }: Props) {
   const [count, setCount] = useState(initialCount);
   const [liked, setLiked] = useState(initialLikedByMe);
@@ -39,7 +37,6 @@ export default function HeartButton({
   const [sheetOpen, setSheetOpen] = useState(false);
 
   function onHeartTap() {
-    if (isOwnRow) return;
     // Optimistic update: flip local state immediately; rollback on server error.
     const prevLiked = liked;
     const prevCount = count;
@@ -58,18 +55,16 @@ export default function HeartButton({
 
   return (
     <>
-      {!isOwnRow && (
-        <button
-          type="button"
-          onClick={onHeartTap}
-          disabled={pending}
-          className={`heart-btn ${liked ? "heart-liked" : ""}`}
-          aria-label={liked ? "Unlike" : "Like"}
-          aria-pressed={liked}
-        >
-          <HeartIcon filled={liked} />
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={onHeartTap}
+        disabled={pending}
+        className={`heart-btn ${liked ? "heart-liked" : ""}`}
+        aria-label={liked ? "Unlike" : "Like"}
+        aria-pressed={liked}
+      >
+        <HeartIcon filled={liked} />
+      </button>
       {count > 0 && (
         <button
           type="button"

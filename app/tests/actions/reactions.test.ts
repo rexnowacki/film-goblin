@@ -68,15 +68,19 @@ describe("_toggleReaction", () => {
     expect(data).toHaveLength(0);
   });
 
-  it("self-like blocked: throws 'cannot like own activity'", async () => {
+  it("self-like allowed: userA can like own activity (uniformity)", async () => {
     const c = await signedInClient(userA.email, userA.password);
-    await expect(_toggleReaction(c as any, activityId)).rejects.toThrow(/cannot like own activity/i);
+    const res = await _toggleReaction(c as any, activityId);
+    expect(res).toEqual({ liked: true });
+
     const { data } = await adminClient()
       .from("activity_reactions")
       .select("*")
       .eq("activity_id", activityId)
       .eq("user_id", userA.id);
-    expect(data).toHaveLength(0);
+    expect(data).toHaveLength(1);
+
+    await adminClient().from("activity_reactions").delete().eq("activity_id", activityId).eq("user_id", userA.id);
   });
 
   it("unauthenticated: throws 'unauthenticated'", async () => {
