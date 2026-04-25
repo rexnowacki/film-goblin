@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
+import { getReactionsForActivities, type ReactionSummary } from "./activity-reactions";
 
 type Client = SupabaseClient<Database>;
 
@@ -31,13 +32,20 @@ interface RecipientLite {
   avatar_url: string | null;
 }
 
-export type EnrichedActivity =
-  | { id: string; kind: "recommendation_sent"; created_at: string; actor: ActorLite; film: FilmLite; recipient: RecipientLite; note: string }
-  | { id: string; kind: "review_published"; created_at: string; actor: ActorLite; film: FilmLite; title: string; pullquote: string | null }
-  | { id: string; kind: "watchlist_added"; created_at: string; actor: ActorLite; film: FilmLite }
-  | { id: string; kind: "list_created"; created_at: string; actor: ActorLite; list: ListLite }
-  | { id: string; kind: "list_film_added"; created_at: string; actor: ActorLite; list: ListLite; film: FilmLite }
-  | { id: string; kind: "coven_joined"; created_at: string; actor: ActorLite; other: RecipientLite };
+export type EnrichedActivity = (
+  | { kind: "recommendation_sent"; film: FilmLite; recipient: RecipientLite; note: string }
+  | { kind: "review_published"; film: FilmLite; title: string; pullquote: string | null }
+  | { kind: "watchlist_added"; film: FilmLite }
+  | { kind: "list_created"; list: ListLite }
+  | { kind: "list_film_added"; list: ListLite; film: FilmLite }
+  | { kind: "coven_joined"; other: RecipientLite }
+) & {
+  id: string;
+  created_at: string;
+  actor: ActorLite;
+  reactions: ReactionSummary;
+  isOwnRow: boolean;
+};
 
 export async function getEnrichedFeed(
   client: Client,
@@ -88,11 +96,12 @@ export async function getEnrichedFeed(
   const recipientIds = Array.from(new Set(raw.map(r => (r.payload as any)?.to_user_id).filter(Boolean)));
   const listIds = Array.from(new Set(raw.map(r => (r.payload as any)?.list_id).filter(Boolean)));
 
-  const [actors, films, recipients, lists] = await Promise.all([
+  const [actors, films, recipients, lists, reactionsMap] = await Promise.all([
     rawActorIds.length ? client.from("profiles").select("id, handle, display_name, avatar_url").in("id", rawActorIds) : Promise.resolve({ data: [] as any }),
     filmIds.length ? client.from("films").select("id, title, director, year, artwork_url, itunes_url").in("id", filmIds) : Promise.resolve({ data: [] as any }),
     recipientIds.length ? client.from("profiles").select("id, handle, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] as any }),
     listIds.length ? client.from("lists").select("id, title").in("id", listIds) : Promise.resolve({ data: [] as any }),
+    getReactionsForActivities(client, raw.map(r => r.id), followerUserId),
   ]);
 
   const actorMap = new Map((actors.data ?? []).map((r: any) => [r.id, r]));
@@ -109,7 +118,9 @@ export async function getEnrichedFeed(
     const recipient = payload?.to_user_id ? (recipientMap.get(payload.to_user_id) as RecipientLite | undefined) : undefined;
     const list = payload?.list_id ? (listMap.get(payload.list_id) as ListLite | undefined) : undefined;
 
-    const base = { id: r.id, created_at: r.created_at, actor };
+    const reactions = reactionsMap.get(r.id) ?? { count: 0, likedByMe: false };
+    const isOwnRow = r.actor_user_id === followerUserId;
+    const base = { id: r.id, created_at: r.created_at, actor, reactions, isOwnRow };
 
     switch (r.kind) {
       case "recommendation_sent":
