@@ -21,14 +21,14 @@ export default async function CovenPage() {
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav current="coven" />
 
-      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "44px 0 32px" }} className="grain-light">
+      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
         <div className="container-wide">
           <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 10 }}>Chapter V</div>
-          <h1 className="h-display">The <em style={{ color: "var(--accent)" }}>Coven</em>.</h1>
+          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>The <em style={{ color: "var(--accent)" }}>Coven</em>.</h1>
         </div>
       </section>
 
-      <section style={{ padding: "48px 0", borderBottom: "3px solid var(--void)" }}>
+      <section style={{ padding: "24px 0 60px", borderBottom: "3px solid var(--void)" }}>
         <div className="container-wide">
           <h2 className="head" style={{ fontSize: 32, margin: "0 0 20px" }}>Pending Invitations</h2>
           {invites.length === 0 ? (
