@@ -119,6 +119,7 @@ export default function OnboardingFlow() {
       <header style={{
         position: "sticky", top: 0, zIndex: 20,
         background: "var(--bone)", borderBottom: "2px solid var(--void)",
+        paddingTop: "env(safe-area-inset-top)",
       }}>
         <div className="container-wide" style={{ padding: "14px var(--container-pad)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 28, lineHeight: 1, cursor: "pointer" }} onClick={() => router.push("/")}>
