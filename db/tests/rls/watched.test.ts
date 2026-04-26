@@ -241,3 +241,70 @@ describe("RLS: watched", () => {
     expect(remaining.rowCount).toBe(1);
   });
 });
+
+describe("trigger: activity_on_watch_insert", () => {
+  it("fires watch_logged activity when broadcast_watched = TRUE", async () => {
+    await beginAs(db.client, fx.userA.id, "authenticated");
+    try {
+      await db.client.query(
+        `INSERT INTO watched (user_id, film_id) VALUES ($1, $2)`,
+        [fx.userA.id, fx.filmId]
+      );
+    } finally { await commit(db.client); }
+
+    await beginAs(db.client, null, "service_role");
+    const r = await db.client.query(
+      `SELECT actor_user_id, kind, payload FROM activity
+       WHERE kind = 'watch_logged' AND actor_user_id = $1`,
+      [fx.userA.id]
+    );
+    await commit(db.client);
+    expect(r.rowCount).toBe(1);
+    expect(r.rows[0].kind).toBe("watch_logged");
+    expect(r.rows[0].payload).toEqual({ film_id: fx.filmId });
+  });
+
+  it("does NOT fire when broadcast_watched = FALSE", async () => {
+    await beginAs(db.client, null, "service_role");
+    await db.client.query(
+      `UPDATE profiles SET broadcast_watched = FALSE WHERE id = $1`,
+      [fx.userA.id]
+    );
+    await commit(db.client);
+
+    await beginAs(db.client, fx.userA.id, "authenticated");
+    try {
+      await db.client.query(
+        `INSERT INTO watched (user_id, film_id) VALUES ($1, $2)`,
+        [fx.userA.id, fx.filmId]
+      );
+    } finally { await commit(db.client); }
+
+    await beginAs(db.client, null, "service_role");
+    const r = await db.client.query(
+      `SELECT 1 FROM activity WHERE kind = 'watch_logged' AND actor_user_id = $1`,
+      [fx.userA.id]
+    );
+    await commit(db.client);
+    expect(r.rowCount).toBe(0);
+  });
+
+  it("fires once per row — multiple inserts → multiple activity rows", async () => {
+    await beginAs(db.client, fx.userA.id, "authenticated");
+    try {
+      await db.client.query(
+        `INSERT INTO watched (user_id, film_id) VALUES ($1, $2), ($1, $2), ($1, $2)`,
+        [fx.userA.id, fx.filmId]
+      );
+    } finally { await commit(db.client); }
+
+    await beginAs(db.client, null, "service_role");
+    const r = await db.client.query(
+      `SELECT count(*)::int AS c FROM activity
+       WHERE kind = 'watch_logged' AND actor_user_id = $1`,
+      [fx.userA.id]
+    );
+    await commit(db.client);
+    expect(r.rows[0].c).toBe(3);
+  });
+});
