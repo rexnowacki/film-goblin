@@ -15,7 +15,7 @@
 ## Task 1: Migration 0125 + pg-mem smoke
 
 **Files:**
-- Create: `db/migrations/0125_films_with_stats_watcher_count.sql`
+- Create: `db/migrations/0128_films_with_stats_watcher_count.sql`
 
 This task lands the view extension. The pg-mem smoke helper auto-strips `CREATE VIEW`/`DROP VIEW` per the post-hygiene-sweep extension at `db/tests/helpers/pg-mem.ts`, so the file silently no-ops in the smoke run — but the smoke must keep passing as a "still green" check. There's no RLS test addition because no policies change.
 
@@ -30,7 +30,7 @@ Expected: 1 passed (the existing migration smoke). If anything is red, STOP — 
 
 - [ ] **Step 2: Create the migration**
 
-Create `db/migrations/0125_films_with_stats_watcher_count.sql` with this exact content:
+Create `db/migrations/0128_films_with_stats_watcher_count.sql` with this exact content:
 
 ```sql
 -- B2: Extend films_with_stats with watcher_count for the social-signal badges
@@ -66,7 +66,7 @@ Expected: 1 passed. The smoke helper strips the CREATE/DROP VIEW statements befo
 
 ```bash
 cd /home/cthulhulemon/film_goblin
-git add db/migrations/0125_films_with_stats_watcher_count.sql
+git add db/migrations/0128_films_with_stats_watcher_count.sql
 git commit -m "feat(b2): 0125 films_with_stats.watcher_count"
 ```
 
@@ -91,7 +91,7 @@ PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH npm run migrate
 
 If this errors with `ENETUNREACH` or DNS failure, the direct host is unreachable from this machine. Read `passwords.txt` at the repo root for the pooler connection string + password, then re-run with the pooler URL substituted into `DATABASE_URL` for that single command. The prior C2 implementer's notes confirm this approach works.
 
-Expected: output reports applying `0125_films_with_stats_watcher_count.sql` (1 new migration). Older migrations are skipped because they're already in `_migrations`.
+Expected: output reports applying `0128_films_with_stats_watcher_count.sql` (1 new migration). Older migrations are skipped because they're already in `_migrations`.
 
 - [ ] **Step 2: Verify migration landed**
 
@@ -108,7 +108,7 @@ const { Client } = require('pg');
 "
 ```
 
-Expected: `0125_films_with_stats_watcher_count.sql` is the most recent entry, with a timestamp from this session. The two prior entries (`0124_watch_logged_trigger.sql`, `0123_watched.sql`) confirm we're operating on the same prod DB the C2 work touched.
+Expected: `0128_films_with_stats_watcher_count.sql` is the most recent entry, with a timestamp from this session. The two prior entries (`0124_watch_logged_trigger.sql`, `0123_watched.sql`) confirm we're operating on the same prod DB the C2 work touched.
 
 - [ ] **Step 3: Regenerate types**
 

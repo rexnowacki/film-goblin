@@ -46,7 +46,7 @@ Surface global social signals on `/films` Archive cards so scanning the grid com
 
 ## Section 1 — Data model
 
-**One new migration: `db/migrations/0125_films_with_stats_watcher_count.sql`.**
+**One new migration: `db/migrations/0128_films_with_stats_watcher_count.sql`.**
 
 Additive view extension. Column appended at the end of the SELECT list so existing PostgREST consumers (which always pick explicit column lists, never `select("*")`) are unaffected. Same DROP+CREATE pattern from C1's 0122 (the smoke helper auto-strips CREATE/DROP VIEW per the post-hygiene-sweep extension).
 
@@ -212,7 +212,7 @@ Singular/plural handled inline; no i18n machinery for v1.
 ## Section 5 — File plan
 
 ### New
-- `db/migrations/0125_films_with_stats_watcher_count.sql`
+- `db/migrations/0128_films_with_stats_watcher_count.sql`
 
 ### Modified
 - `app/lib/queries/films.ts` — add `watcher_count` to `getFilms` select + return type; switch `getFilm` to `films_with_stats` and include `watchlist_count` + `watcher_count`
@@ -224,7 +224,7 @@ Singular/plural handled inline; no i18n machinery for v1.
 
 ## Section 6 — Implementation order (high-level)
 
-1. Land `0125_films_with_stats_watcher_count.sql` — apply to prod Supabase via the pooler; regen types from the live DB (no local Supabase in this project, per the C2 precedent).
+1. Land `0128_films_with_stats_watcher_count.sql` — apply to prod Supabase via the pooler; regen types from the live DB (no local Supabase in this project, per the C2 precedent).
 2. Extend `getFilms` (add column + return type) and switch `getFilm` to read from the view; typecheck.
 3. Add `FilmPoster` props + render + CSS; typecheck.
 4. Pass props from `/films/page.tsx`; render caption in `/film/[id]/page.tsx`.
