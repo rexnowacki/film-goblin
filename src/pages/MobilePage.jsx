@@ -258,7 +258,7 @@ function MobileLanding() {
             fontSize: 17, lineHeight: 1.35, color: "var(--bone-2)",
             borderLeft: "3px solid var(--accent)", paddingLeft: 12,
           }}>
-            A field guide to cheap movies.<br/>
+            Watch weirder.<br/>
             We hunt discounts on the films worth owning — so you can stop renting and start collecting.
           </div>
         </div>

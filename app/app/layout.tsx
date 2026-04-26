@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Film Goblin — A Field Guide To Cheap Movies",
+  title: "Film Goblin — Watch Weirder",
   description: "Hunt price drops on Apple TV movies. Join the coven.",
   icons: {
     icon: [

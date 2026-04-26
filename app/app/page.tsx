@@ -41,7 +41,7 @@ export default async function LandingPage() {
           <div className="stackable" style={{ "--stack-template": "1.4fr 1fr", "--stack-gap": "40px", alignItems: "stretch" } as React.CSSProperties}>
             <div>
               <div className="stamp" style={{ background: "var(--void)", color: "var(--yellow)", borderColor: "var(--void)", marginBottom: 20 }}>
-                ✦ A Field Guide To Cheap Movies ✦
+                ✦ Watch Weirder ✦
               </div>
               <h1 className="display" style={{ fontSize: "clamp(80px, 11vw, 180px)", margin: 0, color: "var(--void)", lineHeight: 0.82, letterSpacing: "-0.02em" }}>
                 FILM
