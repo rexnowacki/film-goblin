@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import UserMenu from "./UserMenu";
+import NotificationBell from "./NotificationBell";
+import type { NotificationFeedItem } from "@/lib/queries/notifications";
 
 interface NavItem { id: string; label: string; href: string; badge?: number }
 interface ProfileShape { handle: string; display_name: string | null; avatar_url: string | null }
@@ -14,9 +16,11 @@ interface Props {
   user: boolean;
   profile: ProfileShape | null;
   isAdmin: boolean;
+  unreadNotifCount: number;
+  notifItems: NotificationFeedItem[];
 }
 
-export default function TopNavChrome({ items, current, user, profile, isAdmin }: Props) {
+export default function TopNavChrome({ items, current, user, profile, isAdmin, unreadNotifCount, notifItems }: Props) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -60,12 +64,15 @@ export default function TopNavChrome({ items, current, user, profile, isAdmin }:
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {user ? (
-            <UserMenu
-              handle={profile?.handle ?? "you"}
-              displayName={profile?.display_name ?? profile?.handle ?? "You"}
-              avatarUrl={profile?.avatar_url}
-              isAdmin={isAdmin}
-            />
+            <>
+              <NotificationBell unreadCount={unreadNotifCount} items={notifItems} />
+              <UserMenu
+                handle={profile?.handle ?? "you"}
+                displayName={profile?.display_name ?? profile?.handle ?? "You"}
+                avatarUrl={profile?.avatar_url}
+                isAdmin={isAdmin}
+              />
+            </>
           ) : (
             <Link href="/auth/signin" className="btn btn-dark btn-sm" style={{ textDecoration: "none" }}>
               Sign In
