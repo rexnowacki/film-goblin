@@ -354,6 +354,36 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["notification_kind"]
+          payload: Json
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["notification_kind"]
+          payload?: Json
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["notification_kind"]
+          payload?: Json
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       price_alerts: {
         Row: {
           created_at: string
@@ -780,6 +810,11 @@ export type Database = {
         | "coven_joined"
         | "watch_logged"
       coven_request_status: "pending" | "accepted" | "declined"
+      notification_kind:
+        | "coven_invite_pending"
+        | "coven_invite_accepted"
+        | "recommendation_received"
+        | "price_drop"
       review_status: "draft" | "published"
       staff_role: "reviewer" | "admin"
     }
