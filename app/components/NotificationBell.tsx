@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import NotificationBadge from "./NotificationBadge";
 import NotificationsDropdown from "./NotificationsDropdown";
-import { markAllRead } from "@/lib/actions/notifications";
+import { markAllRead, clearAllNotifications } from "@/lib/actions/notifications";
 import type { NotificationFeedItem } from "@/lib/queries/notifications";
 
 interface Props {
@@ -14,8 +14,15 @@ interface Props {
 export default function NotificationBell({ unreadCount, items }: Props) {
   const [open, setOpen] = useState(false);
   const [optimisticUnread, setOptimisticUnread] = useState(unreadCount);
+  const [optimisticItems, setOptimisticItems] = useState(items);
   const [isMobile, setIsMobile] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Sync optimistic items from SSR while the dropdown is closed (same
+  // reasoning as the unread-count sync below).
+  useEffect(() => {
+    if (!open) setOptimisticItems(items);
+  }, [items, open]);
 
   // Sync optimistic count from SSR — but only while the dropdown is closed.
   // The markAllRead action revalidates layout-level data, which would zero
@@ -50,6 +57,13 @@ export default function NotificationBell({ unreadCount, items }: Props) {
     setOptimisticUnread(0);
   }
 
+  async function onClear() {
+    setOptimisticItems([]);
+    setOptimisticUnread(0);
+    setOpen(false);
+    try { await clearAllNotifications(); } catch { /* swallow — server-side error handled by action */ }
+  }
+
   return (
     <div ref={wrapperRef} style={{ position: "relative" }}>
       <button
@@ -62,7 +76,8 @@ export default function NotificationBell({ unreadCount, items }: Props) {
       <NotificationsDropdown
         open={open}
         onClose={onClose}
-        items={items}
+        onClear={onClear}
+        items={optimisticItems}
         isMobile={isMobile}
       />
     </div>

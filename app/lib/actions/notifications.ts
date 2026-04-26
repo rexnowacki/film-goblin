@@ -23,3 +23,19 @@ export async function markAllRead(): Promise<void> {
   await _markAllRead(client, user.id);
   revalidatePath("/", "layout");
 }
+
+export async function _clearAllNotifications(client: Client, userId: string): Promise<void> {
+  const { error } = await client
+    .from("notifications")
+    .delete()
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
+export async function clearAllNotifications(): Promise<void> {
+  const client = await createClient();
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) return;
+  await _clearAllNotifications(client, user.id);
+  revalidatePath("/", "layout");
+}

@@ -9,12 +9,13 @@ import type { NotificationFeedItem } from "@/lib/queries/notifications";
 interface Props {
   open: boolean;
   onClose: () => void;
+  onClear: () => void;
   items: NotificationFeedItem[];
   /** True if the viewport is mobile-width. Detected by parent via media-query on mount. */
   isMobile: boolean;
 }
 
-export default function NotificationsDropdown({ open, onClose, items, isMobile }: Props) {
+export default function NotificationsDropdown({ open, onClose, onClear, items, isMobile }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
   // Click-outside on desktop only — BottomSheet handles its own backdrop on mobile.
@@ -31,19 +32,40 @@ export default function NotificationsDropdown({ open, onClose, items, isMobile }
   if (!open) return null;
 
   const body = (
-    <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
-      {items.length === 0 ? (
-        <div style={{ padding: "16px 12px", fontStyle: "italic", color: "var(--muted)" }}>
-          No notifications yet.
+    <>
+      <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
+        {items.length === 0 ? (
+          <div style={{ padding: "16px 12px", fontStyle: "italic", color: "var(--muted)" }}>
+            No notifications yet.
+          </div>
+        ) : (
+          items.map(it =>
+            it.type === "single"
+              ? <NotificationRow key={it.notification.id} notification={it.notification} onNavigate={onClose} />
+              : <NotificationGroupRow key={it.group.key} group={it.group} onNavigate={onClose} />
+          )
+        )}
+      </div>
+      {items.length > 0 && (
+        <div style={{ padding: "8px 12px", borderTop: "1px solid #2a2a2a", display: "flex", justifyContent: "center" }}>
+          <button
+            onClick={onClear}
+            className="caps"
+            style={{
+              background: "transparent",
+              border: 0,
+              padding: "6px 8px",
+              cursor: "pointer",
+              fontSize: 11,
+              color: "var(--muted)",
+              letterSpacing: "0.14em",
+            }}
+          >
+            Clear all
+          </button>
         </div>
-      ) : (
-        items.map(it =>
-          it.type === "single"
-            ? <NotificationRow key={it.notification.id} notification={it.notification} onNavigate={onClose} />
-            : <NotificationGroupRow key={it.group.key} group={it.group} onNavigate={onClose} />
-        )
       )}
-    </div>
+    </>
   );
 
   if (isMobile) {
