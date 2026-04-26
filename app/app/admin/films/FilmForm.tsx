@@ -45,11 +45,7 @@ export default function FilmForm({ mode, filmId, initial }: Props) {
         setErr(result.error);
         return;
       }
-      if (mode === "create") {
-        router.push(`/admin/films/${(result as { ok: true; filmId: string }).filmId}/edit`);
-      } else {
-        router.refresh();
-      }
+      router.push("/admin/films");
     } finally { setSaving(false); }
   }
 
