@@ -46,7 +46,7 @@ export default function DiaryRow({ row }: Props) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="head" style={{ fontSize: 18, lineHeight: 1.1 }}>{row.film.title}</div>
           <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
-            {row.film.year} · {row.watched_at}
+            {row.film.year} · {row.watched_at.slice(8, 10)}
           </div>
           {row.note && (
             <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, marginTop: 6, color: "var(--bone)", opacity: 0.85, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
