@@ -37,7 +37,6 @@ export function groupNotifications(items: EnrichedNotification[]): NotificationF
     if (run.length >= MIN_GROUP_SIZE) {
       const oldestId = run[run.length - 1].id;
       const group: NotificationGroup = {
-        kind: "group",
         key: `${headActorId ?? "system"}:${head.kind}:${oldestId}`,
         actor: head.actor,
         notifKind: head.kind,
@@ -45,7 +44,7 @@ export function groupNotifications(items: EnrichedNotification[]): NotificationF
         count: run.length,
         latestAt: head.created_at,
       };
-      out.push(group);
+      out.push({ kind: "group", group });
     } else {
       for (const r of run) out.push({ kind: "single", notification: r });
     }

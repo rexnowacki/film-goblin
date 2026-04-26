@@ -26,7 +26,6 @@ export interface EnrichedNotification {
 }
 
 export interface NotificationGroup {
-  kind: "group";
   key: string;
   actor: ActorLite | null;
   notifKind: NotificationKind;
@@ -35,9 +34,6 @@ export interface NotificationGroup {
   latestAt: string;
 }
 
-export interface NotificationSingle {
-  kind: "single";
-  notification: EnrichedNotification;
-}
-
-export type NotificationFeedItem = NotificationSingle | NotificationGroup;
+export type NotificationFeedItem =
+  | { kind: "single"; notification: EnrichedNotification }
+  | { kind: "group"; group: NotificationGroup };

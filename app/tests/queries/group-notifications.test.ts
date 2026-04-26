@@ -37,8 +37,8 @@ describe("groupNotifications", () => {
     expect(out.length).toBe(1);
     expect(out[0].kind).toBe("group");
     if (out[0].kind === "group") {
-      expect(out[0].count).toBe(3);
-      expect(out[0].latestAt).toBe("2026-04-26T12:00:00Z");
+      expect(out[0].group.count).toBe(3);
+      expect(out[0].group.latestAt).toBe("2026-04-26T12:00:00Z");
     }
   });
 
@@ -72,8 +72,8 @@ describe("groupNotifications", () => {
     expect(out.length).toBe(1);
     expect(out[0].kind).toBe("group");
     if (out[0].kind === "group") {
-      expect(out[0].notifKind).toBe("price_drop");
-      expect(out[0].actor).toBeNull();
+      expect(out[0].group.notifKind).toBe("price_drop");
+      expect(out[0].group.actor).toBeNull();
     }
   });
 
@@ -88,7 +88,7 @@ describe("groupNotifications", () => {
     // in. The function should refuse to extend the group across the 24-hr boundary.
     if (out.length === 1 && out[0].kind === "group") {
       // Regression — span ceiling missed
-      expect(out[0].count).toBeLessThan(3);
+      expect(out[0].group.count).toBeLessThan(3);
     }
     // At least one item must be a single (the older one outside the window)
     expect(out.some(o => o.kind === "single")).toBe(true);
