@@ -28,12 +28,12 @@ export interface EnrichedNotification {
 export interface NotificationGroup {
   key: string;
   actor: ActorLite | null;
-  notifKind: NotificationKind;
+  kind: NotificationKind;
   items: EnrichedNotification[];
   count: number;
   latestAt: string;
 }
 
 export type NotificationFeedItem =
-  | { kind: "single"; notification: EnrichedNotification }
-  | { kind: "group"; group: NotificationGroup };
+  | { type: "single"; notification: EnrichedNotification }
+  | { type: "group"; group: NotificationGroup };

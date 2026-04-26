@@ -10,6 +10,8 @@ const MIN_GROUP_SIZE = 3;
  * gap and 24-hr span ceiling and 3+ size into groups; otherwise emits singles.
  *
  * Null actor (price_drop) groups by (kind, NULL).
+ *
+ * Input MUST be sorted newest-first by created_at.
  */
 export function groupNotifications(items: EnrichedNotification[]): NotificationFeedItem[] {
   const out: NotificationFeedItem[] = [];
@@ -39,14 +41,14 @@ export function groupNotifications(items: EnrichedNotification[]): NotificationF
       const group: NotificationGroup = {
         key: `${headActorId ?? "system"}:${head.kind}:${oldestId}`,
         actor: head.actor,
-        notifKind: head.kind,
+        kind: head.kind,
         items: run,
         count: run.length,
         latestAt: head.created_at,
       };
-      out.push({ kind: "group", group });
+      out.push({ type: "group", group });
     } else {
-      for (const r of run) out.push({ kind: "single", notification: r });
+      for (const r of run) out.push({ type: "single", notification: r });
     }
     i = j;
   }
