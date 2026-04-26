@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getFilm, getLatestPriceHistory } from "@/lib/queries/films";
 import { isOnWatchlist } from "@/lib/queries/watchlists";
 import { isInLibrary } from "@/lib/queries/library";
+import { getWatchCountForFilm } from "@/lib/queries/watched";
 import { getPublishedReviewsForFilm } from "@/lib/queries/reviews";
 import { getMyCovenMembers } from "@/lib/queries/coven";
 import FilmPoster from "@/components/FilmPoster";
@@ -21,6 +22,7 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
   const covenMembers = user ? await getMyCovenMembers(supabase, user.id) : [];
   const onList = user ? await isOnWatchlist(supabase, id) : false;
   const owned = user ? await isInLibrary(supabase, user.id, id) : false;
+  const watchCount = user ? await getWatchCountForFilm(supabase, user.id, id) : 0;
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
@@ -62,7 +64,7 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
               "{film.description}"
             </p>
             <div className="hero-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
-              {user && <FilmActions filmId={film.id} initialOnWatchlist={onList} initialOwned={owned} />}
+              {user && <FilmActions filmId={film.id} filmTitle={film.title} initialOnWatchlist={onList} initialOwned={owned} initialWatchCount={watchCount} />}
               {user && <RecommendModal filmId={film.id} filmTitle={film.title} covenMembers={covenMembers.map(m => ({ id: m.id, handle: m.handle, display_name: m.display_name }))} />}
               {film.itunes_url && (
                 <a href={film.itunes_url} target="_blank" rel="noreferrer" className="btn btn-lg">
