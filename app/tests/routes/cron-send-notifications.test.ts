@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 const connectMock = vi.fn();
 const endMock = vi.fn();
-const clientCtor = vi.fn(() => ({ connect: connectMock, end: endMock }));
+const queryMock = vi.fn();
+const clientCtor = vi.fn(() => ({ connect: connectMock, end: endMock, query: queryMock }));
 const sendDailyDigestsMock = vi.fn();
 const resendCtor = vi.fn();
 
@@ -38,6 +39,7 @@ describe("GET /api/cron/send-notifications", () => {
     process.env.APP_BASE_URL = "https://film-goblin.vercel.app";
     connectMock.mockReset().mockResolvedValue(undefined);
     endMock.mockReset().mockResolvedValue(undefined);
+    queryMock.mockReset().mockResolvedValue({ rowCount: 0 });
     clientCtor.mockClear();
     sendDailyDigestsMock.mockReset();
     resendCtor.mockClear();
@@ -74,19 +76,23 @@ describe("GET /api/cron/send-notifications", () => {
     expect(body.error).toMatch(/RESEND_API_KEY/);
   });
 
-  it("returns 200 with digest counters on happy path", async () => {
+  it("returns 200 with digest counters on happy path and runs the 30-day cleanup", async () => {
     sendDailyDigestsMock.mockResolvedValue({
       sent: 3, failed: 0, skipped: 0, failed_user_ids: [],
     });
+    queryMock.mockResolvedValue({ rowCount: 7 });
     const res = await GET(makeRequest("Bearer test-secret"));
     expect(res.status).toBe(200);
     expect(clientCtor).toHaveBeenCalledTimes(1);
     expect(connectMock).toHaveBeenCalledTimes(1);
     expect(resendCtor).toHaveBeenCalledWith("re_test");
     expect(sendDailyDigestsMock).toHaveBeenCalledTimes(1);
+    expect(queryMock).toHaveBeenCalledTimes(1);
+    expect(queryMock.mock.calls[0][0]).toMatch(/DELETE FROM notifications/i);
     const body = await res.json();
     expect(body.ok).toBe(true);
     expect(body.digest.sent).toBe(3);
+    expect(body.notificationsDeleted).toBe(7);
     expect(endMock).toHaveBeenCalledTimes(1);
   });
 

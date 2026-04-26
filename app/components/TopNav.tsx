@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getPendingInviteCount } from "@/lib/queries/coven";
+import { getUnreadNotificationCount, getRecentNotifications } from "@/lib/queries/notifications";
 import TopNavChrome from "./TopNavChrome";
 
 interface TopNavProps {
@@ -31,8 +32,14 @@ export default async function TopNav({ current }: TopNavProps) {
   }
 
   let pendingInviteCount = 0;
+  let unreadNotifCount = 0;
+  let notifItems: Awaited<ReturnType<typeof getRecentNotifications>> = [];
   if (user) {
-    pendingInviteCount = await getPendingInviteCount(supabase, user.id);
+    [pendingInviteCount, unreadNotifCount, notifItems] = await Promise.all([
+      getPendingInviteCount(supabase, user.id),
+      getUnreadNotificationCount(supabase, user.id),
+      getRecentNotifications(supabase, user.id),
+    ]);
   }
 
   const items = user
@@ -56,6 +63,8 @@ export default async function TopNav({ current }: TopNavProps) {
       user={Boolean(user)}
       profile={profile}
       isAdmin={isAdmin}
+      unreadNotifCount={unreadNotifCount}
+      notifItems={notifItems}
     />
   );
 }

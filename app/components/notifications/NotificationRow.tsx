@@ -1,0 +1,73 @@
+"use client";
+
+import Link from "next/link";
+import Avatar from "../Avatar";
+import { relativeTime } from "../activity/relativeTime";
+import type { EnrichedNotification } from "@/lib/queries/notifications";
+
+interface Props {
+  notification: EnrichedNotification;
+  onNavigate?: () => void;
+}
+
+function targetFor(n: EnrichedNotification): string {
+  switch (n.kind) {
+    case "coven_invite_pending":
+      return "/coven#requests";
+    case "coven_invite_accepted":
+      return n.actor ? `/p/${encodeURIComponent(n.actor.handle)}` : "/coven";
+    case "recommendation_received":
+    case "price_drop": {
+      const filmId = (n.payload as { film_id?: string }).film_id;
+      return filmId ? `/film/${filmId}` : "/home";
+    }
+  }
+}
+
+function copyFor(n: EnrichedNotification): React.ReactNode {
+  const actorName = n.actor?.display_name ?? n.actor?.handle ?? "Someone";
+  const title = n.film?.title ?? "a film";
+  switch (n.kind) {
+    case "coven_invite_pending":
+      return <><strong>{actorName}</strong> invited you to their coven.</>;
+    case "coven_invite_accepted":
+      return <><strong>{actorName}</strong> joined your coven.</>;
+    case "recommendation_received":
+      return <><strong>{actorName}</strong> recommended <em>{title}</em>.</>;
+    case "price_drop": {
+      const p = n.payload as { old_price_usd?: number; new_price_usd?: number };
+      return <>Price drop: <em>{title}</em>{p.new_price_usd !== undefined ? ` — $${p.new_price_usd.toFixed(2)}` : ""}.</>;
+    }
+  }
+}
+
+export default function NotificationRow({ notification, onNavigate }: Props) {
+  const href = targetFor(notification);
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      style={{
+        display: "flex", gap: 10, padding: "10px 12px",
+        borderBottom: "1px solid #2a2a2a",
+        textDecoration: "none", color: "var(--bone)",
+        background: notification.read_at ? "transparent" : "rgba(255,45,136,0.06)",
+      }}
+    >
+      <Avatar
+        name={notification.actor?.display_name ?? notification.actor?.handle ?? "system"}
+        color="var(--accent)"
+        size={32}
+        url={notification.actor?.avatar_url ?? null}
+      />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: "var(--font-ui)", fontSize: 13, lineHeight: 1.35 }}>
+          {copyFor(notification)}
+        </div>
+        <div style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
+          {relativeTime(notification.created_at)}
+        </div>
+      </div>
+    </Link>
+  );
+}
