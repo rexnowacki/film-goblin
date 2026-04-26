@@ -27,6 +27,7 @@ describe("migration smoke (pg-mem, DDL only)", () => {
         "reviews",
         "recommendations",
         "activity",
+        "watched",
       ]));
     } finally {
       await close();

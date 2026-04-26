@@ -453,6 +453,7 @@ export type Database = {
           avatar_url: string
           bio: string
           broadcast_library: boolean
+          broadcast_watched: boolean
           broadcast_watchlist_adds: boolean
           created_at: string
           display_name: string
@@ -466,6 +467,7 @@ export type Database = {
           avatar_url?: string
           bio?: string
           broadcast_library?: boolean
+          broadcast_watched?: boolean
           broadcast_watchlist_adds?: boolean
           created_at?: string
           display_name: string
@@ -479,6 +481,7 @@ export type Database = {
           avatar_url?: string
           bio?: string
           broadcast_library?: boolean
+          broadcast_watched?: boolean
           broadcast_watchlist_adds?: boolean
           created_at?: string
           display_name?: string
@@ -611,6 +614,48 @@ export type Database = {
         }
         Relationships: []
       }
+      watched: {
+        Row: {
+          created_at: string
+          film_id: string
+          id: string
+          note: string | null
+          user_id: string
+          watched_at: string
+        }
+        Insert: {
+          created_at?: string
+          film_id: string
+          id?: string
+          note?: string | null
+          user_id: string
+          watched_at?: string
+        }
+        Update: {
+          created_at?: string
+          film_id?: string
+          id?: string
+          note?: string | null
+          user_id?: string
+          watched_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watched_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "watched_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films_with_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       watchlists: {
         Row: {
           created_at: string
@@ -733,6 +778,7 @@ export type Database = {
         | "list_created"
         | "list_film_added"
         | "coven_joined"
+        | "watch_logged"
       coven_request_status: "pending" | "accepted" | "declined"
       review_status: "draft" | "published"
       staff_role: "reviewer" | "admin"
@@ -873,6 +919,7 @@ export const Constants = {
         "list_created",
         "list_film_added",
         "coven_joined",
+        "watch_logged",
       ],
       coven_request_status: ["pending", "accepted", "declined"],
       review_status: ["draft", "published"],
