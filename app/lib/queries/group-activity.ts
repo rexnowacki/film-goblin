@@ -5,7 +5,7 @@ const SPAN_MS = 24 * 60 * 60 * 1000;  // 24 hours total span ceiling
 const MIN_GROUP_SIZE = 3;
 
 function isGroupableKind(kind: EnrichedActivity["kind"]): boolean {
-  return kind === "watchlist_added";
+  return kind === "watchlist_added" || kind === "watch_logged";
 }
 
 /**

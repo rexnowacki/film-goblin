@@ -37,6 +37,7 @@ export type EnrichedActivity = (
   | { kind: "recommendation_sent"; film: FilmLite; recipient: RecipientLite; note: string }
   | { kind: "review_published"; film: FilmLite; title: string; pullquote: string | null }
   | { kind: "watchlist_added"; film: FilmLite }
+  | { kind: "watch_logged"; film: FilmLite }
   | { kind: "list_created"; list: ListLite }
   | { kind: "list_film_added"; list: ListLite; film: FilmLite }
   | { kind: "coven_joined"; other: RecipientLite }
@@ -56,7 +57,7 @@ export interface ActivityGroup {
   // so the key doesn't shift if newer events join the run on subsequent reads.
   key: string;
   actor: ActorLite;
-  kind: "watchlist_added"; // narrow union; widens when C2 / future actions register
+  kind: "watchlist_added" | "watch_logged"; // widens as more kinds register
   items: EnrichedActivity[]; // newest-first, length >= 3
   count: number; // = items.length
   latestAt: string; // = items[0].created_at
@@ -145,6 +146,9 @@ export async function getEnrichedFeed(
         break;
       case "watchlist_added":
         if (film) out.push({ ...base, kind: "watchlist_added", film });
+        break;
+      case "watch_logged":
+        if (film) out.push({ ...base, kind: "watch_logged", film });
         break;
       case "list_created":
         if (list) out.push({ ...base, kind: "list_created", list });

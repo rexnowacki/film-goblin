@@ -57,6 +57,30 @@ function rec(opts: { id: string; actorId: string; minutesAgo: number }): Enriche
   };
 }
 
+function watchLog(opts: { id: string; actorId: string; minutesAgo: number }): EnrichedActivity {
+  const created = new Date(Date.now() - opts.minutesAgo * 60 * 1000).toISOString();
+  return {
+    id: opts.id,
+    created_at: created,
+    actor: {
+      id: opts.actorId,
+      handle: `user_${opts.actorId}`,
+      display_name: `User ${opts.actorId}`,
+      avatar_url: null,
+    },
+    reactions: { count: 0, likedByMe: false },
+    kind: "watch_logged",
+    film: {
+      id: `film_${opts.id}`,
+      title: `Film ${opts.id}`,
+      director: "Test Director",
+      year: 2024,
+      artwork_url: "https://example.test/poster.jpg",
+      itunes_url: "https://itunes.apple.com/test",
+    },
+  };
+}
+
 describe("groupFeed", () => {
   it("returns empty array for empty input", () => {
     expect(groupFeed([])).toEqual([]);
@@ -177,5 +201,42 @@ describe("groupFeed", () => {
     const out = groupFeed(items);
     expect(out).toHaveLength(3);
     expect(out.every(i => i.type === "single")).toBe(true);
+  });
+});
+
+describe("groupFeed: watch_logged", () => {
+  it("groups 3+ same-actor watch_logged events within window", () => {
+    const items: EnrichedActivity[] = [
+      watchLog({ id: "3", actorId: "u1", minutesAgo: 0 }),
+      watchLog({ id: "2", actorId: "u1", minutesAgo: 5 }),
+      watchLog({ id: "1", actorId: "u1", minutesAgo: 10 }),
+    ];
+    const out = groupFeed(items);
+    expect(out).toHaveLength(1);
+    expect(out[0].type).toBe("group");
+    if (out[0].type === "group") {
+      expect(out[0].group.kind).toBe("watch_logged");
+      expect(out[0].group.count).toBe(3);
+    }
+  });
+
+  it("doesn't group 2 events (below MIN_GROUP_SIZE)", () => {
+    const items: EnrichedActivity[] = [
+      watchLog({ id: "2", actorId: "u1", minutesAgo: 0 }),
+      watchLog({ id: "1", actorId: "u1", minutesAgo: 5 }),
+    ];
+    const out = groupFeed(items);
+    expect(out).toHaveLength(2);
+    expect(out.every(x => x.type === "single")).toBe(true);
+  });
+
+  it("doesn't group across kinds (watchlist_added + watch_logged interleave)", () => {
+    const items: EnrichedActivity[] = [
+      watchLog({ id: "3", actorId: "u1", minutesAgo: 0 }),
+      watchlist({ id: "2", actorId: "u1", minutesAgo: 5 }),
+      watchLog({ id: "1", actorId: "u1", minutesAgo: 10 }),
+    ];
+    const out = groupFeed(items);
+    expect(out.every(x => x.type === "single")).toBe(true);
   });
 });
