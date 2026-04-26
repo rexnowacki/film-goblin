@@ -33,7 +33,7 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
         borderBottom: "3px solid var(--void)",
         position: "relative", overflow: "hidden",
       }}>
-        <div className="container-wide stackable" style={{ padding: "48px 0", "--stack-template": "340px 1fr", "--stack-gap": "48px", alignItems: "start" } as React.CSSProperties}>
+        <div className="container-wide stackable" style={{ paddingTop: 48, paddingBottom: 48, "--stack-template": "340px 1fr", "--stack-gap": "48px", alignItems: "start" } as React.CSSProperties}>
           <div style={{
             transform: "rotate(-2deg)",
             width: "100%",
