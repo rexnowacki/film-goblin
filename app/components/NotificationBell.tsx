@@ -17,8 +17,13 @@ export default function NotificationBell({ unreadCount, items }: Props) {
   const [isMobile, setIsMobile] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Sync optimistic count when SSR'd value changes (e.g. after revalidation).
-  useEffect(() => { setOptimisticUnread(unreadCount); }, [unreadCount]);
+  // Sync optimistic count from SSR — but only while the dropdown is closed.
+  // The markAllRead action revalidates layout-level data, which would zero
+  // the badge out from under the user while they're still browsing the open
+  // dropdown. Hold the count steady until they close it.
+  useEffect(() => {
+    if (!open) setOptimisticUnread(unreadCount);
+  }, [unreadCount, open]);
 
   // Detect mobile-width once per mount.
   useEffect(() => {
@@ -30,15 +35,24 @@ export default function NotificationBell({ unreadCount, items }: Props) {
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
-  if (optimisticUnread <= 0) return null;
+  // Stay mounted while the dropdown is open — otherwise the optimistic
+  // setOptimisticUnread(0) on click unmounts the whole component before
+  // the dropdown can render. Only hide when count is 0 AND closed.
+  if (optimisticUnread <= 0 && !open) return null;
 
   async function onClick() {
     if (open) return;
     setOpen(true);
     if (optimisticUnread > 0) {
-      setOptimisticUnread(0);
       try { await markAllRead(); } catch { /* swallow — server-side error handled by action */ }
     }
+  }
+
+  function onClose() {
+    setOpen(false);
+    // Zero the badge immediately on close so the bell unmounts snappily
+    // regardless of whether the post-markAllRead revalidate has completed.
+    setOptimisticUnread(0);
   }
 
   return (
@@ -52,7 +66,7 @@ export default function NotificationBell({ unreadCount, items }: Props) {
       </button>
       <NotificationsDropdown
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={onClose}
         items={items}
         isMobile={isMobile}
       />
