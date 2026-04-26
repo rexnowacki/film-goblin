@@ -151,25 +151,12 @@ export default async function CovenPage({
 
             <div>
               <h2 className="head" style={{ fontSize: 28, margin: "0 0 16px" }}>Find People</h2>
-              <div
-                style={{
-                  display: "flex",
-                  border: "3px solid var(--void)",
-                  background: "var(--bone)",
-                  boxShadow: "6px 6px 0 var(--accent)",
-                  marginBottom: 20,
-                }}
-              >
-                <span
-                  style={{
-                    padding: "14px 16px",
-                    fontFamily: "var(--font-display)",
-                    fontSize: 24,
-                    color: "var(--accent)",
-                    lineHeight: 1,
-                  }}
-                >
-                  ✦
+              <div style={{ display: "flex", gap: 0, border: "1px solid var(--muted)", background: "var(--bone)", boxShadow: "6px 6px 0 var(--accent)", marginBottom: 20 }}>
+                <span style={{ padding: "14px 16px", color: "var(--accent-deep)", lineHeight: 1, display: "inline-flex", alignItems: "center" }} aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="7" />
+                    <line x1="21" y1="21" x2="16.5" y2="16.5" />
+                  </svg>
                 </span>
                 <PeopleSearch />
               </div>
