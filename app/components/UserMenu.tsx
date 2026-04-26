@@ -46,9 +46,13 @@ export default function UserMenu({ handle, displayName, avatarUrl, isAdmin }: Pr
           minWidth: 160,
           zIndex: 50,
         }}>
-          <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--void)", fontFamily: "var(--font-ui)", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          <Link
+            href={`/p/${handle}`}
+            onClick={() => setOpen(false)}
+            style={{ display: "block", padding: "10px 14px", borderBottom: "1px solid var(--void)", fontFamily: "var(--font-ui)", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--void)", textDecoration: "none" }}
+          >
             @{handle}
-          </div>
+          </Link>
           {isAdmin && (
             <Link
               href="/admin"
