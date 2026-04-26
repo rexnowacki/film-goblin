@@ -38,18 +38,15 @@ export default async function TopNav({ current }: TopNavProps) {
   const items = user
     ? [
         { id: "home", label: "Home", href: "/home" },
-        { id: "films", label: "Films", href: "/films" },
+        { id: "films", label: "Discovery", href: "/films" },
         { id: "watchlist", label: "Watchlist", href: "/watchlist" },
-        { id: "library", label: "Library", href: "/library" },
+        { id: "library", label: "Your Grimoire", href: "/library" },
         { id: "watched", label: "Diary", href: "/watched" },
-        { id: "lists", label: "Lists", href: "/lists" },
         { id: "people", label: "People", href: "/people" },
         { id: "coven", label: "Coven", href: "/coven", badge: pendingInviteCount },
-        { id: "settings", label: "Settings", href: "/settings" },
       ]
     : [
-        { id: "films", label: "Films", href: "/films" },
-        { id: "lists", label: "Lists", href: "/lists" },
+        { id: "films", label: "Discovery", href: "/films" },
       ];
 
   return (

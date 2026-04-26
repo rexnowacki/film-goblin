@@ -23,6 +23,17 @@ Private repo at [rexnowacki/film-goblin](https://github.com/rexnowacki/film-gobl
 
 **Deploy rule: always run `npx vercel deploy --prod --yes` from the repo root.** See the Vercel gotcha in the Gotchas section before deploying from anywhere else.
 
+## Git workflow
+
+I am working on the same codebase on two separate machines, as if I'm two devs.
+
+- Never commit directly to `master`. Always work on a feature branch.
+- Before starting new work, pull latest `master` and branch from there.
+- Use descriptive branch names like `feature/spell-card-balance` or `fix/rulebook-typos`.
+- Commit frequently with clear messages.
+- Push the branch to origin when work is paused or complete.
+- Open pull requests rather than merging directly.
+
 ## Packages in this repo
 
 Five packages, deployed/run independently:
