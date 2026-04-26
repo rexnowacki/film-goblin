@@ -1,0 +1,80 @@
+Session shipped — 2026-04-26
+=============================
+
+PR #4  TopNav cleanup — removed Lists/Settings, renamed Films→Discovery
+       and Library→Your Grimoire; added the two-machine Git workflow
+       section to CLAUDE.md.
+
+PR #5  /films hero copy — "Every Film, Indexed." → "Watch Weirder."
+
+PR #6  Avatar menu — the @handle row is now a Link to /p/<handle>
+       so users can jump to their own profile.
+
+PR #7  Admin film form — saving create or edit now redirects to
+       /admin/films instead of refreshing the edit page.
+
+PR #8  Sitewide tagline swap — "A Field Guide To Cheap Movies" →
+       "Watch Weirder" across browser title, landing stamp, email
+       header, and the legacy Vite prototype.
+
+PR #9  Notifications badge (the big one) — new notifications table +
+       four SECURITY DEFINER triggers (migrations 0125 + 0126), avatar
+       drop badge with grouping/dropdown/markAllRead, 30-day cleanup
+       cron, full TopNav integration left of the avatar.
+
+PR #10 Notifications fix — bell stays mounted while the dropdown is
+       open so clicking the drop actually shows the panel; badge holds
+       its count visually until close.
+
+PR #11 Notifications empty state — always-visible outlined drop when
+       count = 0 so users can revisit history after clicking through.
+
+PR #12 Clear-all button — DELETE policy migration 0127 + a quiet
+       "Clear all" affordance below the dropdown's row list.
+
+PR #13 Grain overlay fix — long-standing CSS bug where .grain and
+       .grain-light ::before pseudo-elements escaped their parents
+       and painted noise across the entire page; fixed by adding
+       position: relative to the parent rules.
+
+PR #14 Housekeeping — gitignore exports/ + scripts/ (local tooling
+       dirs) and switch ActivityFooter timestamp to sentence-case
+       muted style to match grouped rows.
+
+PR #15 WatchModal on first watch — every "+ Watched" click now opens
+       the note-capture modal so first-watch impressions become
+       micro-reviews.
+
+PR #16 Page hero normalization — People + Coven heroes brought back
+       in line with the canonical hero shape used by Discovery /
+       Watchlist / Diary / Grimoire.
+
+PR #17 Mobile padding — bumped --container-pad from 16px to 20px at
+       ≤720px so content stops butting up against the screen edges.
+
+PR #18 Film hero padding fix — the inner .container-wide div on
+       /film/[id] had inline `padding: "48px 0"`, whose shorthand
+       zeroed horizontal padding and overrode the class-provided
+       gutter. Swapped to paddingTop/paddingBottom longhand so the
+       32px desktop / 20px mobile gutter survives. Visible on every
+       viewport but worst on mobile.
+
+PR #19 Git-fetch workflow docs — codified `git fetch` in the
+       multi-machine Git workflow section of CLAUDE.md: fetch +
+       merge --ff-only before branching, fetch + rebase before
+       pushing long-held branches, fetch before deploying. Added a
+       "coordination hot spots" subsection (CLAUDE.md current state,
+       hand-edited types.ts, numbered migrations).
+
+Note: the other dev shipped B2 (Social signal on posters) on master
+between this machine's #17 and #18 — corner-pill badges on /films
+cards, watcher_count on films_with_stats, migration 0128. Their
+CLAUDE.md "Last shipped" update is reflected at HEAD.
+
+Also created locally (not committed):
+- docs/in-repo-tickets-setup.md — proposal for an in-repo file-based
+  ticket system (tasks/{todo,in-progress,done}/) for two-machine
+  coordination without external tools.
+- .claude/commands/wrapup.md — /wrapup slash command for end-of-
+  session housekeeping. Currently project-local + untracked; needs
+  a session restart on each machine to register.

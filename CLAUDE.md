@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > **Convention:** This section is updated before each session close so the next session can pick up cold. Update it at the end of every session — what just shipped, what's next, any open threads worth carrying forward.
 
-**Last updated:** 2026-04-26 (end of session that shipped B2)
+**Last updated:** 2026-04-26 (post-B2 polish: PR #18 film hero padding fix + PR #19 git-fetch workflow docs)
 
 **Last shipped:** B2 — Social signal on posters. Two corner-pill badges (👁 N eyeing, ✓ N watched) overlaid on `/films` Archive cards via additive props on `FilmPoster`; each badge hides when its own count is 0 so clean poster art stays clean. Goblin-voice caption ("43 goblins are eyeing this · 12 have watched it") on the `/film/[id]` hero. View extension `films_with_stats.watcher_count` (count DISTINCT user_id from watched). No new tables, RLS, or actions. Spec `2026-04-25-social-signal-posters-design.md`, plan `2026-04-25-social-signal-posters.md`. Migration 0125 applied to prod. Live at https://film-goblin.vercel.app/films.
 
@@ -15,6 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Open threads worth knowing about:**
 - `passwords.txt` at repo root holds the Supabase prod pooler URL + password (gitignored). See the "Passwords scratchpad" auto-memory.
 - B2 deferred: coven-scoped signals (future profile-page sub-project), owned + review badges (additive props on FilmPoster + view extensions), most-watched sort on `/films`, badges on other poster surfaces (`/library`, `/home` marquee, `/watched` strip), `/film/[id]` stat block beyond the single caption, compact unit display (1.2K, 12K) past 99+.
+- **`/wrapup` slash command** lives at `.claude/commands/wrapup.md` (untracked, project-local on this machine only). Restart Claude Code to pick it up. Open question: commit `.claude/commands/` to the repo (gitignoring `.claude/settings.local.json`) so the other machine gets the command too — or keep both machines local-only.
+- **`docs/in-repo-tickets-setup.md`** — proposal for `tasks/{todo,in-progress,done}/` file-per-ticket coordination, still local/uncommitted. Decide whether to implement now that two-machine work has bumped against itself a few times.
 
 ## Remote
 
