@@ -225,6 +225,7 @@ describe("RLS: watched", () => {
       [fx.userA.id, fx.filmId]
     );
     const watchId = ins.rows[0].id;
+    // Bond + broadcast=TRUE, so userB CAN see (SELECT) but DELETE is owner-only.
     await bond(db.client, fx.userA.id, fx.userB.id);
     await commit(db.client);
 
@@ -232,5 +233,11 @@ describe("RLS: watched", () => {
     const del = await db.client.query(`DELETE FROM watched WHERE id = $1`, [watchId]);
     await commit(db.client);
     expect(del.rowCount).toBe(0);
+
+    // Confirm row still exists via service_role.
+    await beginAs(db.client, null, "service_role");
+    const remaining = await db.client.query(`SELECT id FROM watched WHERE id = $1`, [watchId]);
+    await commit(db.client);
+    expect(remaining.rowCount).toBe(1);
   });
 });
