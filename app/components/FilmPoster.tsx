@@ -21,9 +21,11 @@ interface FilmPosterProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
   style?: React.CSSProperties;
+  watchlistCount?: number;
+  watcherCount?: number;
 }
 
-export default function FilmPoster({ film, size = "md", className = "", style = {} }: FilmPosterProps) {
+export default function FilmPoster({ film, size = "md", className = "", style = {}, watchlistCount = 0, watcherCount = 0 }: FilmPosterProps) {
   const sizes = {
     xs: { w: 54, h: 80, title: 10, year: 7 },
     sm: { w: 88, h: 130, title: 14, year: 8 },
@@ -167,6 +169,21 @@ export default function FilmPoster({ film, size = "md", className = "", style = 
           </div>
         )}
       </div>}
+
+      {(watchlistCount > 0 || watcherCount > 0) && (
+        <div className="film-poster-signals">
+          {watchlistCount > 0 && (
+            <span className="film-poster-signal" title={`${watchlistCount} on watchlists`}>
+              👁 {watchlistCount > 99 ? "99+" : watchlistCount}
+            </span>
+          )}
+          {watcherCount > 0 && (
+            <span className="film-poster-signal" title={`${watcherCount} watched`}>
+              ✓ {watcherCount > 99 ? "99+" : watcherCount}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
