@@ -47,7 +47,7 @@
 
 @media (max-width: 720px) {
   :root {
-    --container-pad: 16px;
+    --container-pad: 20px;
     --grid-gap: 14px;
     --card-shadow-offset: 6px;
     --modal-pad: 20px;
