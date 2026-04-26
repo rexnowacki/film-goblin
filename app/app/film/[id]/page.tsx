@@ -63,6 +63,17 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
             <p style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontStyle: "italic", lineHeight: 1.35, margin: "28px 0", maxWidth: 620 }}>
               "{film.description}"
             </p>
+            {(film.watchlist_count > 0 || film.watcher_count > 0) && (
+              <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, color: "var(--muted)", margin: "0 0 18px" }}>
+                {film.watchlist_count > 0 && (
+                  <span><strong style={{ color: "var(--accent)" }}>{film.watchlist_count}</strong> goblin{film.watchlist_count === 1 ? " is" : "s are"} eyeing this</span>
+                )}
+                {film.watchlist_count > 0 && film.watcher_count > 0 && " · "}
+                {film.watcher_count > 0 && (
+                  <span><strong style={{ color: "var(--accent)" }}>{film.watcher_count}</strong> ha{film.watcher_count === 1 ? "s" : "ve"} watched it</span>
+                )}
+              </p>
+            )}
             <div className="hero-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
               {user && <FilmActions filmId={film.id} filmTitle={film.title} initialOnWatchlist={onList} initialOwned={owned} initialWatchCount={watchCount} />}
               {user && <RecommendModal filmId={film.id} filmTitle={film.title} covenMembers={covenMembers.map(m => ({ id: m.id, handle: m.handle, display_name: m.display_name }))} />}
