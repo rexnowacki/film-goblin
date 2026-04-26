@@ -43,7 +43,16 @@ export async function GET(request: Request): Promise<NextResponse> {
     await client.connect();
     const digest = await sendDailyDigests(client, resend, { from, baseUrl });
     console.log(`notifier digest: sent=${digest.sent} failed=${digest.failed} skipped=${digest.skipped}`);
-    return NextResponse.json({ ok: true, digest });
+
+    // Notifications cleanup: drop rows older than 30 days. Bell reads only
+    // the last 14 days; the extra 16-day buffer keeps a row visible after
+    // it's been read but ages it out within a month.
+    const cleanup = await client.query(
+      `DELETE FROM notifications WHERE created_at < now() - INTERVAL '30 days'`
+    );
+    console.log(`notifications cleanup: deleted=${cleanup.rowCount ?? 0}`);
+
+    return NextResponse.json({ ok: true, digest, notificationsDeleted: cleanup.rowCount ?? 0 });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("cron send-notifications failed:", message);
