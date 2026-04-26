@@ -749,6 +749,7 @@ export type Database = {
           runtime_min: number | null
           title: string | null
           tracking: boolean | null
+          watcher_count: number | null
           watchlist_count: number | null
           year: number | null
         }
@@ -770,6 +771,7 @@ export type Database = {
           runtime_min?: number | null
           title?: string | null
           tracking?: boolean | null
+          watcher_count?: never
           watchlist_count?: never
           year?: number | null
         }
@@ -791,6 +793,7 @@ export type Database = {
           runtime_min?: number | null
           title?: string | null
           tracking?: boolean | null
+          watcher_count?: never
           watchlist_count?: never
           year?: number | null
         }
