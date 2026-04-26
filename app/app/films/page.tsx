@@ -42,7 +42,7 @@ export default async function FilmsPage({
       <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
         <div className="container-wide">
           <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
-            Every Film, <em style={{ color: "var(--accent)" }}>Indexed</em>.
+            Watch <em style={{ color: "var(--accent)" }}>Weirder</em>.
           </h1>
           <div style={{ display: "flex", gap: 0, border: "1px solid var(--muted)", background: "var(--bone)", boxShadow: "6px 6px 0 var(--accent)", marginTop: 16 }}>
             <span style={{ padding: "14px 16px", color: "var(--accent-deep)", lineHeight: 1, display: "inline-flex", alignItems: "center" }} aria-hidden="true">
