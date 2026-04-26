@@ -35,11 +35,6 @@ export default function NotificationBell({ unreadCount, items }: Props) {
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
-  // Stay mounted while the dropdown is open — otherwise the optimistic
-  // setOptimisticUnread(0) on click unmounts the whole component before
-  // the dropdown can render. Only hide when count is 0 AND closed.
-  if (optimisticUnread <= 0 && !open) return null;
-
   async function onClick() {
     if (open) return;
     setOpen(true);
@@ -59,7 +54,7 @@ export default function NotificationBell({ unreadCount, items }: Props) {
     <div ref={wrapperRef} style={{ position: "relative" }}>
       <button
         onClick={onClick}
-        aria-label={`Open notifications (${optimisticUnread} unread)`}
+        aria-label={optimisticUnread > 0 ? `Open notifications (${optimisticUnread} unread)` : "Open notifications"}
         style={{ background: "transparent", border: 0, padding: 0, cursor: "pointer", display: "inline-flex" }}
       >
         <NotificationBadge count={optimisticUnread} />
