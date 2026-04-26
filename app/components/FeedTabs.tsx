@@ -62,7 +62,7 @@ export default function FeedTabs({ items }: Props) {
       <div style={{ display: "grid", gap: 0 }}>
         {filtered.length === 0 ? (
           <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6, padding: "20px 0" }}>
-            No activity yet. Visit <a href="/people" style={{ color: "var(--accent)" }}>/people</a> to follow someone.
+            No activity yet. Visit <a href="/coven" style={{ color: "var(--accent)" }}>/coven</a> to follow someone.
           </div>
         ) : (
           filtered.map(item => (

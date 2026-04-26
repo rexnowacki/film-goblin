@@ -5,8 +5,6 @@ import { useTransition } from "react";
 import Avatar from "./Avatar";
 import { sendCovenRequest, acceptCovenRequest } from "@/lib/actions/coven";
 
-type RowState = "none" | "pending_outbound" | "pending_inbound" | "in_coven";
-
 export interface SearchPersonRowProps {
   profile: {
     id: string;
@@ -15,7 +13,7 @@ export interface SearchPersonRowProps {
     avatar_url: string | null;
     bio: string | null;
   };
-  state: RowState;
+  state: "none" | "pending_outbound" | "pending_inbound";
   incomingRequestId?: string;
 }
 
@@ -40,13 +38,6 @@ export default function SearchPersonRow({ profile, state, incomingRequestId }: S
       return (
         <button className="btn" disabled style={{ opacity: 0.5 }}>
           Pending
-        </button>
-      );
-    }
-    if (state === "in_coven") {
-      return (
-        <button className="btn" disabled style={{ borderColor: "var(--accent)", color: "var(--accent)" }}>
-          In Coven
         </button>
       );
     }

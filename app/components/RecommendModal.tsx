@@ -51,7 +51,7 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers }: Prop
 
         {covenMembers.length === 0 ? (
           <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, lineHeight: 1.5 }}>
-            You have no coven yet. Visit <a href="/people" style={{ color: "var(--accent-deep)", textDecoration: "underline" }}>/people</a> to bind with someone, then come back.
+            You have no coven yet. Visit <a href="/coven" style={{ color: "var(--accent-deep)", textDecoration: "underline" }}>/coven</a> to bind with someone, then come back.
           </div>
         ) : sent ? (
           <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic" }}>Sent. They'll see it in their feed.</div>
