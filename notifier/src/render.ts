@@ -95,7 +95,7 @@ export function renderDigestEmail(
           Film <span style="color:#FF2D88;">Goblin</span>
         </div>
         <div style="font-family:Arial,sans-serif;font-size:10px;letter-spacing:0.24em;text-transform:uppercase;color:#666;margin-top:8px;">
-          A Field Guide To Cheap Movies · Issue nº1
+          Watch Weirder · Issue nº1
         </div>
       </td></tr>
       <tr><td style="padding:0 24px;">

@@ -32,7 +32,7 @@ export default function LandingPage({ onNavigate }) {
           <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 40, alignItems: "stretch" }}>
             <div>
               <div className="stamp" style={{ background: "var(--void)", color: "var(--yellow)", borderColor: "var(--void)", marginBottom: 20 }}>
-                ✦ A Field Guide To Cheap Movies ✦
+                ✦ Watch Weirder ✦
               </div>
               <h1 className="display" style={{
                 fontSize: "clamp(80px, 11vw, 180px)",
