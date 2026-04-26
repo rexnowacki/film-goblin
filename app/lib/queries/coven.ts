@@ -104,3 +104,36 @@ export async function getCovenStateBetween(
   if (r.from_user_id === viewerId) return { state: "pending_outbound", requestId: r.id };
   return { state: "pending_inbound", requestId: r.id };
 }
+
+type PendingRelationship = {
+  state: "pending_outbound" | "pending_inbound";
+  requestId: string;
+};
+
+export async function getRelationshipMap(
+  client: Client,
+  currentUserId: string,
+  profileIds: string[],
+): Promise<Map<string, PendingRelationship>> {
+  const result = new Map<string, PendingRelationship>();
+  if (profileIds.length === 0) return result;
+
+  const idList = profileIds.join(",");
+  const { data, error } = await client
+    .from("coven_requests")
+    .select("id, from_user_id, to_user_id, status")
+    .eq("status", "pending")
+    .or(
+      `and(from_user_id.eq.${currentUserId},to_user_id.in.(${idList})),and(to_user_id.eq.${currentUserId},from_user_id.in.(${idList}))`,
+    );
+  if (error) throw error;
+
+  for (const r of data ?? []) {
+    if (r.from_user_id === currentUserId) {
+      result.set(r.to_user_id, { state: "pending_outbound", requestId: r.id });
+    } else {
+      result.set(r.from_user_id, { state: "pending_inbound", requestId: r.id });
+    }
+  }
+  return result;
+}

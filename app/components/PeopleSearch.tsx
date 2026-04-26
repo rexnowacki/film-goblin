@@ -14,7 +14,7 @@ export default function PeopleSearch() {
     start(() => {
       const p = new URLSearchParams(params);
       if (next) p.set("q", next); else p.delete("q");
-      router.push(`/people?${p.toString()}`);
+      router.push(`/coven?${p.toString()}`);
     });
   }
 

@@ -27,7 +27,7 @@ export async function getProfileByHandle(client: Client, handle: string) {
 
 export async function getProfilesBySearch(
   client: Client,
-  opts: { q?: string; limit?: number } = {},
+  opts: { q?: string; limit?: number; excludeUserIds?: string[] } = {},
 ) {
   let query = client
     .from("profiles")
@@ -37,6 +37,9 @@ export async function getProfilesBySearch(
   if (opts.q && opts.q.trim()) {
     const q = opts.q.trim();
     query = query.or(`handle.ilike.%${q}%,display_name.ilike.%${q}%`);
+  }
+  if (opts.excludeUserIds && opts.excludeUserIds.length > 0) {
+    query = query.not("id", "in", `(${opts.excludeUserIds.join(",")})`);
   }
   const { data, error } = await query;
   if (error) throw error;
