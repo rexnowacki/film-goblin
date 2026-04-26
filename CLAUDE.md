@@ -6,16 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > **Convention:** This section is updated before each session close so the next session can pick up cold. Update it at the end of every session — what just shipped, what's next, any open threads worth carrying forward.
 
-**Last updated:** 2026-04-25 (end of session that shipped C2)
+**Last updated:** 2026-04-26 (end of session that shipped B2)
 
-**Last shipped:** C2 — Watched Action. New event-stream `watched` table (one row per (user, film, date)), one-tap "+ Watched" button on `/film/[id]` with re-tap modal for rewatches, `/watched` route with stats hero + month-grouped diary + edit/delete via shared `WatchModal`, `watch_logged` activity event fan-out (gated by `broadcast_watched` profile flag) wired through D1's `groupFeed` so 3+ in 30 min collapse on the home/coven feed. Spec `2026-04-25-watched-action-design.md`, plan `2026-04-25-watched-action.md`. Migrations 0123 + 0124 applied to prod. Live at https://film-goblin.vercel.app/watched.
+**Last shipped:** B2 — Social signal on posters. Two corner-pill badges (👁 N eyeing, ✓ N watched) overlaid on `/films` Archive cards via additive props on `FilmPoster`; each badge hides when its own count is 0 so clean poster art stays clean. Goblin-voice caption ("43 goblins are eyeing this · 12 have watched it") on the `/film/[id]` hero. View extension `films_with_stats.watcher_count` (count DISTINCT user_id from watched). No new tables, RLS, or actions. Spec `2026-04-25-social-signal-posters-design.md`, plan `2026-04-25-social-signal-posters.md`. Migration 0125 applied to prod. Live at https://film-goblin.vercel.app/films.
 
-**Next up (queue locked in "Queued sub-projects" below):**
-1. **B2 — Social signal on posters.** Coven-watchlist/owned/watched/(eventually)reviewed badges on `/films` Archive cards. Reads from `films_with_stats`. Now that C2 has shipped, B2's `watcher_count` extension can land alongside `owned_count` and `watchlist_count`.
+**Next up:** Queue is empty. The Library / Watched / Social-signal trio (C1, C2, B2) is fully shipped. Future micro-projects on deck per the deferred lists in C2's spec and B2's spec — coven-overlap signals on profile pages, owned/review badges, year-in-review, ratings on diary, etc. Brainstorm the next pick when there's appetite.
 
 **Open threads worth knowing about:**
 - `passwords.txt` at repo root holds the Supabase prod pooler URL + password (gitignored). See the "Passwords scratchpad" auto-memory.
-- C2 deferred: `/p/[handle]/watched` profile-page integration (v1.1 polish), rewatch differentiation in feed copy ("rewatched X" vs "watched X"), year-in-review breakdown chart, stars/ratings on diary entries, bulk-import from Letterboxd CSV, in-place film swap on diary rows.
+- B2 deferred: coven-scoped signals (future profile-page sub-project), owned + review badges (additive props on FilmPoster + view extensions), most-watched sort on `/films`, badges on other poster surfaces (`/library`, `/home` marquee, `/watched` strip), `/film/[id]` stat block beyond the single caption, compact unit display (1.2K, 12K) past 99+.
 
 ## Remote
 
@@ -223,12 +222,11 @@ Every sub-project gets a spec + plan under `docs/superpowers/specs/` and `docs/s
 | 12 | Library — Owned (C1) — new `library` table + RLS, `/library` route, `OwnedButton` + `FilmActions` wrapper, auto-watchlist-cleanup on add, `films_with_stats.owned_count` exposed for B2 | `2026-04-25-library-owned-design.md` |
 | 13 | Activity Feed Grouping (D1 / #52) — read-time `groupFeed` pass over `getEnrichedFeed`, `FeedItem` discriminated union (`single \| group`), new `ActivityWatchlistAddedGroup` component + `FeedRow` dispatcher, 30-min event-to-event window + 24-hr span ceiling + min-3 size, watchlist-adds only in v1 | `2026-04-25-activity-feed-grouping-design.md` |
 | 14 | Watched Action (C2) — `watched` event-stream table + `/watched` route (stats hero + month-grouped diary), shared `WatchModal` for new+edit, `WatchedButton` as 3rd peer in `FilmActions`, `watch_logged` activity kind + trigger + `groupFeed` registration, `broadcast_watched` Settings toggle | `2026-04-25-watched-action-design.md` |
+| 15 | Social signal on posters (B2) — `films_with_stats.watcher_count` view extension; `FilmPoster` opt-in `watchlistCount`/`watcherCount` props with corner-pill render; `/films` archive grid badges; `/film/[id]` hero goblin-voice caption | `2026-04-25-social-signal-posters-design.md` |
 
 ## Queued sub-projects
 
-One piece of follow-on work. Brainstorm + spec before implementation.
-
-1. **B2 — Social signal on posters.** Surface coven-watchlist / coven-owned / coven-watched / coven-reviewed counts as small badges on `/films` Archive cards. Reads from `films_with_stats` (already exposes `watchlist_count` and `owned_count`; needs additive extension for `watcher_count` (from `watched`) and `review_count` (from `reviews`)). No new schema for the read path. Open design questions: which signals matter most, how to render badges at small card sizes without crowding, whether to surface row-level "Sarah owns this" or stick to aggregate counts only.
+The Library / Watched / Social-signal trio (C1, C2, B2) is shipped. No formally-locked next project. When ready, brainstorm a new sub-project from the deferred lists in C2's and B2's specs (coven-overlap signals on `/p/[handle]`, year-in-review on `/watched`, owned/review badges, etc.) or pick a fresh direction.
 
 **Tier-zero hygiene:** Done 2026-04-25. pg-mem smoke fixed at the helper layer (not the migration), all action+admin test files retrofitted with `describe.skipIf`, `/watchlist` hero compressed to match `/films` + `/library`.
 
