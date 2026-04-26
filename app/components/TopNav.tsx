@@ -41,6 +41,7 @@ export default async function TopNav({ current }: TopNavProps) {
         { id: "films", label: "Films", href: "/films" },
         { id: "watchlist", label: "Watchlist", href: "/watchlist" },
         { id: "library", label: "Library", href: "/library" },
+        { id: "watched", label: "Diary", href: "/watched" },
         { id: "lists", label: "Lists", href: "/lists" },
         { id: "people", label: "People", href: "/people" },
         { id: "coven", label: "Coven", href: "/coven", badge: pendingInviteCount },
