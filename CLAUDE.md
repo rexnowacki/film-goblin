@@ -6,21 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > **Convention:** This section is updated before each session close so the next session can pick up cold. Update it at the end of every session — what just shipped, what's next, any open threads worth carrying forward.
 
-**Last updated:** 2026-04-25 (end of tier-zero hygiene sweep)
+**Last updated:** 2026-04-25 (end of session that shipped C2)
 
-**Last shipped:** Tier-zero hygiene sweep. pg-mem migration smoke is green again (extended `db/tests/helpers/pg-mem.ts` to strip GRANT, CREATE/DROP VIEW, and `backfill` files — the prior CLAUDE.md diagnosis blaming `CREATE OR REPLACE VIEW` was wrong; pg-mem 3.0.4 actually parses that fine). All `app/tests/{actions,admin}/*.test.ts` files now report green-skipped on missing env via `hasEnv` guards + `describe.skipIf`. `/watchlist` hero restructured into the bone-on-void + content split that `/films` and `/library` use, with `h-display` + `<em>` accent and the dropped eyebrow. Tests: db smoke passes; app suite is 88 passed / 38 skipped / 0 failed across 26 files.
-
-Prior shipped: D1 — Activity Feed Grouping (#52). Watchlist-adds groups of 3+ in a 30-min window collapse to a single expandable row on the home/coven feed; profile pages stay individual. Live at https://film-goblin.vercel.app.
+**Last shipped:** C2 — Watched Action. New event-stream `watched` table (one row per (user, film, date)), one-tap "+ Watched" button on `/film/[id]` with re-tap modal for rewatches, `/watched` route with stats hero + month-grouped diary + edit/delete via shared `WatchModal`, `watch_logged` activity event fan-out (gated by `broadcast_watched` profile flag) wired through D1's `groupFeed` so 3+ in 30 min collapse on the home/coven feed. Spec `2026-04-25-watched-action-design.md`, plan `2026-04-25-watched-action.md`. Migrations 0123 + 0124 applied to prod. Live at https://film-goblin.vercel.app/watched.
 
 **Next up (queue locked in "Queued sub-projects" below):**
-1. **C2 — Watched action.** Event-stream `watched` table + `/watched` page; D1's grouping picks up `watch_logged` events automatically once registered.
-2. **B2 — Social signal on posters.** Coven-watchlist/owned/(eventually)watched/reviewed badges on `/films` Archive cards. Reads from `films_with_stats`.
+1. **B2 — Social signal on posters.** Coven-watchlist/owned/watched/(eventually)reviewed badges on `/films` Archive cards. Reads from `films_with_stats`. Now that C2 has shipped, B2's `watcher_count` extension can land alongside `owned_count` and `watchlist_count`.
 
 **Open threads worth knowing about:**
-- "tests pass" is now a real signal. db smoke + app vitest both green; integration tests skip cleanly when Supabase env is absent.
 - `passwords.txt` at repo root holds the Supabase prod pooler URL + password (gitignored). See the "Passwords scratchpad" auto-memory.
-- D1 deferred: 2-event natural-language "X added A and B" rendering (v1.1 polish), group-level likes (would force a write-time concept of group), analytics infra (own future sub-project).
-- `/watchlist` hero restructure was visual-only (typecheck clean, no logic changes) — wasn't able to verify in-browser this session.
+- C2 deferred: `/p/[handle]/watched` profile-page integration (v1.1 polish), rewatch differentiation in feed copy ("rewatched X" vs "watched X"), year-in-review breakdown chart, stars/ratings on diary entries, bulk-import from Letterboxd CSV, in-place film swap on diary rows.
 
 ## Remote
 
@@ -216,13 +211,13 @@ Every sub-project gets a spec + plan under `docs/superpowers/specs/` and `docs/s
 | 11 | Discovery chrome polish (B1) — chip-row sort on `/films`, dropped Chapter II eyebrow, installable PWA shell with goblin-skull glyph | `2026-04-25-discovery-chrome-polish-design.md` |
 | 12 | Library — Owned (C1) — new `library` table + RLS, `/library` route, `OwnedButton` + `FilmActions` wrapper, auto-watchlist-cleanup on add, `films_with_stats.owned_count` exposed for B2 | `2026-04-25-library-owned-design.md` |
 | 13 | Activity Feed Grouping (D1 / #52) — read-time `groupFeed` pass over `getEnrichedFeed`, `FeedItem` discriminated union (`single \| group`), new `ActivityWatchlistAddedGroup` component + `FeedRow` dispatcher, 30-min event-to-event window + 24-hr span ceiling + min-3 size, watchlist-adds only in v1 | `2026-04-25-activity-feed-grouping-design.md` |
+| 14 | Watched Action (C2) — `watched` event-stream table + `/watched` route (stats hero + month-grouped diary), shared `WatchModal` for new+edit, `WatchedButton` as 3rd peer in `FilmActions`, `watch_logged` activity kind + trigger + `groupFeed` registration, `broadcast_watched` Settings toggle | `2026-04-25-watched-action-design.md` |
 
 ## Queued sub-projects
 
-Two pieces of follow-on work, in **locked execution order**. Brainstorm + spec each before implementation.
+One piece of follow-on work. Brainstorm + spec before implementation.
 
-1. **C2 — Watched action.** Track when a user watches a film (timestamps + counts). Builds directly on C1's data model. Needs a new `watched` event-stream table (event-shaped, not flag-shaped — multiple watch entries per `(user, film)`), a server action distinct from `addToLibrary` (logging an event vs setting a flag), a `/watched` page with history view + per-film count + most-watched stats. Bigger surface than C1 because of the temporal dimension. Likely also gets a `watched_at` activity event for the coven feed — which D1's `groupFeed` will pick up automatically once `watch_logged` is registered in `isGroupableKind` (one-line change in `app/lib/queries/group-activity.ts`).
-2. **B2 — Social signal on posters.** Surface coven-watchlist / coven-owned / coven-reviewed counts as small badges on `/films` Archive cards. Reads from `films_with_stats` (already exposes `watchlist_count` and `owned_count` via C1's view extension; reviews count would need a similar additive extension; watched count waits on C2). No new schema for the read path. Open design questions: which signals matter most, how to render badges at small card sizes without crowding, whether to surface row-level "Sarah owns this" or stick to aggregate counts only.
+1. **B2 — Social signal on posters.** Surface coven-watchlist / coven-owned / coven-watched / coven-reviewed counts as small badges on `/films` Archive cards. Reads from `films_with_stats` (already exposes `watchlist_count` and `owned_count`; needs additive extension for `watcher_count` (from `watched`) and `review_count` (from `reviews`)). No new schema for the read path. Open design questions: which signals matter most, how to render badges at small card sizes without crowding, whether to surface row-level "Sarah owns this" or stick to aggregate counts only.
 
 **Tier-zero hygiene:** Done 2026-04-25. pg-mem smoke fixed at the helper layer (not the migration), all action+admin test files retrofitted with `describe.skipIf`, `/watchlist` hero compressed to match `/films` + `/library`.
 
