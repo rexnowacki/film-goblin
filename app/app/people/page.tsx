@@ -18,10 +18,10 @@ export default async function PeoplePage({
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav current="people" />
 
-      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "44px 0 32px" }} className="grain-light">
+      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
         <div className="container-wide">
           <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 10 }}>Chapter IV · The Covenfolk</div>
-          <h1 className="h-display">
+          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
             Find Your <em style={{ color: "var(--accent)" }}>People</em>.
           </h1>
           <div style={{ display: "flex", border: "3px solid var(--void)", background: "var(--bone)", boxShadow: "6px 6px 0 var(--accent)", marginTop: 24 }}>
@@ -31,7 +31,7 @@ export default async function PeoplePage({
         </div>
       </section>
 
-      <section style={{ padding: "36px 0 60px" }}>
+      <section style={{ padding: "24px 0 60px" }}>
         <div className="container-wide">
           {profiles.length === 0 ? (
             <div style={{ textAlign: "center", padding: 60, fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--muted)" }}>
