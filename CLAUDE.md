@@ -24,14 +24,28 @@ Private repo at [rexnowacki/film-goblin](https://github.com/rexnowacki/film-gobl
 
 ## Git workflow
 
-I am working on the same codebase on two separate machines, as if I'm two devs.
+I am working on the same codebase on two separate machines, as if I'm two devs. Both devs follow the same protocol so we don't step on each other.
+
+**Always-on rules:**
 
 - Never commit directly to `master`. Always work on a feature branch.
-- Before starting new work, pull latest `master` and branch from there.
 - Use descriptive branch names like `feature/spell-card-balance` or `fix/rulebook-typos`.
 - Commit frequently with clear messages.
 - Push the branch to origin when work is paused or complete.
 - Open pull requests rather than merging directly.
+
+**Stay in sync with `git fetch`** — the other dev may have merged work since you last looked. `git fetch` updates `origin/*` refs without touching your working tree, so it's always safe.
+
+- **Before starting a new branch:** `git fetch origin && git checkout master && git merge --ff-only origin/master`. Fast-forwards local `master` to the remote tip, then branch from there. The `--ff-only` flag refuses to silently create a merge commit if local `master` somehow diverged (it shouldn't — see rule #1).
+- **Before pushing a branch you've held for a while:** `git fetch origin` and check whether `origin/master` moved while you worked. If it did, rebase: `git rebase origin/master`. Resolves conflicts locally instead of dumping them onto the PR.
+- **Before deploying to prod:** `git fetch origin` so you confirm you're shipping the actual current `master`, not a stale local snapshot.
+- Prefer `git fetch` + explicit `merge --ff-only` / `rebase` over `git pull`. `pull` is fine in practice but hides whether a fast-forward, merge, or rebase happened — explicit is better for two-machine coordination.
+
+**Coordination hot spots** — files where two devs are most likely to collide. Touch carefully and merge fast:
+
+- `CLAUDE.md` "Current state" section — both `/wrapup` runs edit the same paragraphs.
+- `app/lib/supabase/types.ts` — hand-edited on machines without the Supabase CLI; regen on the other machine will clobber. Commit type edits in their own PR.
+- `db/migrations/0NNN_*.sql` — numbered sequentially. If both devs add the same number independently, the second-to-merge renumbers and bumps any consumers.
 
 ## Packages in this repo
 
