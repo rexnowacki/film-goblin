@@ -68,7 +68,7 @@ export default async function CovenPage({
       {invites.length > 0 && (
         <section style={{ padding: "24px 0", borderBottom: "3px solid var(--void)" }}>
           <div className="container-wide">
-            <h2 className="head" style={{ fontSize: 24, margin: "0 0 16px" }}>Pending Invitations</h2>
+            <h2 className="eyebrow" style={{ fontSize: 14, color: "var(--accent)", margin: "0 0 16px" }}>Pending Invitations</h2>
             <div style={{ display: "grid", gap: 12 }}>
               {invites.map((inv) => (
                 <div
@@ -109,7 +109,7 @@ export default async function CovenPage({
             style={{ "--stack-template": "1fr 1fr", "--stack-gap": "32px", alignItems: "start" } as React.CSSProperties}
           >
             <div>
-              <h2 className="head" style={{ fontSize: 28, margin: "0 0 16px" }}>Your Coven</h2>
+              <h2 className="eyebrow" style={{ fontSize: 14, color: "var(--accent)", margin: "0 0 16px" }}>Your Coven</h2>
               {members.length === 0 ? (
                 <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>
                   Your coven is empty. Search to your right to find souls to bind with.
@@ -150,7 +150,7 @@ export default async function CovenPage({
             </div>
 
             <div>
-              <h2 className="head" style={{ fontSize: 28, margin: "0 0 16px" }}>Find People</h2>
+              <h2 className="eyebrow" style={{ fontSize: 14, color: "var(--accent)", margin: "0 0 16px" }}>Find People</h2>
               <div style={{ display: "flex", gap: 0, border: "1px solid var(--muted)", background: "var(--bone)", boxShadow: "6px 6px 0 var(--accent)", marginBottom: 20 }}>
                 <span style={{ padding: "14px 16px", color: "var(--accent-deep)", lineHeight: 1, display: "inline-flex", alignItems: "center" }} aria-hidden="true">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
