@@ -111,6 +111,7 @@ export default function SettingsForm() {
         bio: String(fd.get("bio") || ""),
         broadcast_watchlist_adds: fd.get("broadcast") === "on",
         broadcast_library: fd.get("broadcast_library") === "on",
+        broadcast_watched: fd.get("broadcast_watched") === "on",
         email_notifications_enabled: fd.get("email_notifications") === "on",
       });
       setSaved(true);
@@ -179,6 +180,11 @@ export default function SettingsForm() {
         <input type="checkbox" name="broadcast_library" defaultChecked={profile.broadcast_library} />
         <span className="check-zine__box" aria-hidden="true" />
         <span className="caps" style={{ fontSize: 11 }}>Show your library to coven members</span>
+      </label>
+      <label className="check-zine">
+        <input type="checkbox" name="broadcast_watched" defaultChecked={profile.broadcast_watched} />
+        <span className="check-zine__box" aria-hidden="true" />
+        <span className="caps" style={{ fontSize: 11 }}>Broadcast watches to your coven</span>
       </label>
       <label className="check-zine">
         <input type="checkbox" name="email_notifications" defaultChecked={profile.email_notifications_enabled} />

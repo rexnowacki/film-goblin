@@ -15,6 +15,7 @@ export interface ProfileFields {
   avatar_url?: string;
   broadcast_watchlist_adds?: boolean;
   broadcast_library?: boolean;
+  broadcast_watched?: boolean;
   email_notifications_enabled?: boolean;
 }
 
