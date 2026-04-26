@@ -16,6 +16,18 @@ export const metadata: Metadata = {
     capable: true,
     title: "Film Goblin",
     statusBarStyle: "black-translucent",
+    startupImage: [
+      // iPhone 14/15/16 Pro Max & Plus (430×932 @3x)
+      { url: "/icons/splash-1290x2796.png", media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
+      // iPhone 14/15/16 Pro (393×852 @3x)
+      { url: "/icons/splash-1179x2556.png", media: "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
+      // iPhone 14/15/16 + 12/13 (390×844 @3x)
+      { url: "/icons/splash-1170x2532.png", media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
+      // iPhone XR / 11 (414×896 @2x)
+      { url: "/icons/splash-828x1792.png", media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },
+      // iPhone SE 2nd/3rd, 8, 7, 6s, 6 (375×667 @2x)
+      { url: "/icons/splash-750x1334.png", media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },
+    ],
   },
 };
 
