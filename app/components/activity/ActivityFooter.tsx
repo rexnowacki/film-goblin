@@ -9,7 +9,7 @@ interface Props {
 export default function ActivityFooter({ item }: Props) {
   return (
     <div className="activity-footer">
-      <span className="caps activity-footer-time">{relativeTime(item.created_at)}</span>
+      <span className="activity-footer-time" style={{ fontFamily: "var(--font-ui)", color: "var(--muted)" }}>{relativeTime(item.created_at)}</span>
       <HeartButton
         activityId={item.id}
         initialCount={item.reactions.count}
