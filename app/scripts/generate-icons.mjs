@@ -2,8 +2,8 @@
 //   cd app
 //   npm install --no-save sharp png-to-ico
 //   node scripts/generate-icons.mjs
-// Reads public/icons/source.png and writes the derived PNG set + favicon.ico.
-// Re-run if you swap source.png. Output is committed to git.
+// Reads public/icons/icon-source.png and writes the derived PNG set + favicon.ico.
+// Re-run if you swap icon-source.png. Output is committed to git.
 // (--no-save keeps sharp/png-to-ico out of package.json — they're one-shot
 //  build-time deps, not runtime. node_modules entries don't pollute git.)
 
@@ -11,7 +11,7 @@ import sharp from "sharp";
 import pngToIco from "png-to-ico";
 import { readFileSync, writeFileSync } from "node:fs";
 
-const SRC = "public/icons/source.png";
+const SRC = "public/icons/icon-source.png";
 
 const sizes = [
   { out: "public/icons/icon-192.png", size: 192 },
