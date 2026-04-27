@@ -42,6 +42,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        {/* Legacy iOS standalone capability declaration. Next.js's metadata API
+            emits only the modern `mobile-web-app-capable` tag; older iOS still
+            preferentially reads the apple-prefixed form. Belt-and-suspenders. */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        {/* No-media fallback splash. iOS picks the FIRST matching apple-touch-
+            startup-image link; if none of the device-specific media queries
+            match (rare but possible — iOS standalone reports dimensions
+            differently than browser mode), this catches it with a portrait
+            iPhone 14/15 size that iOS will scale. */}
+        <link rel="apple-touch-startup-image" href="/icons/splash-1179x2556.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
