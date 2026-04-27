@@ -1,17 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getLandingMarquee } from "@/lib/queries/films";
-import { getFeaturedGrimoires } from "@/lib/queries/lists";
 import FilmPoster from "@/components/FilmPoster";
 import PriceDrop from "@/components/PriceDrop";
 import HalftoneBar from "@/components/HalftoneBar";
 
 export default async function LandingPage() {
   const supabase = await createClient();
-  const [marqueeFilms, featuredLists] = await Promise.all([
-    getLandingMarquee(supabase),
-    getFeaturedGrimoires(supabase),
-  ]);
+  const marqueeFilms = await getLandingMarquee(supabase);
 
   // Double the marquee for seamless loop
   const marqueeStrip = [...marqueeFilms, ...marqueeFilms];
@@ -83,7 +79,6 @@ export default async function LandingPage() {
       {/* MARQUEE */}
       <section style={{ background: "var(--void)", color: "var(--bone)", borderBottom: "2px solid var(--void)", padding: "40px 0", overflow: "hidden" }}>
         <div className="container-wide" style={{ marginBottom: 20 }}>
-          <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 6 }}>Chapter I</div>
           <h2 className="h-display">
             Deals, Fresh <span style={{ color: "var(--accent)", fontStyle: "italic" }}>From The Pit</span>
           </h2>
@@ -99,36 +94,6 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* GRIMOIRES */}
-      <section style={{ background: "var(--bone)", color: "var(--void)", padding: "72px 0", borderBottom: "2px solid var(--void)" }} className="grain-light">
-        <div className="container-wide">
-          <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 6 }}>Chapter II</div>
-          <h2 className="h-display" style={{ marginBottom: 40 }}>
-            The Curated <em style={{ color: "var(--accent)" }}>Grimoires</em>
-          </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "var(--grid-gap)" }}>
-            {featuredLists.map((list, i) => (
-              <div key={list.id} style={{
-                background: "var(--void)",
-                color: "var(--bone)",
-                border: "2px solid var(--void)",
-                boxShadow: "5px 5px 0 var(--void)",
-                padding: 28,
-                transform: `rotate(${[-1.5, 0.5, -0.8, 1.2][i]}deg)`,
-                minHeight: 280,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-              }}>
-                {list.is_official && <span className="stamp">✦ Official</span>}
-                <div className="display" style={{ fontSize: list.title.length > 20 ? 28 : 40, lineHeight: 0.92 }}>
-                  {list.title}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
