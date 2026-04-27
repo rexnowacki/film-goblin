@@ -19,24 +19,22 @@ const sizes = [
   { out: "public/icons/splash-750x1334.png",  w: 750,  h: 1334 }, // SE 2/3, 8, 7, 6s, 6
 ];
 
-// Goblin art occupies the full square. To leave breathing room on portrait
-// splashes (and avoid a goblin that reaches the top/bottom edges), inset the
-// art so it covers ~50% of the shorter screen dimension.
-const ART_FRACTION = 0.5;
-
+// The square goblin art bleeds edge-to-edge horizontally so the splash
+// reads as full-screen on portrait phones. Top/bottom letterbox is pure
+// black (#000000) — must match the source's black exactly so there's no
+// visible seam between the embedded art and the padding.
 for (const { out, w, h } of sizes) {
-  const artSize = Math.round(Math.min(w, h) * ART_FRACTION);
-  const art = await sharp(SRC).resize(artSize, artSize, { fit: "contain" }).toBuffer();
+  const art = await sharp(SRC).resize(w, w, { fit: "cover" }).toBuffer();
   await sharp({
     create: {
       width: w,
       height: h,
       channels: 3,
-      background: { r: 0x0a, g: 0x0a, b: 0x0a }, // --void
+      background: { r: 0, g: 0, b: 0 },
     },
   })
     .composite([{ input: art, gravity: "center" }])
     .png()
     .toFile(out);
-  console.log(`wrote ${out} (${w}x${h}, art ${artSize}px)`);
+  console.log(`wrote ${out} (${w}x${h}, art ${w}x${w} centered)`);
 }
