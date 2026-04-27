@@ -70,25 +70,6 @@ export default async function PublicProfilePage({
         </div>
       </section>
 
-      <section style={{ background: "var(--bone)", color: "var(--void)", padding: "48px 0", borderBottom: "3px solid var(--void)" }} className="grain-light">
-        <div className="container-wide">
-          <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 10 }}>Their Grimoires</div>
-          {bundle.lists.length === 0 ? (
-            <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>No public lists.</div>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "var(--grid-gap)" }}>
-              {bundle.lists.map(l => (
-                <div key={l.id} style={{ border: "2px solid var(--void)", padding: 20 }}>
-                  {l.is_official && <span className="stamp" style={{ background: "var(--accent)", color: "var(--accent-ink)", marginBottom: 12, display: "inline-block" }}>✦ Official</span>}
-                  <div className="head" style={{ fontSize: 22, lineHeight: 1.1, marginBottom: 8 }}>{l.title}</div>
-                  {l.description && <div style={{ fontFamily: "var(--font-serif)", fontSize: 13, opacity: 0.8 }}>{l.description}</div>}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
       <section style={{ padding: "48px 0", borderBottom: "3px solid var(--void)" }}>
         <div className="container-wide">
           <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 10 }}>Their Coven</div>
