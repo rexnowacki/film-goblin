@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getPublicProfileBundle } from "@/lib/queries/profiles";
 import { getCovenStateBetween } from "@/lib/queries/coven";
 import { getReactionsForActivities } from "@/lib/queries/activity-reactions";
+import { getCommentSummariesForActivities } from "@/lib/queries/activity-comments";
 import TopNav from "@/components/TopNav";
 import Avatar from "@/components/Avatar";
 import FollowButton from "@/components/FollowButton";
@@ -110,11 +111,12 @@ async function enrichOwnActivity(supabase: any, rows: any[], profile: any, viewe
   const recipientIds = Array.from(new Set(rows.map(r => r.payload?.to_user_id).filter(Boolean)));
   const listIds = Array.from(new Set(rows.map(r => r.payload?.list_id).filter(Boolean)));
 
-  const [films, recipients, lists, reactionsMap] = await Promise.all([
+  const [films, recipients, lists, reactionsMap, commentsMap] = await Promise.all([
     filmIds.length ? supabase.from("films").select("id, title, director, year, artwork_url, itunes_url").in("id", filmIds) : Promise.resolve({ data: [] }),
     recipientIds.length ? supabase.from("profiles").select("id, handle, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] }),
     listIds.length ? supabase.from("lists").select("id, title").in("id", listIds) : Promise.resolve({ data: [] }),
     getReactionsForActivities(supabase, rows.map(r => r.id), viewerId),
+    getCommentSummariesForActivities(supabase, rows.map(r => r.id)),
   ]);
 
   const filmMap = new Map((films.data ?? []).map((r: any) => [r.id, r]));
@@ -125,7 +127,8 @@ async function enrichOwnActivity(supabase: any, rows: any[], profile: any, viewe
   const out: any[] = [];
   for (const r of rows) {
     const reactions = reactionsMap.get(r.id) ?? { count: 0, likedByMe: false };
-    const base = { id: r.id, created_at: r.created_at, actor, reactions };
+    const comments = commentsMap.get(r.id) ?? { count: 0, items: [] };
+    const base = { id: r.id, created_at: r.created_at, actor, reactions, comments };
     const film = r.payload?.film_id ? filmMap.get(r.payload.film_id) : undefined;
     const recipient = r.payload?.to_user_id ? recipMap.get(r.payload.to_user_id) : undefined;
     const list = r.payload?.list_id ? listMap.get(r.payload.list_id) : undefined;
