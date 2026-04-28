@@ -1,0 +1,127 @@
+Session shipped — 2026-04-27
+=============================
+
+PR #28  Landing — dropped the "Chapter II · The Curated Grimoires" section
+        and the now-orphaned "Chapter I" eyebrow above the marquee on the
+        pre-login landing page; also dropped the unused
+        getFeaturedGrimoires import.
+
+PR #29  Profile pages — removed the "Their Grimoires" panel from
+        /p/<handle> since lists aren't a user-facing feature yet. Left
+        the underlying bundle.lists query intact for when lists ship.
+
+PR #21  Covenfolk merge spec + plan (docs only) — the design and
+        implementation plan that backed last session's /people + /coven
+        merge. Carried over from prior session; merged today as the
+        canonical record of those design decisions.
+
+PR #31  Activity comments — the headline sub-project for this session.
+        New activity_comments table (migration 0129) with surrogate UUID
+        PK, 1..140 CHECK on body, two-disjunct DELETE policy (author OR
+        activity owner). New comment_on_activity notification kind +
+        SECURITY DEFINER trigger split across migrations 0130/0131
+        (per the same-transaction enum-value rule that 0123/0124
+        established). Server actions addActivityComment /
+        deleteActivityComment with private/public split. Read helper
+        getCommentSummariesForActivities. New CommentButton (speech-
+        bubble toggle) and ActivityCommentThread (inline list +
+        140-char composer with optimistic insert/delete). Wired once
+        into ActivityFooter so all 7 per-kind components inherit; group
+        rows skip per spec decision #3. Both /home (getEnrichedFeed)
+        and profile pages (enrichOwnActivity) attach comments.
+        Notification rendering for comment_on_activity in
+        NotificationRow + NotificationGroupRow with deep-link to
+        /home?activity=<id> + auto-expand on arrival. Spec
+        2026-04-27-activity-comments-design.md, plan
+        2026-04-27-activity-comments.md. Migrations 0129/0130/0131
+        applied to prod ahead of merge. Live at
+        https://film-goblin.vercel.app/home.
+
+PR #32  Comments hotfix — the production /home page threw a server-
+        side exception (digest 596798767) immediately after #31
+        because the read query used a profiles!inner nested embed
+        but activity_comments.user_id FKs to auth.users, not profiles
+        — PostgREST can't traverse that chain. Replaced with the
+        documented two-step hydrate pattern from
+        fetchLikersForActivity in lib/actions/reactions.ts (rows
+        first, then a single profiles SELECT keyed by the unique
+        commenter ids). Same fix applied to _addActivityComment's
+        insert response.
+
+PR #33  Comments — collapse the thread after a successful post. Adds
+        an onPosted callback fired only on server-confirmed success;
+        ActivityFooter wires it to setExpanded(false). Failed posts
+        keep the panel open with the inline error visible.
+
+PR #34  Comments — replaced the ✕ delete glyph on owned-comment rows
+        with a small hollow uppercase "Delete" pill. The ✕ was reading
+        as "close/collapse the thread" rather than "delete this
+        comment."
+
+PR #35  Comments — added a "Hide" pill to the thread panel for a more
+        discoverable manual-collapse affordance. Same hollow-pill
+        style as the Delete pill so the two read as a pair of utility
+        pills. Wires through a new onCollapse prop.
+
+PR #36  Comments hotfix — the Hide pill was absolutely positioned at
+        the panel's top-right and overlapped the Delete pill on the
+        first owned-comment row. Moved Hide into a flex header above
+        the comment list so it gets its own row.
+
+PR #37  Watch notes on the feed — when a user logs a watch with a
+        note, that note now renders under the
+        "<actor> watched <title>." line on /home and on profile
+        pages. Migration 0132 extends activity_on_watch_insert() to
+        snapshot watched.note into the activity payload at INSERT
+        time. EnrichedActivity.watch_logged gains note: string |
+        null. Bonus fix: profile pages were previously dropping
+        watch_logged events on the floor (no case in the enrichment
+        switch). Forward-only — pre-existing watch_logged rows don't
+        get backfilled notes.
+
+PR #38  Watched RLS test alignment — the trigger test asserted on
+        payload === { film_id } exactly; updated to
+        { film_id, note: null } so it matches the 0132 payload shape.
+        Test-only change, no deploy.
+
+PR #39  Discovery hover quick-add — desktop /films posters now reveal
+        a small + button on hover. Click it to open a 2-pill menu
+        (Watchlist / Library) that fires the existing addToWatchlist
+        / addToLibrary actions and shows a ✓ disabled state once
+        added. New PosterQuickAdd client component, new
+        getWatchlistedFilmIds query helper symmetric to
+        getOwnedFilmIds. Mobile (≤720px) and anon viewers see the
+        poster unchanged. Owned films were already filtered out of
+        /films so the Library pill always means "add."
+
+PR #40  Discovery exclusion — getFilms now subtracts both library AND
+        watchlist film IDs from the /films grid for the viewer (was
+        only library before). Both fetches run in parallel; the
+        union is the exclusion list. /library and /watchlist remain
+        the canonical surfaces for engaged-with films.
+
+Also created locally (not committed):
+- docs/in-repo-tickets-setup.md — proposal for tasks/{todo,in-progress,done}/
+  file-per-ticket coordination, still local from a prior session;
+  unchanged today.
+- .superpowers/ — brainstorm-companion session storage from the
+  activity-comments brainstorm; gitignored.
+- .claude/ — local-only Claude Code project files; gitignored.
+
+Open threads worth knowing about:
+- PR #30 (activity-comments spec + plan docs) is still OPEN. Same
+  situation as PR #21 was at session start. Decide whether to merge
+  it as the canonical record of the design or close it (the
+  implementation is the authoritative state now).
+- The activity-comments brainstorm spawned a 13-task plan executed
+  via subagent-driven development. Worktree at
+  .worktrees/activity-comments was cleaned up on merge.
+- Migrations 0129, 0130, 0131, 0132 applied to prod via the session-
+  mode pooler; types.ts hand-edited (this is the no-Supabase-CLI
+  machine). Both the watchlistedSet bit on /films and the
+  getWatchlistedFilmIds helper landed in #39 and stayed when #40
+  added the watchlist exclusion — defensive in case PosterQuickAdd
+  is reused on another surface that doesn't filter watchlist.
+- User asked at end of session to make library-add an activity
+  feed event (analogous to watchlist_added / watch_logged). Not
+  shipped this session — picks up next.
