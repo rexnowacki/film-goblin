@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getPublicLists, getMySubscribedLists } from "@/lib/queries/lists";
 import TopNav from "@/components/TopNav";
+import BottomNav from "@/components/BottomNav";
 import SubscribeButton from "@/components/SubscribeButton";
 
 export default async function ListsPage() {
@@ -12,6 +13,7 @@ export default async function ListsPage() {
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav current="lists" />
+      <BottomNav current="lists" />
 
       <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "48px 0 32px" }} className="grain-light">
         <div className="container-wide">

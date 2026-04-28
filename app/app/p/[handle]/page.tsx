@@ -5,6 +5,7 @@ import { getCovenStateBetween } from "@/lib/queries/coven";
 import { getReactionsForActivities } from "@/lib/queries/activity-reactions";
 import { getCommentSummariesForActivities } from "@/lib/queries/activity-comments";
 import TopNav from "@/components/TopNav";
+import BottomNav from "@/components/BottomNav";
 import Avatar from "@/components/Avatar";
 import FollowButton from "@/components/FollowButton";
 import CovenButton from "@/components/CovenButton";
@@ -47,7 +48,8 @@ export default async function PublicProfilePage({
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
-      <TopNav />
+      <TopNav current="coven" />
+      <BottomNav current="coven" />
 
       <section style={{ background: "var(--void-2)", borderBottom: "3px solid var(--void)", padding: "48px 0" }}>
         <div className="container-wide stackable" style={{ "--stack-template": "140px 1fr", "--stack-gap": "32px", alignItems: "center" } as React.CSSProperties}>

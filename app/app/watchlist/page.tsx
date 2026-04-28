@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyWatchlistWithFilms } from "@/lib/queries/watchlists";
 import { sortWatchlist, type WatchlistSort } from "@/lib/queries/sort-watchlist";
 import TopNav from "@/components/TopNav";
+import BottomNav from "@/components/BottomNav";
 import WatchlistRow from "./WatchlistRow";
 import WatchlistSortSelect from "./WatchlistSortSelect";
 
@@ -40,7 +41,8 @@ export default async function WatchlistPage({
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
-      <TopNav />
+      <TopNav current="watchlist" />
+      <BottomNav current="watchlist" />
 
       <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
         <div className="container-wide">

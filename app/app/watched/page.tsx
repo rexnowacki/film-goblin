@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getWatchedDiary, getWatchedStats } from "@/lib/queries/watched";
 import TopNav from "@/components/TopNav";
+import BottomNav from "@/components/BottomNav";
 import DiaryRow from "./DiaryRow";
 
 const MONTH_NAMES = [
@@ -58,6 +59,7 @@ export default async function WatchedPage() {
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav current="watched" />
+      <BottomNav current="watched" />
 
       <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
         <div className="container-wide">
