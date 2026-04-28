@@ -21,6 +21,8 @@ function targetFor(n: EnrichedNotification): string {
       const filmId = (n.payload as { film_id?: string }).film_id;
       return filmId ? `/film/${filmId}` : "/home";
     }
+    case "comment_on_activity":
+      return "/home"; // Task 12 wires the proper /home?activity=<id> deep-link.
   }
 }
 
@@ -38,6 +40,8 @@ function copyFor(n: EnrichedNotification): React.ReactNode {
       const p = n.payload as { old_price_usd?: number; new_price_usd?: number };
       return <>Price drop: <em>{title}</em>{p.new_price_usd !== undefined ? ` — $${p.new_price_usd.toFixed(2)}` : ""}.</>;
     }
+    case "comment_on_activity":
+      return <><strong>{actorName}</strong> commented on your activity.</>; // Task 12 adds the body snippet.
   }
 }
 
