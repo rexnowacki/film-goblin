@@ -21,9 +21,12 @@ export interface CommentSummary {
 }
 
 /**
- * Batch-fetch comment threads for a set of activity rows. Single SELECT joining
- * activity_comments + profiles via PostgREST nested embed; aggregate into
- * Map<activity_id, CommentSummary> in JS. Mirrors getReactionsForActivities.
+ * Batch-fetch comment threads for a set of activity rows. Two-step hydrate:
+ * activity_comments rows first, then a single profiles lookup over the unique
+ * commenter ids. Cannot use a PostgREST nested embed because activity_comments
+ * .user_id FKs to auth.users (not profiles); PostgREST can't traverse the
+ * auth.users -> profiles indirection. Same pattern as fetchLikersForActivity
+ * in app/lib/actions/reactions.ts.
  *
  * The empty entry for every requested id is pre-seeded so callers can read
  * `map.get(id)` without null checks.
@@ -36,23 +39,31 @@ export async function getCommentSummariesForActivities(
   for (const id of activityIds) map.set(id, { count: 0, items: [] });
   if (activityIds.length === 0) return map;
 
-  const { data, error } = await client
+  const { data: rows, error } = await client
     .from("activity_comments")
-    .select("id, activity_id, user_id, body, created_at, user:profiles!inner(handle, display_name, avatar_url)")
+    .select("id, activity_id, user_id, body, created_at")
     .in("activity_id", activityIds)
     .order("created_at", { ascending: true });
   if (error) throw error;
+  if (!rows || rows.length === 0) return map;
 
-  for (const row of data ?? []) {
+  const userIds = Array.from(new Set(rows.map(r => r.user_id)));
+  const { data: profiles, error: pErr } = await client
+    .from("profiles")
+    .select("id, handle, display_name, avatar_url")
+    .in("id", userIds);
+  if (pErr) throw pErr;
+  const profileById = new Map((profiles ?? []).map(p => [p.id, p]));
+
+  for (const row of rows) {
     const entry = map.get(row.activity_id);
     if (!entry) continue;
-    // PostgREST nested embed types may model the embed as array even when it's
-    // always one row — same workaround as the FilmPoster `as never` cast.
-    const u = (Array.isArray(row.user) ? row.user[0] : row.user) as CommentItem["user"];
+    const p = profileById.get(row.user_id);
+    if (!p) continue; // commenter profile missing (deleted account); skip the row
     entry.items.push({
       id: row.id,
       user_id: row.user_id,
-      user: u,
+      user: { handle: p.handle, display_name: p.display_name, avatar_url: p.avatar_url },
       body: row.body,
       created_at: row.created_at,
     });

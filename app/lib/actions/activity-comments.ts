@@ -30,20 +30,34 @@ export async function _addActivityComment(
   if (body.length === 0) return { ok: false, error: "Comment is empty." };
   if (body.length > MAX_LEN) return { ok: false, error: `Comment is over ${MAX_LEN} characters.` };
 
+  // Two-step hydrate: activity_comments.user_id FKs to auth.users, not profiles,
+  // so PostgREST can't traverse the chain via a nested embed. Insert first, then
+  // hydrate the commenter profile in a second query. Same pattern as the read
+  // helper in lib/queries/activity-comments.ts.
   const { data, error } = await client
     .from("activity_comments")
     .insert({ activity_id: activityId, user_id: user.id, body })
-    .select("id, activity_id, user_id, body, created_at, user:profiles!inner(handle, display_name, avatar_url)")
+    .select("id, activity_id, user_id, body, created_at")
     .single();
   if (error) return { ok: false, error: error.message };
 
-  const u = (Array.isArray(data.user) ? data.user[0] : data.user) as CommentItem["user"];
+  const { data: profile, error: pErr } = await client
+    .from("profiles")
+    .select("handle, display_name, avatar_url")
+    .eq("id", user.id)
+    .single();
+  if (pErr) return { ok: false, error: pErr.message };
+
   return {
     ok: true,
     comment: {
       id: data.id,
       user_id: data.user_id,
-      user: u,
+      user: {
+        handle: profile.handle,
+        display_name: profile.display_name,
+        avatar_url: profile.avatar_url,
+      },
       body: data.body,
       created_at: data.created_at,
     },
