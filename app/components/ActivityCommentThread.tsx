@@ -83,29 +83,28 @@ export default function ActivityCommentThread({
   }
 
   return (
-    <div className="comment-thread" style={{ marginTop: 10, borderLeft: "2px solid var(--accent)", paddingLeft: 12, position: "relative" }}>
+    <div className="comment-thread" style={{ marginTop: 10, borderLeft: "2px solid var(--accent)", paddingLeft: 12 }}>
       {onCollapse && (
-        <button
-          type="button"
-          onClick={onCollapse}
-          aria-label="Hide comments"
-          className="caps"
-          style={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            background: "transparent",
-            border: "1px solid var(--muted)",
-            color: "var(--muted)",
-            cursor: "pointer",
-            padding: "2px 8px",
-            borderRadius: 999,
-            fontSize: 9,
-            letterSpacing: "0.08em",
-          }}
-        >
-          Hide
-        </button>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+          <button
+            type="button"
+            onClick={onCollapse}
+            aria-label="Hide comments"
+            className="caps"
+            style={{
+              background: "transparent",
+              border: "1px solid var(--muted)",
+              color: "var(--muted)",
+              cursor: "pointer",
+              padding: "2px 8px",
+              borderRadius: 999,
+              fontSize: 9,
+              letterSpacing: "0.08em",
+            }}
+          >
+            Hide
+          </button>
+        </div>
       )}
       <div style={{ maxHeight: "min(50vh, 240px)", overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
         {items.map(c => {
