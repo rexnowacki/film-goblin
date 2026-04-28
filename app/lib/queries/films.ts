@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
 import { getOwnedFilmIds } from "./library";
+import { getWatchlistedFilmIds } from "./watchlists";
 
 type Client = SupabaseClient<Database>;
 
@@ -68,9 +69,16 @@ export async function getFilms(
   }
 
   if (opts.viewerUserId) {
-    const ownedIds = await getOwnedFilmIds(client, opts.viewerUserId);
-    if (ownedIds.length > 0) {
-      query = query.not("id", "in", `(${ownedIds.map(id => `"${id}"`).join(",")})`);
+    // Discovery hides films the viewer has already saved or owns — keeps the
+    // grid focused on stuff they haven't engaged with yet. Both /library and
+    // /watchlist remain the canonical surfaces for those.
+    const [ownedIds, watchlistedIds] = await Promise.all([
+      getOwnedFilmIds(client, opts.viewerUserId),
+      getWatchlistedFilmIds(client, opts.viewerUserId),
+    ]);
+    const excludeIds = Array.from(new Set([...ownedIds, ...watchlistedIds]));
+    if (excludeIds.length > 0) {
+      query = query.not("id", "in", `(${excludeIds.map(id => `"${id}"`).join(",")})`);
     }
   }
 
