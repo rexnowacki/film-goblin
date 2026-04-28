@@ -14,12 +14,13 @@ interface Props {
   initialItems: CommentItem[];
   onCountChange?: (n: number) => void;
   onPosted?: () => void;
+  onCollapse?: () => void;
 }
 
 const MAX_LEN = 140;
 
 export default function ActivityCommentThread({
-  activityId, actorUserId, viewerId, initialItems, onCountChange, onPosted,
+  activityId, actorUserId, viewerId, initialItems, onCountChange, onPosted, onCollapse,
 }: Props) {
   const [items, setItems] = useState<CommentItem[]>(initialItems);
   const [draft, setDraft] = useState("");
@@ -82,7 +83,30 @@ export default function ActivityCommentThread({
   }
 
   return (
-    <div className="comment-thread" style={{ marginTop: 10, borderLeft: "2px solid var(--accent)", paddingLeft: 12 }}>
+    <div className="comment-thread" style={{ marginTop: 10, borderLeft: "2px solid var(--accent)", paddingLeft: 12, position: "relative" }}>
+      {onCollapse && (
+        <button
+          type="button"
+          onClick={onCollapse}
+          aria-label="Hide comments"
+          className="caps"
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            background: "transparent",
+            border: "1px solid var(--muted)",
+            color: "var(--muted)",
+            cursor: "pointer",
+            padding: "2px 8px",
+            borderRadius: 999,
+            fontSize: 9,
+            letterSpacing: "0.08em",
+          }}
+        >
+          Hide
+        </button>
+      )}
       <div style={{ maxHeight: "min(50vh, 240px)", overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
         {items.map(c => {
           const canDelete = viewerId !== null && (viewerId === c.user_id || viewerId === actorUserId);

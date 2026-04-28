@@ -50,6 +50,7 @@ export default function ActivityFooter({ item }: Props) {
           initialItems={item.comments.items}
           onCountChange={setCount}
           onPosted={() => setExpanded(false)}
+          onCollapse={() => setExpanded(false)}
         />
       )}
     </>
