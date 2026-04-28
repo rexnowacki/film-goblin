@@ -81,6 +81,7 @@ function watchLog(opts: { id: string; actorId: string; minutesAgo: number }): En
       artwork_url: "https://example.test/poster.jpg",
       itunes_url: "https://itunes.apple.com/test",
     },
+    note: null,
   };
 }
 

@@ -16,6 +16,7 @@ export default function ActivityWatchLogged({ item }: { item: Item }) {
           <Link href={`/film/${item.film.id}`} style={{ color: "var(--accent)", fontStyle: "italic" }}>{item.film.title}</Link>
           {"."}
         </div>
+        {item.note && <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, marginTop: 4, color: "var(--muted)" }}>&ldquo;{item.note}&rdquo;</div>}
         <ActivityFooter item={item} />
       </div>
       <Link href={`/film/${item.film.id}`}>
