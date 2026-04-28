@@ -49,6 +49,7 @@ export default function ActivityFooter({ item }: Props) {
           viewerId={viewerId}
           initialItems={item.comments.items}
           onCountChange={setCount}
+          onPosted={() => setExpanded(false)}
         />
       )}
     </>
