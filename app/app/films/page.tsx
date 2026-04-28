@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { getFilms, type FilmsSort } from "@/lib/queries/films";
+import { getWatchlistedFilmIds } from "@/lib/queries/watchlists";
 import TopNav from "@/components/TopNav";
 import FilmPoster from "@/components/FilmPoster";
 import FilmsSearch from "@/components/FilmsSearch";
+import PosterQuickAdd from "@/components/PosterQuickAdd";
 import FilmsSortChips from "./FilmsSortChips";
 import Link from "next/link";
 
@@ -24,6 +26,8 @@ export default async function FilmsPage({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { rows: films, total, pageSize } = await getFilms(supabase, { q, sort, page, viewerUserId: user?.id ?? null });
+  const watchlistedIds = await getWatchlistedFilmIds(supabase, user?.id ?? null);
+  const watchlistedSet = new Set(watchlistedIds);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   function pageHref(p: number) {
@@ -71,7 +75,13 @@ export default async function FilmsPage({
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "var(--grid-gap)" }}>
               {films.map(f => (
                 <Link key={f.id} href={`/film/${f.id}`} style={{ cursor: "pointer", textDecoration: "none", color: "inherit" }}>
-                  <FilmPoster film={f as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
+                  {user ? (
+                    <PosterQuickAdd filmId={f.id} initialOnWatchlist={watchlistedSet.has(f.id)}>
+                      <FilmPoster film={f as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
+                    </PosterQuickAdd>
+                  ) : (
+                    <FilmPoster film={f as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
+                  )}
                   <div style={{ marginTop: 10 }}>
                     <div className="head" style={{ fontSize: 16, lineHeight: 1.1 }}>{f.title}</div>
                     <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
