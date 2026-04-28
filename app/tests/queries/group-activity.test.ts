@@ -14,6 +14,7 @@ function watchlist(opts: { id: string; actorId: string; minutesAgo: number }): E
       avatar_url: null,
     },
     reactions: { count: 0, likedByMe: false },
+    comments: { count: 0, items: [] },
     kind: "watchlist_added",
     film: {
       id: `film_${opts.id}`,
@@ -38,6 +39,7 @@ function rec(opts: { id: string; actorId: string; minutesAgo: number }): Enriche
       avatar_url: null,
     },
     reactions: { count: 0, likedByMe: false },
+    comments: { count: 0, items: [] },
     kind: "recommendation_sent",
     film: {
       id: `film_${opts.id}`,
@@ -69,6 +71,7 @@ function watchLog(opts: { id: string; actorId: string; minutesAgo: number }): En
       avatar_url: null,
     },
     reactions: { count: 0, likedByMe: false },
+    comments: { count: 0, items: [] },
     kind: "watch_logged",
     film: {
       id: `film_${opts.id}`,

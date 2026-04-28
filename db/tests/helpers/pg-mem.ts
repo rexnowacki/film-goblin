@@ -40,6 +40,14 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
       impure: true,
     });
   });
+  // pg-mem doesn't ship char_length(text) — register it so CHECK constraints
+  // like `char_length(body) BETWEEN 1 AND 140` parse during CREATE TABLE.
+  mem.public.registerFunction({
+    name: "char_length",
+    args: [DataType.text],
+    returns: DataType.integer,
+    implementation: (s: string | null) => (s == null ? null : s.length),
+  });
   const { Client: PgMemClient } = mem.adapters.createPg();
   const client = new PgMemClient() as unknown as Client;
   await client.connect();
@@ -70,6 +78,11 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
     // their UPDATE … FROM (subquery) shape.
     if (f.includes("backfill")) continue;
     const raw = readFileSync(join(DB_MIGRATIONS, f), "utf8");
+    // pg-mem can't parse `LANGUAGE plpgsql SECURITY DEFINER` functions. Skip
+    // any migration file that defines one — the smoke only asserts table
+    // presence, so trigger files don't need to execute. Match the full phrase
+    // so prose comments like "-- (SECURITY DEFINER)" don't trigger the skip.
+    if (/LANGUAGE\s+plpgsql\s+SECURITY\s+DEFINER/i.test(raw)) continue;
     const stripped = raw
       .split(/;\s*\n/)
       .filter(stmt => !/ALTER\s+TABLE\s+\S+\s+ENABLE\s+ROW\s+LEVEL\s+SECURITY/i.test(stmt))

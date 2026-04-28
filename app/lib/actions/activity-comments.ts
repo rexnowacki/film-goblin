@@ -1,0 +1,85 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/supabase/types";
+import type { CommentItem } from "@/lib/queries/activity-comments";
+
+type Client = SupabaseClient<Database>;
+
+const MAX_LEN = 140;
+
+export type AddResult =
+  | { ok: true; comment: CommentItem }
+  | { ok: false; error: string };
+
+export type DeleteResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function _addActivityComment(
+  client: Client,
+  activityId: string,
+  rawBody: string,
+): Promise<AddResult> {
+  const { data: { user }, error: userErr } = await client.auth.getUser();
+  if (userErr || !user) return { ok: false, error: "unauthenticated" };
+
+  const body = (rawBody ?? "").trim();
+  if (body.length === 0) return { ok: false, error: "Comment is empty." };
+  if (body.length > MAX_LEN) return { ok: false, error: `Comment is over ${MAX_LEN} characters.` };
+
+  const { data, error } = await client
+    .from("activity_comments")
+    .insert({ activity_id: activityId, user_id: user.id, body })
+    .select("id, activity_id, user_id, body, created_at, user:profiles!inner(handle, display_name, avatar_url)")
+    .single();
+  if (error) return { ok: false, error: error.message };
+
+  const u = (Array.isArray(data.user) ? data.user[0] : data.user) as CommentItem["user"];
+  return {
+    ok: true,
+    comment: {
+      id: data.id,
+      user_id: data.user_id,
+      user: u,
+      body: data.body,
+      created_at: data.created_at,
+    },
+  };
+}
+
+export async function addActivityComment(
+  activityId: string,
+  body: string,
+): Promise<AddResult> {
+  const supabase = await createClient();
+  const result = await _addActivityComment(supabase, activityId, body);
+  if (result.ok) revalidatePath("/home");
+  return result;
+}
+
+export async function _deleteActivityComment(
+  client: Client,
+  commentId: string,
+): Promise<DeleteResult> {
+  const { data: { user }, error: userErr } = await client.auth.getUser();
+  if (userErr || !user) return { ok: false, error: "unauthenticated" };
+
+  const { data, error } = await client
+    .from("activity_comments")
+    .delete()
+    .eq("id", commentId)
+    .select("id"); // returns deleted row(s); empty array means RLS filtered the delete out.
+  if (error) return { ok: false, error: error.message };
+  if (!data || data.length === 0) return { ok: false, error: "Not allowed." };
+  return { ok: true };
+}
+
+export async function deleteActivityComment(commentId: string): Promise<DeleteResult> {
+  const supabase = await createClient();
+  const result = await _deleteActivityComment(supabase, commentId);
+  if (result.ok) revalidatePath("/home");
+  return result;
+}

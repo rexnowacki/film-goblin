@@ -73,6 +73,38 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_comments: {
+        Row: {
+          activity_id: string
+          body: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activity_id: string
+          body: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activity_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_comments_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activity"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_reactions: {
         Row: {
           activity_id: string
@@ -818,6 +850,7 @@ export type Database = {
         | "coven_invite_accepted"
         | "recommendation_received"
         | "price_drop"
+        | "comment_on_activity"
       review_status: "draft" | "published"
       staff_role: "reviewer" | "admin"
     }
