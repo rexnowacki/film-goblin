@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
 import { getReactionsForActivities, type ReactionSummary } from "./activity-reactions";
+import { getCommentSummariesForActivities, type CommentSummary } from "./activity-comments";
 import { groupFeed } from "./group-activity";
 
 type Client = SupabaseClient<Database>;
@@ -46,6 +47,7 @@ export type EnrichedActivity = (
   created_at: string;
   actor: ActorLite;
   reactions: ReactionSummary;
+  comments: CommentSummary;
 };
 
 export type FeedItem =
@@ -112,12 +114,13 @@ export async function getEnrichedFeed(
   const recipientIds = Array.from(new Set(raw.map(r => (r.payload as any)?.to_user_id).filter(Boolean)));
   const listIds = Array.from(new Set(raw.map(r => (r.payload as any)?.list_id).filter(Boolean)));
 
-  const [actors, films, recipients, lists, reactionsMap] = await Promise.all([
+  const [actors, films, recipients, lists, reactionsMap, commentsMap] = await Promise.all([
     rawActorIds.length ? client.from("profiles").select("id, handle, display_name, avatar_url").in("id", rawActorIds) : Promise.resolve({ data: [] as any }),
     filmIds.length ? client.from("films").select("id, title, director, year, artwork_url, itunes_url").in("id", filmIds) : Promise.resolve({ data: [] as any }),
     recipientIds.length ? client.from("profiles").select("id, handle, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] as any }),
     listIds.length ? client.from("lists").select("id, title").in("id", listIds) : Promise.resolve({ data: [] as any }),
     getReactionsForActivities(client, raw.map(r => r.id), followerUserId),
+    getCommentSummariesForActivities(client, raw.map(r => r.id)),
   ]);
 
   const actorMap = new Map((actors.data ?? []).map((r: any) => [r.id, r]));
@@ -135,7 +138,8 @@ export async function getEnrichedFeed(
     const list = payload?.list_id ? (listMap.get(payload.list_id) as ListLite | undefined) : undefined;
 
     const reactions = reactionsMap.get(r.id) ?? { count: 0, likedByMe: false };
-    const base = { id: r.id, created_at: r.created_at, actor, reactions };
+    const comments = commentsMap.get(r.id) ?? { count: 0, items: [] };
+    const base = { id: r.id, created_at: r.created_at, actor, reactions, comments };
 
     switch (r.kind) {
       case "recommendation_sent":
