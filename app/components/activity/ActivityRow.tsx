@@ -6,6 +6,7 @@ import ActivityWatchLogged from "./ActivityWatchLogged";
 import ActivityListCreated from "./ActivityListCreated";
 import ActivityListFilmAdded from "./ActivityListFilmAdded";
 import ActivityCovenJoined from "./ActivityCovenJoined";
+import ActivityLibraryAdded from "./ActivityLibraryAdded";
 
 export default function ActivityRow({ item }: { item: EnrichedActivity }) {
   switch (item.kind) {
@@ -16,5 +17,6 @@ export default function ActivityRow({ item }: { item: EnrichedActivity }) {
     case "list_created": return <ActivityListCreated item={item} />;
     case "list_film_added": return <ActivityListFilmAdded item={item} />;
     case "coven_joined": return <ActivityCovenJoined item={item} />;
+    case "library_added": return <ActivityLibraryAdded item={item} />;
   }
 }
