@@ -24,7 +24,7 @@ function headerCopy(group: NotificationGroup): React.ReactNode {
     case "coven_invite_accepted":
       return <><strong>{actorName}</strong> accepted {group.count} coven invites.</>;
     case "comment_on_activity":
-      return <><strong>{actorName}</strong> left {group.count} comments on your activity.</>; // Task 12 polishes copy.
+      return <><strong>{actorName}</strong> left {group.count} comments on your activity.</>;
   }
 }
 
@@ -40,8 +40,10 @@ function headerHref(group: NotificationGroup): string {
       const filmId = (first.payload as { film_id?: string }).film_id;
       return filmId ? `/film/${filmId}` : "/home";
     }
-    case "comment_on_activity":
-      return "/home"; // Task 12 wires the proper /home?activity=<id> deep-link.
+    case "comment_on_activity": {
+      const activityId = (first.payload as { activity_id?: string }).activity_id;
+      return activityId ? `/home?activity=${encodeURIComponent(activityId)}` : "/home";
+    }
   }
 }
 

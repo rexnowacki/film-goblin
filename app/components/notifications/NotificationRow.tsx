@@ -21,8 +21,10 @@ function targetFor(n: EnrichedNotification): string {
       const filmId = (n.payload as { film_id?: string }).film_id;
       return filmId ? `/film/${filmId}` : "/home";
     }
-    case "comment_on_activity":
-      return "/home"; // Task 12 wires the proper /home?activity=<id> deep-link.
+    case "comment_on_activity": {
+      const activityId = (n.payload as { activity_id?: string }).activity_id;
+      return activityId ? `/home?activity=${encodeURIComponent(activityId)}` : "/home";
+    }
   }
 }
 
@@ -40,8 +42,12 @@ function copyFor(n: EnrichedNotification): React.ReactNode {
       const p = n.payload as { old_price_usd?: number; new_price_usd?: number };
       return <>Price drop: <em>{title}</em>{p.new_price_usd !== undefined ? ` — $${p.new_price_usd.toFixed(2)}` : ""}.</>;
     }
-    case "comment_on_activity":
-      return <><strong>{actorName}</strong> commented on your activity.</>; // Task 12 adds the body snippet.
+    case "comment_on_activity": {
+      const raw = (n.payload as { body?: string }).body ?? "";
+      const snippet = raw.length > 60 ? raw.slice(0, 57) + "…" : raw;
+      const subject = n.film?.title ?? "your activity";
+      return <><strong>{actorName}</strong> commented on <em>{subject}</em>: &ldquo;{snippet}&rdquo;</>;
+    }
   }
 }
 
