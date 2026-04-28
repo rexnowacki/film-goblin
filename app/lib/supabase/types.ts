@@ -844,6 +844,7 @@ export type Database = {
         | "list_film_added"
         | "coven_joined"
         | "watch_logged"
+        | "library_added"
       coven_request_status: "pending" | "accepted" | "declined"
       notification_kind:
         | "coven_invite_pending"
@@ -991,6 +992,7 @@ export const Constants = {
         "list_film_added",
         "coven_joined",
         "watch_logged",
+        "library_added",
       ],
       coven_request_status: ["pending", "accepted", "declined"],
       review_status: ["draft", "published"],

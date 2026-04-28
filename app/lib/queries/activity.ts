@@ -39,6 +39,7 @@ export type EnrichedActivity = (
   | { kind: "review_published"; film: FilmLite; title: string; pullquote: string | null }
   | { kind: "watchlist_added"; film: FilmLite }
   | { kind: "watch_logged"; film: FilmLite; note: string | null }
+  | { kind: "library_added"; film: FilmLite }
   | { kind: "list_created"; list: ListLite }
   | { kind: "list_film_added"; list: ListLite; film: FilmLite }
   | { kind: "coven_joined"; other: RecipientLite }
@@ -153,6 +154,9 @@ export async function getEnrichedFeed(
         break;
       case "watch_logged":
         if (film) out.push({ ...base, kind: "watch_logged", film, note: payload.note ?? null });
+        break;
+      case "library_added":
+        if (film) out.push({ ...base, kind: "library_added", film });
         break;
       case "list_created":
         if (list) out.push({ ...base, kind: "list_created", list });
