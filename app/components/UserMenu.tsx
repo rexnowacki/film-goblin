@@ -53,6 +53,20 @@ export default function UserMenu({ handle, displayName, avatarUrl, isAdmin }: Pr
           >
             @{handle}
           </Link>
+          <Link
+            href="/library"
+            onClick={() => setOpen(false)}
+            style={{ display: "block", padding: "10px 14px", color: "var(--void)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 12, borderBottom: "1px solid var(--void)" }}
+          >
+            Your Grimoire
+          </Link>
+          <Link
+            href="/watched"
+            onClick={() => setOpen(false)}
+            style={{ display: "block", padding: "10px 14px", color: "var(--void)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 12, borderBottom: "1px solid var(--void)" }}
+          >
+            Diary
+          </Link>
           {isAdmin && (
             <Link
               href="/admin"

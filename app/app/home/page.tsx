@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getEnrichedFeed } from "@/lib/queries/activity";
 import TopNav from "@/components/TopNav";
+import BottomNav from "@/components/BottomNav";
 import FeedTabs from "@/components/FeedTabs";
 
 export default async function HomePage() {
@@ -11,6 +12,7 @@ export default async function HomePage() {
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav current="home" />
+      <BottomNav current="home" />
 
       <div className="container-wide stackable" style={{ padding: "32px var(--container-pad)", "--stack-template": "220px 1fr 320px", "--stack-gap": "32px" } as React.CSSProperties}>
         <aside className="desktop-only">

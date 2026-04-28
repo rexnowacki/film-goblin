@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getFilms, type FilmsSort } from "@/lib/queries/films";
 import { getWatchlistedFilmIds } from "@/lib/queries/watchlists";
 import TopNav from "@/components/TopNav";
+import BottomNav from "@/components/BottomNav";
 import FilmPoster from "@/components/FilmPoster";
 import FilmsSearch from "@/components/FilmsSearch";
 import PosterQuickAdd from "@/components/PosterQuickAdd";
@@ -42,6 +43,7 @@ export default async function FilmsPage({
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav current="films" />
+      <BottomNav current="films" />
 
       <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
         <div className="container-wide">

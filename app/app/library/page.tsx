@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getLibrary } from "@/lib/queries/library";
 import TopNav from "@/components/TopNav";
+import BottomNav from "@/components/BottomNav";
 import FilmPoster from "@/components/FilmPoster";
 
 export default async function LibraryPage() {
@@ -15,6 +16,7 @@ export default async function LibraryPage() {
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav current="library" />
+      <BottomNav current="library" />
 
       <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
         <div className="container-wide">

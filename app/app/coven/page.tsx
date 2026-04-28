@@ -7,6 +7,7 @@ import {
 } from "@/lib/queries/coven";
 import { getProfilesBySearch } from "@/lib/queries/profiles";
 import TopNav from "@/components/TopNav";
+import BottomNav from "@/components/BottomNav";
 import Avatar from "@/components/Avatar";
 import CovenInviteActions from "@/components/CovenInviteActions";
 import LeaveCovenButton from "@/components/LeaveCovenButton";
@@ -45,6 +46,7 @@ export default async function CovenPage({
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav current="coven" />
+      <BottomNav current="coven" />
 
       <section
         style={{

@@ -8,6 +8,7 @@ import { getMyCovenMembers } from "@/lib/queries/coven";
 import FilmPoster from "@/components/FilmPoster";
 import Stars from "@/components/Stars";
 import TopNav from "@/components/TopNav";
+import BottomNav from "@/components/BottomNav";
 import FilmActions from "@/components/FilmActions";
 import RecommendModal from "@/components/RecommendModal";
 import PriceStatBlock from "@/components/PriceStatBlock";
@@ -26,7 +27,8 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
-      <TopNav />
+      <TopNav current="films" />
+      <BottomNav current="films" />
 
       <section style={{
         background: "var(--void-2)", color: "var(--bone)",
