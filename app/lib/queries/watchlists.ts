@@ -47,6 +47,21 @@ export async function isOnWatchlist(client: Client, filmId: string): Promise<boo
   return data != null;
 }
 
+/**
+ * Returns the IDs of films on the given user's watchlist. Used by /films
+ * discovery to mark which posters already have a green-checked watchlist
+ * affordance in the hover-quick-add menu. Returns [] for unauthed callers.
+ */
+export async function getWatchlistedFilmIds(client: Client, userId: string | null): Promise<string[]> {
+  if (!userId) return [];
+  const { data, error } = await client
+    .from("watchlists")
+    .select("film_id")
+    .eq("user_id", userId);
+  if (error) throw error;
+  return (data ?? []).map(r => r.film_id);
+}
+
 export async function getMyWatchlistWithFilms(client: Client): Promise<WatchlistRowData[]> {
   const { data, error } = await client
     .from("watchlists")
