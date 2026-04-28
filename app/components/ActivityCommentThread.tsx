@@ -108,9 +108,19 @@ export default function ActivityCommentThread({
                   type="button"
                   onClick={() => removeComment(c.id)}
                   aria-label="Delete comment"
-                  style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 2 }}
+                  className="caps"
+                  style={{
+                    background: "transparent",
+                    border: "1px solid var(--muted)",
+                    color: "var(--muted)",
+                    cursor: "pointer",
+                    padding: "2px 8px",
+                    borderRadius: 999,
+                    fontSize: 9,
+                    letterSpacing: "0.08em",
+                  }}
                 >
-                  ✕
+                  Delete
                 </button>
               )}
             </div>
