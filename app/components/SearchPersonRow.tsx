@@ -56,10 +56,10 @@ export default function SearchPersonRow({ profile, state, incomingRequestId }: S
   })();
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 14, border: "2px solid var(--bone)", padding: 16 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", border: "2px solid var(--bone)", padding: 16 }}>
       <Link
         href={`/p/${encodeURIComponent(profile.handle)}`}
-        style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, textDecoration: "none", color: "inherit", minWidth: 0 }}
+        style={{ display: "flex", alignItems: "center", gap: 14, flex: "1 1 220px", textDecoration: "none", color: "inherit", minWidth: 0 }}
       >
         <Avatar name={profile.display_name ?? profile.handle} color="var(--accent)" size={48} url={profile.avatar_url} />
         <div style={{ flex: 1, minWidth: 0 }}>
