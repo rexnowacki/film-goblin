@@ -6,7 +6,6 @@ import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FilmPoster from "@/components/FilmPoster";
 import PosterDropBadge from "@/components/PosterDropBadge";
-import BuyOnAppleTvPill from "@/components/BuyOnAppleTvPill";
 import WatchlistSortChips from "./WatchlistSortChips";
 
 const VALID_SORTS: readonly WatchlistSort[] = ["drop", "recency", "price-low", "alphabetical"] as const;
@@ -67,20 +66,17 @@ export default async function WatchlistPage({
                   const dropPct = computeDropPct(r);
                   return (
                     <div key={r.id} className="watchlist-card">
-                      <div style={{ position: "relative" }}>
-                        <Link href={`/film/${r.film.id}`} style={{ display: "block", textDecoration: "none", color: "inherit" }}>
+                      <Link href={`/film/${r.film.id}`} style={{ display: "block", textDecoration: "none", color: "inherit" }}>
+                        <div style={{ position: "relative" }}>
                           <FilmPoster film={r.film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
                           <PosterDropBadge dropPct={dropPct} />
-                        </Link>
-                        {r.film.itunes_url && (
-                          <BuyOnAppleTvPill url={r.film.itunes_url} price={r.film.latest_price} />
-                        )}
-                      </div>
-                      <Link href={`/film/${r.film.id}`} style={{ display: "block", textDecoration: "none", color: "inherit", marginTop: 10 }}>
-                        <div className="head" style={{ fontSize: 16, lineHeight: 1.1 }}>{r.film.title}</div>
-                        <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
-                          {r.film.year}
-                          {r.film.director ? <span> · {r.film.director}</span> : null}
+                        </div>
+                        <div style={{ marginTop: 10 }}>
+                          <div className="head" style={{ fontSize: 16, lineHeight: 1.1 }}>{r.film.title}</div>
+                          <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
+                            {r.film.year}
+                            {r.film.director ? <span> · {r.film.director}</span> : null}
+                          </div>
                         </div>
                       </Link>
                       {r.film.itunes_url && (
@@ -91,7 +87,7 @@ export default async function WatchlistPage({
                           className="caps"
                           style={{ display: "inline-block", fontSize: 10, color: "var(--accent)", marginTop: 4, textDecoration: "none" }}
                         >
-                          Buy on Apple TV →
+                          Apple TV{r.film.latest_price != null ? ` · $${r.film.latest_price.toFixed(2)}` : ""} →
                         </a>
                       )}
                     </div>
