@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef } from "react";
+import { createPortal } from "react-dom";
 
 interface Props {
   open: boolean;
@@ -52,8 +53,9 @@ export default function BottomSheet({ open, onClose, title, children }: Props) {
   }, [open, onClose]);
 
   if (!open) return null;
+  if (typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div
       className="bottom-sheet-overlay"
       onClick={onClose}
@@ -83,6 +85,7 @@ export default function BottomSheet({ open, onClose, title, children }: Props) {
         </div>
         <div className="bottom-sheet-body">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
