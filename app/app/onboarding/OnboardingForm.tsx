@@ -35,12 +35,16 @@ export default function OnboardingForm({ initialFilms }: Props) {
     );
   }, [q, initialFilms]);
 
-  const handleOk = handle.trim().length > 0;
+  const trimmedHandle = handle.trim();
+  const handleFormatOk = /^[a-z0-9._]+$/.test(trimmedHandle);
+  const handleOk = trimmedHandle.length > 0 && handleFormatOk;
   const watchlistOk = watchlist.length >= 3;
   const canSubmit = handleOk && watchlistOk;
 
   const disabledReason =
-    !handleOk && !watchlistOk
+    trimmedHandle.length > 0 && !handleFormatOk
+      ? "Handle: lowercase letters, numbers, dots, underscores only."
+      : !handleOk && !watchlistOk
       ? "Choose a handle, and pick three films."
       : !handleOk
       ? "Choose a handle."

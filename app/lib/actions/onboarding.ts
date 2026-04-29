@@ -13,15 +13,22 @@ export interface OnboardingPayload {
   thresholdPct: number; // 10–75
 }
 
+const HANDLE_RE = /^[a-z0-9._]+$/;
+
 export async function _completeOnboarding(client: Client, p: OnboardingPayload): Promise<void> {
   const { data: { user } } = await client.auth.getUser();
   if (!user) throw new Error("unauthenticated");
 
+  const handle = p.handle.trim();
+  if (!HANDLE_RE.test(handle)) {
+    throw new Error("Invalid handle: lowercase letters, numbers, dots, underscores only.");
+  }
+
   const { error: pErr } = await client
     .from("profiles")
     .update({
-      handle: p.handle,
-      display_name: p.handle,
+      handle,
+      display_name: handle,
       broadcast_watchlist_adds: true,
       onboarded_at: new Date().toISOString(),
     })
