@@ -7,13 +7,17 @@ export default async function OnboardingPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/signin?next=/onboarding");
 
-  const { data } = await supabase
-    .from("films")
-    .select("id, itunes_id, title, director, year, genre_primary, artwork_url")
-    .eq("tracking", true)
-    .eq("available", true)
-    .limit(24);
-  const films = (data ?? []) as DbFilm[];
+  const [filmsRes, profileRes] = await Promise.all([
+    supabase
+      .from("films")
+      .select("id, itunes_id, title, director, year, genre_primary, artwork_url")
+      .eq("tracking", true)
+      .eq("available", true)
+      .limit(24),
+    supabase.from("profiles").select("handle").eq("id", user.id).single(),
+  ]);
+  const films = (filmsRes.data ?? []) as DbFilm[];
+  const initialHandle = profileRes.data?.handle ?? "";
 
   return (
     <div style={{ background: "var(--bone)", color: "var(--void)", minHeight: "100dvh" }}>
@@ -36,7 +40,7 @@ export default async function OnboardingPage() {
         </div>
       </section>
 
-      <OnboardingForm initialFilms={films} />
+      <OnboardingForm initialFilms={films} initialHandle={initialHandle} />
     </div>
   );
 }
