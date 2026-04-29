@@ -522,6 +522,7 @@ export type Database = {
           email_notifications_enabled: boolean
           handle: string
           id: string
+          onboarded_at: string | null
           unsubscribe_token: string
           updated_at: string
         }
@@ -536,6 +537,7 @@ export type Database = {
           email_notifications_enabled?: boolean
           handle: string
           id: string
+          onboarded_at?: string | null
           unsubscribe_token?: string
           updated_at?: string
         }
@@ -550,6 +552,7 @@ export type Database = {
           email_notifications_enabled?: boolean
           handle?: string
           id?: string
+          onboarded_at?: string | null
           unsubscribe_token?: string
           updated_at?: string
         }

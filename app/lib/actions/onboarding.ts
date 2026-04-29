@@ -23,6 +23,7 @@ export async function _completeOnboarding(client: Client, p: OnboardingPayload):
       handle: p.handle,
       display_name: p.handle,
       broadcast_watchlist_adds: true,
+      onboarded_at: new Date().toISOString(),
     })
     .eq("id", user.id);
   if (pErr) throw pErr;

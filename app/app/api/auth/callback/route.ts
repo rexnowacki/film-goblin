@@ -22,12 +22,10 @@ export async function GET(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("handle")
+      .select("onboarded_at")
       .eq("id", user.id)
       .single();
-    const defaultHandle = user.email?.split("@")[0] ?? "";
-    const looksUnOnboarded = !profile || profile.handle === defaultHandle;
-    if (looksUnOnboarded) {
+    if (!profile || !profile.onboarded_at) {
       return NextResponse.redirect(new URL("/onboarding", url));
     }
   }
