@@ -557,120 +557,50 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ===== WATCHLIST PAGE =====
-   /watchlist — editorial list, drop-first default sort. Each row
-   shows poster · title · current price · Buy-on-Apple-TV link ·
-   remove ×. Desktop: single-line row via grid. Mobile (≤720px):
-   poster spans two rows left, title on top right, price + buy +
-   remove share the bottom right cell via justify-self start/
-   center/end. Dropped rows show the current price in accent
-   color with the add-time price strikethrough beneath. */
-.watchlist-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-.watchlist-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.watchlist-row {
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) auto auto auto;
-  gap: 18px;
-  align-items: center;
-  padding: 14px 16px;
-  background: var(--void-2);
-  border: 1px solid #222;
-}
-.watchlist-row-poster {
-  display: block;
-  line-height: 0;
-}
-.watchlist-row-title {
-  min-width: 0;
-  overflow: hidden;
-}
-.watchlist-row-title a {
-  display: block;
-}
-.watchlist-row-price {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  min-width: 80px;
-  text-align: right;
-}
-.watchlist-row-dropped .watchlist-row-price > :first-child {
-  color: var(--accent);
-}
-.watchlist-row-was-price {
-  font-family: var(--font-head);
-  font-size: 14px;
-  color: var(--muted);
-  text-decoration: line-through;
-  margin-top: 2px;
-}
-.watchlist-row-buy {
-  min-width: 140px;
-  text-align: right;
-}
-.watchlist-row-buy-link {
-  font-size: 11px;
-  color: var(--bone);
-  border-bottom: 1px solid var(--muted-dark);
-  padding-bottom: 2px;
-  transition: color 80ms ease, border-color 80ms ease;
-}
-.watchlist-row-buy-link:hover {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-}
-.watchlist-remove {
-  background: none;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 22px;
-  line-height: 1;
-  padding: 4px 8px;
-}
-.watchlist-remove:hover {
-  color: var(--accent);
-}
-.watchlist-remove:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
+   /watchlist — poster grid identical in shape to /library. Drop badge
+   (top-right) signals on-sale films via PosterDropBadge; buy pill
+   (bottom-right) opens iTunes URL via BuyOnAppleTvPill. Mutation
+   (remove from watchlist) lives only on /film/[id]. */
 .watchlist-empty {
   padding: 48px 0;
   text-align: left;
 }
 
-@media (max-width: 720px) {
-  .watchlist-toolbar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-  .watchlist-row {
-    grid-template-columns: 48px 1fr;
-    gap: 12px;
-    padding: 14px;
-  }
-  .watchlist-row-poster { grid-column: 1; grid-row: 1 / span 2; }
-  .watchlist-row-title  { grid-column: 2; grid-row: 1; }
-  .watchlist-row-price,
-  .watchlist-row-buy,
-  .watchlist-remove {
-    grid-column: 2;
-    grid-row: 2;
-    align-self: center;
-  }
-  .watchlist-row-price { justify-self: start; align-items: flex-start; text-align: left; }
-  .watchlist-row-buy   { justify-self: center; min-width: 0; text-align: center; }
-  .watchlist-remove    { justify-self: end; }
+.poster-drop-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: var(--accent);
+  color: var(--void);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 4px 7px;
+  border: 1px solid var(--void);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.buy-on-apple-tv-pill {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: var(--accent);
+  color: var(--void);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 5px 9px;
+  border: 1px solid var(--void);
+  text-decoration: none;
+  z-index: 2;
+  transition: opacity 120ms ease;
+}
+
+@media (hover: hover) {
+  .buy-on-apple-tv-pill { opacity: 0; }
+  .watchlist-card:hover .buy-on-apple-tv-pill,
+  .buy-on-apple-tv-pill:focus-visible { opacity: 1; }
 }
 
 /* ===== COVEN FEED HEARTS =====

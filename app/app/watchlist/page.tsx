@@ -1,10 +1,13 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMyWatchlistWithFilms } from "@/lib/queries/watchlists";
-import { sortWatchlist, type WatchlistSort } from "@/lib/queries/sort-watchlist";
+import { sortWatchlist, computeDropPct, type WatchlistSort } from "@/lib/queries/sort-watchlist";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
-import WatchlistRow from "./WatchlistRow";
-import WatchlistSortSelect from "./WatchlistSortSelect";
+import FilmPoster from "@/components/FilmPoster";
+import PosterDropBadge from "@/components/PosterDropBadge";
+import BuyOnAppleTvPill from "@/components/BuyOnAppleTvPill";
+import WatchlistSortChips from "./WatchlistSortChips";
 
 const VALID_SORTS: readonly WatchlistSort[] = ["drop", "recency", "price-low", "alphabetical"] as const;
 
@@ -58,16 +61,31 @@ export default async function WatchlistPage({
             <WatchlistEmpty />
           ) : (
             <>
-              <div className="watchlist-toolbar">
-                <span className="caps" style={{ opacity: 0.7 }}>
-                  {rows.length} tracked
-                </span>
-                <WatchlistSortSelect current={sort} />
-              </div>
-              <div className="watchlist-list">
-                {sorted.map(r => (
-                  <WatchlistRow key={r.id} row={r} />
-                ))}
+              <WatchlistSortChips currentSort={sort} />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "var(--grid-gap)" }}>
+                {sorted.map(r => {
+                  const dropPct = computeDropPct(r);
+                  return (
+                    <div key={r.id} className="watchlist-card">
+                      <div style={{ position: "relative" }}>
+                        <Link href={`/film/${r.film.id}`} style={{ display: "block", textDecoration: "none", color: "inherit" }}>
+                          <FilmPoster film={r.film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
+                          <PosterDropBadge dropPct={dropPct} />
+                        </Link>
+                        {r.film.itunes_url && (
+                          <BuyOnAppleTvPill url={r.film.itunes_url} price={r.film.latest_price} />
+                        )}
+                      </div>
+                      <Link href={`/film/${r.film.id}`} style={{ display: "block", textDecoration: "none", color: "inherit", marginTop: 10 }}>
+                        <div className="head" style={{ fontSize: 16, lineHeight: 1.1 }}>{r.film.title}</div>
+                        <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
+                          {r.film.year}
+                          {r.film.director ? <span> · {r.film.director}</span> : null}
+                        </div>
+                      </Link>
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}
