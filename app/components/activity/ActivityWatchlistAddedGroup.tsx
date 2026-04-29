@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import Avatar from "../Avatar";
 import ActivityWatchlistAdded from "./ActivityWatchlistAdded";
@@ -68,7 +69,7 @@ export default function ActivityWatchlistAddedGroup({ group }: Props) {
             const isLast = idx === visiblePosters.length - 1;
             return (
               <div key={wlItem.id} style={{ position: "relative" }}>
-                <img src={wlItem.film.artwork_url} alt={wlItem.film.title} />
+                <Image src={wlItem.film.artwork_url} alt={wlItem.film.title} width={32} height={48} />
                 {isLast && overflowCount > 0 && (
                   <span className="more-badge">+{overflowCount}</span>
                 )}

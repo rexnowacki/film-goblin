@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import WatchModal from "@/components/WatchModal";
 import { editWatch, deleteWatch } from "@/lib/actions/watched";
@@ -35,7 +36,7 @@ export default function DiaryRow({ row }: Props) {
           onClick={e => e.stopPropagation()}
           style={{ flexShrink: 0 }}
         >
-          <img
+          <Image
             src={row.film.artwork_url}
             alt={row.film.title}
             width={50}

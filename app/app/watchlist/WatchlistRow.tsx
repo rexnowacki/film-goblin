@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useTransition } from "react";
 import { removeFromWatchlist } from "@/lib/actions/watchlists";
 import { computeDropPct } from "@/lib/queries/sort-watchlist";
@@ -31,7 +32,7 @@ export default function WatchlistRow({ row }: Props) {
     <div className={`watchlist-row${dropped ? " watchlist-row-dropped" : ""}`}>
       <a href={`/film/${row.film.id}`} className="watchlist-row-poster">
         {row.film.artwork_url ? (
-          <img src={row.film.artwork_url} alt="" width={48} height={72} style={{ objectFit: "cover", display: "block" }} />
+          <Image src={row.film.artwork_url} alt="" width={48} height={72} style={{ objectFit: "cover", display: "block" }} />
         ) : (
           <div style={{ width: 48, height: 72, background: "#222" }} />
         )}
