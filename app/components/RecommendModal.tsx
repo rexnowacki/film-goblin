@@ -58,7 +58,7 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers }: Prop
         ) : (
           <form action={send}>
             <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Coven Member</div>
-            <select name="to_user_id" required defaultValue="" style={{ width: "100%", border: "2px solid var(--void)", padding: "8px 10px", fontFamily: "var(--font-ui)", fontSize: 14, marginBottom: 14, background: "var(--bone)" }}>
+            <select name="to_user_id" required defaultValue="" style={{ width: "100%", border: "2px solid var(--void)", padding: "8px 10px", fontFamily: "var(--font-ui)", fontSize: 16, marginBottom: 14, background: "var(--bone)" }}>
               <option value="">Choose someone…</option>
               {covenMembers.map(m => (
                 <option key={m.id} value={m.id}>@{m.handle}{m.display_name ? ` · ${m.display_name}` : ""}</option>

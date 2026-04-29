@@ -39,7 +39,7 @@ export default function WatchlistSortSelect({ current }: Props) {
           color: "var(--bone)",
           border: "2px solid var(--muted)",
           fontFamily: "var(--font-ui)",
-          fontSize: 12,
+          fontSize: 16,
           cursor: "pointer",
         }}
       >
