@@ -404,6 +404,15 @@ a { color: inherit; text-decoration: none; }
   select {
     font-size: 16px;
   }
+
+  /* Kill the 300ms double-tap-to-zoom delay on interactive elements. iOS Safari
+     interprets a quick tap as a possible double-tap and waits to see if a second
+     tap follows; users perceive this as unresponsiveness or accidental zoom-in.
+     touch-action: manipulation tells the browser these controls don't double-tap-
+     to-zoom, removing the delay site-wide. */
+  input, textarea, select, button {
+    touch-action: manipulation;
+  }
 }
 
 /* Landing hero posters — on mobile, drop the absolute positioning and rotations. */
