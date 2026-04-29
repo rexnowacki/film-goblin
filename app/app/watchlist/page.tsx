@@ -83,6 +83,17 @@ export default async function WatchlistPage({
                           {r.film.director ? <span> · {r.film.director}</span> : null}
                         </div>
                       </Link>
+                      {r.film.itunes_url && (
+                        <a
+                          href={r.film.itunes_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="caps"
+                          style={{ display: "inline-block", fontSize: 10, color: "var(--accent)", marginTop: 4, textDecoration: "none" }}
+                        >
+                          Buy on Apple TV →
+                        </a>
+                      )}
                     </div>
                   );
                 })}
