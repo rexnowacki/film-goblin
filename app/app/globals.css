@@ -396,6 +396,16 @@ a { color: inherit; text-decoration: none; }
 /* selection */
 ::selection { background: var(--accent); color: var(--accent-ink); }
 
+/* iOS Safari auto-zooms any focused form control with computed font-size < 16px
+   and never zooms back out. Force ≥16px on mobile so focus/submit stays put. */
+@media (max-width: 720px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 /* Landing hero posters — on mobile, drop the absolute positioning and rotations. */
 @media (max-width: 720px) {
   .hero-posters { min-height: auto !important; }
