@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getWatchedDiary, getWatchedStats } from "@/lib/queries/watched";
@@ -97,7 +98,7 @@ export default async function WatchedPage() {
                 <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 12, marginBottom: 24 }}>
                   {stats.topFilms.map(t => (
                     <Link key={t.film.id} href={`/film/${t.film.id}`} style={{ flexShrink: 0, textDecoration: "none", color: "inherit" }}>
-                      <img
+                      <Image
                         src={t.film.artwork_url}
                         alt={t.film.title}
                         width={70}

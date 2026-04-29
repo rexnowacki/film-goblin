@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import Avatar from "../Avatar";
 import ActivityFooter from "./ActivityFooter";
@@ -21,7 +22,7 @@ export default function ActivityRecommendationSent({ item }: { item: Item }) {
         <ActivityFooter item={item} />
       </div>
       <Link href={`/film/${item.film.id}`}>
-        <img src={item.film.artwork_url} alt={item.film.title} width={40} height={60} style={{ display: "block", objectFit: "cover", border: "1px solid var(--void)" }} />
+        <Image src={item.film.artwork_url} alt={item.film.title} width={40} height={60} style={{ display: "block", objectFit: "cover", border: "1px solid var(--void)" }} />
       </Link>
     </div>
   );

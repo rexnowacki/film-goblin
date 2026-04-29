@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 export interface Film {
   id: string;
@@ -54,16 +55,12 @@ export default function FilmPoster({ film, size = "md", className = "", style = 
       }}
     >
       {hasArt && (
-        <img
+        <Image
           src={film.artwork_url!}
           alt={film.title}
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
+          fill
+          sizes={`${s.w}px`}
+          style={{ objectFit: "cover" }}
         />
       )}
       {!hasArt && (
