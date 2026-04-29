@@ -436,24 +436,6 @@ a { color: inherit; text-decoration: none; }
   .film-hero-text > p { order: 5; }
 }
 
-/* Onboarding — mobile overrides.
-   The onboarding flow has desktop-first grids: Chapter II storefront
-   row (4-col), Chapter IV two-column oath, Chapter IV coven-seed 2-col.
-   They collapse to single-column or drop redundant cells on mobile. */
-@media (max-width: 720px) {
-  .onboarding-store-row {
-    grid-template-columns: 48px 44px 1fr !important;
-  }
-  .onboarding-store-row > .onboarding-store-cta { display: none; }
-  .onboarding-oath {
-    grid-template-columns: 1fr !important;
-    gap: 28px !important;
-  }
-  .onboarding-coven-seed {
-    grid-template-columns: 1fr !important;
-  }
-}
-
 /* ===== PRICE STAT BLOCK =====
    A24-poster-split price history card. Replaces the old inline SVG chart
    on the film detail page. Asymmetric two-column layout: giant NOW price
@@ -577,6 +559,23 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0.08em;
   padding: 4px 7px;
   border: 1px solid var(--void);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.poster-check-pill {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  background: var(--accent);
+  color: var(--void);
+  border: 1px solid var(--void);
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 700;
   z-index: 2;
   pointer-events: none;
 }
