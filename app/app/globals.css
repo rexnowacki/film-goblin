@@ -414,6 +414,11 @@ a { color: inherit; text-decoration: none; }
      works). */
   body {
     touch-action: manipulation;
+    /* Clip any element that extends past the viewport so a single overflowing
+       child can't force the entire page into horizontal scroll mode (which
+       reads visually as the page being "zoomed in" because iOS lands at
+       scroll-x: 0 and the right side is invisible). */
+    overflow-x: hidden;
   }
 }
 
