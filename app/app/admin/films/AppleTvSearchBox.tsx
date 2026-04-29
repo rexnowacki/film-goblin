@@ -56,7 +56,7 @@ export default function AppleTvSearchBox({ onPick }: Props) {
           value={term}
           onChange={e => setTerm(e.target.value)}
           placeholder="Search Apple TV (title)…"
-          style={{ flex: 1, padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)", fontFamily: "var(--font-ui)", fontSize: 14 }}
+          style={{ flex: 1, padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)", fontFamily: "var(--font-ui)", fontSize: 16 }}
         />
         <button type="submit" className="btn btn-sm" disabled={loading || !term.trim()}>
           {loading ? "Searching…" : "Search"}
