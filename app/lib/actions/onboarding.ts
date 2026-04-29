@@ -28,7 +28,6 @@ export async function _completeOnboarding(client: Client, p: OnboardingPayload):
     .from("profiles")
     .update({
       handle,
-      display_name: handle,
       broadcast_watchlist_adds: true,
       onboarded_at: new Date().toISOString(),
     })

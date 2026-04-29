@@ -17,11 +17,12 @@ export interface DbFilm {
 
 interface Props {
   initialFilms: DbFilm[];
+  initialHandle: string;
 }
 
-export default function OnboardingForm({ initialFilms }: Props) {
+export default function OnboardingForm({ initialFilms, initialHandle }: Props) {
   const router = useRouter();
-  const [handle, setHandle] = useState("");
+  const [handle, setHandle] = useState(initialHandle);
   const [threshold, setThreshold] = useState(30);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [q, setQ] = useState("");

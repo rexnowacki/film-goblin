@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signUp } from "@/lib/actions/auth";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
@@ -12,9 +12,18 @@ function SignUpInner() {
   const [duplicate, setDuplicate] = useState(false);
   const [dupEmail, setDupEmail] = useState("");
   const [pending, setPending] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [handleValue, setHandleValue] = useState("");
+  const [handleEdited, setHandleEdited] = useState(false);
   const redirectTo = params.get("redirect") || "/home";
 
-  async function handle(formData: FormData) {
+  useEffect(() => {
+    if (handleEdited) return;
+    const suggested = displayName.toLowerCase().replace(/[^a-z0-9._]/g, "").slice(0, 24);
+    setHandleValue(suggested);
+  }, [displayName, handleEdited]);
+
+  async function submit(formData: FormData) {
     setPending(true);
     setError(null);
     setInfo(null);
@@ -52,14 +61,41 @@ function SignUpInner() {
           <span style={{ flex: 1, height: 1, background: "var(--muted)" }} />
         </div>
 
-        <form action={handle}>
+        <form action={submit}>
           <input type="hidden" name="redirect" value={redirectTo} />
           <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Email</div>
           <input name="email" type="email" required autoComplete="email"
             style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 16, fontFamily: "var(--font-ui)" }} />
           <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Password (min 6)</div>
           <input name="password" type="password" required minLength={6} autoComplete="new-password"
-            style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 20, fontFamily: "var(--font-ui)" }} />
+            style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 16, fontFamily: "var(--font-ui)" }} />
+          <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Display Name</div>
+          <input
+            name="display_name"
+            type="text"
+            required
+            maxLength={40}
+            autoComplete="nickname"
+            value={displayName}
+            onChange={e => setDisplayName(e.target.value)}
+            placeholder="Tooth Tony"
+            style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 16, fontFamily: "var(--font-ui)" }}
+          />
+          <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Handle</div>
+          <input
+            name="handle"
+            type="text"
+            required
+            maxLength={24}
+            autoComplete="username"
+            value={handleValue}
+            onChange={e => { setHandleValue(e.target.value); setHandleEdited(true); }}
+            placeholder="toothtony"
+            style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 6, fontFamily: "var(--font-ui)" }}
+          />
+          <div style={{ fontFamily: "var(--font-serif)", fontSize: 11, fontStyle: "italic", opacity: 0.6, marginBottom: 20 }}>
+            Lowercase letters, numbers, dots, underscores. This is your @.
+          </div>
           {error && (
             <div style={{ color: "var(--blood)", fontFamily: "var(--font-serif)", fontStyle: "italic", marginBottom: 8 }}>
               {error}
