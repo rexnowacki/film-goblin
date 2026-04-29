@@ -46,15 +46,38 @@ export async function middleware(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-  const decision = decideRedirect(user, request.nextUrl.pathname);
+  const path = request.nextUrl.pathname;
+  const decision = decideRedirect(user, path);
 
   if (decision) {
     const redirect = request.nextUrl.clone();
     redirect.pathname = decision.target;
     if (decision.preserveRedirect) {
-      redirect.searchParams.set("redirect", request.nextUrl.pathname);
+      redirect.searchParams.set("redirect", path);
     }
     return NextResponse.redirect(redirect);
+  }
+
+  // Onboarding gate: authenticated users with profiles.onboarded_at = null get
+  // routed to /onboarding from any non-auth, non-api page. Catches password
+  // sign-ins (the callback only handles OAuth + email-confirmation).
+  if (
+    user &&
+    path !== "/onboarding" &&
+    !path.startsWith("/auth/") &&
+    !path.startsWith("/api/")
+  ) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarded_at")
+      .eq("id", user.id)
+      .single();
+    if (!profile?.onboarded_at) {
+      const redirect = request.nextUrl.clone();
+      redirect.pathname = "/onboarding";
+      redirect.search = "";
+      return NextResponse.redirect(redirect);
+    }
   }
 
   return response;
