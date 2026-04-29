@@ -43,6 +43,7 @@ describe.skipIf(!hasEnv)("actions/onboarding", () => {
     const p = await admin.from("profiles").select("*").eq("id", user.id).single();
     expect(p.data?.handle).toBe("moss.witch");
     expect(p.data?.broadcast_watchlist_adds).toBe(true);
+    expect(p.data?.onboarded_at).not.toBeNull();
 
     const wl = await admin.from("watchlists").select("*").eq("user_id", user.id);
     expect(wl.data).toHaveLength(2);
