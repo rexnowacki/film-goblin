@@ -15,18 +15,11 @@ export default function RoleBadge({ role, size = 20, title }: Props) {
       <span
         title={title ?? "Witch"}
         aria-label={title ?? "Witch"}
-        style={{ display: "inline-flex", alignItems: "center", verticalAlign: "middle" }}
+        style={{ display: "inline-flex", alignItems: "center", verticalAlign: "middle", color: "var(--accent)" }}
       >
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <circle cx="12" cy="12" r="11" fill="var(--accent-deep)" />
-          <path
-            d="M12 4 L14.35 11.24 L21.93 11.24 L15.79 15.71 L18.14 22.94 L12 18.47 L5.86 22.94 L8.21 15.71 L2.07 11.24 L9.65 11.24 Z"
-            fill="none"
-            stroke="var(--bone)"
-            strokeWidth="1.4"
-            strokeLinejoin="miter"
-            transform="translate(0,0.5) scale(0.7) translate(5.14, 5.14)"
-          />
+        <svg width={size} height={size} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="32" cy="32" r="22" />
+          <path d="M 32 10 L 44.9 49.8 L 11.1 25.2 L 52.9 25.2 L 19.1 49.8 Z" />
         </svg>
       </span>
     );
