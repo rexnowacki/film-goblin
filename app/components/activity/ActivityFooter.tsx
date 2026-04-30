@@ -21,9 +21,12 @@ export default function ActivityFooter({ item }: Props) {
   const [viewerId, setViewerId] = useState<string | null>(null);
 
   // Pull viewer once on mount. Avoids threading a prop through 7 kind components.
+  // getSession() reads the cached session synchronously (no network round-trip),
+  // so the comment input never tries to render with viewerId=null while we wait
+  // on a JWT validation call.
   useEffect(() => {
     const c = createClient();
-    c.auth.getUser().then(({ data }) => setViewerId(data.user?.id ?? null));
+    c.auth.getSession().then(({ data }) => setViewerId(data.session?.user?.id ?? null));
   }, []);
 
   // Auto-expand when this row matches `?activity=<id>` on /home.
@@ -49,7 +52,6 @@ export default function ActivityFooter({ item }: Props) {
           viewerId={viewerId}
           initialItems={item.comments.items}
           onCountChange={setCount}
-          onPosted={() => setExpanded(false)}
           onCollapse={() => setExpanded(false)}
         />
       )}

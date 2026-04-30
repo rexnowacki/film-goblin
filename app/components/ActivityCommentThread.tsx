@@ -13,14 +13,13 @@ interface Props {
   viewerId: string | null;
   initialItems: CommentItem[];
   onCountChange?: (n: number) => void;
-  onPosted?: () => void;
   onCollapse?: () => void;
 }
 
 const MAX_LEN = 140;
 
 export default function ActivityCommentThread({
-  activityId, actorUserId, viewerId, initialItems, onCountChange, onPosted, onCollapse,
+  activityId, actorUserId, viewerId, initialItems, onCountChange, onCollapse,
 }: Props) {
   const [items, setItems] = useState<CommentItem[]>(initialItems);
   const [draft, setDraft] = useState("");
@@ -53,7 +52,6 @@ export default function ActivityCommentThread({
       const result = await addActivityComment(activityId, trimmed);
       if (result.ok) {
         setItems(prev => prev.map(c => c.id === tempId ? result.comment : c));
-        onPosted?.();
       } else {
         setItems(prev => {
           const next = prev.filter(c => c.id !== tempId);
