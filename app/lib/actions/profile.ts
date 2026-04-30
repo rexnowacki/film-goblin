@@ -17,6 +17,10 @@ export interface ProfileFields {
   broadcast_library?: boolean;
   broadcast_watched?: boolean;
   email_notifications_enabled?: boolean;
+  email_price_drops?: boolean;
+  email_coven_recs?: boolean;
+  email_comments?: boolean;
+  email_coven_invites?: boolean;
 }
 
 type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
@@ -26,13 +30,25 @@ export async function _updateProfile(client: Client, fields: ProfileFields): Pro
   if (!user) throw new Error("unauthenticated");
 
   const patch: ProfileUpdate = { ...fields };
-  if (fields.email_notifications_enabled === true) {
+  const reEnablingAnyKind =
+    fields.email_price_drops === true ||
+    fields.email_coven_recs === true ||
+    fields.email_comments === true ||
+    fields.email_coven_invites === true ||
+    fields.email_notifications_enabled === true;
+  if (reEnablingAnyKind) {
     const { data: current } = await client
       .from("profiles")
-      .select("email_notifications_enabled")
+      .select("email_price_drops, email_coven_recs, email_comments, email_coven_invites")
       .eq("id", user.id)
       .single();
-    if (current && current.email_notifications_enabled === false) {
+    const wasFullyOptedOut =
+      current &&
+      current.email_price_drops === false &&
+      current.email_coven_recs === false &&
+      current.email_comments === false &&
+      current.email_coven_invites === false;
+    if (wasFullyOptedOut) {
       const { randomUUID } = await import("node:crypto");
       patch.unsubscribe_token = randomUUID();
     }

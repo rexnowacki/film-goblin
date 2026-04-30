@@ -520,7 +520,11 @@ export type Database = {
           created_at: string
           display_name: string
           email_added_at: string | null
+          email_comments: boolean
+          email_coven_invites: boolean
+          email_coven_recs: boolean
           email_notifications_enabled: boolean
+          email_price_drops: boolean
           username: string
           id: string
           onboarded_at: string | null
@@ -536,7 +540,11 @@ export type Database = {
           created_at?: string
           display_name: string
           email_added_at?: string | null
+          email_comments?: boolean
+          email_coven_invites?: boolean
+          email_coven_recs?: boolean
           email_notifications_enabled?: boolean
+          email_price_drops?: boolean
           username: string
           id: string
           onboarded_at?: string | null
@@ -552,7 +560,11 @@ export type Database = {
           created_at?: string
           display_name?: string
           email_added_at?: string | null
+          email_comments?: boolean
+          email_coven_invites?: boolean
+          email_coven_recs?: boolean
           email_notifications_enabled?: boolean
+          email_price_drops?: boolean
           username?: string
           id?: string
           onboarded_at?: string | null

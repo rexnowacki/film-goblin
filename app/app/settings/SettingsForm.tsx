@@ -117,7 +117,10 @@ export default function SettingsForm() {
         broadcast_watchlist_adds: fd.get("broadcast") === "on",
         broadcast_library: fd.get("broadcast_library") === "on",
         broadcast_watched: fd.get("broadcast_watched") === "on",
-        email_notifications_enabled: fd.get("email_notifications") === "on",
+        email_price_drops: fd.get("email_price_drops") === "on",
+        email_coven_recs: fd.get("email_coven_recs") === "on",
+        email_comments: fd.get("email_comments") === "on",
+        email_coven_invites: fd.get("email_coven_invites") === "on",
       });
       setSaved(true);
     } finally { setSaving(false); }
@@ -201,11 +204,34 @@ export default function SettingsForm() {
         <span className="check-zine__box" aria-hidden="true" />
         <span className="caps" style={{ fontSize: 11 }}>Broadcast watches to your coven</span>
       </label>
-      <label className="check-zine">
-        <input type="checkbox" name="email_notifications" defaultChecked={profile.email_notifications_enabled} />
-        <span className="check-zine__box" aria-hidden="true" />
-        <span className="caps" style={{ fontSize: 11 }}>Email me when a watchlist film drops in price</span>
-      </label>
+      <div style={{ borderTop: "1px solid #333", marginTop: 8, paddingTop: 16 }}>
+        <div className="caps" style={{ fontSize: 11, marginBottom: 12, color: "var(--accent)" }}>Email me when…</div>
+        <div style={{ display: "grid", gap: 10 }}>
+          <label className="check-zine">
+            <input type="checkbox" name="email_price_drops" defaultChecked={profile.email_price_drops ?? true} />
+            <span className="check-zine__box" aria-hidden="true" />
+            <span className="caps" style={{ fontSize: 11 }}>Price drops on my watchlist</span>
+          </label>
+          <label className="check-zine">
+            <input type="checkbox" name="email_coven_recs" defaultChecked={profile.email_coven_recs ?? true} />
+            <span className="check-zine__box" aria-hidden="true" />
+            <span className="caps" style={{ fontSize: 11 }}>Coven recommends me a film</span>
+          </label>
+          <label className="check-zine">
+            <input type="checkbox" name="email_comments" defaultChecked={profile.email_comments ?? true} />
+            <span className="check-zine__box" aria-hidden="true" />
+            <span className="caps" style={{ fontSize: 11 }}>Someone comments on my activity</span>
+          </label>
+          <label className="check-zine">
+            <input type="checkbox" name="email_coven_invites" defaultChecked={profile.email_coven_invites ?? true} />
+            <span className="check-zine__box" aria-hidden="true" />
+            <span className="caps" style={{ fontSize: 11 }}>Someone invites me to their coven</span>
+          </label>
+        </div>
+        <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12, color: "var(--muted)", marginTop: 8 }}>
+          Only price drops actually email today. The rest are placeholders for the next time we wire up email for that kind.
+        </div>
+      </div>
       <button type="submit" disabled={saving} className="btn">
         {saving ? "Saving…" : "Save"}
       </button>

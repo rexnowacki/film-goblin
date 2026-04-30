@@ -52,6 +52,11 @@ export async function setupTestDb(): Promise<{ client: Client; cleanup: () => Pr
   // 0138 adds profiles.email_added_at; same trigger-parsing constraint, so
   // apply the column + backfill inline.
   mem.public.none(`ALTER TABLE profiles ADD COLUMN email_added_at TIMESTAMPTZ NULL`);
+  // 0139 splits email_notifications_enabled into a per-kind matrix.
+  mem.public.none(`ALTER TABLE profiles ADD COLUMN email_price_drops BOOLEAN NOT NULL DEFAULT TRUE`);
+  mem.public.none(`ALTER TABLE profiles ADD COLUMN email_coven_recs BOOLEAN NOT NULL DEFAULT TRUE`);
+  mem.public.none(`ALTER TABLE profiles ADD COLUMN email_comments BOOLEAN NOT NULL DEFAULT TRUE`);
+  mem.public.none(`ALTER TABLE profiles ADD COLUMN email_coven_invites BOOLEAN NOT NULL DEFAULT TRUE`);
 
   const { Client } = mem.adapters.createPg();
   const client = new Client() as unknown as Client;
