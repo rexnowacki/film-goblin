@@ -15,11 +15,11 @@ import Link from "next/link";
 export default async function PublicProfilePage({
   params,
 }: {
-  params: Promise<{ handle: string }>;
+  params: Promise<{ username: string }>;
 }) {
-  const { handle } = await params;
+  const { username } = await params;
   const supabase = await createClient();
-  const bundle = await getPublicProfileBundle(supabase, handle);
+  const bundle = await getPublicProfileBundle(supabase, username);
   if (!bundle) notFound();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -54,19 +54,19 @@ export default async function PublicProfilePage({
       <section style={{ background: "var(--void-2)", borderBottom: "3px solid var(--void)", padding: "48px 0" }}>
         <div className="container-wide stackable" style={{ "--stack-template": "140px 1fr", "--stack-gap": "32px", alignItems: "center" } as React.CSSProperties}>
           <div style={{ display: "flex", justifyContent: "center" }}>
-            <Avatar name={bundle.profile.display_name ?? bundle.profile.handle} color="var(--accent)" size={140} url={bundle.profile.avatar_url} />
+            <Avatar name={bundle.profile.display_name ?? bundle.profile.username} color="var(--accent)" size={140} url={bundle.profile.avatar_url} />
           </div>
           <div>
             <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 8 }}>Profile</div>
             <h1 className="h-display">
-              {bundle.profile.display_name ?? bundle.profile.handle}
+              {bundle.profile.display_name ?? bundle.profile.username}
             </h1>
-            <div className="caps" style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>@{bundle.profile.handle}</div>
+            <div className="caps" style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>@{bundle.profile.username}</div>
             {bundle.profile.bio && <p style={{ fontFamily: "var(--font-serif)", fontSize: 18, fontStyle: "italic", marginTop: 20, maxWidth: 560 }}>{bundle.profile.bio}</p>}
             {user && user.id !== bundle.profile.id && (
               <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
-                <FollowButton userId={bundle.profile.id} handle={bundle.profile.handle} initialFollowing={amFollowing} />
-                <CovenButton targetUserId={bundle.profile.id} targetHandle={bundle.profile.handle} initialState={coven.state} initialRequestId={coven.requestId} />
+                <FollowButton userId={bundle.profile.id} username={bundle.profile.username} initialFollowing={amFollowing} />
+                <CovenButton targetUserId={bundle.profile.id} targetUsername={bundle.profile.username} initialState={coven.state} initialRequestId={coven.requestId} />
               </div>
             )}
           </div>
@@ -81,9 +81,9 @@ export default async function PublicProfilePage({
           ) : (
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
               {bundle.coven.map(m => (
-                <Link key={m.id} href={`/p/${encodeURIComponent(m.handle)}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "inherit", textDecoration: "none" }}>
-                  <Avatar name={m.display_name ?? m.handle} color="var(--accent)" size={56} url={m.avatar_url} />
-                  <div className="caps" style={{ fontSize: 10 }}>@{m.handle}</div>
+                <Link key={m.id} href={`/p/${encodeURIComponent(m.username)}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "inherit", textDecoration: "none" }}>
+                  <Avatar name={m.display_name ?? m.username} color="var(--accent)" size={56} url={m.avatar_url} />
+                  <div className="caps" style={{ fontSize: 10 }}>@{m.username}</div>
                 </Link>
               ))}
             </div>
@@ -115,7 +115,7 @@ async function enrichOwnActivity(supabase: any, rows: any[], profile: any, viewe
 
   const [films, recipients, lists, reactionsMap, commentsMap] = await Promise.all([
     filmIds.length ? supabase.from("films").select("id, title, director, year, artwork_url, itunes_url").in("id", filmIds) : Promise.resolve({ data: [] }),
-    recipientIds.length ? supabase.from("profiles").select("id, handle, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] }),
+    recipientIds.length ? supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] }),
     listIds.length ? supabase.from("lists").select("id, title").in("id", listIds) : Promise.resolve({ data: [] }),
     getReactionsForActivities(supabase, rows.map(r => r.id), viewerId),
     getCommentSummariesForActivities(supabase, rows.map(r => r.id)),
@@ -125,7 +125,7 @@ async function enrichOwnActivity(supabase: any, rows: any[], profile: any, viewe
   const recipMap = new Map((recipients.data ?? []).map((r: any) => [r.id, r]));
   const listMap = new Map((lists.data ?? []).map((r: any) => [r.id, r]));
 
-  const actor = { id: profile.id, handle: profile.handle, display_name: profile.display_name, avatar_url: profile.avatar_url };
+  const actor = { id: profile.id, username: profile.username, display_name: profile.display_name, avatar_url: profile.avatar_url };
   const out: any[] = [];
   for (const r of rows) {
     const reactions = reactionsMap.get(r.id) ?? { count: 0, likedByMe: false };

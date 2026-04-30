@@ -6,13 +6,13 @@ type Client = SupabaseClient<Database>;
 export interface PendingInvite {
   id: string;
   from_user_id: string;
-  from: { handle: string; display_name: string | null; avatar_url: string | null };
+  from: { username: string; display_name: string | null; avatar_url: string | null };
   created_at: string;
 }
 
 export interface CovenMember {
   id: string;
-  handle: string;
+  username: string;
   display_name: string | null;
   avatar_url: string | null;
 }
@@ -36,7 +36,7 @@ export async function getPendingInvites(client: Client, userId: string): Promise
   const senderIds = reqs.map(r => r.from_user_id);
   const { data: profiles } = await client
     .from("profiles")
-    .select("id, handle, display_name, avatar_url")
+    .select("id, username, display_name, avatar_url")
     .in("id", senderIds);
   const byId = new Map((profiles ?? []).map((p: any) => [p.id, p]));
 
@@ -47,7 +47,7 @@ export async function getPendingInvites(client: Client, userId: string): Promise
       return {
         id: r.id,
         from_user_id: r.from_user_id,
-        from: { handle: p.handle, display_name: p.display_name, avatar_url: p.avatar_url },
+        from: { username: p.username, display_name: p.display_name, avatar_url: p.avatar_url },
         created_at: r.created_at,
       };
     })
@@ -64,7 +64,7 @@ export async function getMyCovenMembers(client: Client, userId: string): Promise
   if (otherIds.length === 0) return [];
   const { data: profiles, error: pErr } = await client
     .from("profiles")
-    .select("id, handle, display_name, avatar_url")
+    .select("id, username, display_name, avatar_url")
     .in("id", otherIds);
   if (pErr) throw pErr;
   return profiles ?? [];

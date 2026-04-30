@@ -16,10 +16,10 @@ export default async function OnboardingPage() {
       .eq("tracking", true)
       .eq("available", true)
       .limit(24),
-    supabase.from("profiles").select("handle").eq("id", user.id).single(),
+    supabase.from("profiles").select("username").eq("id", user.id).single(),
   ]);
   const films = (filmsRes.data ?? []) as DbFilm[];
-  const initialHandle = profileRes.data?.handle ?? "";
+  const initialUsername = profileRes.data?.username ?? "";
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
@@ -44,7 +44,7 @@ export default async function OnboardingPage() {
 
       <section style={{ padding: "24px 0 60px" }}>
         <div className="container-wide">
-          <OnboardingForm initialFilms={films} initialHandle={initialHandle} />
+          <OnboardingForm initialFilms={films} initialUsername={initialUsername} />
         </div>
       </section>
     </div>

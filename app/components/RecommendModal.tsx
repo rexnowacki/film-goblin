@@ -5,7 +5,7 @@ import { recommendFilm } from "@/lib/actions/recommendations";
 
 interface CovenMember {
   id: string;
-  handle: string;
+  username: string;
   display_name: string | null;
 }
 
@@ -61,7 +61,7 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers }: Prop
             <select name="to_user_id" required defaultValue="" style={{ width: "100%", border: "2px solid var(--void)", padding: "8px 10px", fontFamily: "var(--font-ui)", fontSize: 16, marginBottom: 14, background: "var(--bone)" }}>
               <option value="">Choose someone…</option>
               {covenMembers.map(m => (
-                <option key={m.id} value={m.id}>@{m.handle}{m.display_name ? ` · ${m.display_name}` : ""}</option>
+                <option key={m.id} value={m.id}>@{m.username}{m.display_name ? ` · ${m.display_name}` : ""}</option>
               ))}
             </select>
             <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>A Whisper</div>

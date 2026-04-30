@@ -107,7 +107,7 @@ export function renderDigestEmail(
         </table>
       </td></tr>
       <tr><td style="padding:24px;background:#0A0A0A;color:#F3ECD8;font-family:Georgia,serif;font-size:12px;line-height:1.6;">
-        <div style="margin-bottom:8px;">Summoned by Film Goblin · hello, ${escapeHtml(user.handle)}.</div>
+        <div style="margin-bottom:8px;">Summoned by Film Goblin · hello, ${escapeHtml(user.username)}.</div>
         <div>
           <a href="${unsubUrl}" style="color:#F5D300;text-decoration:underline;">Unsubscribe</a>
           &nbsp;·&nbsp;

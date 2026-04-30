@@ -13,15 +13,15 @@ function SignUpInner() {
   const [dupEmail, setDupEmail] = useState("");
   const [pending, setPending] = useState(false);
   const [displayName, setDisplayName] = useState("");
-  const [handleValue, setHandleValue] = useState("");
-  const [handleEdited, setHandleEdited] = useState(false);
+  const [usernameValue, setUsernameValue] = useState("");
+  const [usernameEdited, setUsernameEdited] = useState(false);
   const redirectTo = params.get("redirect") || "/home";
 
   useEffect(() => {
-    if (handleEdited) return;
+    if (usernameEdited) return;
     const suggested = displayName.toLowerCase().replace(/[^a-z0-9._]/g, "").slice(0, 24);
-    setHandleValue(suggested);
-  }, [displayName, handleEdited]);
+    setUsernameValue(suggested);
+  }, [displayName, usernameEdited]);
 
   async function submit(formData: FormData) {
     setPending(true);
@@ -81,15 +81,15 @@ function SignUpInner() {
             placeholder="Tooth Tony"
             style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 16, fontFamily: "var(--font-ui)" }}
           />
-          <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Handle</div>
+          <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Username</div>
           <input
-            name="handle"
+            name="username"
             type="text"
             required
             maxLength={24}
             autoComplete="username"
-            value={handleValue}
-            onChange={e => { setHandleValue(e.target.value); setHandleEdited(true); }}
+            value={usernameValue}
+            onChange={e => { setUsernameValue(e.target.value); setUsernameEdited(true); }}
             placeholder="toothtony"
             style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 6, fontFamily: "var(--font-ui)" }}
           />

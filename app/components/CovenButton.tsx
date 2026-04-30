@@ -6,12 +6,12 @@ import type { CovenState } from "@/lib/queries/coven";
 
 interface Props {
   targetUserId: string;
-  targetHandle: string;
+  targetUsername: string;
   initialState: CovenState;
   initialRequestId: string | null;
 }
 
-export default function CovenButton({ targetUserId, targetHandle, initialState, initialRequestId }: Props) {
+export default function CovenButton({ targetUserId, targetUsername, initialState, initialRequestId }: Props) {
   const [state, setState] = useState<CovenState>(initialState);
   const [requestId, setRequestId] = useState<string | null>(initialRequestId);
   const [pending, start] = useTransition();
@@ -20,7 +20,7 @@ export default function CovenButton({ targetUserId, targetHandle, initialState, 
     start(async () => {
       try {
         if (kind === "invite") {
-          const { id } = await sendCovenRequest(targetUserId, targetHandle);
+          const { id } = await sendCovenRequest(targetUserId, targetUsername);
           setRequestId(id);
           setState("pending_outbound");
         } else if (kind === "cancel" && requestId) {

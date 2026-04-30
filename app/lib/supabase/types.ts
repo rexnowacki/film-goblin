@@ -520,7 +520,7 @@ export type Database = {
           created_at: string
           display_name: string
           email_notifications_enabled: boolean
-          handle: string
+          username: string
           id: string
           onboarded_at: string | null
           unsubscribe_token: string
@@ -535,7 +535,7 @@ export type Database = {
           created_at?: string
           display_name: string
           email_notifications_enabled?: boolean
-          handle: string
+          username: string
           id: string
           onboarded_at?: string | null
           unsubscribe_token?: string
@@ -550,7 +550,7 @@ export type Database = {
           created_at?: string
           display_name?: string
           email_notifications_enabled?: boolean
-          handle?: string
+          username?: string
           id?: string
           onboarded_at?: string | null
           unsubscribe_token?: string

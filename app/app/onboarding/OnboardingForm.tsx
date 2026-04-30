@@ -17,12 +17,12 @@ export interface DbFilm {
 
 interface Props {
   initialFilms: DbFilm[];
-  initialHandle: string;
+  initialUsername: string;
 }
 
-export default function OnboardingForm({ initialFilms, initialHandle }: Props) {
+export default function OnboardingForm({ initialFilms, initialUsername }: Props) {
   const router = useRouter();
-  const [handle, setHandle] = useState(initialHandle);
+  const [username, setUsername] = useState(initialUsername);
   const [threshold, setThreshold] = useState(30);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [q, setQ] = useState("");
@@ -36,19 +36,19 @@ export default function OnboardingForm({ initialFilms, initialHandle }: Props) {
     );
   }, [q, initialFilms]);
 
-  const trimmedHandle = handle.trim();
-  const handleFormatOk = /^[a-z0-9._]+$/.test(trimmedHandle);
-  const handleOk = trimmedHandle.length > 0 && handleFormatOk;
+  const trimmedUsername = username.trim();
+  const usernameFormatOk = /^[a-z0-9._]+$/.test(trimmedUsername);
+  const usernameOk = trimmedUsername.length > 0 && usernameFormatOk;
   const watchlistOk = watchlist.length >= 3;
-  const canSubmit = handleOk && watchlistOk;
+  const canSubmit = usernameOk && watchlistOk;
 
   const disabledReason =
-    trimmedHandle.length > 0 && !handleFormatOk
-      ? "Handle: lowercase letters, numbers, dots, underscores only."
-      : !handleOk && !watchlistOk
-      ? "Choose a handle, and pick three films."
-      : !handleOk
-      ? "Choose a handle."
+    trimmedUsername.length > 0 && !usernameFormatOk
+      ? "Username: lowercase letters, numbers, dots, underscores only."
+      : !usernameOk && !watchlistOk
+      ? "Choose a username, and pick three films."
+      : !usernameOk
+      ? "Choose a username."
       : !watchlistOk
       ? "Pick three films to begin."
       : "";
@@ -64,7 +64,7 @@ export default function OnboardingForm({ initialFilms, initialHandle }: Props) {
     setSubmitting(true);
     try {
       await completeOnboarding({
-        handle: handle.trim(),
+        username: username.trim(),
         watchlistFilmIds: watchlist,
         thresholdPct: threshold,
       });
@@ -79,10 +79,10 @@ export default function OnboardingForm({ initialFilms, initialHandle }: Props) {
   return (
     <>
       <div style={{ marginBottom: 28 }}>
-        <div className="caps" style={{ fontSize: 10, color: "var(--accent)", marginBottom: 8 }}>Your Handle</div>
+        <div className="caps" style={{ fontSize: 10, color: "var(--accent)", marginBottom: 8 }}>Your Username</div>
         <input
-          value={handle}
-          onChange={e => setHandle(e.target.value)}
+          value={username}
+          onChange={e => setUsername(e.target.value)}
           placeholder="moss.witch"
           maxLength={24}
           style={{

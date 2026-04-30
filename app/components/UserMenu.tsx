@@ -6,13 +6,13 @@ import Avatar from "./Avatar";
 import { signOut } from "@/lib/actions/auth";
 
 interface Props {
-  handle: string;
+  username: string;
   displayName: string;
   avatarUrl?: string | null;
   isAdmin?: boolean;
 }
 
-export default function UserMenu({ handle, displayName, avatarUrl, isAdmin }: Props) {
+export default function UserMenu({ username, displayName, avatarUrl, isAdmin }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -32,7 +32,7 @@ export default function UserMenu({ handle, displayName, avatarUrl, isAdmin }: Pr
         aria-label="Open account menu"
         style={{ background: "transparent", border: 0, padding: 0, cursor: "pointer" }}
       >
-        <Avatar name={displayName || handle} color="var(--accent)" size={36} url={avatarUrl} />
+        <Avatar name={displayName || username} color="var(--accent)" size={36} url={avatarUrl} />
       </button>
       {open && (
         <div style={{
@@ -47,11 +47,11 @@ export default function UserMenu({ handle, displayName, avatarUrl, isAdmin }: Pr
           zIndex: 50,
         }}>
           <Link
-            href={`/p/${encodeURIComponent(handle)}`}
+            href={`/p/${encodeURIComponent(username)}`}
             onClick={() => setOpen(false)}
             style={{ display: "block", padding: "10px 14px", borderBottom: "1px solid var(--void)", fontFamily: "var(--font-ui)", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--void)", textDecoration: "none" }}
           >
-            @{handle}
+            @{username}
           </Link>
           <Link
             href="/library"

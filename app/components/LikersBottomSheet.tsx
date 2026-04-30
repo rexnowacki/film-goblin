@@ -12,20 +12,20 @@ interface Props {
 }
 
 interface LikerRowProps {
-  p: { id: string; handle: string; display_name: string | null; avatar_url: string | null };
+  p: { id: string; username: string; display_name: string | null; avatar_url: string | null };
 }
 
 function LikerRow({ p }: LikerRowProps) {
   return (
-    <a href={`/p/${p.handle}`} className="liker-row">
+    <a href={`/p/${p.username}`} className="liker-row">
       <Avatar
-        name={p.display_name || p.handle}
+        name={p.display_name || p.username}
         url={p.avatar_url}
         size={36}
       />
       <div className="liker-row-text">
-        <div className="liker-row-name">{p.display_name || p.handle}</div>
-        <div className="liker-row-handle">@{p.handle}</div>
+        <div className="liker-row-name">{p.display_name || p.username}</div>
+        <div className="liker-row-handle">@{p.username}</div>
       </div>
     </a>
   );

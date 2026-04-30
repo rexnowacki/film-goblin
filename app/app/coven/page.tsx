@@ -78,7 +78,7 @@ export default async function CovenPage({
                   style={{ display: "flex", alignItems: "center", gap: 16, padding: 14, border: "1px solid var(--muted)" }}
                 >
                   <Avatar
-                    name={inv.from.display_name ?? inv.from.handle}
+                    name={inv.from.display_name ?? inv.from.username}
                     color="var(--accent)"
                     size={44}
                     url={inv.from.avatar_url}
@@ -86,14 +86,14 @@ export default async function CovenPage({
                   <div style={{ flex: 1 }}>
                     <div className="head" style={{ fontSize: 16, lineHeight: 1 }}>
                       <Link
-                        href={`/p/${encodeURIComponent(inv.from.handle)}`}
+                        href={`/p/${encodeURIComponent(inv.from.username)}`}
                         style={{ color: "var(--bone)", textDecoration: "none" }}
                       >
-                        {inv.from.display_name ?? inv.from.handle}
+                        {inv.from.display_name ?? inv.from.username}
                       </Link>
                     </div>
                     <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
-                      @{inv.from.handle}
+                      @{inv.from.username}
                     </div>
                   </div>
                   <CovenInviteActions requestId={inv.id} />
@@ -122,18 +122,18 @@ export default async function CovenPage({
                     <div key={m.id} style={{ border: "1px solid var(--muted)", padding: 16 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                         <Avatar
-                          name={m.display_name ?? m.handle}
+                          name={m.display_name ?? m.username}
                           color="var(--accent)"
                           size={44}
                           url={m.avatar_url}
                         />
                         <div style={{ flex: 1 }}>
-                          <Link href={`/p/${encodeURIComponent(m.handle)}`} style={{ color: "var(--bone)", textDecoration: "none" }}>
+                          <Link href={`/p/${encodeURIComponent(m.username)}`} style={{ color: "var(--bone)", textDecoration: "none" }}>
                             <div className="head" style={{ fontSize: 16, lineHeight: 1 }}>
-                              {m.display_name ?? m.handle}
+                              {m.display_name ?? m.username}
                             </div>
                             <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
-                              @{m.handle}
+                              @{m.username}
                             </div>
                           </Link>
                         </div>
@@ -141,8 +141,8 @@ export default async function CovenPage({
                       <div style={{ marginTop: 12 }}>
                         <LeaveCovenButton
                           otherUserId={m.id}
-                          otherHandle={m.handle}
-                          otherDisplayName={m.display_name ?? m.handle}
+                          otherUsername={m.username}
+                          otherDisplayName={m.display_name ?? m.username}
                         />
                       </div>
                     </div>

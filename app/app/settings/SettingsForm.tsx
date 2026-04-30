@@ -106,7 +106,7 @@ export default function SettingsForm() {
     setSaved(false);
     try {
       await updateProfile({
-        handle: String(fd.get("handle")),
+        username: String(fd.get("username")),
         display_name: String(fd.get("display_name")),
         bio: String(fd.get("bio") || ""),
         broadcast_watchlist_adds: fd.get("broadcast") === "on",
@@ -134,7 +134,7 @@ export default function SettingsForm() {
   return (
     <>
     <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 24, flexWrap: "wrap" }}>
-      <Avatar name={profile.display_name ?? profile.handle ?? "You"} color="var(--accent)" size={72} url={profile.avatar_url} />
+      <Avatar name={profile.display_name ?? profile.username ?? "You"} color="var(--accent)" size={72} url={profile.avatar_url} />
       <div>
         <div className="caps" style={{ fontSize: 11, marginBottom: 6, color: "var(--accent)" }}>Profile picture</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -160,8 +160,8 @@ export default function SettingsForm() {
     )}
     <form action={save} style={{ display: "grid", gap: 16, maxWidth: 540 }}>
       <label>
-        <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Handle</div>
-        <input name="handle" defaultValue={profile.handle} required style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)" }} />
+        <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Username</div>
+        <input name="username" defaultValue={profile.username} required style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)" }} />
       </label>
       <label>
         <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Display Name</div>

@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { groupNotifications } from "@/lib/queries/group-notifications";
 import type { EnrichedNotification, NotificationKind } from "@/lib/queries/notifications";
 
-const ACTOR_A = { id: "a", handle: "alice", display_name: "Alice", avatar_url: null };
-const ACTOR_B = { id: "b", handle: "bob",   display_name: "Bob",   avatar_url: null };
+const ACTOR_A = { id: "a", username: "alice", display_name: "Alice", avatar_url: null };
+const ACTOR_B = { id: "b", username: "bob",   display_name: "Bob",   avatar_url: null };
 const FILM = { id: "f1", title: "F", artwork_url: "" };
 
 function rec(

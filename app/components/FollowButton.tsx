@@ -5,11 +5,11 @@ import { follow, unfollow } from "@/lib/actions/follows";
 
 interface Props {
   userId: string;
-  handle: string;
+  username: string;
   initialFollowing: boolean;
 }
 
-export default function FollowButton({ userId, handle, initialFollowing }: Props) {
+export default function FollowButton({ userId, username, initialFollowing }: Props) {
   const [following, setFollowing] = useState(initialFollowing);
   const [pending, start] = useTransition();
 
@@ -17,10 +17,10 @@ export default function FollowButton({ userId, handle, initialFollowing }: Props
     start(async () => {
       try {
         if (following) {
-          await unfollow(userId, handle);
+          await unfollow(userId, username);
           setFollowing(false);
         } else {
-          await follow(userId, handle);
+          await follow(userId, username);
           setFollowing(true);
         }
       } catch (e) { console.error(e); }

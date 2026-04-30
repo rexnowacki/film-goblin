@@ -46,6 +46,9 @@ export async function setupTestDb(): Promise<{ client: Client; cleanup: () => Pr
     const sql = readFileSync(join(REPO_ROOT, relPath), "utf8");
     mem.public.none(stripUnsupported(sql));
   }
+  // 0137 renames profiles.handle -> profiles.username; pg-mem can't parse the
+  // accompanying CREATE OR REPLACE FUNCTION, so apply the ALTER inline.
+  mem.public.none(`ALTER TABLE profiles RENAME COLUMN handle TO username`);
 
   const { Client } = mem.adapters.createPg();
   const client = new Client() as unknown as Client;

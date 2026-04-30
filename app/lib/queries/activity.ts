@@ -8,7 +8,7 @@ type Client = SupabaseClient<Database>;
 
 interface ActorLite {
   id: string;
-  handle: string;
+  username: string;
   display_name: string | null;
   avatar_url: string | null;
 }
@@ -29,7 +29,7 @@ interface ListLite {
 
 interface RecipientLite {
   id: string;
-  handle: string;
+  username: string;
   display_name: string | null;
   avatar_url: string | null;
 }
@@ -116,9 +116,9 @@ export async function getEnrichedFeed(
   const listIds = Array.from(new Set(raw.map(r => (r.payload as any)?.list_id).filter(Boolean)));
 
   const [actors, films, recipients, lists, reactionsMap, commentsMap] = await Promise.all([
-    rawActorIds.length ? client.from("profiles").select("id, handle, display_name, avatar_url").in("id", rawActorIds) : Promise.resolve({ data: [] as any }),
+    rawActorIds.length ? client.from("profiles").select("id, username, display_name, avatar_url").in("id", rawActorIds) : Promise.resolve({ data: [] as any }),
     filmIds.length ? client.from("films").select("id, title, director, year, artwork_url, itunes_url").in("id", filmIds) : Promise.resolve({ data: [] as any }),
-    recipientIds.length ? client.from("profiles").select("id, handle, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] as any }),
+    recipientIds.length ? client.from("profiles").select("id, username, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] as any }),
     listIds.length ? client.from("lists").select("id, title").in("id", listIds) : Promise.resolve({ data: [] as any }),
     getReactionsForActivities(client, raw.map(r => r.id), followerUserId),
     getCommentSummariesForActivities(client, raw.map(r => r.id)),

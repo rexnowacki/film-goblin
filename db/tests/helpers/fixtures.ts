@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 export interface TestUser {
   id: string;
   email: string;
-  handle: string;
+  username: string;
 }
 
 export interface Fixtures {
@@ -24,7 +24,7 @@ export async function seedFixtures(client: Client): Promise<Fixtures> {
   const mk = (label: string): TestUser => ({
     id: randomUUID(),
     email: `${label}-${randomUUID().slice(0, 8)}@test.example`,
-    handle: `${label}_${randomUUID().slice(0, 6)}`,
+    username: `${label}_${randomUUID().slice(0, 6)}`,
   });
 
   const userA = mk("a");
@@ -35,10 +35,10 @@ export async function seedFixtures(client: Client): Promise<Fixtures> {
 
   for (const u of [userA, userB, userC, staffS, adminA]) {
     await client.query(`INSERT INTO auth.users (id, email) VALUES ($1, $2)`, [u.id, u.email]);
-    // Trigger created a profiles row; overwrite handle/display_name for deterministic test values
+    // Trigger created a profiles row; overwrite username/display_name for deterministic test values
     await client.query(
-      `UPDATE profiles SET handle = $2, display_name = $3 WHERE id = $1`,
-      [u.id, u.handle, u.handle]
+      `UPDATE profiles SET username = $2, display_name = $3 WHERE id = $1`,
+      [u.id, u.username, u.username]
     );
   }
 

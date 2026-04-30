@@ -2,7 +2,7 @@ import type { Client } from "pg";
 
 export interface UserLite {
   id: string;
-  handle: string;
+  username: string;
   email: string;
   unsubscribe_token: string;
 }
@@ -37,7 +37,7 @@ export async function findPendingDigests(client: Client): Promise<PendingDigest[
   const { rows } = await client.query(`
     SELECT
       u.id AS user_id,
-      p.handle,
+      p.username,
       u.email,
       p.unsubscribe_token,
       pa.id AS alert_id,
@@ -66,7 +66,7 @@ export async function findPendingDigests(client: Client): Promise<PendingDigest[
       byUser.set(r.user_id, {
         user: {
           id: r.user_id,
-          handle: r.handle,
+          username: r.username,
           email: r.email,
           unsubscribe_token: r.unsubscribe_token,
         },

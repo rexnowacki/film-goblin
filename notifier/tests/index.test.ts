@@ -17,7 +17,7 @@ afterEach(async () => { await cleanup(); });
 async function seedAlert(userId: string, email: string): Promise<string> {
   await client.query(`INSERT INTO auth.users (id, email) VALUES ($1, $2)`, [userId, email]);
   await client.query(
-    `INSERT INTO profiles (id, handle, display_name, email_notifications_enabled)
+    `INSERT INTO profiles (id, username, display_name, email_notifications_enabled)
      VALUES ($1, $2, $2, TRUE)`,
     [userId, email.split("@")[0]],
   );

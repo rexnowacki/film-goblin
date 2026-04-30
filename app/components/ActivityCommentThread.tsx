@@ -39,7 +39,7 @@ export default function ActivityCommentThread({
     const optimistic: CommentItem = {
       id: tempId,
       user_id: viewerId,
-      user: { handle: "...", display_name: null, avatar_url: null },
+      user: { username: "...", display_name: null, avatar_url: null },
       body: trimmed,
       created_at: new Date().toISOString(),
     };
@@ -112,15 +112,15 @@ export default function ActivityCommentThread({
           return (
             <div key={c.id} style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12 }}>
               <Avatar
-                name={c.user.display_name ?? c.user.handle}
+                name={c.user.display_name ?? c.user.username}
                 color="var(--accent)"
                 size={22}
                 url={c.user.avatar_url}
               />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div>
-                  <Link href={`/p/${encodeURIComponent(c.user.handle)}`} style={{ color: "var(--bone)", fontWeight: 700 }}>
-                    @{c.user.handle}
+                  <Link href={`/p/${encodeURIComponent(c.user.username)}`} style={{ color: "var(--bone)", fontWeight: 700 }}>
+                    @{c.user.username}
                   </Link>{" "}
                   <span style={{ wordBreak: "break-word" }}>{c.body}</span>
                 </div>

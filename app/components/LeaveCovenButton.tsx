@@ -3,15 +3,15 @@
 import { useState, useTransition } from "react";
 import { leaveCoven } from "@/lib/actions/coven";
 
-interface Props { otherUserId: string; otherHandle: string; otherDisplayName: string; }
+interface Props { otherUserId: string; otherUsername: string; otherDisplayName: string; }
 
-export default function LeaveCovenButton({ otherUserId, otherHandle, otherDisplayName }: Props) {
+export default function LeaveCovenButton({ otherUserId, otherUsername, otherDisplayName }: Props) {
   const [confirm, setConfirm] = useState(false);
   const [pending, start] = useTransition();
 
   function onLeave() {
     start(async () => {
-      try { await leaveCoven(otherUserId, otherHandle); }
+      try { await leaveCoven(otherUserId, otherUsername); }
       catch (e) { console.error(e); }
     });
   }

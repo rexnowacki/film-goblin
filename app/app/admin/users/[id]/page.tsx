@@ -16,16 +16,16 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
   return (
     <div>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        <h1 className="h-display" style={{ margin: 0 }}>@{user.handle}</h1>
+        <h1 className="h-display" style={{ margin: 0 }}>@{user.username}</h1>
         <div style={{ display: "flex", gap: 8 }}>
           <Link href="/admin/users" className="btn btn-sm btn-outline">← Back</Link>
-          <Link href={`/p/${user.handle}`} className="btn btn-sm btn-outline">Public profile →</Link>
+          <Link href={`/p/${user.username}`} className="btn btn-sm btn-outline">Public profile →</Link>
         </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20, marginBottom: 28 }}>
         <Section title="Profile">
-          <Field label="Handle" value={`@${user.handle}`} />
+          <Field label="Username" value={`@${user.username}`} />
           <Field label="Display name" value={user.display_name ?? "—"} />
           <Field label="Bio" value={user.bio ?? "—"} />
           <Field label="Staff role" value={user.staff_role ?? "—"} />
@@ -42,7 +42,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
         <div className="caps" style={{ color: "var(--blood)", fontSize: 12, marginBottom: 10 }}>Danger zone</div>
         <DeleteUserModal
           userId={user.id}
-          handle={user.handle}
+          username={user.username}
           email={user.email}
           createdAt={user.created_at}
           lastSignInAt={user.last_sign_in_at}
