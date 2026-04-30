@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getUserForAdmin } from "@/lib/queries/admin/users";
 import DeleteUserModal from "../DeleteUserModal";
+import RoleControl from "./RoleControl";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "never";
@@ -23,12 +24,18 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
         </div>
       </div>
 
+      <div style={{ marginBottom: 20 }}>
+        <Section title="Role">
+          <RoleControl userId={user.id} currentRole={user.role} />
+        </Section>
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20, marginBottom: 28 }}>
         <Section title="Profile">
           <Field label="Username" value={`@${user.username}`} />
           <Field label="Display name" value={user.display_name ?? "—"} />
           <Field label="Bio" value={user.bio ?? "—"} />
-          <Field label="Staff role" value={user.staff_role ?? "—"} />
+          <Field label="Staff row" value={user.staff_role ?? "—"} />
         </Section>
         <Section title="Auth">
           <Field label="Email" value={user.email ?? "—"} />

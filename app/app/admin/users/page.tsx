@@ -42,7 +42,15 @@ export default async function AdminUsersPage({
           {rows.map(u => (
             <div key={u.id} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 14, alignItems: "center", padding: "10px 14px", borderBottom: "1px solid #333" }}>
               <div>
-                <div style={{ fontFamily: "var(--font-head)", fontSize: 16 }}>@{u.username} {u.staff_role && <span className="caps" style={{ fontSize: 9, padding: "1px 6px", marginLeft: 6, background: "var(--accent)", color: "var(--accent-ink)" }}>{u.staff_role}</span>}</div>
+                <div style={{ fontFamily: "var(--font-head)", fontSize: 16 }}>
+                  @{u.username}
+                  {u.role !== "goblin" && (
+                    <span className="caps" style={{ fontSize: 9, padding: "1px 6px", marginLeft: 6, background: u.role === "witch" ? "var(--accent-deep)" : "var(--accent)", color: "var(--bone)" }}>
+                      {u.role === "high_goblin" ? "high goblin" : u.role}
+                    </span>
+                  )}
+                  {u.staff_role && <span className="caps" style={{ fontSize: 9, padding: "1px 6px", marginLeft: 6, background: "var(--accent)", color: "var(--accent-ink)" }}>{u.staff_role}</span>}
+                </div>
                 <div style={{ fontSize: 11, opacity: 0.7 }}>{u.display_name ?? "—"} · {u.email ?? "—"} · joined {fmtDate(u.created_at)} · last seen {fmtDate(u.last_sign_in_at)}</div>
               </div>
               <Link href={`/admin/users/${u.id}`} className="btn btn-sm btn-outline">View</Link>

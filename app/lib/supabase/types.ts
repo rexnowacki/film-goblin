@@ -528,6 +528,7 @@ export type Database = {
           username: string
           id: string
           onboarded_at: string | null
+          role: "goblin" | "witch" | "high_goblin"
           unsubscribe_token: string
           updated_at: string
         }
@@ -548,6 +549,7 @@ export type Database = {
           username: string
           id: string
           onboarded_at?: string | null
+          role?: "goblin" | "witch" | "high_goblin"
           unsubscribe_token?: string
           updated_at?: string
         }
@@ -568,6 +570,7 @@ export type Database = {
           username?: string
           id?: string
           onboarded_at?: string | null
+          role?: "goblin" | "witch" | "high_goblin"
           unsubscribe_token?: string
           updated_at?: string
         }

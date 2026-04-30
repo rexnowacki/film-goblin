@@ -11,6 +11,7 @@ export interface AdminUserRow {
   created_at: string;
   last_sign_in_at: string | null;
   staff_role: "admin" | "reviewer" | null;
+  role: "goblin" | "witch" | "high_goblin";
 }
 
 const PAGE_SIZE = 20;
@@ -25,7 +26,7 @@ export async function listUsersForAdmin(
   // profile filter based on input shape
   let profileQuery = sb
     .from("profiles")
-    .select("id, username, display_name, avatar_url", { count: "exact" });
+    .select("id, username, display_name, avatar_url, role", { count: "exact" });
 
   if (trimmed) {
     if (UUID_RE.test(trimmed)) {
@@ -61,7 +62,7 @@ export async function listUsersForAdmin(
     effectiveCount = matchingIds.size;
     const { data: emailProfiles } = await sb
       .from("profiles")
-      .select("id, username, display_name, avatar_url")
+      .select("id, username, display_name, avatar_url, role")
       .in("id", Array.from(matchingIds).slice(0, 1000));
     effectiveProfiles = (emailProfiles ?? []).slice(from, to + 1);
   }
@@ -82,6 +83,7 @@ export async function listUsersForAdmin(
       created_at: au?.created_at ?? "",
       last_sign_in_at: au?.last_sign_in_at ?? null,
       staff_role: staffMap.get(p.id) ?? null,
+      role: (p.role as "goblin" | "witch" | "high_goblin") ?? "goblin",
     };
   });
 
@@ -90,7 +92,7 @@ export async function listUsersForAdmin(
 
 export async function getUserForAdmin(id: string): Promise<AdminUserRow & { bio: string | null; identities: string[] } | null> {
   const sb = serviceRoleClient();
-  const { data: profile } = await sb.from("profiles").select("id, username, display_name, avatar_url, bio").eq("id", id).maybeSingle();
+  const { data: profile } = await sb.from("profiles").select("id, username, display_name, avatar_url, bio, role").eq("id", id).maybeSingle();
   if (!profile) return null;
   const { data: authInfo } = await sb.auth.admin.getUserById(id);
   const { data: staffRow } = await sb.from("staff").select("role").eq("user_id", id).maybeSingle();
@@ -105,5 +107,6 @@ export async function getUserForAdmin(id: string): Promise<AdminUserRow & { bio:
     last_sign_in_at: authInfo?.user?.last_sign_in_at ?? null,
     identities: (authInfo?.user?.identities ?? []).map(i => i.provider),
     staff_role: (staffRow?.role as "admin" | "reviewer" | null) ?? null,
+    role: (profile.role as "goblin" | "witch" | "high_goblin") ?? "goblin",
   };
 }

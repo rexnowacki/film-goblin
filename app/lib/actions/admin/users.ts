@@ -57,3 +57,38 @@ export async function adminDeleteUser(id: string): Promise<{ ok: true } | { ok: 
   revalidatePath("/admin/users");
   return { ok: true };
 }
+
+export type UserRole = "goblin" | "witch" | "high_goblin";
+
+const VALID_ROLES: UserRole[] = ["goblin", "witch", "high_goblin"];
+
+export async function adminSetUserRole(
+  userId: string,
+  role: UserRole,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createClient();
+  await requireAdmin(supabase);
+  if (!VALID_ROLES.includes(role)) return { ok: false, error: "Invalid role." };
+
+  const sr = serviceRoleClient();
+
+  const { error: updateErr } = await sr.from("profiles").update({ role }).eq("id", userId);
+  if (updateErr) return { ok: false, error: updateErr.message };
+
+  // Witch <-> staff invariant: promoting to witch grants admin staff;
+  // demoting from witch revokes it. Settled in the same call so the
+  // two can't drift via the admin UI.
+  if (role === "witch") {
+    const { error: staffErr } = await sr
+      .from("staff")
+      .upsert({ user_id: userId, role: "admin" }, { onConflict: "user_id" });
+    if (staffErr) return { ok: false, error: staffErr.message };
+  } else {
+    const { error: staffDelErr } = await sr.from("staff").delete().eq("user_id", userId);
+    if (staffDelErr) return { ok: false, error: staffDelErr.message };
+  }
+
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${userId}`);
+  return { ok: true };
+}
