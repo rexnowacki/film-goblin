@@ -17,12 +17,12 @@ beforeEach(async () => {
 
 afterEach(async () => { await cleanup(); });
 
-async function seedUser(id: string, email: string, opts: { enabled?: boolean } = {}) {
+async function seedUser(id: string, email: string, opts: { enabled?: boolean; emailAddedAt?: Date | null } = {}) {
   await client.query(`INSERT INTO auth.users (id, email) VALUES ($1, $2)`, [id, email]);
   await client.query(
-    `INSERT INTO profiles (id, username, display_name, email_notifications_enabled)
-     VALUES ($1, $2, $2, $3)`,
-    [id, email.split("@")[0], opts.enabled ?? true],
+    `INSERT INTO profiles (id, username, display_name, email_notifications_enabled, email_added_at)
+     VALUES ($1, $2, $2, $3, $4)`,
+    [id, email.split("@")[0], opts.enabled ?? true, opts.emailAddedAt === null ? null : (opts.emailAddedAt ?? new Date())],
   );
 }
 

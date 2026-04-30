@@ -519,6 +519,7 @@ export type Database = {
           broadcast_watchlist_adds: boolean
           created_at: string
           display_name: string
+          email_added_at: string | null
           email_notifications_enabled: boolean
           username: string
           id: string
@@ -534,6 +535,7 @@ export type Database = {
           broadcast_watchlist_adds?: boolean
           created_at?: string
           display_name: string
+          email_added_at?: string | null
           email_notifications_enabled?: boolean
           username: string
           id: string
@@ -549,6 +551,7 @@ export type Database = {
           broadcast_watchlist_adds?: boolean
           created_at?: string
           display_name?: string
+          email_added_at?: string | null
           email_notifications_enabled?: boolean
           username?: string
           id?: string

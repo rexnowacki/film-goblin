@@ -10,7 +10,7 @@ function SignInInner() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const redirectTo = params.get("redirect") || "/home";
-  const prefilledEmail = params.get("email") || "";
+  const prefilledIdentifier = params.get("identifier") || params.get("email") || "";
 
   async function handle(formData: FormData) {
     setPending(true);
@@ -42,8 +42,9 @@ function SignInInner() {
 
         <form action={handle}>
           <input type="hidden" name="redirect" value={redirectTo} />
-          <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Email</div>
-          <input name="email" type="email" required autoComplete="email" defaultValue={prefilledEmail}
+          <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Username or Email</div>
+          <input name="identifier" type="text" required autoComplete="username" defaultValue={prefilledIdentifier}
+            placeholder="moss.witch"
             style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 16, fontFamily: "var(--font-ui)" }} />
           <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Password</div>
           <input name="password" type="password" required minLength={6} autoComplete="current-password"

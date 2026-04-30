@@ -49,6 +49,9 @@ export async function setupTestDb(): Promise<{ client: Client; cleanup: () => Pr
   // 0137 renames profiles.handle -> profiles.username; pg-mem can't parse the
   // accompanying CREATE OR REPLACE FUNCTION, so apply the ALTER inline.
   mem.public.none(`ALTER TABLE profiles RENAME COLUMN handle TO username`);
+  // 0138 adds profiles.email_added_at; same trigger-parsing constraint, so
+  // apply the column + backfill inline.
+  mem.public.none(`ALTER TABLE profiles ADD COLUMN email_added_at TIMESTAMPTZ NULL`);
 
   const { Client } = mem.adapters.createPg();
   const client = new Client() as unknown as Client;

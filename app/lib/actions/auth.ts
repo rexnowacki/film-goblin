@@ -7,12 +7,37 @@ import { friendlyError } from "@/lib/auth/friendly-errors";
 import { safeRedirect } from "@/lib/auth/safe-redirect";
 
 const USERNAME_RE = /^[a-z0-9._]+$/;
+const SYNTHETIC_EMAIL_DOMAIN = "noreply.film-goblin.app";
+
+function syntheticEmailFor(username: string): string {
+  return `${username}@${SYNTHETIC_EMAIL_DOMAIN}`;
+}
 
 export async function signIn(formData: FormData): Promise<{ error?: string }> {
-  const email = String(formData.get("email") || "");
+  const identifier = String(formData.get("identifier") || formData.get("email") || "").trim();
   const password = String(formData.get("password") || "");
   const redirectIn = String(formData.get("redirect") || "/home");
   const target = safeRedirect(redirectIn);
+
+  if (!identifier) return { error: "Enter your username or email." };
+
+  let email = identifier;
+  if (!identifier.includes("@")) {
+    if (!USERNAME_RE.test(identifier)) {
+      return { error: "Invalid credentials." };
+    }
+    const admin = serviceRoleClient();
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("id")
+      .ilike("username", identifier)
+      .maybeSingle();
+    if (!profile) return { error: "Invalid credentials." };
+    const { data: user, error: lookupErr } = await admin.auth.admin.getUserById(profile.id);
+    if (lookupErr || !user?.user?.email) return { error: "Invalid credentials." };
+    email = user.user.email;
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: friendlyError(error) };
@@ -20,11 +45,9 @@ export async function signIn(formData: FormData): Promise<{ error?: string }> {
 }
 
 export async function signUp(formData: FormData): Promise<{ error?: string; info?: string; duplicate?: boolean }> {
-  const email = String(formData.get("email") || "").trim();
   const password = String(formData.get("password") || "");
   const displayName = String(formData.get("display_name") || "").trim();
-  const username = String(formData.get("username") || "").trim();
-  const origin = String(formData.get("origin") || "");
+  const username = String(formData.get("username") || "").trim().toLowerCase();
   const redirectIn = String(formData.get("redirect") || "/home");
   const target = safeRedirect(redirectIn);
 
@@ -33,6 +56,9 @@ export async function signUp(formData: FormData): Promise<{ error?: string; info
   }
   if (!USERNAME_RE.test(username) || username.length > 24) {
     return { error: "Username: lowercase letters, numbers, dots, underscores only (max 24)." };
+  }
+  if (password.length < 6) {
+    return { error: "Password must be at least 6 characters." };
   }
 
   const admin = serviceRoleClient();
@@ -45,21 +71,24 @@ export async function signUp(formData: FormData): Promise<{ error?: string; info
     return { error: "That username is already taken." };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+  const email = syntheticEmailFor(username);
+  const { error: createErr } = await admin.auth.admin.createUser({
     email,
     password,
-    options: {
-      data: { username, display_name: displayName },
-      emailRedirectTo: `${origin}/api/auth/callback?next=${encodeURIComponent(target)}`,
-    },
+    email_confirm: true,
+    user_metadata: { username, display_name: displayName },
   });
-  if (error) {
-    const friendly = friendlyError(error);
-    const duplicate = error.message === "User already registered";
-    return { error: friendly, duplicate };
+  if (createErr) {
+    const duplicate = createErr.message?.toLowerCase().includes("already") ?? false;
+    return { error: friendlyError(createErr), duplicate };
   }
-  return { info: "Check your email to confirm your account." };
+
+  const supabase = await createClient();
+  const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+  if (signInErr) {
+    return { error: friendlyError(signInErr) };
+  }
+  redirect(target);
 }
 
 export async function signOut(): Promise<void> {
@@ -90,7 +119,6 @@ export async function sendPasswordReset(formData: FormData): Promise<{ message: 
   await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/reset`,
   });
-  // Don't leak whether the email exists (no email-enumeration).
   return { message: "If an account with that email exists, we've sent a reset link. Check your inbox." };
 }
 

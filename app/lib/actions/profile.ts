@@ -48,6 +48,23 @@ export async function updateProfile(fields: ProfileFields) {
   revalidatePath("/settings");
 }
 
+export async function updateEmail(formData: FormData): Promise<{ error?: string; ok?: boolean; info?: string }> {
+  const newEmail = String(formData.get("email") || "").trim().toLowerCase();
+  if (!newEmail || !newEmail.includes("@")) {
+    return { error: "Enter a valid email address." };
+  }
+  if (newEmail.endsWith("@noreply.film-goblin.app")) {
+    return { error: "That domain is reserved." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ email: newEmail });
+  if (error) return { error: friendlyError(error) };
+  return {
+    ok: true,
+    info: "Check the new inbox for a confirmation link. Email isn't active until you click it.",
+  };
+}
+
 export async function changePassword(formData: FormData): Promise<{ error?: string; ok?: boolean }> {
   const currentPassword = String(formData.get("current_password") || "");
   const newPassword = String(formData.get("new_password") || "");
