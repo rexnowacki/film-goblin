@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signUp } from "@/lib/actions/auth";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
@@ -11,16 +11,7 @@ function SignUpInner() {
   const [info, setInfo] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState(false);
   const [pending, setPending] = useState(false);
-  const [displayName, setDisplayName] = useState("");
-  const [usernameValue, setUsernameValue] = useState("");
-  const [usernameEdited, setUsernameEdited] = useState(false);
   const redirectTo = params.get("redirect") || "/home";
-
-  useEffect(() => {
-    if (usernameEdited) return;
-    const suggested = displayName.toLowerCase().replace(/[^a-z0-9._]/g, "").slice(0, 24);
-    setUsernameValue(suggested);
-  }, [displayName, usernameEdited]);
 
   async function submit(formData: FormData) {
     setPending(true);
@@ -58,18 +49,6 @@ function SignUpInner() {
 
         <form action={submit}>
           <input type="hidden" name="redirect" value={redirectTo} />
-          <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Display Name</div>
-          <input
-            name="display_name"
-            type="text"
-            required
-            maxLength={40}
-            autoComplete="nickname"
-            value={displayName}
-            onChange={e => setDisplayName(e.target.value)}
-            placeholder="Tooth Tony"
-            style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 16, fontFamily: "var(--font-ui)" }}
-          />
           <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Username</div>
           <input
             name="username"
@@ -77,13 +56,11 @@ function SignUpInner() {
             required
             maxLength={24}
             autoComplete="username"
-            value={usernameValue}
-            onChange={e => { setUsernameValue(e.target.value); setUsernameEdited(true); }}
             placeholder="toothtony"
             style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 6, fontFamily: "var(--font-ui)" }}
           />
           <div style={{ fontFamily: "var(--font-serif)", fontSize: 11, fontStyle: "italic", opacity: 0.6, marginBottom: 20 }}>
-            Lowercase letters, numbers, dots, underscores. This is your @.
+            Lowercase letters, numbers, dots, underscores. This is your @. Add a display name later in settings.
           </div>
           <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Password (min 6)</div>
           <input name="password" type="password" required minLength={6} autoComplete="new-password"

@@ -46,14 +46,10 @@ export async function signIn(formData: FormData): Promise<{ error?: string }> {
 
 export async function signUp(formData: FormData): Promise<{ error?: string; info?: string; duplicate?: boolean }> {
   const password = String(formData.get("password") || "");
-  const displayName = String(formData.get("display_name") || "").trim();
   const username = String(formData.get("username") || "").trim().toLowerCase();
   const redirectIn = String(formData.get("redirect") || "/home");
   const target = safeRedirect(redirectIn);
 
-  if (displayName.length < 1 || displayName.length > 40) {
-    return { error: "Display name must be 1–40 characters." };
-  }
   if (!USERNAME_RE.test(username) || username.length > 24) {
     return { error: "Username: lowercase letters, numbers, dots, underscores only (max 24)." };
   }
@@ -76,7 +72,7 @@ export async function signUp(formData: FormData): Promise<{ error?: string; info
     email,
     password,
     email_confirm: true,
-    user_metadata: { username, display_name: displayName },
+    user_metadata: { username },
   });
   if (createErr) {
     const duplicate = createErr.message?.toLowerCase().includes("already") ?? false;
