@@ -6,12 +6,13 @@ import BottomSheet from "./BottomSheet";
 interface SaveValues {
   watched_at: string;
   note: string;
+  recommended: boolean | null;
 }
 
 interface Props {
   open: boolean;
   mode: "new" | "edit";
-  initial: { watched_at: string; note: string; id?: string };
+  initial: { watched_at: string; note: string; recommended: boolean | null; id?: string };
   filmTitle: string;
   onSave(values: SaveValues): Promise<void>;
   onDelete?(): Promise<void>;
@@ -23,6 +24,7 @@ const MAX_NOTE = 500;
 export default function WatchModal({ open, mode, initial, filmTitle, onSave, onDelete, onClose }: Props) {
   const [watchedAt, setWatchedAt] = useState(initial.watched_at);
   const [note, setNote] = useState(initial.note);
+  const [recommended, setRecommended] = useState<boolean | null>(initial.recommended);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -30,7 +32,7 @@ export default function WatchModal({ open, mode, initial, filmTitle, onSave, onD
     start(async () => {
       setError(null);
       try {
-        await onSave({ watched_at: watchedAt, note });
+        await onSave({ watched_at: watchedAt, note, recommended });
         onClose();
       } catch (e: any) {
         setError(e?.message ?? String(e));
@@ -86,6 +88,42 @@ export default function WatchModal({ open, mode, initial, filmTitle, onSave, onD
             style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)", fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, resize: "none" }}
           />
         </label>
+        <div>
+          <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Verdict (optional)</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {[
+              { value: true, label: "Loved it" },
+              { value: false, label: "Didn't love it" },
+            ].map(opt => {
+              const active = recommended === opt.value;
+              return (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => setRecommended(active ? null : opt.value)}
+                  style={{
+                    flex: 1, minWidth: 120,
+                    padding: "10px 14px",
+                    background: active ? (opt.value ? "var(--accent)" : "var(--blood)") : "transparent",
+                    color: active ? (opt.value ? "var(--accent-ink)" : "var(--bone)") : "var(--bone)",
+                    border: `2px solid ${active ? (opt.value ? "var(--accent)" : "var(--blood)") : "var(--muted)"}`,
+                    fontFamily: "var(--font-ui)",
+                    fontWeight: 700,
+                    fontSize: 11,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                  }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12, color: "var(--muted)", marginTop: 6 }}>
+            Tap again to clear. Feeds the coven score.
+          </div>
+        </div>
         {error && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{error}</div>}
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 6 }}>
           <button

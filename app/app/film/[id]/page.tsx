@@ -12,6 +12,7 @@ import BottomNav from "@/components/BottomNav";
 import FilmActions from "@/components/FilmActions";
 import RecommendModal from "@/components/RecommendModal";
 import PriceStatBlock from "@/components/PriceStatBlock";
+import CovenScore from "@/components/CovenScore";
 
 export default async function FilmDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -75,6 +76,11 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
                   <span><strong style={{ color: "var(--accent)" }}>{film.watcher_count}</strong> ha{film.watcher_count === 1 ? "s" : "ve"} watched it</span>
                 )}
               </p>
+            )}
+            {(film.coven_rating_count ?? 0) > 0 && (
+              <div style={{ margin: "0 0 22px" }}>
+                <CovenScore pct={film.coven_rating_pct ?? null} count={film.coven_rating_count ?? 0} />
+              </div>
             )}
             <div className="hero-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
               {user && <FilmActions filmId={film.id} filmTitle={film.title} initialOnWatchlist={onList} initialOwned={owned} initialWatchCount={watchCount} />}

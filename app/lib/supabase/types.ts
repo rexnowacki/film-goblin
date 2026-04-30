@@ -703,6 +703,7 @@ export type Database = {
           film_id: string
           id: string
           note: string | null
+          recommended: boolean | null
           user_id: string
           watched_at: string
         }
@@ -711,6 +712,7 @@ export type Database = {
           film_id: string
           id?: string
           note?: string | null
+          recommended?: boolean | null
           user_id: string
           watched_at?: string
         }
@@ -719,6 +721,7 @@ export type Database = {
           film_id?: string
           id?: string
           note?: string | null
+          recommended?: boolean | null
           user_id?: string
           watched_at?: string
         }
@@ -788,6 +791,8 @@ export type Database = {
           artwork_url: string | null
           available: boolean | null
           content_advisory: string | null
+          coven_rating_count: number | null
+          coven_rating_pct: number | null
           description: string | null
           director: string | null
           first_seen_at: string | null

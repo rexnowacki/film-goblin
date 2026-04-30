@@ -20,7 +20,7 @@ export async function getLandingMarquee(client: Client) {
 export async function getFilm(client: Client, id: string) {
   const { data, error } = await client
     .from("films_with_stats")
-    .select("id, itunes_id, title, director, year, runtime_min, genre_primary, description, content_advisory, artwork_url, itunes_url, tracking, available, first_seen_at, last_checked_at, last_priced_at, watchlist_count, owned_count, watcher_count, latest_price")
+    .select("id, itunes_id, title, director, year, runtime_min, genre_primary, description, content_advisory, artwork_url, itunes_url, tracking, available, first_seen_at, last_checked_at, last_priced_at, watchlist_count, owned_count, watcher_count, latest_price, coven_rating_pct, coven_rating_count")
     .eq("id", id)
     .single();
   if (error) throw error;

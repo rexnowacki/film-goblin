@@ -10,11 +10,13 @@ type Client = SupabaseClient<Database>;
 interface LogWatchOpts {
   watched_at?: string; // ISO YYYY-MM-DD; defaults to today
   note?: string | null;
+  recommended?: boolean | null;
 }
 
 interface EditWatchPatch {
   watched_at?: string;
   note?: string | null;
+  recommended?: boolean | null;
 }
 
 /**
@@ -32,12 +34,13 @@ export async function _logWatch(
   const { data: { user }, error: userErr } = await client.auth.getUser();
   if (userErr || !user) throw new Error("unauthenticated");
 
-  const insertRow: { user_id: string; film_id: string; watched_at?: string; note?: string | null } = {
+  const insertRow: { user_id: string; film_id: string; watched_at?: string; note?: string | null; recommended?: boolean | null } = {
     user_id: user.id,
     film_id: filmId,
   };
   if (opts?.watched_at) insertRow.watched_at = opts.watched_at;
   if (opts?.note !== undefined) insertRow.note = opts.note;
+  if (opts?.recommended !== undefined) insertRow.recommended = opts.recommended;
 
   const { data, error } = await client
     .from("watched")
@@ -64,9 +67,10 @@ export async function _editWatch(
   const { data: { user }, error: userErr } = await client.auth.getUser();
   if (userErr || !user) throw new Error("unauthenticated");
 
-  const update: { watched_at?: string; note?: string | null } = {};
+  const update: { watched_at?: string; note?: string | null; recommended?: boolean | null } = {};
   if (patch.watched_at !== undefined) update.watched_at = patch.watched_at;
   if (patch.note !== undefined) update.note = patch.note;
+  if (patch.recommended !== undefined) update.recommended = patch.recommended;
 
   const { error } = await client
     .from("watched")
