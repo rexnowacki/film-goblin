@@ -56,7 +56,7 @@ export async function findPendingDigests(client: Client): Promise<PendingDigest[
     JOIN profiles p ON p.id = u.id
     JOIN films f ON f.id = pa.film_id
     WHERE pa.notified_at IS NULL
-      AND p.email_notifications_enabled = TRUE
+      AND p.email_price_drops = TRUE
       AND p.email_added_at IS NOT NULL
     ORDER BY u.id, pa.created_at DESC
   `);

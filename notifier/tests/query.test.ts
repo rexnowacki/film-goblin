@@ -19,10 +19,11 @@ afterEach(async () => { await cleanup(); });
 
 async function seedUser(id: string, email: string, opts: { enabled?: boolean; emailAddedAt?: Date | null } = {}) {
   await client.query(`INSERT INTO auth.users (id, email) VALUES ($1, $2)`, [id, email]);
+  const enabled = opts.enabled ?? true;
   await client.query(
-    `INSERT INTO profiles (id, username, display_name, email_notifications_enabled, email_added_at)
-     VALUES ($1, $2, $2, $3, $4)`,
-    [id, email.split("@")[0], opts.enabled ?? true, opts.emailAddedAt === null ? null : (opts.emailAddedAt ?? new Date())],
+    `INSERT INTO profiles (id, username, display_name, email_notifications_enabled, email_price_drops, email_added_at)
+     VALUES ($1, $2, $2, $3, $3, $4)`,
+    [id, email.split("@")[0], enabled, opts.emailAddedAt === null ? null : (opts.emailAddedAt ?? new Date())],
   );
 }
 
@@ -83,7 +84,7 @@ describe("findPendingDigests", () => {
     expect(digests[0].alerts).toHaveLength(2);
   });
 
-  it("excludes users with email_notifications_enabled = false", async () => {
+  it("excludes users with email_price_drops = false", async () => {
     await seedUser(U1, "u1@test.example", { enabled: false });
     const filmId = await seedFilm(103);
     await seedWatchlistAndAlert(U1, filmId);
