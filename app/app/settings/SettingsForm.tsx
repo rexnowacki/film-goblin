@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { updateProfile, changePassword } from "@/lib/actions/profile";
+import { updateProfile, updateEmail, changePassword } from "@/lib/actions/profile";
 import { signOut } from "@/lib/actions/auth";
 import Avatar from "@/components/Avatar";
 import AvatarEditor from "@/components/AvatarEditor";
 
 export default function SettingsForm() {
   const [profile, setProfile] = useState<any>(null);
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -17,6 +18,9 @@ export default function SettingsForm() {
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSuccess, setPwSuccess] = useState(false);
   const [pwPending, setPwPending] = useState(false);
+  const [emailPending, setEmailPending] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailInfo, setEmailInfo] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -95,6 +99,7 @@ export default function SettingsForm() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setHasPasswordIdentity((user.identities ?? []).some((i: any) => i.provider === "email"));
+      setAuthEmail(user.email ?? null);
       const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       setProfile(data);
       setLoading(false);
@@ -116,6 +121,16 @@ export default function SettingsForm() {
       });
       setSaved(true);
     } finally { setSaving(false); }
+  }
+
+  async function handleUpdateEmail(formData: FormData) {
+    setEmailPending(true);
+    setEmailError(null);
+    setEmailInfo(null);
+    const res = await updateEmail(formData);
+    setEmailPending(false);
+    if (res?.error) setEmailError(res.error);
+    if (res?.info) setEmailInfo(res.info);
   }
 
   async function handleChangePassword(formData: FormData) {
@@ -202,6 +217,31 @@ export default function SettingsForm() {
         </div>
       </div>
     </form>
+    <div style={{ marginTop: 40, borderTop: "1px solid #333", paddingTop: 24 }}>
+      <div className="caps" style={{ fontSize: 11, marginBottom: 12, color: "var(--accent)" }}>Email</div>
+      {profile?.email_added_at ? (
+        <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, marginBottom: 16, opacity: 0.8 }}>
+          Current: <strong>{authEmail}</strong>. Update below to send a confirmation link to the new address.
+        </p>
+      ) : (
+        <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, marginBottom: 16, opacity: 0.8 }}>
+          You signed up without an email. Add one below to receive price-drop alerts and recover access if you forget your password.
+        </p>
+      )}
+      <form action={handleUpdateEmail} style={{ display: "grid", gap: 12, maxWidth: 420 }}>
+        <label>
+          <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>{profile?.email_added_at ? "New email" : "Email"}</div>
+          <input name="email" type="email" required autoComplete="email"
+            style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)" }} />
+        </label>
+        {emailError && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{emailError}</div>}
+        {emailInfo && <div style={{ color: "var(--accent)", fontStyle: "italic", fontSize: 13 }}>{emailInfo}</div>}
+        <button type="submit" disabled={emailPending} className="btn" style={{ justifySelf: "start" }}>
+          {emailPending ? "Sending…" : (profile?.email_added_at ? "Update Email" : "Add Email")}
+        </button>
+      </form>
+    </div>
+
     <div style={{ marginTop: 40, borderTop: "1px solid #333", paddingTop: 24 }}>
       <div className="caps" style={{ fontSize: 11, marginBottom: 12, color: "var(--accent)" }}>Change Password</div>
       {!hasPasswordIdentity && (

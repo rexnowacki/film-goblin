@@ -10,7 +10,6 @@ function SignUpInner() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState(false);
-  const [dupEmail, setDupEmail] = useState("");
   const [pending, setPending] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [usernameValue, setUsernameValue] = useState("");
@@ -28,15 +27,11 @@ function SignUpInner() {
     setError(null);
     setInfo(null);
     setDuplicate(false);
-    formData.set("origin", window.location.origin);
     const res = await signUp(formData);
     setPending(false);
     if (res?.error) {
       setError(res.error);
-      if (res.duplicate) {
-        setDuplicate(true);
-        setDupEmail(String(formData.get("email") || ""));
-      }
+      if (res.duplicate) setDuplicate(true);
     }
     if (res?.info) setInfo(res.info);
   }
@@ -63,12 +58,6 @@ function SignUpInner() {
 
         <form action={submit}>
           <input type="hidden" name="redirect" value={redirectTo} />
-          <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Email</div>
-          <input name="email" type="email" required autoComplete="email"
-            style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 16, fontFamily: "var(--font-ui)" }} />
-          <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Password (min 6)</div>
-          <input name="password" type="password" required minLength={6} autoComplete="new-password"
-            style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 16, fontFamily: "var(--font-ui)" }} />
           <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Display Name</div>
           <input
             name="display_name"
@@ -96,6 +85,12 @@ function SignUpInner() {
           <div style={{ fontFamily: "var(--font-serif)", fontSize: 11, fontStyle: "italic", opacity: 0.6, marginBottom: 20 }}>
             Lowercase letters, numbers, dots, underscores. This is your @.
           </div>
+          <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Password (min 6)</div>
+          <input name="password" type="password" required minLength={6} autoComplete="new-password"
+            style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 6, fontFamily: "var(--font-ui)" }} />
+          <div style={{ fontFamily: "var(--font-serif)", fontSize: 11, fontStyle: "italic", opacity: 0.6, marginBottom: 20 }}>
+            Email is optional — add one later from settings if you want price-drop alerts by email.
+          </div>
           {error && (
             <div style={{ color: "var(--blood)", fontFamily: "var(--font-serif)", fontStyle: "italic", marginBottom: 8 }}>
               {error}
@@ -103,7 +98,7 @@ function SignUpInner() {
           )}
           {duplicate && (
             <div style={{ marginBottom: 16 }}>
-              <a href={`/auth/signin?email=${encodeURIComponent(dupEmail)}&redirect=${encodeURIComponent(redirectTo)}`}
+              <a href={`/auth/signin?redirect=${encodeURIComponent(redirectTo)}`}
                  style={{ color: "var(--accent-deep)", textDecoration: "underline", fontStyle: "italic" }}>
                 Go to sign-in →
               </a>
