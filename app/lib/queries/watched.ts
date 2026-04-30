@@ -15,6 +15,7 @@ export interface DiaryRow {
   id: string;
   watched_at: string; // YYYY-MM-DD
   note: string | null;
+  recommended: boolean | null;
   film: DiaryFilm;
 }
 
@@ -37,7 +38,7 @@ export async function getWatchedDiary(client: Client, userId: string): Promise<D
   const { data, error } = await client
     .from("watched")
     .select(`
-      id, watched_at, note,
+      id, watched_at, note, recommended,
       film:films!inner(id, title, year, director, artwork_url)
     `)
     .eq("user_id", userId)

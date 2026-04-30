@@ -14,8 +14,8 @@ interface Props {
 export default function DiaryRow({ row }: Props) {
   const [open, setOpen] = useState(false);
 
-  async function save({ watched_at, note }: { watched_at: string; note: string }) {
-    await editWatch(row.id, { watched_at, note: note || null });
+  async function save({ watched_at, note, recommended }: { watched_at: string; note: string; recommended: boolean | null }) {
+    await editWatch(row.id, { watched_at, note: note || null, recommended });
   }
 
   async function del() {
@@ -60,7 +60,7 @@ export default function DiaryRow({ row }: Props) {
         <WatchModal
           open={open}
           mode="edit"
-          initial={{ id: row.id, watched_at: row.watched_at, note: row.note ?? "" }}
+          initial={{ id: row.id, watched_at: row.watched_at, note: row.note ?? "", recommended: row.recommended ?? null }}
           filmTitle={row.film.title}
           onSave={save}
           onDelete={del}
