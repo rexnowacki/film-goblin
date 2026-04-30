@@ -9,6 +9,7 @@ import BottomNav from "@/components/BottomNav";
 import Avatar from "@/components/Avatar";
 import FollowButton from "@/components/FollowButton";
 import CovenButton from "@/components/CovenButton";
+import RoleBadge from "@/components/RoleBadge";
 import ActivityRow from "@/components/activity/ActivityRow";
 import Link from "next/link";
 
@@ -58,8 +59,9 @@ export default async function PublicProfilePage({
           </div>
           <div>
             <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 8 }}>Profile</div>
-            <h1 className="h-display">
-              {bundle.profile.display_name ?? bundle.profile.username}
+            <h1 className="h-display" style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+              <span>{bundle.profile.display_name ?? bundle.profile.username}</span>
+              <RoleBadge role={bundle.profile.role} size={28} />
             </h1>
             <div className="caps" style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>@{bundle.profile.username}</div>
             {bundle.profile.bio && <p style={{ fontFamily: "var(--font-serif)", fontSize: 18, fontStyle: "italic", marginTop: 20, maxWidth: 560 }}>{bundle.profile.bio}</p>}

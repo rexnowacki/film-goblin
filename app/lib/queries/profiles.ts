@@ -54,6 +54,7 @@ export interface ProfileBundle {
     bio: string | null;
     avatar_url: string | null;
     created_at: string;
+    role: "goblin" | "witch" | "high_goblin";
   };
   lists: Array<{ id: string; title: string; description: string | null; is_official: boolean; is_public: boolean }>;
   coven: Array<{ id: string; username: string; display_name: string | null; avatar_url: string | null }>;
@@ -65,7 +66,7 @@ export async function getPublicProfileBundle(
 ): Promise<ProfileBundle | null> {
   const { data: profile, error } = await client
     .from("profiles")
-    .select("id, username, display_name, bio, avatar_url, created_at")
+    .select("id, username, display_name, bio, avatar_url, created_at, role")
     .ilike("username", username)
     .maybeSingle();
   if (error) throw error;
