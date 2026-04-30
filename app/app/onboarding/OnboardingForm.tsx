@@ -160,8 +160,10 @@ export default function OnboardingForm({ initialFilms, initialUsername }: Props)
                   type="button"
                   onClick={() => toggleFilm(f.id)}
                   style={{
-                    background: "transparent", border: 0, padding: 0, cursor: "pointer",
+                    display: "block", width: "100%",
+                    background: "transparent", border: 0, padding: 0, margin: 0, cursor: "pointer",
                     textAlign: "left", fontFamily: "inherit", color: "inherit",
+                    alignSelf: "start",
                   }}
                 >
                   <div style={{ position: "relative", outline: on ? "2px solid var(--accent)" : "2px solid transparent", outlineOffset: 0 }}>
