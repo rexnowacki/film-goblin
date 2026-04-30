@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import TopNav from "@/components/TopNav";
+import BottomNav from "@/components/BottomNav";
 import OnboardingForm, { type DbFilm } from "./OnboardingForm";
 
 export default async function OnboardingPage() {
@@ -20,13 +22,16 @@ export default async function OnboardingPage() {
   const initialHandle = profileRes.data?.handle ?? "";
 
   return (
-    <div style={{ background: "var(--bone)", color: "var(--void)", minHeight: "100dvh" }}>
+    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
+      <TopNav />
+      <BottomNav />
+
       <section
         style={{
           background: "var(--bone)",
           color: "var(--void)",
           borderBottom: "3px solid var(--void)",
-          padding: "32px 0 24px",
+          padding: "22px 0 18px",
         }}
         className="grain-light"
       >
@@ -34,13 +39,14 @@ export default async function OnboardingPage() {
           <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
             Welcome to the <em style={{ color: "var(--accent)" }}>Coven</em>.
           </h1>
-          <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 18, opacity: 0.75, marginTop: 12, maxWidth: 640 }}>
-            Bind your handle, set your alert threshold, pick three films to start.
-          </p>
         </div>
       </section>
 
-      <OnboardingForm initialFilms={films} initialHandle={initialHandle} />
+      <section style={{ padding: "24px 0 60px" }}>
+        <div className="container-wide">
+          <OnboardingForm initialFilms={films} initialHandle={initialHandle} />
+        </div>
+      </section>
     </div>
   );
 }

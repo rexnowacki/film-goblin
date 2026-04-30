@@ -1,0 +1,123 @@
+Session shipped — 2026-04-29
+=============================
+
+PR #46 iOS form-zoom fix (round 2) — bumped four more inline-styled
+       inputs/selects to fontSize 16 (admin AppleTvSearchBox + iTunes
+       paste box, RecommendModal coven-member <select>, watchlist
+       sort <select>). Inline styles win over the global ≤720px
+       media-query rule from #45, so each spot needed its own bump.
+
+PR #47 Bottom-nav tap responsiveness — added touch-action: manipulation
+       + :active opacity feedback + transparent tap-highlight on
+       .bottom-nav__item. Kills iOS's 300ms double-tap-zoom delay
+       and gives a visible press cue while the destination route
+       server-renders.
+
+PR #48 next/image for film posters — added images.remotePatterns for
+       *.mzstatic.com and migrated FilmPoster (fill + sizes), 7
+       activity components, WatchlistRow, DiaryRow, and the watched-
+       page top-films strip. Per-surface variant sizing (40×60 thumbs
+       fetch ~50px sources instead of 600px JPEGs) plus AVIF/WebP
+       transcode. Admin pages stay on plain <img>.
+
+PR #49 Watchlist redesign (sub-project 18) — collapsed the row
+       layout to a poster grid identical to /library. Added
+       PosterDropBadge ("23% OFF" top-right when dropPct ≥ 10%) and
+       BuyOnAppleTvPill (bottom-right, hover fade-in on desktop,
+       always-visible on mobile). Replaced native <select> sort with
+       WatchlistSortChips. Deleted WatchlistRow.tsx,
+       WatchlistSortSelect.tsx, ~110 lines of .watchlist-row* CSS,
+       and the bare × remove. Spec:
+       2026-04-29-watchlist-redesign-design.md.
+
+PR #50 Watchlist caption-line buy link — added a quieter caps
+       "Buy on Apple TV →" link beneath {year} · {director} as a
+       sibling of the wrapping <Link>. Coexisted with the corner pill
+       briefly (until #51).
+
+PR #51 Drop the buy pill — folded the price into the caption link
+       ("Apple TV · $9.99 →"). User reported they didn't realize the
+       overlay pill was clickable; deleted BuyOnAppleTvPill.tsx and
+       its CSS. Drop badge stayed (state signal, not CTA).
+
+PR #52 Onboarding redesign (sub-project 19) — collapsed the 723-line
+       five-chapter ritual into a single-page form (handle, threshold
+       slider, pick three films). Hero matches /library / /watchlist
+       aesthetic; chapter labels, progress bar, blood-pact
+       certificate, signature flourish all gone. OnboardingPayload
+       narrows from 7 fields to 3; genres + storefronts dropped
+       (captured-but-not-persisted today); follows-seeding moved to
+       /coven Find People. Films query now server-rendered. Spec:
+       2026-04-29-onboarding-redesign-design.md.
+
+PR #53 First-sign-in routes to /onboarding — new migration 0135 adds
+       profiles.onboarded_at TIMESTAMPTZ NULL, backfilled to
+       created_at for existing 7 profiles. _completeOnboarding sets
+       it to now(); auth callback checks it explicitly instead of
+       comparing handle === email-local-part (which broke for any
+       email with uppercase or punctuation in the local-part, e.g.
+       nowacki.chris → trigger generates "nowackichris" but callback
+       expected "nowacki.chris").
+
+PR #54 Middleware onboarding gate — the callback only catches OAuth +
+       email-confirmation flows; password sign-ins via
+       signInWithPassword bypass it. Moved the onboarded_at check to
+       middleware so any authenticated user with onboarded_at = null
+       gets routed to /onboarding from any non-auth, non-api page,
+       regardless of how they signed in.
+
+PR #55 touch-action: manipulation on inputs/buttons — generalized
+       #47's bottom-nav fix to all input/textarea/select/button at
+       ≤720px so any tappable interactive control on the site is
+       immune to the 300ms tap-delay zoom.
+
+PR #56 touch-action on body — extended further to body so text
+       elements (headings, eyebrows, paragraph copy) also stop
+       triggering iOS double-tap-zoom. Per spec, touch-action on a
+       parent constrains gestures across the subtree while preserving
+       pinch-zoom (accessibility intact).
+
+PR #57 /coven mobile horizontal overflow — user reported /coven
+       "zooming in" when their coven was empty; screenshot revealed
+       horizontal overflow with iOS landing at scroll-x: 0
+       (text/buttons clipped at right edge). Added body
+       { overflow-x: hidden } at ≤720px, plus flex-wrap on
+       SearchPersonRow with flex: 1 1 220px on the inner link so
+       wide .btn CTAs drop below the avatar+name on narrow viewports
+       instead of getting clipped.
+
+PR #58 Handle validation + URL encoding — user "tooth tony"
+       (tieflinggreaser@gmail.com) typed "teeth tony" with a space
+       into the onboarding handle field; UserMenu's avatar link
+       didn't encodeURIComponent (lone outlier in the app), 404'd.
+       Added regex /^[a-z0-9._]+$/ to OnboardingForm + server-side
+       in _completeOnboarding, encoded UserMenu's link, patched
+       Tony's handle in prod (teeth tony → teethtony, display_name
+       preserved).
+
+PR #59 Identity at signup (sub-project 20) — moved handle +
+       display_name onto the signup form. New migration 0136 has
+       the on_auth_user trigger read raw_user_meta_data->>'handle'
+       + 'display_name' when present (with regex validation), falls
+       back to email-derived auto-generation for OAuth. signUp action
+       validates both fields, pre-checks handle uniqueness via
+       serviceRoleClient before calling auth.signUp, passes via
+       options.data. Signup form has Display Name + Handle inputs;
+       handle auto-suggests from display_name and locks on manual
+       edit. OnboardingForm pre-fills handle from profile.handle so
+       email/password users see what they picked at signup; OAuth
+       users see auto-generated, can edit. Spec:
+       2026-04-29-identity-at-signup-design.md.
+
+PR #60 Test mocks for raw_user_meta_data — #59 broke CI on master
+       because db/tests/helpers/auth-mock.sql (testcontainers) and
+       db/tests/helpers/pg-mem.ts (smoke) didn't have the column.
+       Added raw_user_meta_data jsonb NOT NULL DEFAULT '{}' to both
+       so synthetic-user fixtures fall through to the trigger's
+       email-derived auto-generation path.
+
+Memory updates:
+- feedback_ios_zoom_horizontal_overflow.md — saved the lesson from
+  PR #57: when a user reports "page is zooming in" on iOS without a
+  tap, suspect horizontal overflow + scroll-x: 0 before reaching for
+  touch-action / 16px-input fixes. Ask for a screenshot first.

@@ -77,29 +77,29 @@ export default function OnboardingForm({ initialFilms, initialHandle }: Props) {
   }
 
   return (
-    <div className="container-wide" style={{ paddingBottom: 60 }}>
-      <section style={{ padding: "32px 0", borderBottom: "1px solid #2a2a2a" }}>
-        <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 10 }}>Your Handle</div>
+    <>
+      <div style={{ marginBottom: 28 }}>
+        <div className="caps" style={{ fontSize: 10, color: "var(--accent)", marginBottom: 8 }}>Your Handle</div>
         <input
           value={handle}
           onChange={e => setHandle(e.target.value)}
           placeholder="moss.witch"
           maxLength={24}
           style={{
-            width: "100%", padding: "16px 18px",
-            background: "var(--bone-2)", border: "2px solid var(--void)",
-            fontFamily: "var(--font-head)", fontSize: 28, color: "var(--void)",
+            width: "100%", padding: "12px 14px",
+            background: "var(--void-2)", border: "2px solid var(--muted)",
+            fontFamily: "var(--font-head)", fontSize: 22, color: "var(--bone)",
             outline: "none",
           }}
         />
-        <div style={{ fontFamily: "var(--font-serif)", fontSize: 11, fontStyle: "italic", opacity: 0.6, marginTop: 6 }}>
+        <div style={{ fontFamily: "var(--font-serif)", fontSize: 12, fontStyle: "italic", color: "var(--muted)", marginTop: 6 }}>
           This is what the coven sees when you review.
         </div>
-      </section>
+      </div>
 
-      <section style={{ padding: "32px 0", borderBottom: "1px solid #2a2a2a" }}>
-        <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 10 }}>Alert Threshold</div>
-        <div style={{ background: "var(--bone-2)", border: "2px solid var(--void)", padding: "18px 22px" }}>
+      <div style={{ marginBottom: 28 }}>
+        <div className="caps" style={{ fontSize: 10, color: "var(--accent)", marginBottom: 8 }}>Alert Threshold</div>
+        <div style={{ background: "var(--void-2)", border: "2px solid var(--muted)", padding: "18px 22px" }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
             <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14 }}>
               Alert me when a tracked film drops at least
@@ -114,35 +114,40 @@ export default function OnboardingForm({ initialFilms, initialHandle }: Props) {
             onChange={e => setThreshold(+e.target.value)}
             style={{ width: "100%", accentColor: "var(--accent)" }}
           />
-          <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-ui)", fontSize: 10, opacity: 0.6, marginTop: 4 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-ui)", fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
             <span>−10% (a flinch)</span>
             <span>−40% (a real deal)</span>
             <span>−75% (a gift)</span>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section style={{ padding: "32px 0" }}>
-        <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 10 }}>Pick Three Films</div>
+      <div>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 8, gap: 12, flexWrap: "wrap" }}>
+          <div className="caps" style={{ fontSize: 10, color: "var(--accent)" }}>Pick Three Films</div>
+          <div className="caps" style={{ fontSize: 10, color: "var(--muted)" }}>
+            {watchlistOk ? `${watchlist.length} chosen — ready` : `${watchlist.length} of 3`}
+          </div>
+        </div>
         <div style={{ position: "relative", marginBottom: 20 }}>
           <input
             value={q}
             onChange={e => setQ(e.target.value)}
             placeholder="Search the grimoire…"
             style={{
-              width: "100%", padding: "14px 18px",
-              background: "var(--bone-2)", border: "2px solid var(--void)",
-              fontFamily: "var(--font-ui)", fontSize: 16, color: "var(--void)",
+              width: "100%", padding: "12px 14px",
+              background: "var(--void-2)", border: "2px solid var(--muted)",
+              fontFamily: "var(--font-ui)", fontSize: 16, color: "var(--bone)",
               outline: "none",
             }}
           />
-          <span className="caps" style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 10, opacity: 0.6 }}>
+          <span className="caps" style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: "var(--muted)" }}>
             {results.length} results
           </span>
         </div>
 
         {results.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 48, fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--muted)" }}>
+          <div style={{ textAlign: "center", padding: 60, fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--muted)" }}>
             Nothing in the grimoire matches.
           </div>
         ) : (
@@ -156,7 +161,7 @@ export default function OnboardingForm({ initialFilms, initialHandle }: Props) {
                   onClick={() => toggleFilm(f.id)}
                   style={{
                     background: "transparent", border: 0, padding: 0, cursor: "pointer",
-                    textAlign: "left", fontFamily: "inherit",
+                    textAlign: "left", fontFamily: "inherit", color: "inherit",
                   }}
                 >
                   <div style={{ position: "relative", outline: on ? "2px solid var(--accent)" : "2px solid transparent", outlineOffset: 0 }}>
@@ -179,13 +184,9 @@ export default function OnboardingForm({ initialFilms, initialHandle }: Props) {
             })}
           </div>
         )}
+      </div>
 
-        <div style={{ marginTop: 18, textAlign: "center", fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, opacity: 0.75 }}>
-          {watchlistOk ? `Sowed: ${watchlist.length} — ready` : `Sowed: ${watchlist.length} of 3`}
-        </div>
-      </section>
-
-      <div style={{ textAlign: "center", padding: "40px 0 60px" }}>
+      <div style={{ textAlign: "center", padding: "40px 0 0" }}>
         <button
           type="button"
           className="btn btn-lg"
@@ -201,11 +202,11 @@ export default function OnboardingForm({ initialFilms, initialHandle }: Props) {
           {submitting ? "Sealing the pact…" : "Enter →"}
         </button>
         {disabledReason && (
-          <div style={{ marginTop: 12, fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, opacity: 0.65 }}>
+          <div style={{ marginTop: 12, fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, color: "var(--muted)" }}>
             {disabledReason}
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }
