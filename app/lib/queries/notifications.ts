@@ -8,7 +8,7 @@ export type NotificationKind = Database["public"]["Enums"]["notification_kind"];
 
 export interface ActorLite {
   id: string;
-  handle: string;
+  username: string;
   display_name: string | null;
   avatar_url: string | null;
 }
@@ -78,7 +78,7 @@ export async function getRecentNotifications(client: Client, userId: string): Pr
   const [actorsRes, filmsRes] = await Promise.all([
     actorIds.length === 0
       ? Promise.resolve({ data: [], error: null as null })
-      : client.from("profiles").select("id, handle, display_name, avatar_url").in("id", actorIds),
+      : client.from("profiles").select("id, username, display_name, avatar_url").in("id", actorIds),
     filmIds.length === 0
       ? Promise.resolve({ data: [], error: null as null })
       : client.from("films").select("id, title, artwork_url").in("id", filmIds),
@@ -99,7 +99,7 @@ export async function getRecentNotifications(client: Client, userId: string): Pr
       created_at: r.created_at,
       read_at: r.read_at,
       actor: actor
-        ? { id: actor.id, handle: actor.handle, display_name: actor.display_name, avatar_url: actor.avatar_url }
+        ? { id: actor.id, username: actor.username, display_name: actor.display_name, avatar_url: actor.avatar_url }
         : null,
       payload: (r.payload ?? {}) as Record<string, unknown>,
       film,

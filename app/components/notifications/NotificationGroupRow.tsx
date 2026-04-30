@@ -13,7 +13,7 @@ interface Props {
 }
 
 function headerCopy(group: NotificationGroup): React.ReactNode {
-  const actorName = group.actor?.display_name ?? group.actor?.handle ?? "System";
+  const actorName = group.actor?.display_name ?? group.actor?.username ?? "System";
   switch (group.kind) {
     case "recommendation_received":
       return <><strong>{actorName}</strong> recommended <strong>{group.count} films</strong>.</>;
@@ -34,7 +34,7 @@ function headerHref(group: NotificationGroup): string {
     case "coven_invite_pending":
       return "/coven#requests";
     case "coven_invite_accepted":
-      return group.actor ? `/p/${encodeURIComponent(group.actor.handle)}` : "/coven";
+      return group.actor ? `/p/${encodeURIComponent(group.actor.username)}` : "/coven";
     case "recommendation_received":
     case "price_drop": {
       const filmId = (first.payload as { film_id?: string }).film_id;
@@ -69,7 +69,7 @@ export default function NotificationGroupRow({ group, onNavigate }: Props) {
         }}
       >
         <Avatar
-          name={group.actor?.display_name ?? group.actor?.handle ?? "system"}
+          name={group.actor?.display_name ?? group.actor?.username ?? "system"}
           color="var(--accent)"
           size={32}
           url={group.actor?.avatar_url ?? null}

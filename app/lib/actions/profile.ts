@@ -9,7 +9,7 @@ import { friendlyError } from "@/lib/auth/friendly-errors";
 type Client = SupabaseClient<Database>;
 
 export interface ProfileFields {
-  handle?: string;
+  username?: string;
   display_name?: string;
   bio?: string;
   avatar_url?: string;

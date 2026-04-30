@@ -6,7 +6,7 @@ import NotificationBell from "./NotificationBell";
 import type { NotificationFeedItem } from "@/lib/queries/notifications";
 
 interface NavItem { id: string; label: string; href: string; badge?: number }
-interface ProfileShape { handle: string; display_name: string | null; avatar_url: string | null }
+interface ProfileShape { username: string; display_name: string | null; avatar_url: string | null }
 
 interface Props {
   items: NavItem[];
@@ -52,8 +52,8 @@ export default function TopNavChrome({ items, current, user, profile, isAdmin, u
             <>
               <NotificationBell unreadCount={unreadNotifCount} items={notifItems} />
               <UserMenu
-                handle={profile?.handle ?? "you"}
-                displayName={profile?.display_name ?? profile?.handle ?? "You"}
+                username={profile?.username ?? "you"}
+                displayName={profile?.display_name ?? profile?.username ?? "You"}
                 avatarUrl={profile?.avatar_url}
                 isAdmin={isAdmin}
               />

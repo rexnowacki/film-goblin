@@ -8,7 +8,7 @@ import { sendCovenRequest, acceptCovenRequest } from "@/lib/actions/coven";
 export interface SearchPersonRowProps {
   profile: {
     id: string;
-    handle: string;
+    username: string;
     display_name: string | null;
     avatar_url: string | null;
     bio: string | null;
@@ -58,16 +58,16 @@ export default function SearchPersonRow({ profile, state, incomingRequestId }: S
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", border: "2px solid var(--bone)", padding: 16 }}>
       <Link
-        href={`/p/${encodeURIComponent(profile.handle)}`}
+        href={`/p/${encodeURIComponent(profile.username)}`}
         style={{ display: "flex", alignItems: "center", gap: 14, flex: "1 1 220px", textDecoration: "none", color: "inherit", minWidth: 0 }}
       >
-        <Avatar name={profile.display_name ?? profile.handle} color="var(--accent)" size={48} url={profile.avatar_url} />
+        <Avatar name={profile.display_name ?? profile.username} color="var(--accent)" size={48} url={profile.avatar_url} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="head" style={{ fontSize: 18, lineHeight: 1 }}>
-            {profile.display_name ?? profile.handle}
+            {profile.display_name ?? profile.username}
           </div>
           <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
-            @{profile.handle}
+            @{profile.username}
           </div>
           {profile.bio && (
             <div

@@ -52,11 +52,11 @@ export async function _leaveCoven(client: Client, otherUserId: string): Promise<
   if (error) throw error;
 }
 
-export async function sendCovenRequest(toUserId: string, targetHandle?: string) {
+export async function sendCovenRequest(toUserId: string, targetUsername?: string) {
   const c = await createClient();
   const result = await _sendCovenRequest(c, toUserId);
   revalidatePath("/coven");
-  if (targetHandle) revalidatePath(`/p/${targetHandle}`);
+  if (targetUsername) revalidatePath(`/p/${targetUsername}`);
   return result;
 }
 
@@ -73,9 +73,9 @@ export async function declineCovenRequest(requestId: string) {
   revalidatePath("/coven");
 }
 
-export async function leaveCoven(otherUserId: string, targetHandle?: string) {
+export async function leaveCoven(otherUserId: string, targetUsername?: string) {
   const c = await createClient();
   await _leaveCoven(c, otherUserId);
   revalidatePath("/coven");
-  if (targetHandle) revalidatePath(`/p/${targetHandle}`);
+  if (targetUsername) revalidatePath(`/p/${targetUsername}`);
 }

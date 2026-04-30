@@ -9,7 +9,7 @@ function watchlist(opts: { id: string; actorId: string; minutesAgo: number }): E
     created_at: created,
     actor: {
       id: opts.actorId,
-      handle: `user_${opts.actorId}`,
+      username: `user_${opts.actorId}`,
       display_name: `User ${opts.actorId}`,
       avatar_url: null,
     },
@@ -34,7 +34,7 @@ function rec(opts: { id: string; actorId: string; minutesAgo: number }): Enriche
     created_at: created,
     actor: {
       id: opts.actorId,
-      handle: `user_${opts.actorId}`,
+      username: `user_${opts.actorId}`,
       display_name: `User ${opts.actorId}`,
       avatar_url: null,
     },
@@ -51,7 +51,7 @@ function rec(opts: { id: string; actorId: string; minutesAgo: number }): Enriche
     },
     recipient: {
       id: "rec_target",
-      handle: "target",
+      username: "target",
       display_name: "Target",
       avatar_url: null,
     },
@@ -66,7 +66,7 @@ function watchLog(opts: { id: string; actorId: string; minutesAgo: number }): En
     created_at: created,
     actor: {
       id: opts.actorId,
-      handle: `user_${opts.actorId}`,
+      username: `user_${opts.actorId}`,
       display_name: `User ${opts.actorId}`,
       avatar_url: null,
     },

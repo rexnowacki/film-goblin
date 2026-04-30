@@ -9,14 +9,14 @@ beforeAll(async () => { db = await makeTestDb(); });
 afterAll(async () => { await db.close(); });
 
 describe("trigger: auth.users → profiles bootstrap", () => {
-  it("creates a matching profiles row with a unique handle", async () => {
+  it("creates a matching profiles row with a unique username", async () => {
     const id = randomUUID();
     await beginAs(db.client, null, "service_role");
     try {
       await db.client.query(`INSERT INTO auth.users (id, email) VALUES ($1, 'goblin@test.example')`, [id]);
-      const r = await db.client.query(`SELECT handle FROM profiles WHERE id = $1`, [id]);
+      const r = await db.client.query(`SELECT username FROM profiles WHERE id = $1`, [id]);
       expect(r.rowCount).toBe(1);
-      expect(r.rows[0].handle).toMatch(/^goblin/);
+      expect(r.rows[0].username).toMatch(/^goblin/);
     } finally { await rollback(db.client); }
   });
 
@@ -27,7 +27,7 @@ describe("trigger: auth.users → profiles bootstrap", () => {
       await db.client.query(`INSERT INTO auth.users (id, email) VALUES ($1, 'alice@test.example')`, [a]);
       await db.client.query(`INSERT INTO auth.users (id, email) VALUES ($1, 'alice@other.example')`, [b]);
       const r = await db.client.query(
-        `SELECT lower(handle) AS h FROM profiles WHERE id IN ($1, $2) ORDER BY handle`, [a, b]
+        `SELECT lower(username) AS h FROM profiles WHERE id IN ($1, $2) ORDER BY username`, [a, b]
       );
       const handles = r.rows.map((x: any) => x.h);
       expect(handles).toContain("alice");

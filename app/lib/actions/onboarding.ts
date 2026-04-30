@@ -8,26 +8,26 @@ import type { Database } from "@/lib/supabase/types";
 type Client = SupabaseClient<Database>;
 
 export interface OnboardingPayload {
-  handle: string;
+  username: string;
   watchlistFilmIds: string[];
   thresholdPct: number; // 10–75
 }
 
-const HANDLE_RE = /^[a-z0-9._]+$/;
+const USERNAME_RE = /^[a-z0-9._]+$/;
 
 export async function _completeOnboarding(client: Client, p: OnboardingPayload): Promise<void> {
   const { data: { user } } = await client.auth.getUser();
   if (!user) throw new Error("unauthenticated");
 
-  const handle = p.handle.trim();
-  if (!HANDLE_RE.test(handle)) {
-    throw new Error("Invalid handle: lowercase letters, numbers, dots, underscores only.");
+  const username = p.username.trim();
+  if (!USERNAME_RE.test(username)) {
+    throw new Error("Invalid username: lowercase letters, numbers, dots, underscores only.");
   }
 
   const { error: pErr } = await client
     .from("profiles")
     .update({
-      handle,
+      username,
       broadcast_watchlist_adds: true,
       onboarded_at: new Date().toISOString(),
     })

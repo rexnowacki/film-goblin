@@ -15,7 +15,7 @@ function targetFor(n: EnrichedNotification): string {
     case "coven_invite_pending":
       return "/coven#requests";
     case "coven_invite_accepted":
-      return n.actor ? `/p/${encodeURIComponent(n.actor.handle)}` : "/coven";
+      return n.actor ? `/p/${encodeURIComponent(n.actor.username)}` : "/coven";
     case "recommendation_received":
     case "price_drop": {
       const filmId = (n.payload as { film_id?: string }).film_id;
@@ -29,7 +29,7 @@ function targetFor(n: EnrichedNotification): string {
 }
 
 function copyFor(n: EnrichedNotification): React.ReactNode {
-  const actorName = n.actor?.display_name ?? n.actor?.handle ?? "Someone";
+  const actorName = n.actor?.display_name ?? n.actor?.username ?? "Someone";
   const title = n.film?.title ?? "a film";
   switch (n.kind) {
     case "coven_invite_pending":
@@ -65,7 +65,7 @@ export default function NotificationRow({ notification, onNavigate }: Props) {
       }}
     >
       <Avatar
-        name={notification.actor?.display_name ?? notification.actor?.handle ?? "system"}
+        name={notification.actor?.display_name ?? notification.actor?.username ?? "system"}
         color="var(--accent)"
         size={32}
         url={notification.actor?.avatar_url ?? null}

@@ -7,7 +7,7 @@ export interface CommentItem {
   id: string;
   user_id: string;
   user: {
-    handle: string;
+    username: string;
     display_name: string | null;
     avatar_url: string | null;
   };
@@ -50,7 +50,7 @@ export async function getCommentSummariesForActivities(
   const userIds = Array.from(new Set(rows.map(r => r.user_id)));
   const { data: profiles, error: pErr } = await client
     .from("profiles")
-    .select("id, handle, display_name, avatar_url")
+    .select("id, username, display_name, avatar_url")
     .in("id", userIds);
   if (pErr) throw pErr;
   const profileById = new Map((profiles ?? []).map(p => [p.id, p]));
@@ -63,7 +63,7 @@ export async function getCommentSummariesForActivities(
     entry.items.push({
       id: row.id,
       user_id: row.user_id,
-      user: { handle: p.handle, display_name: p.display_name, avatar_url: p.avatar_url },
+      user: { username: p.username, display_name: p.display_name, avatar_url: p.avatar_url },
       body: row.body,
       created_at: row.created_at,
     });

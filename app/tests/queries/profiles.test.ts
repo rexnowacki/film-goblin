@@ -22,15 +22,15 @@ function makeClient(rows: any[]) {
 
 describe("getProfilesBySearch", () => {
   it("returns rows unfiltered when excludeUserIds is omitted", async () => {
-    const client = makeClient([{ id: "p1", handle: "alice" }]);
+    const client = makeClient([{ id: "p1", username: "alice" }]);
     const rows = await getProfilesBySearch(client, {});
     expect(rows).toHaveLength(1);
-    expect(rows[0].handle).toBe("alice");
+    expect(rows[0].username).toBe("alice");
     expect(client._builder._calls.not).toHaveLength(0);
   });
 
   it("does not call .not() when excludeUserIds is empty", async () => {
-    const client = makeClient([{ id: "p1", handle: "alice" }]);
+    const client = makeClient([{ id: "p1", username: "alice" }]);
     await getProfilesBySearch(client, { excludeUserIds: [] });
     expect(client._builder._calls.not).toHaveLength(0);
   });

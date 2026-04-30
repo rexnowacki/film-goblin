@@ -6,7 +6,7 @@ import { adminDeleteUser } from "@/lib/actions/admin/users";
 
 interface Props {
   userId: string;
-  handle: string;
+  username: string;
   email: string | null;
   createdAt: string;
   lastSignInAt: string | null;
@@ -19,7 +19,7 @@ function isTestUser(createdAt: string, lastSignInAt: string | null): boolean {
   return Date.now() - createdMs < 24 * 60 * 60 * 1000;
 }
 
-export default function DeleteUserModal({ userId, handle, email, createdAt, lastSignInAt }: Props) {
+export default function DeleteUserModal({ userId, username, email, createdAt, lastSignInAt }: Props) {
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -28,7 +28,7 @@ export default function DeleteUserModal({ userId, handle, email, createdAt, last
   const testShape = isTestUser(createdAt, lastSignInAt);
 
   async function onConfirm() {
-    if (!testShape && typed !== handle) return;
+    if (!testShape && typed !== username) return;
     setSubmitting(true);
     setErr(null);
     const res = await adminDeleteUser(userId);
@@ -53,14 +53,14 @@ export default function DeleteUserModal({ userId, handle, email, createdAt, last
           <div style={{ background: "var(--bone)", color: "var(--void)", border: "3px solid var(--void)", boxShadow: "6px 6px 0 var(--blood)", padding: 22, maxWidth: 480, width: "100%" }}>
             {testShape ? (
               <>
-                <div className="head" style={{ fontSize: 22, marginBottom: 10 }}>Delete @{handle}?</div>
+                <div className="head" style={{ fontSize: 22, marginBottom: 10 }}>Delete @{username}?</div>
                 <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, marginBottom: 16 }}>
                   This user has never signed in and was created within the last 24 hours.
                 </p>
               </>
             ) : (
               <>
-                <div className="head" style={{ fontSize: 22, marginBottom: 10 }}>Permanently delete @{handle}</div>
+                <div className="head" style={{ fontSize: 22, marginBottom: 10 }}>Permanently delete @{username}</div>
                 <p style={{ fontFamily: "var(--font-ui)", fontSize: 13, marginBottom: 10 }}>
                   <strong>Email:</strong> {email ?? "—"}<br />
                   <strong>Joined:</strong> {new Date(createdAt).toISOString().slice(0, 10)}
@@ -69,7 +69,7 @@ export default function DeleteUserModal({ userId, handle, email, createdAt, last
                   Watchlist entries, reviews, recommendations, coven memberships, follows, and activity entries all cascade-delete. This cannot be undone.
                 </p>
                 <label style={{ display: "block", marginBottom: 16 }}>
-                  <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Type <code>{handle}</code> to confirm</div>
+                  <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Type <code>{username}</code> to confirm</div>
                   <input
                     value={typed}
                     onChange={e => setTyped(e.target.value)}
@@ -87,9 +87,9 @@ export default function DeleteUserModal({ userId, handle, email, createdAt, last
               <button
                 type="button"
                 className="btn btn-sm"
-                style={{ background: "var(--blood)", color: "var(--bone)", borderColor: "var(--blood)", opacity: (!testShape && typed !== handle) ? 0.4 : 1 }}
+                style={{ background: "var(--blood)", color: "var(--bone)", borderColor: "var(--blood)", opacity: (!testShape && typed !== username) ? 0.4 : 1 }}
                 onClick={onConfirm}
-                disabled={submitting || (!testShape && typed !== handle)}
+                disabled={submitting || (!testShape && typed !== username)}
               >
                 {submitting ? "Deleting…" : "Delete user"}
               </button>

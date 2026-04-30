@@ -26,7 +26,7 @@ export default function ActivityWatchLoggedGroup({ group }: Props) {
     <div className={expanded ? "activity-group-expanded" : ""}>
       <div className="activity-group-row" onClick={toggle} role="button" aria-expanded={expanded}>
         <Avatar
-          name={actor.display_name ?? actor.handle}
+          name={actor.display_name ?? actor.username}
           color="var(--accent)"
           size={40}
           url={actor.avatar_url}
@@ -34,11 +34,11 @@ export default function ActivityWatchLoggedGroup({ group }: Props) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, lineHeight: 1.4 }}>
             <Link
-              href={`/p/${encodeURIComponent(actor.handle)}`}
+              href={`/p/${encodeURIComponent(actor.username)}`}
               onClick={e => e.stopPropagation()}
               style={{ color: "var(--bone)", fontWeight: 700 }}
             >
-              {actor.display_name ?? actor.handle}
+              {actor.display_name ?? actor.username}
             </Link>
             {" watched "}
             <Link

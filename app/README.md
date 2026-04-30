@@ -58,7 +58,7 @@ printed by `supabase start`.
 4. Land on `/home`; see feed (empty unless you follow someone with activity).
 5. Visit `/films`; click a film; see detail.
 6. Click "+ Watchlist"; reload; confirm state persists.
-7. Visit `/settings`; edit handle; save; reload; confirm persists.
+7. Visit `/settings`; edit username; save; reload; confirm persists.
 8. Sign out; confirm `/home` redirects to `/auth/signin`.
 
 ## Deploy

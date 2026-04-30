@@ -22,7 +22,7 @@ export default function PeopleSearch() {
     <input
       value={q}
       onChange={e => update(e.target.value)}
-      placeholder="Handle or display name…"
+      placeholder="Username or display name…"
       style={{ flex: 1, background: "transparent", border: 0, fontFamily: "var(--font-serif)", fontSize: 20, padding: "12px 8px", color: "var(--void)", outline: "none" }}
     />
   );

@@ -31,17 +31,17 @@ afterAll(async () => {
 });
 
 describe.skipIf(!hasEnv)("actions/onboarding", () => {
-  it("completeOnboarding sets profile handle + inserts watchlists with threshold-derived max_price_usd", async () => {
+  it("completeOnboarding sets profile username + inserts watchlists with threshold-derived max_price_usd", async () => {
     const c = await signedInClient(user.email, user.password);
     await _completeOnboarding(c, {
-      handle: "moss.witch",
+      username: "moss.witch",
       watchlistFilmIds: [filmA, filmB],
       thresholdPct: 30,
     });
 
     const admin = adminClient();
     const p = await admin.from("profiles").select("*").eq("id", user.id).single();
-    expect(p.data?.handle).toBe("moss.witch");
+    expect(p.data?.username).toBe("moss.witch");
     expect(p.data?.broadcast_watchlist_adds).toBe(true);
     expect(p.data?.onboarded_at).not.toBeNull();
 

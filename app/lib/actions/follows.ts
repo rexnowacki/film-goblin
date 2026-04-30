@@ -28,16 +28,16 @@ export async function _unfollow(client: Client, followedUserId: string): Promise
   if (error) throw error;
 }
 
-export async function follow(followedUserId: string, targetHandle?: string) {
+export async function follow(followedUserId: string, targetUsername?: string) {
   const c = await createClient();
   await _follow(c, followedUserId);
   revalidatePath("/home");
-  if (targetHandle) revalidatePath(`/p/${targetHandle}`);
+  if (targetUsername) revalidatePath(`/p/${targetUsername}`);
 }
 
-export async function unfollow(followedUserId: string, targetHandle?: string) {
+export async function unfollow(followedUserId: string, targetUsername?: string) {
   const c = await createClient();
   await _unfollow(c, followedUserId);
   revalidatePath("/home");
-  if (targetHandle) revalidatePath(`/p/${targetHandle}`);
+  if (targetUsername) revalidatePath(`/p/${targetUsername}`);
 }

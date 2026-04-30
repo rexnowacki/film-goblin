@@ -11,11 +11,11 @@ beforeAll(async () => { if (!hasEnv) return; user = await createTestUser(); });
 afterAll(async () => { if (!hasEnv) return; await deleteTestUser(user.id); });
 
 describe.skipIf(!hasEnv)("actions/profile", () => {
-  it("updateProfile changes handle and bio", async () => {
+  it("updateProfile changes username and bio", async () => {
     const c = await signedInClient(user.email, user.password);
-    await _updateProfile(c, { handle: "newhandle", bio: "a new bio" });
+    await _updateProfile(c, { username: "newhandle", bio: "a new bio" });
     const { data } = await adminClient().from("profiles").select("*").eq("id", user.id).single();
-    expect(data?.handle).toBe("newhandle");
+    expect(data?.username).toBe("newhandle");
     expect(data?.bio).toBe("a new bio");
   });
 

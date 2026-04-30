@@ -70,22 +70,22 @@ describe("RLS: profiles", () => {
     try {
       await expect(
         db.client.query(
-          `INSERT INTO profiles (id, handle, display_name) VALUES (gen_random_uuid(), 'x', 'X')`
+          `INSERT INTO profiles (id, username, display_name) VALUES (gen_random_uuid(), 'x', 'X')`
         )
       ).rejects.toThrow();
     } finally { await rollback(db.client); }
   });
 
-  it("handle uniqueness is case-insensitive", async () => {
+  it("username uniqueness is case-insensitive", async () => {
     const fx = await seedFixtures(db.client);
     await beginAs(db.client, null, "service_role");
     try {
       // Direct service-role insert to test the unique index — it bypasses RLS
       await expect(
         db.client.query(
-          `INSERT INTO profiles (id, handle, display_name)
+          `INSERT INTO profiles (id, username, display_name)
            VALUES (gen_random_uuid(), $1, 'Clash')`,
-          [fx.userA.handle.toUpperCase()]
+          [fx.userA.username.toUpperCase()]
         )
       ).rejects.toThrow(/unique/i);
     } finally { await rollback(db.client); }

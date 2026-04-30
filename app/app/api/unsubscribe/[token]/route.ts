@@ -56,7 +56,7 @@ export async function GET(
   try {
     await client.connect();
     const result = await client.query(
-      `UPDATE profiles SET email_notifications_enabled = FALSE WHERE unsubscribe_token = $1 RETURNING handle`,
+      `UPDATE profiles SET email_notifications_enabled = FALSE WHERE unsubscribe_token = $1 RETURNING username`,
       [token],
     );
     if (result.rowCount === 0) return notFound();

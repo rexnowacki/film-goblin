@@ -9,7 +9,7 @@ type Client = SupabaseClient<Database>;
 
 export interface LikerProfile {
   id: string;
-  handle: string;
+  username: string;
   display_name: string | null;
   avatar_url: string | null;
 }
@@ -100,7 +100,7 @@ export async function fetchLikersForActivity(activityId: string): Promise<Likers
   // hydration pattern).
   const { data: profileRows, error: pErr } = await supabase
     .from("profiles")
-    .select("id, handle, display_name, avatar_url")
+    .select("id, username, display_name, avatar_url")
     .in("id", likerIds);
   if (pErr) throw pErr;
   const allLikers: LikerProfile[] = (profileRows ?? []) as LikerProfile[];

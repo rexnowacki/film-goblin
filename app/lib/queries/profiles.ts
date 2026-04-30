@@ -15,11 +15,11 @@ export async function getMyProfile(client: Client) {
   return data;
 }
 
-export async function getProfileByHandle(client: Client, handle: string) {
+export async function getProfileByUsername(client: Client, username: string) {
   const { data, error } = await client
     .from("profiles")
     .select("*")
-    .ilike("handle", handle)
+    .ilike("username", username)
     .maybeSingle();
   if (error) throw error;
   return data;
@@ -31,12 +31,12 @@ export async function getProfilesBySearch(
 ) {
   let query = client
     .from("profiles")
-    .select("id, handle, display_name, avatar_url, bio, created_at")
-    .order("handle", { ascending: true })
+    .select("id, username, display_name, avatar_url, bio, created_at")
+    .order("username", { ascending: true })
     .limit(opts.limit ?? 60);
   if (opts.q && opts.q.trim()) {
     const q = opts.q.trim();
-    query = query.or(`handle.ilike.%${q}%,display_name.ilike.%${q}%`);
+    query = query.or(`username.ilike.%${q}%,display_name.ilike.%${q}%`);
   }
   if (opts.excludeUserIds && opts.excludeUserIds.length > 0) {
     query = query.not("id", "in", `(${opts.excludeUserIds.join(",")})`);
@@ -49,24 +49,24 @@ export async function getProfilesBySearch(
 export interface ProfileBundle {
   profile: {
     id: string;
-    handle: string;
+    username: string;
     display_name: string | null;
     bio: string | null;
     avatar_url: string | null;
     created_at: string;
   };
   lists: Array<{ id: string; title: string; description: string | null; is_official: boolean; is_public: boolean }>;
-  coven: Array<{ id: string; handle: string; display_name: string | null; avatar_url: string | null }>;
+  coven: Array<{ id: string; username: string; display_name: string | null; avatar_url: string | null }>;
 }
 
 export async function getPublicProfileBundle(
   client: Client,
-  handle: string,
+  username: string,
 ): Promise<ProfileBundle | null> {
   const { data: profile, error } = await client
     .from("profiles")
-    .select("id, handle, display_name, bio, avatar_url, created_at")
-    .ilike("handle", handle)
+    .select("id, username, display_name, bio, avatar_url, created_at")
+    .ilike("username", username)
     .maybeSingle();
   if (error) throw error;
   if (!profile) return null;
@@ -83,11 +83,11 @@ export async function getPublicProfileBundle(
     .select("user_a_id, user_b_id")
     .or(`user_a_id.eq.${profile.id},user_b_id.eq.${profile.id}`);
   const otherIds = (pairs ?? []).map(p => (p.user_a_id === profile.id ? p.user_b_id : p.user_a_id));
-  let coven: Array<{ id: string; handle: string; display_name: string | null; avatar_url: string | null }> = [];
+  let coven: Array<{ id: string; username: string; display_name: string | null; avatar_url: string | null }> = [];
   if (otherIds.length > 0) {
     const { data: cov } = await client
       .from("profiles")
-      .select("id, handle, display_name, avatar_url")
+      .select("id, username, display_name, avatar_url")
       .in("id", otherIds);
     coven = cov ?? [];
   }

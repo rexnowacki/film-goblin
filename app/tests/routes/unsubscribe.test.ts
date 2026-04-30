@@ -54,7 +54,7 @@ describe("GET /api/unsubscribe/[token]", () => {
   });
 
   it("returns 200 HTML and UPDATEs the profile when the token matches", async () => {
-    queryMock.mockResolvedValue({ rows: [{ handle: "moss" }], rowCount: 1 });
+    queryMock.mockResolvedValue({ rows: [{ username: "moss" }], rowCount: 1 });
     const res = await GET(makeRequest(), { params: Promise.resolve({ token: VALID }) });
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toMatch(/text\/html/);
@@ -69,7 +69,7 @@ describe("GET /api/unsubscribe/[token]", () => {
   });
 
   it("is idempotent — a valid token already opted-out still returns 200", async () => {
-    queryMock.mockResolvedValue({ rows: [{ handle: "moss" }], rowCount: 1 });
+    queryMock.mockResolvedValue({ rows: [{ username: "moss" }], rowCount: 1 });
     const res = await GET(makeRequest(), { params: Promise.resolve({ token: VALID }) });
     expect(res.status).toBe(200);
   });

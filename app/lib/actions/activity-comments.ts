@@ -43,7 +43,7 @@ export async function _addActivityComment(
 
   const { data: profile, error: pErr } = await client
     .from("profiles")
-    .select("handle, display_name, avatar_url")
+    .select("username, display_name, avatar_url")
     .eq("id", user.id)
     .single();
   if (pErr) return { ok: false, error: pErr.message };
@@ -54,7 +54,7 @@ export async function _addActivityComment(
       id: data.id,
       user_id: data.user_id,
       user: {
-        handle: profile.handle,
+        username: profile.username,
         display_name: profile.display_name,
         avatar_url: profile.avatar_url,
       },

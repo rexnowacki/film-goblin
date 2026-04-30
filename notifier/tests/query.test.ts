@@ -20,7 +20,7 @@ afterEach(async () => { await cleanup(); });
 async function seedUser(id: string, email: string, opts: { enabled?: boolean } = {}) {
   await client.query(`INSERT INTO auth.users (id, email) VALUES ($1, $2)`, [id, email]);
   await client.query(
-    `INSERT INTO profiles (id, handle, display_name, email_notifications_enabled)
+    `INSERT INTO profiles (id, username, display_name, email_notifications_enabled)
      VALUES ($1, $2, $2, $3)`,
     [id, email.split("@")[0], opts.enabled ?? true],
   );

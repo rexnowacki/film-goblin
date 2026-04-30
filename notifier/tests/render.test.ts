@@ -4,7 +4,7 @@ import type { UserLite, AlertLite } from "../src/query.js";
 
 const USER: UserLite = {
   id: "u1",
-  handle: "moss.witch",
+  username: "moss.witch",
   email: "moss@test.example",
   unsubscribe_token: "token-abc",
 };
