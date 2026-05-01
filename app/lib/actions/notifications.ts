@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
@@ -21,7 +20,6 @@ export async function markAllRead(): Promise<void> {
   const { data: { user } } = await client.auth.getUser();
   if (!user) return;
   await _markAllRead(client, user.id);
-  revalidatePath("/", "layout");
 }
 
 export async function _clearAllNotifications(client: Client, userId: string): Promise<void> {
@@ -37,5 +35,4 @@ export async function clearAllNotifications(): Promise<void> {
   const { data: { user } } = await client.auth.getUser();
   if (!user) return;
   await _clearAllNotifications(client, user.id);
-  revalidatePath("/", "layout");
 }

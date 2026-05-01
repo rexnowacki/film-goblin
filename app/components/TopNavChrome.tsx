@@ -23,12 +23,12 @@ export default function TopNavChrome({ items, current, user, profile, isAdmin, u
     <div style={{ borderBottom: "1px solid #2a2a2a", background: "var(--void-2)", position: "sticky", top: 0, zIndex: 20, paddingTop: "env(safe-area-inset-top)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", maxWidth: 1280, margin: "0 auto", width: "100%" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 28, minWidth: 0 }}>
-          <Link href={user ? "/home" : "/"} style={{ fontFamily: "var(--font-display)", fontSize: 26, lineHeight: 1, color: "var(--bone)", textDecoration: "none", flexShrink: 0 }}>
+          <Link href={user ? "/home" : "/"} prefetch={false} style={{ fontFamily: "var(--font-display)", fontSize: 26, lineHeight: 1, color: "var(--bone)", textDecoration: "none", flexShrink: 0 }}>
             Film<span style={{ color: "var(--accent)" }}>Goblin</span>
           </Link>
           <nav className="desktop-only" style={{ display: "flex", gap: 22 }}>
             {items.map(it => (
-              <Link key={it.id} href={it.href} className="caps" style={{
+              <Link key={it.id} href={it.href} prefetch={false} className="caps" style={{
                 fontSize: 11,
                 color: current === it.id ? "var(--accent)" : "var(--bone)",
                 borderBottom: current === it.id ? "2px solid var(--accent)" : "2px solid transparent",
@@ -59,7 +59,7 @@ export default function TopNavChrome({ items, current, user, profile, isAdmin, u
               />
             </>
           ) : (
-            <Link href="/auth/signin" className="btn btn-dark btn-sm" style={{ textDecoration: "none" }}>
+            <Link href="/auth/signin" prefetch={false} className="btn btn-dark btn-sm" style={{ textDecoration: "none" }}>
               Sign In
             </Link>
           )}

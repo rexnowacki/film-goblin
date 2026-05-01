@@ -49,7 +49,8 @@ export default function SettingsForm() {
     setPendingFile(null);
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) { setAvatarError("Not signed in."); return; }
       const path = `${user.id}/avatar-${Date.now()}.jpg`;
       const { error: uploadErr } = await supabase.storage
@@ -74,7 +75,8 @@ export default function SettingsForm() {
     setAvatarError(null);
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) { setAvatarError("Not signed in."); return; }
       // Best-effort: delete the blob at the stored URL's object path.
       const marker = "/avatars/";
@@ -96,7 +98,8 @@ export default function SettingsForm() {
   useEffect(() => {
     (async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
       setHasPasswordIdentity((user.identities ?? []).some((i: any) => i.provider === "email"));
       setAuthEmail(user.email ?? null);

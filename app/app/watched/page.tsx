@@ -101,7 +101,7 @@ export default async function WatchedPage({ searchParams }: PageProps) {
 
               {stats.topFilms.length > 0 && (
                 <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 12, marginBottom: 24 }}>
-                  {stats.topFilms.map(t => (
+                  {stats.topFilms.map((t, i) => (
                     <Link key={t.film.id} href={`/film/${t.film.id}`} style={{ flexShrink: 0, textDecoration: "none", color: "inherit" }}>
                       <Image
                         src={t.film.artwork_url}
@@ -109,6 +109,7 @@ export default async function WatchedPage({ searchParams }: PageProps) {
                         width={70}
                         height={105}
                         style={{ display: "block", objectFit: "cover", border: "1px solid var(--void)" }}
+                        priority={i < 3}
                       />
                       <div className="caps" style={{ fontSize: 10, color: "var(--accent)", marginTop: 4, textAlign: "center" }}>&times;{t.count}</div>
                     </Link>

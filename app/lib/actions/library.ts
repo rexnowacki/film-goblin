@@ -48,8 +48,6 @@ export async function addToLibrary(filmId: string) {
   await _addToLibrary(supabase, filmId);
   revalidatePath("/library");
   revalidatePath("/watchlist");
-  revalidatePath("/home");
-  revalidatePath("/films");
   revalidatePath(`/film/${filmId}`);
 }
 
@@ -57,6 +55,5 @@ export async function removeFromLibrary(filmId: string) {
   const supabase = await createClient();
   await _removeFromLibrary(supabase, filmId);
   revalidatePath("/library");
-  revalidatePath("/films");
   revalidatePath(`/film/${filmId}`);
 }

@@ -18,14 +18,21 @@ import { compactCount } from "@/lib/format";
 export default async function FilmDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const film = await getFilm(supabase, id);
-  const history = await getLatestPriceHistory(supabase, id, 180);
-  const reviews = await getPublishedReviewsForFilm(supabase, id);
-  const { data: { user } } = await supabase.auth.getUser();
-  const covenMembers = user ? await getMyCovenMembers(supabase, user.id) : [];
-  const onList = user ? await isOnWatchlist(supabase, id) : false;
-  const owned = user ? await isInLibrary(supabase, user.id, id) : false;
-  const watchCount = user ? await getWatchCountForFilm(supabase, user.id, id) : 0;
+  const [film, history, reviews, userResult] = await Promise.all([
+    getFilm(supabase, id),
+    getLatestPriceHistory(supabase, id, 180),
+    getPublishedReviewsForFilm(supabase, id),
+    supabase.auth.getUser(),
+  ]);
+  const user = userResult.data.user;
+  const [covenMembers, onList, owned, watchCount] = user
+    ? await Promise.all([
+        getMyCovenMembers(supabase, user.id),
+        isOnWatchlist(supabase, id),
+        isInLibrary(supabase, user.id, id),
+        getWatchCountForFilm(supabase, user.id, id),
+      ])
+    : [[], false, false, 0];
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
@@ -48,6 +55,7 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
               film={film as any}
               size="xl"
               style={{ width: "100%", height: "auto", aspectRatio: "2 / 3" }}
+              priority
             />
           </div>
           <div className="film-hero-text">

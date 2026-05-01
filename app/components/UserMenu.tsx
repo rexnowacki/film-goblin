@@ -48,6 +48,7 @@ export default function UserMenu({ username, displayName, avatarUrl, isAdmin }: 
         }}>
           <Link
             href={`/p/${encodeURIComponent(username)}`}
+            prefetch={false}
             onClick={() => setOpen(false)}
             style={{ display: "block", padding: "10px 14px", borderBottom: "1px solid var(--void)", fontFamily: "var(--font-ui)", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--void)", textDecoration: "none" }}
           >
@@ -55,6 +56,7 @@ export default function UserMenu({ username, displayName, avatarUrl, isAdmin }: 
           </Link>
           <Link
             href="/library"
+            prefetch={false}
             onClick={() => setOpen(false)}
             style={{ display: "block", padding: "10px 14px", color: "var(--void)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 12, borderBottom: "1px solid var(--void)" }}
           >
@@ -62,6 +64,7 @@ export default function UserMenu({ username, displayName, avatarUrl, isAdmin }: 
           </Link>
           <Link
             href="/watched"
+            prefetch={false}
             onClick={() => setOpen(false)}
             style={{ display: "block", padding: "10px 14px", color: "var(--void)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 12, borderBottom: "1px solid var(--void)" }}
           >
@@ -70,7 +73,8 @@ export default function UserMenu({ username, displayName, avatarUrl, isAdmin }: 
           {isAdmin && (
             <Link
               href="/admin"
-              onClick={() => setOpen(false)}
+              prefetch={false}
+            onClick={() => setOpen(false)}
               style={{ display: "block", padding: "10px 14px", color: "var(--accent-deep)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: "1px solid var(--void)" }}
             >
               Admin
@@ -78,6 +82,7 @@ export default function UserMenu({ username, displayName, avatarUrl, isAdmin }: 
           )}
           <Link
             href="/settings"
+            prefetch={false}
             onClick={() => setOpen(false)}
             style={{ display: "block", padding: "10px 14px", color: "var(--void)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 12 }}
           >
