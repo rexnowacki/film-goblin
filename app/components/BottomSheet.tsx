@@ -43,12 +43,20 @@ export default function BottomSheet({ open, onClose, title, children }: Props) {
     };
   }, [open]);
 
-  // Escape to close + focus the sheet panel on open.
+  // Focus the sheet panel exactly once when it opens. Kept separate from
+  // the escape-key effect because parent re-renders typically pass a new
+  // `onClose` function identity; bundling focus with that listener would
+  // re-steal focus on every keystroke from any input inside the sheet.
+  useEffect(() => {
+    if (open) sheetRef.current?.focus();
+  }, [open]);
+
+  // Escape-to-close listener. Re-binds when `onClose` identity changes;
+  // safe because nothing here touches focus.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
-    sheetRef.current?.focus();
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
