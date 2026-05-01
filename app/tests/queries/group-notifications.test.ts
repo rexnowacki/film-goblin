@@ -148,3 +148,68 @@ describe("groupNotifications", () => {
     }
   });
 });
+
+describe("groupNotifications: like_on_comment per-comment grouping (threshold 2)", () => {
+  function lik(
+    id: string,
+    actor: typeof ACTOR_A | null,
+    createdAt: string,
+    commentId: string,
+  ): EnrichedNotification {
+    return {
+      id,
+      kind: "like_on_comment",
+      created_at: createdAt,
+      read_at: null,
+      actor,
+      payload: { activity_id: "act1", comment_id: commentId, body: "hello", film_id: FILM.id },
+      film: FILM,
+    };
+  }
+
+  it("1 like_on_comment item → emits as single", () => {
+    const out = groupNotifications([lik("1", ACTOR_A, "2026-04-26T12:00:00Z", "c1")]);
+    expect(out).toEqual([{ type: "single", notification: out[0].type === "single" ? out[0].notification : null }]);
+    expect(out[0].type).toBe("single");
+  });
+
+  it("2 like_on_comment items on the SAME comment → emits as a group of size 2", () => {
+    const items = [
+      lik("2", ACTOR_B, "2026-04-26T12:00:00Z", "c1"),
+      lik("1", ACTOR_A, "2026-04-26T11:50:00Z", "c1"),
+    ];
+    const out = groupNotifications(items);
+    expect(out).toHaveLength(1);
+    expect(out[0].type).toBe("group");
+    if (out[0].type === "group") {
+      expect(out[0].group.count).toBe(2);
+      expect(out[0].group.kind).toBe("like_on_comment");
+      expect(out[0].group.items.map(i => i.id)).toEqual(["2", "1"]);
+    }
+  });
+
+  it("2 like_on_comment items on DIFFERENT comments → emits as 2 singles", () => {
+    const items = [
+      lik("2", ACTOR_A, "2026-04-26T12:00:00Z", "cA"),
+      lik("1", ACTOR_A, "2026-04-26T11:55:00Z", "cB"),
+    ];
+    const out = groupNotifications(items);
+    expect(out.map(o => o.type)).toEqual(["single", "single"]);
+  });
+
+  it("3 like_on_comment items on the same comment from 3 different actors → group of 3, group.actor is most recent", () => {
+    const ACTOR_C = { id: "c", username: "carol", display_name: "Carol", avatar_url: null };
+    const items = [
+      lik("3", ACTOR_C, "2026-04-26T12:00:00Z", "c1"),
+      lik("2", ACTOR_B, "2026-04-26T11:55:00Z", "c1"),
+      lik("1", ACTOR_A, "2026-04-26T11:50:00Z", "c1"),
+    ];
+    const out = groupNotifications(items);
+    expect(out).toHaveLength(1);
+    expect(out[0].type).toBe("group");
+    if (out[0].type === "group") {
+      expect(out[0].group.count).toBe(3);
+      expect(out[0].group.actor?.id).toBe("c");
+    }
+  });
+});
