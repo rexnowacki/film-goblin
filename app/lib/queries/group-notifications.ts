@@ -1,15 +1,29 @@
-import type { EnrichedNotification, NotificationFeedItem, NotificationGroup } from "./notifications";
+import type { EnrichedNotification, NotificationFeedItem, NotificationGroup, NotificationKind } from "./notifications";
 
 const GAP_MS = 30 * 60 * 1000;
 const SPAN_MS = 24 * 60 * 60 * 1000;
-const MIN_GROUP_SIZE = 3;
+const MIN_GROUP_SIZE_DEFAULT = 3;
+const MIN_GROUP_SIZE_LIKE = 2;
+
+// Kind-aware grouping key. Most kinds group per-actor; like_on_comment groups
+// per-comment so multiple likers on the same comment fold into one row.
+function groupKey(n: EnrichedNotification): string {
+  if (n.kind === "like_on_comment") {
+    const commentId = (n.payload as { comment_id?: string }).comment_id ?? "?";
+    return `like_on_comment:${commentId}`;
+  }
+  return `${n.kind}:${n.actor?.id ?? "system"}`;
+}
+
+function minSize(kind: NotificationKind): number {
+  return kind === "like_on_comment" ? MIN_GROUP_SIZE_LIKE : MIN_GROUP_SIZE_DEFAULT;
+}
 
 /**
  * Mirror of groupFeed for notifications. Walks newest-first, folds runs of
- * same-(kind, actor_user_id) events that satisfy the 30-min event-to-event
- * gap and 24-hr span ceiling and 3+ size into groups; otherwise emits singles.
- *
- * Null actor (price_drop) groups by (kind, NULL).
+ * same-groupKey events that satisfy the 30-min event-to-event gap and 24-hr
+ * span ceiling and meet the kind's minimum size into groups; otherwise emits
+ * singles.
  *
  * Input MUST be sorted newest-first by created_at.
  */
@@ -18,15 +32,13 @@ export function groupNotifications(items: EnrichedNotification[]): NotificationF
   let i = 0;
   while (i < items.length) {
     const head = items[i];
-    const headActorId = head.actor?.id ?? null;
+    const headKey = groupKey(head);
 
     const run: EnrichedNotification[] = [head];
     let j = i + 1;
     while (j < items.length) {
       const cand = items[j];
-      const candActorId = cand.actor?.id ?? null;
-      if (cand.kind !== head.kind) break;
-      if (candActorId !== headActorId) break;
+      if (groupKey(cand) !== headKey) break;
       const prior = run[run.length - 1];
       const gapMs = new Date(prior.created_at).getTime() - new Date(cand.created_at).getTime();
       if (gapMs > GAP_MS) break;
@@ -36,10 +48,10 @@ export function groupNotifications(items: EnrichedNotification[]): NotificationF
       j++;
     }
 
-    if (run.length >= MIN_GROUP_SIZE) {
+    if (run.length >= minSize(head.kind)) {
       const oldestId = run[run.length - 1].id;
       const group: NotificationGroup = {
-        key: `${headActorId ?? "system"}:${head.kind}:${oldestId}`,
+        key: `${headKey}:${oldestId}`,
         actor: head.actor,
         kind: head.kind,
         items: run,
