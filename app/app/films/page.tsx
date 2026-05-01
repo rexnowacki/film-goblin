@@ -8,6 +8,7 @@ import FilmsSearch from "@/components/FilmsSearch";
 import PosterQuickAdd from "@/components/PosterQuickAdd";
 import FilmsSortChips from "./FilmsSortChips";
 import Link from "next/link";
+import { compactCount } from "@/lib/format";
 
 const VALID_SORTS: FilmsSort[] = ["added", "release", "title", "watchlisted", "price_low", "price_high"];
 
@@ -98,7 +99,7 @@ export default async function FilmsPage({
                       ) : null}
                       {sort === "watchlisted" ? (
                         <span style={{ marginLeft: 6, color: "var(--accent)" }}>
-                          · {f.watchlist_count} on watchlists
+                          · {compactCount(f.watchlist_count)} on watchlists
                         </span>
                       ) : null}
                     </div>

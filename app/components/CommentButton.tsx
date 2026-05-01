@@ -1,5 +1,7 @@
 "use client";
 
+import { compactCount } from "@/lib/format";
+
 interface Props {
   count: number;
   expanded: boolean;
@@ -32,7 +34,7 @@ export default function CommentButton({ count, expanded, onToggle }: Props) {
     >
       <SpeechIcon filled={expanded} />
       {count > 0 && (
-        <span className="heart-count" style={{ pointerEvents: "none" }}>{count}</span>
+        <span className="heart-count" style={{ pointerEvents: "none" }}>{compactCount(count)}</span>
       )}
     </button>
   );
