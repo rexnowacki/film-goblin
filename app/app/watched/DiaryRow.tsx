@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import WatchModal from "@/components/WatchModal";
@@ -9,11 +10,19 @@ import type { DiaryRow as DiaryRowData } from "@/lib/queries/watched";
 
 interface Props {
   row: DiaryRowData;
-  initialOpen?: boolean;
 }
 
-export default function DiaryRow({ row, initialOpen = false }: Props) {
-  const [open, setOpen] = useState(initialOpen);
+export default function DiaryRow({ row }: Props) {
+  const params = useSearchParams();
+  const [open, setOpen] = useState(false);
+
+  // Open the modal when ?rate=<this row's id> appears, even on a soft-nav
+  // that doesn't remount the component (bell-row tap from /watched itself).
+  // Re-fires only on URL change; closing via setOpen(false) sticks until
+  // the user clicks the row or the URL changes again.
+  useEffect(() => {
+    if (params?.get("rate") === row.id) setOpen(true);
+  }, [params, row.id]);
 
   async function save({ watched_at, note, recommended }: { watched_at: string; note: string; recommended: boolean | null }) {
     await editWatch(row.id, { watched_at, note: note || null, recommended });

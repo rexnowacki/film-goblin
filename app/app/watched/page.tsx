@@ -34,15 +34,10 @@ function WatchedEmpty() {
   );
 }
 
-interface PageProps {
-  searchParams: Promise<{ rate?: string }>;
-}
-
-export default async function WatchedPage({ searchParams }: PageProps) {
+export default async function WatchedPage() {
   const user = await getServerUser();
   if (!user) redirect("/auth/signin?next=/watched");
   const supabase = await createClient();
-  const { rate } = await searchParams;
 
   const [rows, stats] = await Promise.all([
     getWatchedDiary(supabase, user.id),
@@ -124,7 +119,7 @@ export default async function WatchedPage({ searchParams }: PageProps) {
                     <div className="caps" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 10, paddingBottom: 6, borderBottom: "1px solid var(--muted)" }}>
                       {monthHeader(g.key)}
                     </div>
-                    {g.rows.map(r => <DiaryRow key={r.id} row={r} initialOpen={rate === r.id} />)}
+                    {g.rows.map(r => <DiaryRow key={r.id} row={r} />)}
                   </div>
                 ))}
               </div>
