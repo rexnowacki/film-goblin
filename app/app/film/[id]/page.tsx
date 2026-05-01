@@ -6,6 +6,7 @@ import { isInLibrary } from "@/lib/queries/library";
 import { getWatchCountForFilm } from "@/lib/queries/watched";
 import { getPublishedReviewsForFilm } from "@/lib/queries/reviews";
 import { getMyCovenMembers } from "@/lib/queries/coven";
+import { getTopRecommendedCovenMemberIds } from "@/lib/queries/recommendations";
 import FilmPoster from "@/components/FilmPoster";
 import Stars from "@/components/Stars";
 import TopNav from "@/components/TopNav";
@@ -25,14 +26,15 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
     getPublishedReviewsForFilm(supabase, id),
     getServerUser(),
   ]);
-  const [covenMembers, onList, owned, watchCount] = user
+  const [covenMembers, onList, owned, watchCount, topCovenMemberIds] = user
     ? await Promise.all([
         getMyCovenMembers(supabase, user.id),
         isOnWatchlist(supabase, id),
         isInLibrary(supabase, user.id, id),
         getWatchCountForFilm(supabase, user.id, id),
+        getTopRecommendedCovenMemberIds(supabase, user.id),
       ])
-    : [[], false, false, 0];
+    : [[], false, false, 0, [] as string[]];
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
@@ -93,7 +95,12 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
             )}
             <div className="hero-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
               {user && <FilmActions filmId={film.id} filmTitle={film.title} initialOnWatchlist={onList} initialOwned={owned} initialWatchCount={watchCount} />}
-              {user && <RecommendModal filmId={film.id} filmTitle={film.title} covenMembers={covenMembers.map(m => ({ id: m.id, username: m.username, display_name: m.display_name }))} />}
+              {user && <RecommendModal
+                filmId={film.id}
+                filmTitle={film.title}
+                covenMembers={covenMembers.map(m => ({ id: m.id, username: m.username, display_name: m.display_name, avatar_url: m.avatar_url }))}
+                topCovenMemberIds={topCovenMemberIds}
+              />}
               {film.itunes_url && (
                 <a href={film.itunes_url} target="_blank" rel="noreferrer" className="btn btn-lg">
                   Buy on Apple TV →

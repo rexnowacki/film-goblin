@@ -1,47 +1,75 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { recommendFilm } from "@/lib/actions/recommendations";
 import { useToast } from "./ToastProvider";
 import BottomSheet from "./BottomSheet";
+import Avatar from "./Avatar";
+import { filterCovenMembers } from "./recommend-modal-search";
 
 interface CovenMember {
   id: string;
   username: string;
   display_name: string | null;
+  avatar_url: string | null;
 }
 
 interface Props {
   filmId: string;
   filmTitle: string;
   covenMembers: CovenMember[];
+  topCovenMemberIds: string[];
 }
 
-export default function RecommendModal({ filmId, filmTitle, covenMembers }: Props) {
+export default function RecommendModal({ filmId, filmTitle, covenMembers, topCovenMemberIds }: Props) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [pending, start] = useTransition();
 
+  // Order chips by topCovenMemberIds; if the user has never recommended,
+  // fall back to alphabetical by username so the chip row is still useful
+  // for new accounts.
+  const { chipMembers } = useMemo(() => {
+    const byId = new Map(covenMembers.map(m => [m.id, m]));
+    const top = topCovenMemberIds
+      .map(id => byId.get(id))
+      .filter((m): m is CovenMember => m !== undefined);
+    if (top.length > 0) {
+      return { chipMembers: top.slice(0, 8) };
+    }
+    const alpha = [...covenMembers].sort((a, b) => a.username.localeCompare(b.username));
+    return { chipMembers: alpha.slice(0, 8) };
+  }, [covenMembers, topCovenMemberIds]);
+
+  const filtered = useMemo(
+    () => filterCovenMembers(covenMembers, search),
+    [covenMembers, search],
+  );
+
   function close() {
     setOpen(false);
-    // Reset transient state so the next open shows a fresh form, not a
-    // cached "Sent." or stale error.
+    setSelectedUserId(null);
+    setSearch("");
     setSent(false);
     setError(null);
     setNote("");
   }
 
-  async function send(formData: FormData) {
+  function pick(id: string) {
+    setSelectedUserId(prev => (prev === id ? null : id));
+  }
+
+  function send() {
+    if (!selectedUserId) return;
     start(async () => {
       setError(null);
       try {
-        const toUserId = String(formData.get("to_user_id") || "");
-        if (!toUserId) { setError("Pick a coven member."); return; }
-        const noteVal = String(formData.get("note") || "");
-        await recommendFilm(filmId, toUserId, noteVal);
+        await recommendFilm(filmId, selectedUserId, note);
         setSent(true);
         toast("Recommendation sent");
       } catch (e: unknown) {
@@ -76,35 +104,76 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers }: Prop
           Sent. They&rsquo;ll see it in their feed.
         </div>
       ) : (
-        <form action={send} style={{ display: "flex", flexDirection: "column", gap: 14, padding: "8px 0 4px" }}>
-          <div>
-            <div className="caps" style={{ fontSize: 11, marginBottom: 8, color: "var(--muted)" }}>Coven Member</div>
-            <select
-              name="to_user_id"
-              required
-              defaultValue=""
-              style={{
-                width: "100%",
-                border: "1px solid var(--muted)",
-                background: "transparent",
-                color: "var(--bone)",
-                padding: "10px 12px",
-                fontFamily: "var(--font-ui)",
-                fontSize: 16,
-              }}
-            >
-              <option value="" style={{ background: "#141414" }}>Choose someone…</option>
-              {covenMembers.map(m => (
-                <option key={m.id} value={m.id} style={{ background: "#141414" }}>
-                  @{m.username}{m.display_name ? ` · ${m.display_name}` : ""}
-                </option>
-              ))}
-            </select>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: "8px 0 4px" }}>
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search covenfolk…"
+            className="recommend-picker-search"
+          />
+
+          <div className="recommend-picker-chips">
+            {chipMembers.map(m => {
+              const selected = m.id === selectedUserId;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => pick(m.id)}
+                  className={`recommend-picker-chip ${selected ? "is-selected" : ""}`}
+                  aria-pressed={selected}
+                >
+                  <Avatar
+                    name={m.username}
+                    color="var(--accent)"
+                    size={44}
+                    url={m.avatar_url}
+                  />
+                  <span className="recommend-picker-chip-name">{m.username}</span>
+                </button>
+              );
+            })}
           </div>
+
+          {filtered.length > 0 && (
+            <div className="recommend-picker-list">
+              {filtered.map(m => {
+                const selected = m.id === selectedUserId;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => pick(m.id)}
+                    className={`recommend-picker-row ${selected ? "is-selected" : ""}`}
+                    aria-pressed={selected}
+                  >
+                    <Avatar
+                      name={m.username}
+                      color="var(--accent)"
+                      size={36}
+                      url={m.avatar_url}
+                    />
+                    <span className="recommend-picker-row-text">
+                      <span className="recommend-picker-row-username">{m.username}</span>
+                      {m.display_name && (
+                        <span className="recommend-picker-row-display">{m.display_name}</span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {search.trim().length > 0 && filtered.length === 0 && (
+            <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, color: "var(--muted)", padding: "4px 0" }}>
+              No covenfolk match.
+            </div>
+          )}
+
           <div>
             <div className="caps" style={{ fontSize: 11, marginBottom: 8, color: "var(--muted)" }}>A Whisper</div>
             <textarea
-              name="note"
               value={note}
               onChange={e => setNote(e.target.value)}
               rows={3}
@@ -122,18 +191,21 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers }: Prop
               }}
             />
           </div>
+
           {error && (
             <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{error}</div>
           )}
+
           <button
-            type="submit"
-            disabled={pending}
+            type="button"
+            disabled={pending || !selectedUserId}
+            onClick={send}
             className="btn"
             style={{ width: "100%", justifyContent: "center" }}
           >
             {pending ? "Sealing…" : "✦ Seal & Send"}
           </button>
-        </form>
+        </div>
       )}
     </BottomSheet>
   );

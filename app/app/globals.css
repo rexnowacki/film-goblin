@@ -1193,3 +1193,107 @@ a { color: inherit; text-decoration: none; }
     bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* ===== RECOMMEND MODAL PICKER ===== */
+
+.recommend-picker-search {
+  width: 100%;
+  border: 1px solid var(--muted);
+  background: transparent;
+  color: var(--bone);
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  outline: none;
+}
+.recommend-picker-search::placeholder {
+  color: var(--muted);
+}
+
+.recommend-picker-chips {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.recommend-picker-chips::-webkit-scrollbar { display: none; }
+
+.recommend-picker-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  padding: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.recommend-picker-chip > :first-child {
+  border-radius: 999px;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color 120ms ease-out;
+}
+.recommend-picker-chip.is-selected > :first-child {
+  outline-color: var(--accent);
+}
+.recommend-picker-chip-name {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bone);
+  max-width: 64px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recommend-picker-chip.is-selected .recommend-picker-chip-name {
+  color: var(--accent);
+}
+
+.recommend-picker-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  max-height: 240px;
+  overflow-y: auto;
+}
+.recommend-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 8px 0;
+  cursor: pointer;
+  text-align: left;
+}
+.recommend-picker-row.is-selected {
+  background: rgba(255, 45, 136, 0.08);
+}
+.recommend-picker-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.recommend-picker-row-username {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--bone);
+}
+.recommend-picker-row.is-selected .recommend-picker-row-username {
+  color: var(--accent);
+}
+.recommend-picker-row-display {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--muted);
+}
