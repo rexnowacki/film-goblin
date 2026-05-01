@@ -13,12 +13,16 @@ interface Props {
   activityId: string;
   actorUserId: string;
   viewerId: string | null;
+  viewerAvatarUrl: string | null;
+  viewerDisplayName: string | null;
   initialItems: CommentItem[];
   onCountChange: (n: number) => void;
 }
 
 export default function CommentSheet({
-  open, onClose, activityId, actorUserId, viewerId, initialItems, onCountChange,
+  open, onClose, activityId, actorUserId,
+  viewerId, viewerAvatarUrl, viewerDisplayName,
+  initialItems, onCountChange,
 }: Props) {
   const [items, setItems] = useState<CommentItem[]>(initialItems);
   const [pending, startTransition] = useTransition();
@@ -31,7 +35,7 @@ export default function CommentSheet({
     const optimistic: CommentItem = {
       id: tempId,
       user_id: viewerId,
-      user: { username: "...", display_name: null, avatar_url: null },
+      user: { username: "...", display_name: null, avatar_url: viewerAvatarUrl },
       body,
       created_at: new Date().toISOString(),
       like_count: 0,
@@ -74,8 +78,18 @@ export default function CommentSheet({
     });
   }
 
+  const title = (
+    <span style={{ display: "inline-flex", alignItems: "baseline", gap: 8 }}>
+      <span>Comments</span>
+      <span className="dot-accent">•</span>
+      <span style={{ fontSize: 18, color: "var(--muted)", fontFamily: "var(--font-ui)", fontWeight: 400 }}>
+        {items.length}
+      </span>
+    </span>
+  );
+
   return (
-    <BottomSheet open={open} onClose={onClose} title={`Comments · ${items.length}`}>
+    <BottomSheet open={open} onClose={onClose} title={title}>
       <div style={{ display: "flex", flexDirection: "column", maxHeight: "70dvh" }}>
         <div style={{ flex: 1, overflowY: "auto", paddingBottom: 8 }}>
           <CommentList
@@ -86,7 +100,13 @@ export default function CommentSheet({
           />
         </div>
         {viewerId !== null ? (
-          <CommentComposer pending={pending} error={error} onSubmit={postComment} />
+          <CommentComposer
+            pending={pending}
+            error={error}
+            viewerAvatarUrl={viewerAvatarUrl}
+            viewerDisplayName={viewerDisplayName}
+            onSubmit={postComment}
+          />
         ) : (
           <div style={{ padding: "12px 0", fontSize: 12, color: "var(--muted)", fontStyle: "italic", borderTop: "1px solid var(--muted)" }}>
             Sign in to comment.
