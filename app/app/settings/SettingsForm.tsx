@@ -23,6 +23,13 @@ export default function SettingsForm() {
   const [emailInfo, setEmailInfo] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+
+  // Auto-hide the "Saved." toast 2s after a successful save.
+  useEffect(() => {
+    if (!saved) return;
+    const t = setTimeout(() => setSaved(false), 2000);
+    return () => clearTimeout(t);
+  }, [saved]);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [removingAvatar, setRemovingAvatar] = useState(false);
   const router = useRouter();
@@ -250,7 +257,11 @@ export default function SettingsForm() {
       <button type="submit" disabled={saving} className="btn">
         {saving ? "Saving…" : "Save"}
       </button>
-      {saved && <div style={{ color: "var(--accent)", fontStyle: "italic" }}>Saved.</div>}
+      {saved && (
+        <div className="toast" role="status" aria-live="polite">
+          Saved
+        </div>
+      )}
       <div style={{ borderTop: "1px solid #333", marginTop: 24, paddingTop: 24 }}>
         <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginBottom: 8 }}>Other Tabs</div>
         <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>
