@@ -4,27 +4,12 @@ import { useState, useTransition } from "react";
 import { toggleReaction } from "@/lib/actions/reactions";
 import { compactCount } from "@/lib/format";
 import LikersBottomSheet from "./LikersBottomSheet";
+import HeartIcon from "./HeartIcon";
 
 interface Props {
   activityId: string;
   initialCount: number;
   initialLikedByMe: boolean;
-}
-
-function HeartIcon({ filled }: { filled: boolean }) {
-  // Sharp-geometry classic heart. Miter linejoin keeps the lobes pointed
-  // (not rounded) — matches the spec's "no chubby, bubbly edges" rule.
-  return (
-    <svg viewBox="0 0 18 16" width="16" height="14" aria-hidden="true">
-      <path
-        d="M9 15 L1 7 A4 4 0 0 1 9 3 A4 4 0 0 1 17 7 Z"
-        fill={filled ? "var(--accent)" : "none"}
-        stroke={filled ? "var(--accent)" : "var(--muted)"}
-        strokeWidth="1.5"
-        strokeLinejoin="miter"
-      />
-    </svg>
-  );
 }
 
 export default function HeartButton({
