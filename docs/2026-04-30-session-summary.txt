@@ -1,0 +1,174 @@
+Session shipped — 2026-04-30
+=============================
+
+A long sprint — thirteen PRs landed plus four DB migrations applied to
+prod (0137 → 0143). Highlights: handle → username rename, optional
+email at signup with username-or-email login, per-kind email toggles,
+goblin / witch / high goblin role system with admin promote/demote,
+RT-style coven rating per watch, plus a string of polish/fix PRs.
+
+
+PR #61 /onboarding canvas match — carried sub-project 19 the rest of
+       the way: void wrapper instead of bone-on-bone, restored
+       TopNav/BottomNav, hero padding tightened to 22px/18px, dropped
+       the #2a2a2a section dividers, swapped form inputs to the
+       SettingsForm void-canvas style, "Sowed N of 3" pulled inline
+       with the "Pick Three Films" label.
+
+PR #62 refactor: rename profiles.handle → profiles.username (sub-
+       project 21, PR 1 of 2). Mechanical rename across ~64 files.
+       Migration 0137 ALTERs the column, recreates the unique-on-lower
+       index as profiles_username_lower_idx, and CREATE OR REPLACEs
+       the on_auth_user trigger to read raw_user_meta_data->>'username'
+       instead of ->>'handle'. Route dir app/app/p/[handle] →
+       [username]; component prop renames (UserMenu, FollowButton,
+       CovenButton, LeaveCovenButton); HANDLE_RE → USERNAME_RE; UI
+       copy "Handle" → "Username". Frozen migrations 0101/0110/0111/
+       0135/0136 untouched (historically accurate). Slug values
+       unchanged — /p/<slug> URLs keep resolving.
+
+PR #63 username login + optional email at signup (sub-project 21, PR
+       2 of 2). Spec: 2026-04-30-username-and-optional-email-design.md.
+       Signup form drops the email field entirely — username + display
+       name + password only. Server action generates synthetic
+       <username>@noreply.film-goblin.app and calls
+       auth.admin.createUser({ email_confirm: true }) via service-
+       role, bypassing the dashboard "Confirm email" toggle. Signin
+       form is a single "Username or Email" identifier — sniff @ to
+       decide; if username, service-role lookup auth.users.email by
+       joining on profiles.username, then signInWithPassword. New
+       profiles.email_added_at column (migration 0138) tracks "is
+       this a real email?" with a backfill of created_at for existing
+       rows + an AFTER UPDATE trigger that flips the flag when the
+       email transitions out of the noreply domain. /settings gains
+       an "Add Email" / "Update Email" branch + new updateEmail
+       action wrapping auth.updateUser({email}). Notifier query
+       gains AND email_added_at IS NOT NULL so we never blast the
+       synthetic domain. OAuth flow unchanged; OAuth users newly
+       created post-PR-2 land with email_added_at NULL until they
+       touch /settings (flagged as a 5-line follow-up).
+
+PR #64 per-kind email notification toggles. Migration 0139 adds four
+       boolean columns (email_price_drops, email_coven_recs,
+       email_comments, email_coven_invites), backfilling
+       email_price_drops from email_notifications_enabled so existing
+       opt-outs persist for that kind. /settings replaces the single
+       price-drop checkbox with an "Email me when…" subsection.
+       Notifier filters on email_price_drops; unsubscribe route sets
+       all four to FALSE. Token rotation on _updateProfile now
+       triggers when re-enabling any kind from the fully-opted-out
+       state. email_notifications_enabled stays in the schema for
+       backward compat — drop in a later cleanup PR.
+
+PR #65 drop display name from the signup form. Username + password
+       only. Display name defaults to the username via the trigger's
+       existing COALESCE(meta_display, meta_username) fallback, and
+       can be edited later from /settings.
+
+PR #66 iOS PWA splash fix. User on iPhone 15 Pro Max reported no
+       splash screen. The 1290x2796 asset was correctly listed but
+       a no-media fallback <link> at layout.tsx:54 rendered before
+       the media-queried links from the metadata API — WebKit
+       sometimes picks the first link instead of best-match, and the
+       fallback (1179x2556) was the wrong size for 15 Pro Max,
+       silently declining to render. Dropped the fallback. Caveat to
+       users: iOS bakes splash assets into a home-screen install, so
+       anyone with the PWA already installed needs to remove and re-
+       add the icon.
+
+PR #67 onboarding film picker poster alignment. User reported the 2nd
+       poster sat slightly above its row neighbors. The picker was
+       the only grid in the app wrapping each cell in <button> rather
+       than <Link>/<a>; <button>'s default inline-block + baseline
+       text box can leak baseline alignment into grid placement.
+       Explicit display: block; width: 100%; margin: 0; align-self:
+       start on the button.
+
+PR #68 user roles + badges (sub-project 23). Three-tier role system
+       on profiles: goblin (default), witch (staff), high_goblin
+       (premium, ships dormant — no billing yet). Migration 0140 adds
+       profiles.role with a CHECK constraint and a tightened RLS
+       UPDATE policy (WITH CHECK requires new role to equal existing,
+       so clients can't self-elevate; only service-role writes the
+       column). New <RoleBadge /> component renders inline-SVG glyphs
+       — pentagram for witches, stylized goblin head for high goblins
+       — only on /p/[username] for v1, sized 28px next to the
+       display_name h1. /admin/users/[id] gains a Role section with
+       three pill buttons; the action auto-toggles the staff row when
+       promoting/demoting witch so the two never drift. /admin/users
+       list page surfaces a tiny role pill for quick scanning.
+
+PR #69 swap the witch SVG to user-provided art. Open pentagram inside
+       a circle, currentColor stroke driven by var(--accent) on the
+       wrapping span.
+
+PR #70 coven rating — RT-style binary recommend per watch (sub-
+       project 24). Migration 0141 adds watched.recommended BOOLEAN
+       NULL (TRUE = loved it, FALSE = didn't, NULL = skipped) and
+       extends films_with_stats with coven_rating_count +
+       coven_rating_pct. Aggregate uses DISTINCT ON (user_id, film_id)
+       ORDER BY watched_at DESC, created_at DESC for latest-per-user
+       dedup; pct is NULL until count >= 5. WatchModal gains a
+       "Verdict (optional)" pill pair under the note field; tap
+       active to clear. New <CovenScore /> component renders on
+       /film/[id] with four flavor tiers: Anointed (≥90, accent),
+       Coven approved (≥60, accent), Coven divided (≥40, bone),
+       Cursed (<40, blood). Below-threshold copy: "Awaiting verdict —
+       N of 5 ratings".
+
+PR #71 comment thread fix. User RyLoCrow reported he couldn't comment
+       on a recommendation. Two compounding bugs: (1) ActivityFooter
+       passed onPosted={() => setExpanded(false)} to the thread, so
+       every successful post collapsed the section — comments WERE
+       landing in the DB, the UX just hid them; (2) viewer id was
+       fetched via auth.getUser() (network round-trip), so a fast
+       tap could open the input with viewerId=null and a disabled
+       Post button. Removed the auto-collapse; switched to
+       auth.getSession() (cached, synchronous) so the viewer id is
+       always populated when the input renders.
+
+PR #72 surface the coven rating verdict on watch_logged feed rows
+       (sub-project 24 follow-up). Migration 0142 updates the
+       activity_on_watch_insert trigger to write recommended into the
+       payload alongside film_id + note (snapshot at INSERT, same
+       staleness gap as note). EnrichedActivity for kind=watch_logged
+       gains recommended; ActivityWatchLogged renders an inline pill
+       — accent "loved it", blood "didn't love it" — next to the
+       film title.
+
+PR #73 backfill recommended into pre-0142 watch_logged payloads.
+       Migration 0143 joins activity → watched on (actor_user_id,
+       film_id) within a ±5s created_at window, only touching rows
+       where the user actually rated and the activity payload doesn't
+       already have the key. Applied to prod: 4 of 10 watch_logged
+       rows backfilled (the other 6 were watches the user skipped
+       rating, correctly key-absent).
+
+
+Migrations applied to prod this session (in order):
+- 0137 — rename profiles.handle to profiles.username + trigger update
+- 0138 — profiles.email_added_at + auth.users email-change trigger
+- 0139 — per-kind email pref columns + email_price_drops backfill
+- 0140 — profiles.role + RLS UPDATE policy lockdown
+- 0141 — watched.recommended + films_with_stats coven_rating_*
+- 0142 — activity_on_watch_insert trigger writes recommended
+- 0143 — backfill recommended into pre-0142 watch_logged payloads
+
+
+Roadmap updated mid-session and again at end:
+- Removed shipped: change-email flow, per-kind notification prefs,
+  film admin dashboard, user admin, onboarding resumability.
+- Added: rate-reminder notification for unrated watches, feed page
+  parity + user-search, feed infinite scroll (20-at-a-time, cursor on
+  created_at).
+- Bumped intro to "twenty-four shipped".
+
+
+Also created locally (not committed):
+- .claude/                          — slash command definitions, local
+                                      to this machine.
+- .superpowers/                     — superpowers skill scratch dirs.
+- docs/in-repo-tickets-setup.md     — proposal for tasks/{todo,
+                                      in-progress,done}/ file-per-
+                                      ticket coordination, still
+                                      uncommitted.

@@ -6,7 +6,7 @@ into an actual build, it becomes a spec under `docs/superpowers/specs/`.
 
 See `docs/backlog.md` for unprioritized ideas. Full list of shipped
 sub-projects with spec paths lives in `CLAUDE.md` → "Sub-project
-history" (twenty shipped as of 2026-04-30).
+history" (twenty-four shipped as of 2026-04-30).
 
 ## High
 
@@ -45,6 +45,28 @@ history" (twenty shipped as of 2026-04-30).
   inline as the user types.
 - **Persist `alert_threshold_pct` on profiles.** Let users change all
   alerts at once via `/settings` instead of per-watchlist-row tuning.
+- **Rate-reminder notification for unrated watches.** Several days
+  after a `watched` row lands with `recommended IS NULL`, fire a
+  notification linking to a dedicated "rate your unrated watches" page
+  — a poster grid of every still-unrated film with inline thumb
+  toggles, so the user can clear the backlog in one pass. New
+  notification kind (`rate_reminder`); a daily cron query for
+  `watched.recommended IS NULL AND watched.created_at < now() - 3 days
+  AND no rate_reminder for this watch yet`; a batch-rate page that
+  PATCHes ratings without re-opening WatchModal each time. Feeds the
+  coven score (sub-project 24) over time as people retroactively rate.
+- **Feed page parity + user-search.** Bring `/home` in line with
+  `/library` / `/watchlist` / `/films` visually — bone-stripe hero
+  with `.h-display` headline, accent `<em>`, the same body shell.
+  Functionally, add a search input that lets the viewer pull up another
+  user's activity stream inside the feed surface (today the only path
+  is `/p/[username]`, which is profile-shaped, not feed-shaped). Pairs
+  with the infinite-scroll item below.
+- **Feed infinite scroll.** Today `getEnrichedFeed` loads 50 items in
+  one shot. Switch to 20-at-a-time with intersection-observer-driven
+  pagination, fetching the next 20 each time the user scrolls the
+  bottom into view. Cursor-based on `created_at` to avoid drift if
+  new activity lands mid-scroll.
 
 ## Medium
 
@@ -68,15 +90,10 @@ history" (twenty shipped as of 2026-04-30).
 
 ## Medium-low
 
-- **Change email flow.** `updateUser({email})` with re-confirmation
-  round trip.
 - **Password strength meter + show-password toggle** on signin/signup.
 - **Web push notifications.** Browser Push API for price-drop alerts;
   deferred from sub-project 5. Adds service worker + VAPID keys +
   `push_subscriptions` table.
-- **Per-kind notification preferences.** "Email me for recs, not for
-  follows." Extends `profiles.email_notifications_enabled` into a
-  per-type matrix.
 - **Coven invite email.** Extend the notifier's digest pipeline to
   cover coven-request events.
 - **Public shareable list pages.** Unauthenticated viewers can see a
