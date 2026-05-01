@@ -121,6 +121,7 @@ export default function SettingsForm() {
         email_coven_recs: fd.get("email_coven_recs") === "on",
         email_comments: fd.get("email_comments") === "on",
         email_coven_invites: fd.get("email_coven_invites") === "on",
+        notify_rate_reminders: fd.get("notify_rate_reminders") === "on",
       });
       setSaved(true);
     } finally { setSaving(false); }
@@ -203,6 +204,11 @@ export default function SettingsForm() {
         <input type="checkbox" name="broadcast_watched" defaultChecked={profile.broadcast_watched} />
         <span className="check-zine__box" aria-hidden="true" />
         <span className="caps" style={{ fontSize: 11 }}>Broadcast watches to your coven</span>
+      </label>
+      <label className="check-zine">
+        <input type="checkbox" name="notify_rate_reminders" defaultChecked={profile.notify_rate_reminders ?? true} />
+        <span className="check-zine__box" aria-hidden="true" />
+        <span className="caps" style={{ fontSize: 11 }}>Remind me to rate watches I haven&rsquo;t graded</span>
       </label>
       <div style={{ borderTop: "1px solid #333", marginTop: 8, paddingTop: 16 }}>
         <div className="caps" style={{ fontSize: 11, marginBottom: 12, color: "var(--accent)" }}>Email me when…</div>

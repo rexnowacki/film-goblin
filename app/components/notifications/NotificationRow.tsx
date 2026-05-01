@@ -25,6 +25,10 @@ function targetFor(n: EnrichedNotification): string {
       const activityId = (n.payload as { activity_id?: string }).activity_id;
       return activityId ? `/home?activity=${encodeURIComponent(activityId)}` : "/home";
     }
+    case "rate_reminder": {
+      const watchedId = (n.payload as { watched_id?: string }).watched_id;
+      return watchedId ? `/watched?rate=${encodeURIComponent(watchedId)}` : "/watched";
+    }
   }
 }
 
@@ -47,6 +51,12 @@ function copyFor(n: EnrichedNotification): React.ReactNode {
       const snippet = raw.length > 60 ? raw.slice(0, 57) + "…" : raw;
       const subject = n.film?.title ?? "your activity";
       return <><strong>{actorName}</strong> commented on <em>{subject}</em>: &ldquo;{snippet}&rdquo;</>;
+    }
+    case "rate_reminder": {
+      const count = (n.payload as { unrated_count?: number }).unrated_count ?? 1;
+      return count > 1
+        ? <>You have <strong>{count}</strong> unrated watches. Tell the coven what you thought.</>
+        : <>Got a verdict on <em>{title}</em>? Rate it for the coven.</>;
     }
   }
 }

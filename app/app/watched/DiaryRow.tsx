@@ -9,10 +9,11 @@ import type { DiaryRow as DiaryRowData } from "@/lib/queries/watched";
 
 interface Props {
   row: DiaryRowData;
+  initialOpen?: boolean;
 }
 
-export default function DiaryRow({ row }: Props) {
-  const [open, setOpen] = useState(false);
+export default function DiaryRow({ row, initialOpen = false }: Props) {
+  const [open, setOpen] = useState(initialOpen);
 
   async function save({ watched_at, note, recommended }: { watched_at: string; note: string; recommended: boolean | null }) {
     await editWatch(row.id, { watched_at, note: note || null, recommended });
