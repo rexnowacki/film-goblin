@@ -28,7 +28,7 @@ export default function ActivityWatchlistAddedGroup({ group }: Props) {
     <div className={expanded ? "activity-group-expanded" : ""}>
       <div className="activity-group-row" onClick={toggle} role="button" aria-expanded={expanded}>
         <Avatar
-          name={actor.display_name ?? actor.username}
+          name={actor.username}
           color="var(--accent)"
           size={40}
           url={actor.avatar_url}
@@ -40,7 +40,7 @@ export default function ActivityWatchlistAddedGroup({ group }: Props) {
               onClick={e => e.stopPropagation()}
               style={{ color: "var(--bone)", fontWeight: 700 }}
             >
-              {actor.display_name ?? actor.username}
+              {actor.username}
             </Link>
             {" added "}
             <Link
