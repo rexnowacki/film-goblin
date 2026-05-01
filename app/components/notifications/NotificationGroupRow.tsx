@@ -25,6 +25,8 @@ function headerCopy(group: NotificationGroup): React.ReactNode {
       return <><strong>{actorName}</strong> accepted {group.count} coven invites.</>;
     case "comment_on_activity":
       return <><strong>{actorName}</strong> left {group.count} comments on your activity.</>;
+    case "rate_reminder":
+      return <>You have <strong>{group.count}</strong> pending rate reminders.</>;
   }
 }
 
@@ -44,6 +46,8 @@ function headerHref(group: NotificationGroup): string {
       const activityId = (first.payload as { activity_id?: string }).activity_id;
       return activityId ? `/home?activity=${encodeURIComponent(activityId)}` : "/home";
     }
+    case "rate_reminder":
+      return "/watched";
   }
 }
 

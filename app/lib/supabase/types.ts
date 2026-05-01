@@ -524,6 +524,7 @@ export type Database = {
           email_coven_invites: boolean
           email_coven_recs: boolean
           email_price_drops: boolean
+          notify_rate_reminders: boolean
           username: string
           id: string
           onboarded_at: string | null
@@ -544,6 +545,7 @@ export type Database = {
           email_coven_invites?: boolean
           email_coven_recs?: boolean
           email_price_drops?: boolean
+          notify_rate_reminders?: boolean
           username: string
           id: string
           onboarded_at?: string | null
@@ -564,6 +566,7 @@ export type Database = {
           email_coven_invites?: boolean
           email_coven_recs?: boolean
           email_price_drops?: boolean
+          notify_rate_reminders?: boolean
           username?: string
           id?: string
           onboarded_at?: string | null
@@ -875,6 +878,7 @@ export type Database = {
         | "recommendation_received"
         | "price_drop"
         | "comment_on_activity"
+        | "rate_reminder"
       review_status: "draft" | "published"
       staff_role: "reviewer" | "admin"
     }
