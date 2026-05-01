@@ -13,22 +13,36 @@ interface Props {
   item: EnrichedActivity;
 }
 
+interface ViewerProfile {
+  id: string;
+  avatar_url: string | null;
+  display_name: string | null;
+}
+
 export default function ActivityFooter({ item }: Props) {
   const params = useSearchParams();
   const focusedId = params?.get("activity");
   const [count, setCount] = useState(item.comments.count);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [viewerId, setViewerId] = useState<string | null>(null);
+  const [viewer, setViewer] = useState<ViewerProfile | null>(null);
 
-  // Pull viewer once on mount. getSession() reads the cached session
-  // synchronously (no network round-trip), so the composer never tries
-  // to render with viewerId=null while we wait on a JWT validation call.
   useEffect(() => {
     const c = createClient();
-    c.auth.getSession().then(({ data }) => setViewerId(data.session?.user?.id ?? null));
+    c.auth.getSession().then(async ({ data }) => {
+      const uid = data.session?.user?.id ?? null;
+      if (!uid) {
+        setViewer(null);
+        return;
+      }
+      const { data: prof } = await c
+        .from("profiles")
+        .select("id, avatar_url, display_name")
+        .eq("id", uid)
+        .single();
+      setViewer(prof ?? { id: uid, avatar_url: null, display_name: null });
+    });
   }, []);
 
-  // Auto-open the sheet when this row matches `?activity=<id>` on /home.
   useEffect(() => {
     if (focusedId && focusedId === item.id) setSheetOpen(true);
   }, [focusedId, item.id]);
@@ -49,7 +63,9 @@ export default function ActivityFooter({ item }: Props) {
         onClose={() => setSheetOpen(false)}
         activityId={item.id}
         actorUserId={item.actor.id}
-        viewerId={viewerId}
+        viewerId={viewer?.id ?? null}
+        viewerAvatarUrl={viewer?.avatar_url ?? null}
+        viewerDisplayName={viewer?.display_name ?? null}
         initialItems={item.comments.items}
         onCountChange={setCount}
       />
