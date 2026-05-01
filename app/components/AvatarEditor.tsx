@@ -68,19 +68,33 @@ export default function AvatarEditor({ file, onCancel, onSave }: Props) {
 
   return (
     <div onClick={onCancel} style={{
-      position: "fixed", inset: 0, background: "rgba(10,10,10,0.85)",
+      position: "fixed", inset: 0, background: "rgba(10,10,10,0.92)",
       display: "grid", placeItems: "center", zIndex: 200, padding: 20,
+      backdropFilter: "blur(4px)",
+      WebkitBackdropFilter: "blur(4px)",
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: "var(--bone)", color: "var(--void)",
-        border: "3px solid var(--void)",
-        boxShadow: "var(--card-shadow-offset) var(--card-shadow-offset) 0 var(--accent)",
-        maxWidth: 520, width: "100%", padding: "var(--modal-pad)",
-      }} className="grain-light">
-        <div className="eyebrow" style={{ marginBottom: 8 }}>✦ Frame the Portrait</div>
-        <h2 className="display" style={{ fontSize: 36, margin: "0 0 14px", lineHeight: 0.9 }}>Crop and zoom</h2>
+        background: "#141414",
+        color: "var(--bone)",
+        borderTop: "2px solid var(--accent)",
+        borderRadius: 16,
+        maxWidth: 520,
+        width: "100%",
+        padding: "var(--modal-pad)",
+      }}>
+        <h2 className="head" style={{ fontSize: 28, margin: "0 0 16px", lineHeight: 1 }}>
+          Frame the portrait
+        </h2>
 
-        <div style={{ position: "relative", width: "100%", height: 340, background: "var(--void)", border: "2px solid var(--void)" }}>
+        <div style={{
+          position: "relative",
+          width: "100%",
+          height: 340,
+          background: "#0A0A0A",
+          border: "1px solid var(--muted)",
+          borderRadius: 4,
+          overflow: "hidden",
+        }}>
           {src && (
             <Cropper
               image={src}
@@ -92,12 +106,15 @@ export default function AvatarEditor({ file, onCancel, onSave }: Props) {
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}
+              style={{
+                containerStyle: { background: "#0A0A0A" },
+              }}
             />
           )}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
-          <span className="caps" style={{ fontSize: 10 }}>Zoom</span>
+          <span className="caps" style={{ fontSize: 10, color: "var(--muted)" }}>Zoom</span>
           <input
             type="range"
             min={1}
@@ -110,10 +127,30 @@ export default function AvatarEditor({ file, onCancel, onSave }: Props) {
         </div>
 
         <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
-          <button onClick={onCancel} style={{ padding: "10px 16px", background: "transparent", border: "2px solid var(--void)", fontFamily: "var(--font-ui)", fontWeight: 700, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>
+          <button
+            onClick={onCancel}
+            style={{
+              padding: "10px 16px",
+              background: "transparent",
+              color: "var(--bone)",
+              border: "1px solid var(--muted)",
+              fontFamily: "var(--font-ui)",
+              fontWeight: 700,
+              fontSize: 12,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              borderRadius: 4,
+            }}
+          >
             Cancel
           </button>
-          <button onClick={handleSave} disabled={!pixelArea || saving} style={{ padding: "10px 16px", background: "var(--void)", color: "var(--bone)", border: "2px solid var(--void)", fontFamily: "var(--font-ui)", fontWeight: 700, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", cursor: saving ? "default" : "pointer" }}>
+          <button
+            onClick={handleSave}
+            disabled={!pixelArea || saving}
+            className="btn"
+            style={{ padding: "10px 16px" }}
+          >
             {saving ? "Saving…" : "✦ Save"}
           </button>
         </div>
