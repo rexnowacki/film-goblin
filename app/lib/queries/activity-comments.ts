@@ -13,6 +13,8 @@ export interface CommentItem {
   };
   body: string;
   created_at: string;
+  like_count: number;
+  liked_by_me: boolean;
 }
 
 export interface CommentSummary {
@@ -34,6 +36,7 @@ export interface CommentSummary {
 export async function getCommentSummariesForActivities(
   client: Client,
   activityIds: string[],
+  viewerId: string | null,
 ): Promise<Map<string, CommentSummary>> {
   const map = new Map<string, CommentSummary>();
   for (const id of activityIds) map.set(id, { count: 0, items: [] });
@@ -41,7 +44,7 @@ export async function getCommentSummariesForActivities(
 
   const { data: rows, error } = await client
     .from("activity_comments")
-    .select("id, activity_id, user_id, body, created_at")
+    .select("id, activity_id, user_id, body, created_at, like_count")
     .in("activity_id", activityIds)
     .order("created_at", { ascending: true });
   if (error) throw error;
@@ -55,6 +58,20 @@ export async function getCommentSummariesForActivities(
   if (pErr) throw pErr;
   const profileById = new Map((profiles ?? []).map(p => [p.id, p]));
 
+  // Viewer's likes — single query, then in-memory Set lookup per row.
+  // Skipped entirely for anonymous viewers.
+  const likedSet = new Set<string>();
+  if (viewerId !== null) {
+    const commentIds = rows.map(r => r.id);
+    const { data: rxRows, error: rxErr } = await client
+      .from("activity_comment_reactions")
+      .select("comment_id")
+      .eq("user_id", viewerId)
+      .in("comment_id", commentIds);
+    if (rxErr) throw rxErr;
+    for (const r of rxRows ?? []) likedSet.add(r.comment_id);
+  }
+
   for (const row of rows) {
     const entry = map.get(row.activity_id);
     if (!entry) continue;
@@ -66,6 +83,8 @@ export async function getCommentSummariesForActivities(
       user: { username: p.username, display_name: p.display_name, avatar_url: p.avatar_url },
       body: row.body,
       created_at: row.created_at,
+      like_count: row.like_count,
+      liked_by_me: likedSet.has(row.id),
     });
     entry.count = entry.items.length;
   }

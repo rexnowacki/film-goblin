@@ -121,7 +121,7 @@ export async function getEnrichedFeed(
     recipientIds.length ? client.from("profiles").select("id, username, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] as any }),
     listIds.length ? client.from("lists").select("id, title").in("id", listIds) : Promise.resolve({ data: [] as any }),
     getReactionsForActivities(client, raw.map(r => r.id), followerUserId),
-    getCommentSummariesForActivities(client, raw.map(r => r.id)),
+    getCommentSummariesForActivities(client, raw.map(r => r.id), followerUserId),
   ]);
 
   const actorMap = new Map((actors.data ?? []).map((r: any) => [r.id, r]));

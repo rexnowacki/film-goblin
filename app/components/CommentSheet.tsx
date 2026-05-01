@@ -34,6 +34,8 @@ export default function CommentSheet({
       user: { username: "...", display_name: null, avatar_url: null },
       body,
       created_at: new Date().toISOString(),
+      like_count: 0,
+      liked_by_me: false,
     };
     setItems(prev => {
       const next = [...prev, optimistic];
