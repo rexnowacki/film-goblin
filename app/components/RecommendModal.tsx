@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { recommendFilm } from "@/lib/actions/recommendations";
 import { useToast } from "./ToastProvider";
+import BottomSheet from "./BottomSheet";
 
 interface CovenMember {
   id: string;
@@ -24,6 +25,15 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers }: Prop
   const [sent, setSent] = useState(false);
   const [pending, start] = useTransition();
 
+  function close() {
+    setOpen(false);
+    // Reset transient state so the next open shows a fresh form, not a
+    // cached "Sent." or stale error.
+    setSent(false);
+    setError(null);
+    setNote("");
+  }
+
   async function send(formData: FormData) {
     start(async () => {
       setError(null);
@@ -34,8 +44,9 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers }: Prop
         await recommendFilm(filmId, toUserId, noteVal);
         setSent(true);
         toast("Recommendation sent");
-      } catch (e: any) {
-        setError(e?.message ?? String(e));
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        setError(msg);
       }
     });
   }
@@ -44,40 +55,86 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers }: Prop
     return <button className="btn btn-lg" onClick={() => setOpen(true)}>✦ Recommend To A Coven Member</button>;
   }
 
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(10,10,10,0.82)", display: "grid", placeItems: "center", zIndex: 100, padding: 20 }} onClick={() => setOpen(false)}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "var(--bone)", color: "var(--void)", border: "3px solid var(--void)", boxShadow: "var(--card-shadow-offset) var(--card-shadow-offset) 0 var(--accent)", maxWidth: 560, width: "100%", padding: "var(--modal-pad) var(--modal-pad) calc(var(--modal-pad) - 8px)", transform: "rotate(var(--card-rotation))" }} className="grain-light">
-        <div className="eyebrow" style={{ marginBottom: 8 }}>✦ Cast The Rune ✦</div>
-        <h2 className="display" style={{ fontSize: 44, margin: "0 0 16px", lineHeight: 0.9 }}>
-          Recommend <em style={{ color: "var(--accent)" }}>{filmTitle}</em>
-        </h2>
+  const title = (
+    <span style={{ display: "inline-flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+      <span>Cast the Rune</span>
+      <span className="dot-accent">•</span>
+      <span style={{ fontSize: 18, color: "var(--muted)", fontFamily: "var(--font-ui)", fontWeight: 400 }}>
+        {filmTitle}
+      </span>
+    </span>
+  );
 
-        {covenMembers.length === 0 ? (
-          <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, lineHeight: 1.5 }}>
-            You have no coven yet. Visit <a href="/coven" style={{ color: "var(--accent-deep)", textDecoration: "underline" }}>/coven</a> to bind with someone, then come back.
-          </div>
-        ) : sent ? (
-          <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic" }}>Sent. They'll see it in their feed.</div>
-        ) : (
-          <form action={send}>
-            <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Coven Member</div>
-            <select name="to_user_id" required defaultValue="" style={{ width: "100%", border: "2px solid var(--void)", padding: "8px 10px", fontFamily: "var(--font-ui)", fontSize: 16, marginBottom: 14, background: "var(--bone)" }}>
-              <option value="">Choose someone…</option>
+  return (
+    <BottomSheet open={open} onClose={close} title={title}>
+      {covenMembers.length === 0 ? (
+        <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, lineHeight: 1.5, padding: "12px 0" }}>
+          You have no coven yet. Visit <a href="/coven" style={{ color: "var(--accent)", textDecoration: "underline" }}>/coven</a> to bind with someone, then come back.
+        </div>
+      ) : sent ? (
+        <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", padding: "12px 0" }}>
+          Sent. They&rsquo;ll see it in their feed.
+        </div>
+      ) : (
+        <form action={send} style={{ display: "flex", flexDirection: "column", gap: 14, padding: "8px 0 4px" }}>
+          <div>
+            <div className="caps" style={{ fontSize: 11, marginBottom: 8, color: "var(--muted)" }}>Coven Member</div>
+            <select
+              name="to_user_id"
+              required
+              defaultValue=""
+              style={{
+                width: "100%",
+                border: "1px solid var(--muted)",
+                background: "transparent",
+                color: "var(--bone)",
+                padding: "10px 12px",
+                fontFamily: "var(--font-ui)",
+                fontSize: 16,
+              }}
+            >
+              <option value="" style={{ background: "#141414" }}>Choose someone…</option>
               {covenMembers.map(m => (
-                <option key={m.id} value={m.id}>@{m.username}{m.display_name ? ` · ${m.display_name}` : ""}</option>
+                <option key={m.id} value={m.id} style={{ background: "#141414" }}>
+                  @{m.username}{m.display_name ? ` · ${m.display_name}` : ""}
+                </option>
               ))}
             </select>
-            <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>A Whisper</div>
-            <textarea name="note" value={note} onChange={e => setNote(e.target.value)} rows={3}
+          </div>
+          <div>
+            <div className="caps" style={{ fontSize: 11, marginBottom: 8, color: "var(--muted)" }}>A Whisper</div>
+            <textarea
+              name="note"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              rows={3}
               placeholder="watch this one alone, with the lights off…"
-              style={{ width: "100%", border: "2px solid var(--void)", padding: 10, fontFamily: "var(--font-serif)", fontSize: 14, marginBottom: 16, resize: "none" }} />
-            {error && <div style={{ color: "var(--blood)", marginBottom: 12, fontStyle: "italic" }}>{error}</div>}
-            <button type="submit" disabled={pending} className="btn btn-dark btn-lg" style={{ width: "100%", justifyContent: "center" }}>
-              {pending ? "Sealing…" : "✦ Seal & Send"}
-            </button>
-          </form>
-        )}
-      </div>
-    </div>
+              style={{
+                width: "100%",
+                border: "1px solid var(--muted)",
+                background: "transparent",
+                color: "var(--bone)",
+                padding: 10,
+                fontFamily: "var(--font-serif)",
+                fontSize: 14,
+                resize: "none",
+                outline: "none",
+              }}
+            />
+          </div>
+          {error && (
+            <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{error}</div>
+          )}
+          <button
+            type="submit"
+            disabled={pending}
+            className="btn"
+            style={{ width: "100%", justifyContent: "center" }}
+          >
+            {pending ? "Sealing…" : "✦ Seal & Send"}
+          </button>
+        </form>
+      )}
+    </BottomSheet>
   );
 }
