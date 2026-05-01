@@ -57,6 +57,8 @@ export async function setupTestDb(): Promise<{ client: Client; cleanup: () => Pr
   mem.public.none(`ALTER TABLE profiles ADD COLUMN email_coven_recs BOOLEAN NOT NULL DEFAULT TRUE`);
   mem.public.none(`ALTER TABLE profiles ADD COLUMN email_comments BOOLEAN NOT NULL DEFAULT TRUE`);
   mem.public.none(`ALTER TABLE profiles ADD COLUMN email_coven_invites BOOLEAN NOT NULL DEFAULT TRUE`);
+  // 0144 drops the legacy email_notifications_enabled column.
+  mem.public.none(`ALTER TABLE profiles DROP COLUMN email_notifications_enabled`);
 
   const { Client } = mem.adapters.createPg();
   const client = new Client() as unknown as Client;

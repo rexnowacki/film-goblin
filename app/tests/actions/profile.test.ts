@@ -20,42 +20,47 @@ describe.skipIf(!hasEnv)("actions/profile", () => {
   });
 
   it("re-enabling email notifications rotates the unsubscribe token", async () => {
-    // Seed: user starts with email notifications disabled + a known token.
+    // Seed: user starts with all per-kind email flags off + a known token.
     const admin = adminClient();
     const before = await admin
       .from("profiles")
-      .update({ email_notifications_enabled: false })
+      .update({
+        email_price_drops: false,
+        email_coven_recs: false,
+        email_comments: false,
+        email_coven_invites: false,
+      })
       .eq("id", user.id)
       .select("unsubscribe_token")
       .single();
     const tokenBefore = (before.data as any)?.unsubscribe_token as string;
     expect(tokenBefore).toBeTruthy();
 
-    // Act: user flips the toggle back on.
+    // Act: user flips price-drops back on.
     const c = await signedInClient(user.email, user.password);
-    await _updateProfile(c, { email_notifications_enabled: true });
+    await _updateProfile(c, { email_price_drops: true });
 
     // Assert: new token, old token no longer matches.
     const after = await admin
       .from("profiles")
-      .select("unsubscribe_token, email_notifications_enabled")
+      .select("unsubscribe_token, email_price_drops")
       .eq("id", user.id)
       .single();
     const tokenAfter = (after.data as any)?.unsubscribe_token as string;
-    expect((after.data as any)?.email_notifications_enabled).toBe(true);
+    expect((after.data as any)?.email_price_drops).toBe(true);
     expect(tokenAfter).toBeTruthy();
     expect(tokenAfter).not.toBe(tokenBefore);
   });
 
-  it("toggling email notifications off without re-enable does NOT rotate the token", async () => {
+  it("toggling a kind off without re-enable does NOT rotate the token", async () => {
     const admin = adminClient();
-    await admin.from("profiles").update({ email_notifications_enabled: true }).eq("id", user.id);
+    await admin.from("profiles").update({ email_price_drops: true }).eq("id", user.id);
     const before = await admin
       .from("profiles").select("unsubscribe_token").eq("id", user.id).single();
     const tokenBefore = (before.data as any)?.unsubscribe_token as string;
 
     const c = await signedInClient(user.email, user.password);
-    await _updateProfile(c, { email_notifications_enabled: false });
+    await _updateProfile(c, { email_price_drops: false });
 
     const after = await admin
       .from("profiles").select("unsubscribe_token").eq("id", user.id).single();

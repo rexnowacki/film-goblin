@@ -57,11 +57,10 @@ export async function GET(
     await client.connect();
     const result = await client.query(
       `UPDATE profiles
-          SET email_notifications_enabled = FALSE,
-              email_price_drops           = FALSE,
-              email_coven_recs            = FALSE,
-              email_comments              = FALSE,
-              email_coven_invites         = FALSE
+          SET email_price_drops    = FALSE,
+              email_coven_recs     = FALSE,
+              email_comments       = FALSE,
+              email_coven_invites  = FALSE
         WHERE unsubscribe_token = $1
        RETURNING username`,
       [token],
