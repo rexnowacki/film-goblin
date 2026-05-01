@@ -25,6 +25,12 @@ function headerCopy(group: NotificationGroup): React.ReactNode {
       return <><strong>{actorName}</strong> accepted {group.count} coven invites.</>;
     case "comment_on_activity":
       return <><strong>{actorName}</strong> left {group.count} comments on your activity.</>;
+    case "like_on_comment": {
+      const raw = (group.items[0].payload as { body?: string }).body ?? "";
+      const snippet = raw.length > 60 ? raw.slice(0, 57) + "…" : raw;
+      const subject = group.items[0].film?.title ?? "your activity";
+      return <><strong>{group.count} people</strong> liked your comment on <em>{subject}</em>: &ldquo;{snippet}&rdquo;</>;
+    }
     case "rate_reminder":
       return <>You have <strong>{group.count}</strong> pending rate reminders.</>;
   }
@@ -43,6 +49,10 @@ function headerHref(group: NotificationGroup): string {
       return filmId ? `/film/${filmId}` : "/home";
     }
     case "comment_on_activity": {
+      const activityId = (first.payload as { activity_id?: string }).activity_id;
+      return activityId ? `/home?activity=${encodeURIComponent(activityId)}` : "/home";
+    }
+    case "like_on_comment": {
       const activityId = (first.payload as { activity_id?: string }).activity_id;
       return activityId ? `/home?activity=${encodeURIComponent(activityId)}` : "/home";
     }
