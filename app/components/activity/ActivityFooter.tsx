@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import type { EnrichedActivity } from "@/lib/queries/activity";
 import HeartButton from "../HeartButton";
 import CommentButton from "../CommentButton";
-import ActivityCommentThread from "../ActivityCommentThread";
+import CommentSheet from "../CommentSheet";
 import { relativeTime } from "./relativeTime";
 import { createClient } from "@/lib/supabase/client";
 
@@ -17,44 +17,42 @@ export default function ActivityFooter({ item }: Props) {
   const params = useSearchParams();
   const focusedId = params?.get("activity");
   const [count, setCount] = useState(item.comments.count);
-  const [expanded, setExpanded] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [viewerId, setViewerId] = useState<string | null>(null);
 
-  // Pull viewer once on mount. Avoids threading a prop through 7 kind components.
-  // getSession() reads the cached session synchronously (no network round-trip),
-  // so the comment input never tries to render with viewerId=null while we wait
-  // on a JWT validation call.
+  // Pull viewer once on mount. getSession() reads the cached session
+  // synchronously (no network round-trip), so the composer never tries
+  // to render with viewerId=null while we wait on a JWT validation call.
   useEffect(() => {
     const c = createClient();
     c.auth.getSession().then(({ data }) => setViewerId(data.session?.user?.id ?? null));
   }, []);
 
-  // Auto-expand when this row matches `?activity=<id>` on /home.
+  // Auto-open the sheet when this row matches `?activity=<id>` on /home.
   useEffect(() => {
-    if (focusedId && focusedId === item.id) setExpanded(true);
+    if (focusedId && focusedId === item.id) setSheetOpen(true);
   }, [focusedId, item.id]);
 
   return (
     <>
       <div className="activity-footer">
         <span className="activity-footer-time" style={{ fontFamily: "var(--font-ui)", color: "var(--muted)" }}>{relativeTime(item.created_at)}</span>
-        <CommentButton count={count} expanded={expanded} onToggle={() => setExpanded(v => !v)} />
+        <CommentButton count={count} open={sheetOpen} onOpen={() => setSheetOpen(true)} />
         <HeartButton
           activityId={item.id}
           initialCount={item.reactions.count}
           initialLikedByMe={item.reactions.likedByMe}
         />
       </div>
-      {expanded && (
-        <ActivityCommentThread
-          activityId={item.id}
-          actorUserId={item.actor.id}
-          viewerId={viewerId}
-          initialItems={item.comments.items}
-          onCountChange={setCount}
-          onCollapse={() => setExpanded(false)}
-        />
-      )}
+      <CommentSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        activityId={item.id}
+        actorUserId={item.actor.id}
+        viewerId={viewerId}
+        initialItems={item.comments.items}
+        onCountChange={setCount}
+      />
     </>
   );
 }
