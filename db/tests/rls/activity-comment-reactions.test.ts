@@ -136,45 +136,51 @@ describe("RLS: activity_comment_reactions", () => {
 
   it("trigger increments like_count on INSERT, decrements on DELETE", async () => {
     await beginAs(db.client, null, "service_role");
-    await db.client.query(
-      `INSERT INTO activity_comment_reactions (user_id, comment_id) VALUES ($1, $2)`,
-      [fx.userA.id, commentId],
-    );
-    await db.client.query(
-      `INSERT INTO activity_comment_reactions (user_id, comment_id) VALUES ($1, $2)`,
-      [fx.userB.id, commentId],
-    );
-    let r = await db.client.query<{ like_count: number }>(
-      `SELECT like_count FROM activity_comments WHERE id = $1`,
-      [commentId],
-    );
-    expect(r.rows[0].like_count).toBe(2);
+    try {
+      await db.client.query(
+        `INSERT INTO activity_comment_reactions (user_id, comment_id) VALUES ($1, $2)`,
+        [fx.userA.id, commentId],
+      );
+      await db.client.query(
+        `INSERT INTO activity_comment_reactions (user_id, comment_id) VALUES ($1, $2)`,
+        [fx.userB.id, commentId],
+      );
+      let r = await db.client.query<{ like_count: number }>(
+        `SELECT like_count FROM activity_comments WHERE id = $1`,
+        [commentId],
+      );
+      expect(r.rows[0].like_count).toBe(2);
 
-    await db.client.query(
-      `DELETE FROM activity_comment_reactions WHERE user_id = $1 AND comment_id = $2`,
-      [fx.userA.id, commentId],
-    );
-    r = await db.client.query<{ like_count: number }>(
-      `SELECT like_count FROM activity_comments WHERE id = $1`,
-      [commentId],
-    );
-    expect(r.rows[0].like_count).toBe(1);
-    await commit(db.client);
+      await db.client.query(
+        `DELETE FROM activity_comment_reactions WHERE user_id = $1 AND comment_id = $2`,
+        [fx.userA.id, commentId],
+      );
+      r = await db.client.query<{ like_count: number }>(
+        `SELECT like_count FROM activity_comments WHERE id = $1`,
+        [commentId],
+      );
+      expect(r.rows[0].like_count).toBe(1);
+    } finally {
+      await rollback(db.client);
+    }
   });
 
   it("composite PK prevents duplicate likes", async () => {
     await beginAs(db.client, null, "service_role");
-    await db.client.query(
-      `INSERT INTO activity_comment_reactions (user_id, comment_id) VALUES ($1, $2)`,
-      [fx.userA.id, commentId],
-    );
-    await expect(
-      db.client.query(
+    try {
+      await db.client.query(
         `INSERT INTO activity_comment_reactions (user_id, comment_id) VALUES ($1, $2)`,
         [fx.userA.id, commentId],
-      ),
-    ).rejects.toThrow();
-    await rollback(db.client);
+      );
+      await expect(
+        db.client.query(
+          `INSERT INTO activity_comment_reactions (user_id, comment_id) VALUES ($1, $2)`,
+          [fx.userA.id, commentId],
+        ),
+      ).rejects.toThrow();
+    } finally {
+      await rollback(db.client);
+    }
   });
 
   it("ON DELETE CASCADE — deleting the parent comment removes reactions", async () => {
