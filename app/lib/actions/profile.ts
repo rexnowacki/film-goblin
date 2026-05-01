@@ -16,7 +16,6 @@ export interface ProfileFields {
   broadcast_watchlist_adds?: boolean;
   broadcast_library?: boolean;
   broadcast_watched?: boolean;
-  email_notifications_enabled?: boolean;
   email_price_drops?: boolean;
   email_coven_recs?: boolean;
   email_comments?: boolean;
@@ -25,17 +24,26 @@ export interface ProfileFields {
 
 type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
+const USERNAME_RE = /^[a-z0-9._]+$/;
+
 export async function _updateProfile(client: Client, fields: ProfileFields): Promise<void> {
   const { data: { user } } = await client.auth.getUser();
   if (!user) throw new Error("unauthenticated");
+
+  if (fields.username !== undefined) {
+    const u = fields.username.trim();
+    if (!USERNAME_RE.test(u)) {
+      throw new Error("Invalid username: lowercase letters, numbers, dots, underscores only.");
+    }
+    fields = { ...fields, username: u };
+  }
 
   const patch: ProfileUpdate = { ...fields };
   const reEnablingAnyKind =
     fields.email_price_drops === true ||
     fields.email_coven_recs === true ||
     fields.email_comments === true ||
-    fields.email_coven_invites === true ||
-    fields.email_notifications_enabled === true;
+    fields.email_coven_invites === true;
   if (reEnablingAnyKind) {
     const { data: current } = await client
       .from("profiles")

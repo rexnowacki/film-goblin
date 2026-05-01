@@ -523,7 +523,6 @@ export type Database = {
           email_comments: boolean
           email_coven_invites: boolean
           email_coven_recs: boolean
-          email_notifications_enabled: boolean
           email_price_drops: boolean
           username: string
           id: string
@@ -544,7 +543,6 @@ export type Database = {
           email_comments?: boolean
           email_coven_invites?: boolean
           email_coven_recs?: boolean
-          email_notifications_enabled?: boolean
           email_price_drops?: boolean
           username: string
           id: string
@@ -565,7 +563,6 @@ export type Database = {
           email_comments?: boolean
           email_coven_invites?: boolean
           email_coven_recs?: boolean
-          email_notifications_enabled?: boolean
           email_price_drops?: boolean
           username?: string
           id?: string

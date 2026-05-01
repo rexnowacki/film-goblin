@@ -21,8 +21,8 @@ async function seedUser(id: string, email: string, opts: { enabled?: boolean; em
   await client.query(`INSERT INTO auth.users (id, email) VALUES ($1, $2)`, [id, email]);
   const enabled = opts.enabled ?? true;
   await client.query(
-    `INSERT INTO profiles (id, username, display_name, email_notifications_enabled, email_price_drops, email_added_at)
-     VALUES ($1, $2, $2, $3, $3, $4)`,
+    `INSERT INTO profiles (id, username, display_name, email_price_drops, email_added_at)
+     VALUES ($1, $2, $2, $3, $4)`,
     [id, email.split("@")[0], enabled, opts.emailAddedAt === null ? null : (opts.emailAddedAt ?? new Date())],
   );
 }

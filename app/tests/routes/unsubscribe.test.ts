@@ -64,7 +64,10 @@ describe("GET /api/unsubscribe/[token]", () => {
     expect(queryMock).toHaveBeenCalledTimes(1);
     const [sql, params] = queryMock.mock.calls[0];
     expect(sql).toMatch(/UPDATE profiles/i);
-    expect(sql).toMatch(/email_notifications_enabled = FALSE/i);
+    expect(sql).toMatch(/email_price_drops\s*=\s*FALSE/i);
+    expect(sql).toMatch(/email_coven_recs\s*=\s*FALSE/i);
+    expect(sql).toMatch(/email_comments\s*=\s*FALSE/i);
+    expect(sql).toMatch(/email_coven_invites\s*=\s*FALSE/i);
     expect(params).toEqual([VALID]);
   });
 

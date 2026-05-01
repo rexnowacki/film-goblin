@@ -22,9 +22,15 @@ export async function GET(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("onboarded_at")
+      .select("onboarded_at, email_added_at")
       .eq("id", user.id)
       .single();
+    if (user.email && profile && !profile.email_added_at) {
+      await supabase
+        .from("profiles")
+        .update({ email_added_at: new Date().toISOString() })
+        .eq("id", user.id);
+    }
     if (!profile || !profile.onboarded_at) {
       return NextResponse.redirect(new URL("/onboarding", url));
     }
