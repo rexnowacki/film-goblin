@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { logWatch } from "@/lib/actions/watched";
 import WatchModal from "./WatchModal";
+import { useToast } from "./ToastProvider";
 
 interface Props {
   filmId: string;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function WatchedButton({ filmId, filmTitle, initialCount, onLogged }: Props) {
+  const { toast } = useToast();
   const [count, setCount] = useState(initialCount);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -20,6 +22,7 @@ export default function WatchedButton({ filmId, filmTitle, initialCount, onLogge
     const wasFirst = count === 0;
     setCount(c => c + 1);
     if (wasFirst) onLogged?.();
+    toast(`Logged ${filmTitle}`);
   }
 
   return (

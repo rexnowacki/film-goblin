@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import WatchModal from "@/components/WatchModal";
 import { editWatch, deleteWatch } from "@/lib/actions/watched";
+import { useToast } from "@/components/ToastProvider";
 import type { DiaryRow as DiaryRowData } from "@/lib/queries/watched";
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function DiaryRow({ row }: Props) {
+  const { toast } = useToast();
   const params = useSearchParams();
   const [open, setOpen] = useState(false);
 
@@ -26,10 +28,12 @@ export default function DiaryRow({ row }: Props) {
 
   async function save({ watched_at, note, recommended }: { watched_at: string; note: string; recommended: boolean | null }) {
     await editWatch(row.id, { watched_at, note: note || null, recommended });
+    toast("Watch updated");
   }
 
   async function del() {
     await deleteWatch(row.id);
+    toast("Watch removed");
   }
 
   return (
