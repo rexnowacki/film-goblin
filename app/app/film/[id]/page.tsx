@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/cached";
 import { getFilm, getLatestPriceHistory } from "@/lib/queries/films";
 import { isOnWatchlist } from "@/lib/queries/watchlists";
 import { isInLibrary } from "@/lib/queries/library";
@@ -18,13 +19,12 @@ import { compactCount } from "@/lib/format";
 export default async function FilmDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const [film, history, reviews, userResult] = await Promise.all([
+  const [film, history, reviews, user] = await Promise.all([
     getFilm(supabase, id),
     getLatestPriceHistory(supabase, id, 180),
     getPublishedReviewsForFilm(supabase, id),
-    supabase.auth.getUser(),
+    getServerUser(),
   ]);
-  const user = userResult.data.user;
   const [covenMembers, onList, owned, watchCount] = user
     ? await Promise.all([
         getMyCovenMembers(supabase, user.id),

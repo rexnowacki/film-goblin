@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/cached";
 import { HomeIcon, DiscoverIcon, CovenIcon, CollectionsIcon } from "./BottomNavIcons";
 
 interface Props {
@@ -17,8 +17,7 @@ function activeTab(current: string | undefined): "feed" | "discovery" | "coven" 
 }
 
 export default async function BottomNav({ current }: Props) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getServerUser();
   if (!user) return null; // anon viewers: no bottom nav
 
   const active = activeTab(current);
