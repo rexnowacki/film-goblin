@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { recommendFilm } from "@/lib/actions/recommendations";
+import { useToast } from "./ToastProvider";
 
 interface CovenMember {
   id: string;
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function RecommendModal({ filmId, filmTitle, covenMembers }: Props) {
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +33,7 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers }: Prop
         const noteVal = String(formData.get("note") || "");
         await recommendFilm(filmId, toUserId, noteVal);
         setSent(true);
+        toast("Recommendation sent");
       } catch (e: any) {
         setError(e?.message ?? String(e));
       }

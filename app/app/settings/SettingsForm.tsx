@@ -7,13 +7,14 @@ import { updateProfile, updateEmail, changePassword } from "@/lib/actions/profil
 import { signOut } from "@/lib/actions/auth";
 import Avatar from "@/components/Avatar";
 import AvatarEditor from "@/components/AvatarEditor";
+import { useToast } from "@/components/ToastProvider";
 
 export default function SettingsForm() {
+  const { toast } = useToast();
   const [profile, setProfile] = useState<any>(null);
   const [authEmail, setAuthEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [hasPasswordIdentity, setHasPasswordIdentity] = useState(true);
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSuccess, setPwSuccess] = useState(false);
@@ -23,13 +24,6 @@ export default function SettingsForm() {
   const [emailInfo, setEmailInfo] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
-
-  // Auto-hide the "Saved." toast 2s after a successful save.
-  useEffect(() => {
-    if (!saved) return;
-    const t = setTimeout(() => setSaved(false), 2000);
-    return () => clearTimeout(t);
-  }, [saved]);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [removingAvatar, setRemovingAvatar] = useState(false);
   const router = useRouter();
@@ -68,6 +62,7 @@ export default function SettingsForm() {
       await updateProfile({ avatar_url: pub.publicUrl });
       setProfile({ ...profile, avatar_url: pub.publicUrl });
       router.refresh();
+      toast("Avatar updated");
     } catch (err: any) {
       setAvatarError(err?.message ?? "Upload failed.");
     } finally {
@@ -118,7 +113,6 @@ export default function SettingsForm() {
 
   async function save(fd: FormData) {
     setSaving(true);
-    setSaved(false);
     try {
       await updateProfile({
         username: String(fd.get("username")),
@@ -134,7 +128,7 @@ export default function SettingsForm() {
         notify_rate_reminders: fd.get("notify_rate_reminders") === "on",
         notify_comment_likes: fd.get("notify_comment_likes") === "on",
       });
-      setSaved(true);
+      toast("Saved");
     } finally { setSaving(false); }
   }
 
@@ -145,7 +139,10 @@ export default function SettingsForm() {
     const res = await updateEmail(formData);
     setEmailPending(false);
     if (res?.error) setEmailError(res.error);
-    if (res?.info) setEmailInfo(res.info);
+    if (res?.info) {
+      setEmailInfo(res.info);
+      toast("Confirmation sent");
+    }
   }
 
   async function handleChangePassword(formData: FormData) {
@@ -155,7 +152,10 @@ export default function SettingsForm() {
     const res = await changePassword(formData);
     setPwPending(false);
     if (res?.error) setPwError(res.error);
-    if (res?.ok) setPwSuccess(true);
+    if (res?.ok) {
+      setPwSuccess(true);
+      toast("Password changed");
+    }
   }
 
   if (loading) return <div style={{ padding: 40 }}>Loading…</div>;
@@ -257,11 +257,6 @@ export default function SettingsForm() {
       <button type="submit" disabled={saving} className="btn">
         {saving ? "Saving…" : "Save"}
       </button>
-      {saved && (
-        <div className="toast" role="status" aria-live="polite">
-          Saved
-        </div>
-      )}
       <div style={{ borderTop: "1px solid #333", marginTop: 24, paddingTop: 24 }}>
         <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginBottom: 8 }}>Other Tabs</div>
         <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>

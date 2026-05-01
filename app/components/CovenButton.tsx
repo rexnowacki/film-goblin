@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { sendCovenRequest, declineCovenRequest, acceptCovenRequest } from "@/lib/actions/coven";
 import type { CovenState } from "@/lib/queries/coven";
+import { useToast } from "./ToastProvider";
 
 interface Props {
   targetUserId: string;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function CovenButton({ targetUserId, targetUsername, initialState, initialRequestId }: Props) {
+  const { toast } = useToast();
   const [state, setState] = useState<CovenState>(initialState);
   const [requestId, setRequestId] = useState<string | null>(initialRequestId);
   const [pending, start] = useTransition();
@@ -23,18 +25,22 @@ export default function CovenButton({ targetUserId, targetUsername, initialState
           const { id } = await sendCovenRequest(targetUserId, targetUsername);
           setRequestId(id);
           setState("pending_outbound");
+          toast("Invite sent");
         } else if (kind === "cancel" && requestId) {
           await declineCovenRequest(requestId);
           setRequestId(null);
           setState("none");
+          toast("Invite cancelled");
         } else if (kind === "accept" && requestId) {
           await acceptCovenRequest(requestId);
           setRequestId(null);
           setState("member");
+          toast("Coven joined");
         } else if (kind === "decline" && requestId) {
           await declineCovenRequest(requestId);
           setRequestId(null);
           setState("none");
+          toast("Invite declined");
         }
       } catch (e) { console.error(e); }
     });
