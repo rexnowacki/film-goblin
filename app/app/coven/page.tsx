@@ -57,9 +57,6 @@ export default async function CovenPage({
         className="grain-light"
       >
         <div className="container-wide">
-          <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 10 }}>
-            Chapter IV · The Covenfolk
-          </div>
           <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
             The <em style={{ color: "var(--accent)" }}>Covenfolk</em>.
           </h1>
