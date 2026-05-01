@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Avatar from "./Avatar";
+import CommentHeartButton from "./CommentHeartButton";
 import { relativeTime } from "./activity/relativeTime";
 import type { CommentItem } from "@/lib/queries/activity-comments";
 
@@ -21,46 +22,42 @@ export default function CommentList({ items, viewerId, actorUserId, onDelete }: 
     );
   }
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div>
       {items.map(c => {
         const canDelete = viewerId !== null && (viewerId === c.user_id || viewerId === actorUserId);
         return (
-          <div key={c.id} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13 }}>
+          <div key={c.id} className="comment-row">
             <Avatar
               name={c.user.display_name ?? c.user.username}
               color="var(--accent)"
-              size={26}
+              size={36}
               url={c.user.avatar_url}
             />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div>
-                <Link href={`/p/${encodeURIComponent(c.user.username)}`} style={{ color: "var(--void)", fontWeight: 700 }}>
-                  @{c.user.username}
-                </Link>{" "}
-                <span style={{ wordBreak: "break-word" }}>{c.body}</span>
+            <div className="comment-row-body">
+              <div className="comment-row-meta">
+                <Link href={`/p/${encodeURIComponent(c.user.username)}`} className="comment-row-username">
+                  {c.user.username}
+                </Link>
+                <span className="comment-row-time">{relativeTime(c.created_at)}</span>
               </div>
-              <div style={{ fontSize: 10, color: "var(--muted)" }}>{relativeTime(c.created_at)}</div>
+              <div className="comment-row-text">{c.body}</div>
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={() => onDelete(c.id)}
+                  className="comment-row-delete"
+                  aria-label="Delete comment"
+                >
+                  Delete
+                </button>
+              )}
             </div>
-            {canDelete && (
-              <button
-                type="button"
-                onClick={() => onDelete(c.id)}
-                aria-label="Delete comment"
-                className="caps"
-                style={{
-                  background: "transparent",
-                  border: "1px solid var(--muted)",
-                  color: "var(--muted)",
-                  cursor: "pointer",
-                  padding: "2px 8px",
-                  borderRadius: 999,
-                  fontSize: 9,
-                  letterSpacing: "0.08em",
-                }}
-              >
-                Delete
-              </button>
-            )}
+            <CommentHeartButton
+              commentId={c.id}
+              initialCount={c.like_count}
+              initialLikedByMe={c.liked_by_me}
+              disabled={viewerId === null}
+            />
           </div>
         );
       })}
