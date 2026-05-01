@@ -85,7 +85,7 @@ export default async function PublicProfilePage({
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
               {bundle.coven.map(m => (
                 <Link key={m.id} href={`/p/${encodeURIComponent(m.username)}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "inherit", textDecoration: "none" }}>
-                  <Avatar name={m.display_name ?? m.username} color="var(--accent)" size={56} url={m.avatar_url} />
+                  <Avatar name={m.username} color="var(--accent)" size={56} url={m.avatar_url} />
                   <div className="caps" style={{ fontSize: 10 }}>@{m.username}</div>
                 </Link>
               ))}

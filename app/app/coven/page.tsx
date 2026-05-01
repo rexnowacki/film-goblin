@@ -77,7 +77,7 @@ export default async function CovenPage({
                   style={{ display: "flex", alignItems: "center", gap: 16, padding: 14, border: "1px solid var(--muted)" }}
                 >
                   <Avatar
-                    name={inv.from.display_name ?? inv.from.username}
+                    name={inv.from.username}
                     color="var(--accent)"
                     size={44}
                     url={inv.from.avatar_url}
@@ -88,7 +88,7 @@ export default async function CovenPage({
                         href={`/p/${encodeURIComponent(inv.from.username)}`}
                         style={{ color: "var(--bone)", textDecoration: "none" }}
                       >
-                        {inv.from.display_name ?? inv.from.username}
+                        {inv.from.username}
                       </Link>
                     </div>
                     <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
@@ -121,7 +121,7 @@ export default async function CovenPage({
                     <div key={m.id} style={{ border: "1px solid var(--muted)", padding: 16 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                         <Avatar
-                          name={m.display_name ?? m.username}
+                          name={m.username}
                           color="var(--accent)"
                           size={44}
                           url={m.avatar_url}
@@ -129,7 +129,7 @@ export default async function CovenPage({
                         <div style={{ flex: 1 }}>
                           <Link href={`/p/${encodeURIComponent(m.username)}`} style={{ color: "var(--bone)", textDecoration: "none" }}>
                             <div className="head" style={{ fontSize: 16, lineHeight: 1 }}>
-                              {m.display_name ?? m.username}
+                              {m.username}
                             </div>
                             <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
                               @{m.username}
@@ -141,7 +141,7 @@ export default async function CovenPage({
                         <LeaveCovenButton
                           otherUserId={m.id}
                           otherUsername={m.username}
-                          otherDisplayName={m.display_name ?? m.username}
+                          otherDisplayName={m.username}
                         />
                       </div>
                     </div>
