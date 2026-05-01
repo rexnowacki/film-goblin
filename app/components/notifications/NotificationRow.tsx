@@ -33,7 +33,7 @@ function targetFor(n: EnrichedNotification): string {
 }
 
 function copyFor(n: EnrichedNotification): React.ReactNode {
-  const actorName = n.actor?.display_name ?? n.actor?.username ?? "Someone";
+  const actorName = n.actor?.username ?? "Someone";
   const title = n.film?.title ?? "a film";
   switch (n.kind) {
     case "coven_invite_pending":
@@ -75,7 +75,7 @@ export default function NotificationRow({ notification, onNavigate }: Props) {
       }}
     >
       <Avatar
-        name={notification.actor?.display_name ?? notification.actor?.username ?? "system"}
+        name={notification.actor?.username ?? "system"}
         color="var(--accent)"
         size={32}
         url={notification.actor?.avatar_url ?? null}

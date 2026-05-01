@@ -53,7 +53,7 @@ export default function TopNavChrome({ items, current, user, profile, isAdmin, u
               <NotificationBell unreadCount={unreadNotifCount} items={notifItems} />
               <UserMenu
                 username={profile?.username ?? "you"}
-                displayName={profile?.display_name ?? profile?.username ?? "You"}
+                displayName={profile?.username ?? "You"}
                 avatarUrl={profile?.avatar_url}
                 isAdmin={isAdmin}
               />

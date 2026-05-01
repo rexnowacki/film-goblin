@@ -61,10 +61,10 @@ export default function SearchPersonRow({ profile, state, incomingRequestId }: S
         href={`/p/${encodeURIComponent(profile.username)}`}
         style={{ display: "flex", alignItems: "center", gap: 14, flex: "1 1 220px", textDecoration: "none", color: "inherit", minWidth: 0 }}
       >
-        <Avatar name={profile.display_name ?? profile.username} color="var(--accent)" size={48} url={profile.avatar_url} />
+        <Avatar name={profile.username} color="var(--accent)" size={48} url={profile.avatar_url} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="head" style={{ fontSize: 18, lineHeight: 1 }}>
-            {profile.display_name ?? profile.username}
+            {profile.username}
           </div>
           <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
             @{profile.username}

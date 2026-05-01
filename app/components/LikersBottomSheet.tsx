@@ -19,12 +19,12 @@ function LikerRow({ p }: LikerRowProps) {
   return (
     <a href={`/p/${p.username}`} className="liker-row">
       <Avatar
-        name={p.display_name || p.username}
+        name={p.username}
         url={p.avatar_url}
         size={36}
       />
       <div className="liker-row-text">
-        <div className="liker-row-name">{p.display_name || p.username}</div>
+        <div className="liker-row-name">{p.username}</div>
         <div className="liker-row-handle">@{p.username}</div>
       </div>
     </a>

@@ -13,7 +13,7 @@ interface Props {
 }
 
 function headerCopy(group: NotificationGroup): React.ReactNode {
-  const actorName = group.actor?.display_name ?? group.actor?.username ?? "System";
+  const actorName = group.actor?.username ?? "System";
   switch (group.kind) {
     case "recommendation_received":
       return <><strong>{actorName}</strong> recommended <strong>{group.count} films</strong>.</>;
@@ -73,7 +73,7 @@ export default function NotificationGroupRow({ group, onNavigate }: Props) {
         }}
       >
         <Avatar
-          name={group.actor?.display_name ?? group.actor?.username ?? "system"}
+          name={group.actor?.username ?? "system"}
           color="var(--accent)"
           size={32}
           url={group.actor?.avatar_url ?? null}
