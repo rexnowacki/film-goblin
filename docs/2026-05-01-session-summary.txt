@@ -1,0 +1,58 @@
+Session shipped — 2026-05-01
+=============================
+
+PR #84  Comment sheet polish + likes (sub-project #25) — mig 0147
+        adds activity_comment_reactions (composite PK on
+        (user_id, comment_id), TO-authenticated RLS, SECURITY
+        DEFINER acr_bump_count trigger maintaining a denormalized
+        like_count on activity_comments). New toggleCommentReaction
+        action mirrors toggleReaction. Restyled CommentSheet to
+        prototype 1: serif "Comments • N" header with accent-dot
+        separator, 36px avatars, stacked username/timestamp/body,
+        heart+count column on the right, inline muted "Delete"
+        text-link for owner/author, viewer-avatar + rounded-pill
+        composer with inline N/140 counter and smart Post button
+        (text-link disabled, solid pink pill enabled). BottomSheet
+        title widened to ReactNode. HeartIcon extracted to shared
+        component. CommentItem gains like_count + liked_by_me;
+        getCommentSummariesForActivities takes a viewerId arg.
+
+PR #85  Username on utility surfaces (sub-project #26) — flipped
+        37 render sites from `display_name ?? username` to bare
+        `username` across 17 files (10 activity components +
+        LikersBottomSheet, SearchPersonRow, TopNavChrome, both
+        notification rows, /coven, /p/[username] coven chips).
+        /p/[username] h1 + main avatar still use display_name ??
+        username. /settings Display name input still editable.
+        Admin surfaces unchanged. No schema, no migration.
+
+PR #86  like_on_comment notification (sub-project #27) — migs 0148
+        (enum + notify_comment_likes opt-out column on profiles)
+        and 0149 (notify_like_on_comment SECURITY DEFINER trigger
+        on activity_comment_reactions). Recipient = comment author;
+        self-likes filtered; opt-out skips the INSERT entirely.
+        Bell row mirrors comment_on_activity payload + copy. New
+        per-kind grouping: like_on_comment keys on payload.comment_id
+        (not actor) with MIN_GROUP_SIZE = 2 — single liker reads
+        "<liker> liked your comment", 2+ reads "N people liked your
+        comment". /settings adds "Notify me when someone likes my
+        comment" checkbox.
+
+PR #87  CLAUDE.md note for mig 0150 — flags that an unrelated
+        0150_film_trailers.sql (from the fg-trailers TUI tool) was
+        auto-applied to prod when the migrate runner picked it up
+        during the #86 deploy. The file is still untracked locally.
+        Future sessions need to know prod has trailer_* columns on
+        films even though master doesn't reflect them yet.
+
+Three sub-projects shipped end-to-end, each with brainstorm → spec →
+plan → implementation → migration → merge → prod deploy. Three
+prod migrations applied (0147, 0148, 0149) plus the surprise 0150.
+Live at https://film-goblin.vercel.app.
+
+Also created locally (not committed):
+- db/migrations/0150_film_trailers.sql — fg-trailers tool's trailer
+  metadata migration. Already applied to prod via the migrate
+  runner. Commit when bringing fg-trailers into the monorepo.
+- fg-trailers/ — new untracked directory, source of mig 0150.
+  Separate tool the user is working on.
