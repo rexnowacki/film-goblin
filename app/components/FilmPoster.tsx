@@ -22,9 +22,10 @@ interface FilmPosterProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
   style?: React.CSSProperties;
+  priority?: boolean;
 }
 
-export default function FilmPoster({ film, size = "md", className = "", style = {} }: FilmPosterProps) {
+export default function FilmPoster({ film, size = "md", className = "", style = {}, priority = false }: FilmPosterProps) {
   const sizes = {
     xs: { w: 54, h: 80, title: 10, year: 7 },
     sm: { w: 88, h: 130, title: 14, year: 8 },
@@ -61,6 +62,7 @@ export default function FilmPoster({ film, size = "md", className = "", style = 
           fill
           sizes={`${s.w}px`}
           style={{ objectFit: "cover" }}
+          priority={priority}
         />
       )}
       {!hasArt && (

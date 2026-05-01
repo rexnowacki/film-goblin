@@ -95,8 +95,6 @@ export async function logWatch(filmId: string, opts?: LogWatchOpts): Promise<{ i
   const result = await _logWatch(supabase, filmId, opts);
   revalidatePath("/watched");
   revalidatePath("/watchlist");
-  revalidatePath("/home");
-  revalidatePath("/films");
   revalidatePath(`/film/${filmId}`);
   return result;
 }
@@ -111,7 +109,5 @@ export async function deleteWatch(watchId: string, filmId?: string): Promise<voi
   const supabase = await createClient();
   await _deleteWatch(supabase, watchId);
   revalidatePath("/watched");
-  revalidatePath("/home");
-  revalidatePath("/films");
   if (filmId) revalidatePath(`/film/${filmId}`);
 }

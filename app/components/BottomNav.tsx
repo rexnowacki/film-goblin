@@ -35,6 +35,7 @@ export default async function BottomNav({ current }: Props) {
         <Link
           key={t.id}
           href={t.href}
+          prefetch={false}
           className="bottom-nav__item"
           aria-current={active === t.id ? "page" : undefined}
         >
