@@ -20,15 +20,22 @@ CREATE TABLE activity_comment_reactions (
 ALTER TABLE activity_comment_reactions ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY acr_select ON activity_comment_reactions
-  FOR SELECT USING (true);
+  FOR SELECT TO authenticated
+  USING (true);
 
 CREATE POLICY acr_insert ON activity_comment_reactions
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY acr_delete ON activity_comment_reactions
-  FOR DELETE USING (auth.uid() = user_id);
+  FOR DELETE TO authenticated
+  USING (auth.uid() = user_id);
 
-CREATE OR REPLACE FUNCTION acr_bump_count() RETURNS TRIGGER AS $$
+GRANT SELECT, INSERT, DELETE ON activity_comment_reactions TO authenticated;
+
+CREATE OR REPLACE FUNCTION acr_bump_count()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
     UPDATE activity_comments
@@ -42,7 +49,8 @@ BEGIN
     RETURN OLD;
   END IF;
   RETURN NULL;
-END $$ LANGUAGE plpgsql;
+END;
+$$;
 
 CREATE TRIGGER acr_bump_count_trg
   AFTER INSERT OR DELETE ON activity_comment_reactions
