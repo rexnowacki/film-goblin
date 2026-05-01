@@ -15,6 +15,20 @@ export default function ActivityWatchLogged({ item }: { item: Item }) {
           <Link href={`/p/${encodeURIComponent(item.actor.username)}`} style={{ color: "var(--bone)", fontWeight: 700 }}>{item.actor.display_name ?? item.actor.username}</Link>
           {" watched "}
           <Link href={`/film/${item.film.id}`} style={{ color: "var(--accent)", fontStyle: "italic" }}>{item.film.title}</Link>
+          {item.recommended !== null && (
+            <span
+              className="caps"
+              style={{
+                marginLeft: 8,
+                padding: "1px 6px",
+                fontSize: 9,
+                background: item.recommended ? "var(--accent)" : "var(--blood)",
+                color: item.recommended ? "var(--accent-ink)" : "var(--bone)",
+              }}
+            >
+              {item.recommended ? "loved it" : "didn't love it"}
+            </span>
+          )}
           {"."}
         </div>
         {item.note && <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, marginTop: 4, color: "var(--muted)" }}>&ldquo;{item.note}&rdquo;</div>}
