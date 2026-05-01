@@ -4,8 +4,8 @@ import { compactCount } from "@/lib/format";
 
 interface Props {
   count: number;
-  expanded: boolean;
-  onToggle: () => void;
+  open: boolean;
+  onOpen: () => void;
 }
 
 function SpeechIcon({ filled }: { filled: boolean }) {
@@ -23,16 +23,17 @@ function SpeechIcon({ filled }: { filled: boolean }) {
   );
 }
 
-export default function CommentButton({ count, expanded, onToggle }: Props) {
+export default function CommentButton({ count, open, onOpen }: Props) {
   return (
     <button
       type="button"
-      onClick={onToggle}
-      className={`heart-btn ${expanded ? "heart-liked" : ""}`}
-      aria-label={expanded ? "Hide comments" : "Show comments"}
-      aria-expanded={expanded}
+      onClick={onOpen}
+      className={`heart-btn ${open ? "heart-liked" : ""}`}
+      aria-label="Open comments"
+      aria-haspopup="dialog"
+      aria-expanded={open}
     >
-      <SpeechIcon filled={expanded} />
+      <SpeechIcon filled={open} />
       {count > 0 && (
         <span className="heart-count" style={{ pointerEvents: "none" }}>{compactCount(count)}</span>
       )}
