@@ -13,6 +13,7 @@ import FilmActions from "@/components/FilmActions";
 import RecommendModal from "@/components/RecommendModal";
 import PriceStatBlock from "@/components/PriceStatBlock";
 import CovenScore from "@/components/CovenScore";
+import { compactCount } from "@/lib/format";
 
 export default async function FilmDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -69,11 +70,11 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
             {(film.watchlist_count > 0 || film.watcher_count > 0) && (
               <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, color: "var(--muted)", margin: "0 0 18px" }}>
                 {film.watchlist_count > 0 && (
-                  <span><strong style={{ color: "var(--accent)" }}>{film.watchlist_count}</strong> goblin{film.watchlist_count === 1 ? " is" : "s are"} eyeing this</span>
+                  <span><strong style={{ color: "var(--accent)" }}>{compactCount(film.watchlist_count)}</strong> goblin{film.watchlist_count === 1 ? " is" : "s are"} eyeing this</span>
                 )}
                 {film.watchlist_count > 0 && film.watcher_count > 0 && " · "}
                 {film.watcher_count > 0 && (
-                  <span><strong style={{ color: "var(--accent)" }}>{film.watcher_count}</strong> ha{film.watcher_count === 1 ? "s" : "ve"} watched it</span>
+                  <span><strong style={{ color: "var(--accent)" }}>{compactCount(film.watcher_count)}</strong> ha{film.watcher_count === 1 ? "s" : "ve"} watched it</span>
                 )}
               </p>
             )}

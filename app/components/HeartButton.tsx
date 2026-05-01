@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toggleReaction } from "@/lib/actions/reactions";
+import { compactCount } from "@/lib/format";
 import LikersBottomSheet from "./LikersBottomSheet";
 
 interface Props {
@@ -72,7 +73,7 @@ export default function HeartButton({
           className="heart-count"
           aria-label={`See who liked this (${count})`}
         >
-          {count}
+          {compactCount(count)}
         </button>
       )}
       <LikersBottomSheet
