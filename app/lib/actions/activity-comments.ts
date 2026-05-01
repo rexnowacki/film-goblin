@@ -60,6 +60,8 @@ export async function _addActivityComment(
       },
       body: data.body,
       created_at: data.created_at,
+      like_count: 0,
+      liked_by_me: false,
     },
   };
 }

@@ -121,7 +121,7 @@ async function enrichOwnActivity(supabase: any, rows: any[], profile: any, viewe
     recipientIds.length ? supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] }),
     listIds.length ? supabase.from("lists").select("id, title").in("id", listIds) : Promise.resolve({ data: [] }),
     getReactionsForActivities(supabase, rows.map(r => r.id), viewerId),
-    getCommentSummariesForActivities(supabase, rows.map(r => r.id)),
+    getCommentSummariesForActivities(supabase, rows.map(r => r.id), viewerId),
   ]);
 
   const filmMap = new Map((films.data ?? []).map((r: any) => [r.id, r]));

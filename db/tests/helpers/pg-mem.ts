@@ -84,7 +84,14 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
     // presence, so trigger files don't need to execute. Match the full phrase
     // so prose comments like "-- (SECURITY DEFINER)" don't trigger the skip.
     if (/LANGUAGE\s+plpgsql\s+SECURITY\s+DEFINER/i.test(raw)) continue;
-    const stripped = raw
+    // Strip plpgsql function bodies before splitting on ';' — dollar-quoted
+    // bodies contain embedded semicolons that break the statement splitter.
+    // pg-mem doesn't support LANGUAGE plpgsql at all (no interpreter registered).
+    const withoutFunctions = raw.replace(
+      /CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s[\s\S]*?\$\$\s*LANGUAGE\s+plpgsql[^;]*;/gi,
+      ""
+    );
+    const stripped = withoutFunctions
       .split(/;\s*\n/)
       .filter(stmt => !/ALTER\s+TABLE\s+\S+\s+ENABLE\s+ROW\s+LEVEL\s+SECURITY/i.test(stmt))
       .filter(stmt => !/CREATE\s+POLICY\b/i.test(stmt))
@@ -92,6 +99,7 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
       .filter(stmt => !/^\s*GRANT\b/im.test(stmt))
       .filter(stmt => !/CREATE\s+(OR\s+REPLACE\s+)?VIEW\b/i.test(stmt))
       .filter(stmt => !/DROP\s+VIEW\b/i.test(stmt))
+      .filter(stmt => !/CREATE\s+TRIGGER\b/i.test(stmt))
       .join(";\n");
     if (stripped.trim()) await client.query(stripped);
   }

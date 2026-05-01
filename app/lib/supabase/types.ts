@@ -79,6 +79,7 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          like_count: number
           user_id: string
         }
         Insert: {
@@ -86,6 +87,7 @@ export type Database = {
           body: string
           created_at?: string
           id?: string
+          like_count?: number
           user_id: string
         }
         Update: {
@@ -93,6 +95,7 @@ export type Database = {
           body?: string
           created_at?: string
           id?: string
+          like_count?: number
           user_id?: string
         }
         Relationships: [
@@ -101,6 +104,32 @@ export type Database = {
             columns: ["activity_id"]
             isOneToOne: false
             referencedRelation: "activity"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_comment_reactions: {
+        Row: {
+          comment_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_comment_reactions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "activity_comments"
             referencedColumns: ["id"]
           },
         ]

@@ -1,36 +1,36 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { toggleReaction } from "@/lib/actions/reactions";
+import { toggleCommentReaction } from "@/lib/actions/comment-reactions";
 import { compactCount } from "@/lib/format";
-import LikersBottomSheet from "./LikersBottomSheet";
 import HeartIcon from "./HeartIcon";
 
 interface Props {
-  activityId: string;
+  commentId: string;
   initialCount: number;
   initialLikedByMe: boolean;
+  disabled?: boolean;
 }
 
-export default function HeartButton({
-  activityId,
+export default function CommentHeartButton({
+  commentId,
   initialCount,
   initialLikedByMe,
+  disabled = false,
 }: Props) {
   const [count, setCount] = useState(initialCount);
   const [liked, setLiked] = useState(initialLikedByMe);
   const [pending, startTransition] = useTransition();
-  const [sheetOpen, setSheetOpen] = useState(false);
 
-  function onHeartTap() {
-    // Optimistic update: flip local state immediately; rollback on server error.
+  function onTap() {
+    if (disabled || pending) return;
     const prevLiked = liked;
     const prevCount = count;
     setLiked(!prevLiked);
     setCount(prevCount + (prevLiked ? -1 : 1));
     startTransition(async () => {
       try {
-        await toggleReaction(activityId);
+        await toggleCommentReaction(commentId);
       } catch (e) {
         setLiked(prevLiked);
         setCount(prevCount);
@@ -40,32 +40,18 @@ export default function HeartButton({
   }
 
   return (
-    <>
+    <div className="comment-heart-stack">
       <button
         type="button"
-        onClick={onHeartTap}
-        disabled={pending}
+        onClick={onTap}
+        disabled={disabled || pending}
         className={`heart-btn ${liked ? "heart-liked" : ""}`}
-        aria-label={liked ? "Unlike" : "Like"}
+        aria-label={liked ? "Unlike comment" : "Like comment"}
         aria-pressed={liked}
       >
         <HeartIcon filled={liked} />
       </button>
-      {count > 0 && (
-        <button
-          type="button"
-          onClick={() => setSheetOpen(true)}
-          className="heart-count"
-          aria-label={`See who liked this (${count})`}
-        >
-          {compactCount(count)}
-        </button>
-      )}
-      <LikersBottomSheet
-        activityId={activityId}
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-      />
-    </>
+      <span className="comment-heart-count">{compactCount(count)}</span>
+    </div>
   );
 }

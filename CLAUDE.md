@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > **Convention:** This section is updated before each session close so the next session can pick up cold. Update it at the end of every session — what just shipped, what's next, any open threads worth carrying forward.
 
-**Last updated:** 2026-04-30 (long sprint — handle→username rename, optional email at signup w/ username-or-email login, per-kind email toggles, role + badge system, RT-style coven rating per watch)
+**Last updated:** 2026-05-01 (comment sheet polish + likes on comments — sub-project #25)
 
 **Last shipped:** Four sub-projects + polish/fix PRs. 13 PRs merged (#61–#73), 7 migrations applied to prod (0137 → 0143):
 
@@ -19,9 +19,10 @@ Polish: (a) /onboarding canvas match (PR #61) — void wrapper, restored TopNav/
 
 All 7 migrations + 13 PRs deployed. Live at https://film-goblin.vercel.app.
 
-**Next up:** Nothing queued. Quick wins offered: rating pills on poster grids, watch-note staleness UPDATE trigger, /settings username regex gate, OAuth `email_added_at` backfill. Real projects offered: Your Ledger widget on /home, real sender email domain via Resend, list detail page `/lists/[id]`. New roadmap entries: rate-reminder for unrated watches, feed page parity + user-search, feed infinite scroll (20-at-a-time, cursor on `created_at`).
+**Next up:** Nothing queued. Sub-project #25 just shipped — likes on comments work end-to-end. Deferred follow-ups for the comment surface: threaded replies, emoji quick-react strip, send-icon header variant (proto 2), comment-likers sheet, `like_on_comment` notification kind. Older quick wins still open: rating pills on poster grids, watch-note staleness UPDATE trigger (now closed by mig 0145), /settings username regex gate, OAuth `email_added_at` backfill. Real projects offered: Your Ledger widget on /home, real sender email domain via Resend, list detail page `/lists/[id]`. Roadmap entries: rate-reminder for unrated watches, feed page parity + user-search, feed infinite scroll (20-at-a-time, cursor on `created_at`).
 
 **Open threads:**
+- **Sub-project #25 deferred follow-ups:** threaded comment replies + "Reply"/"View N replies" UI; emoji quick-react strip above composer; send-icon header variant (proto 2); `LikersBottomSheet` for comment likes (tap count → see who liked); notification kind `like_on_comment` (mirror of `comment_on_activity`); comment editing/pagination/@-mentions/markdown.
 - `passwords.txt` at repo root holds Supabase prod pooler URL + password (gitignored). On the second machine `passwords.txt` is missing — pull `DATABASE_URL` via `npx vercel env pull app/.env.local --yes --environment=production` from repo root instead.
 - **Supabase dashboard "Confirm email" toggle stays ON.** Synthetic-email signups bypass it via `email_confirm: true`; toggle now only governs email-CHANGE confirmation from /settings. Don't flip it off.
 - **`/settings` username validation gap.** OnboardingForm + `_completeOnboarding` + signUp action enforce `/^[a-z0-9._]+$/`, but `/settings` `_updateProfile` does a bare string update. Small follow-up.
@@ -243,6 +244,7 @@ Every sub-project gets a spec + plan under `docs/superpowers/specs/` and `docs/s
 | 22 | Per-kind email toggles — mig `0139` adds 4 bool cols (price drops, coven recs, comments, coven invites), backfill `email_price_drops` from `email_notifications_enabled`. /settings "Email me when…" subsection (only price drops actually send today). Notifier swap to `email_price_drops`. Unsubscribe sets all four FALSE. Token rotation on re-enable from fully-opted-out. `email_notifications_enabled` kept for compat. | (no spec) |
 | 23 | User roles + badges (goblin / witch / high goblin) — mig `0140` adds `profiles.role` w/ CHECK; tightened RLS UPDATE to forbid client role changes. New `<RoleBadge />` (inline-SVG glyphs) on `/p/[username]` next to display_name h1, 28px. /admin/users/[id] Role section auto-toggles staff row. /admin/users list shows tiny role pill. high_goblin dormant — no billing yet. | (no spec) |
 | 24 | Coven rating — RT-style binary recommend per watch. Mig `0141` adds `watched.recommended BOOLEAN NULL`; extends `films_with_stats` w/ `coven_rating_count` + `coven_rating_pct` (latest-per-user dedup, NULL until count≥5). WatchModal verdict pill pair. `<CovenScore />` on `/film/[id]` w/ tiers (Anointed/Coven approved/Coven divided/Cursed). Mig `0142` writes `recommended` into `watch_logged` activity payload. Mig `0143` backfilled the 4 existing rated watches via ±5s join. | (no spec) |
+| 25 | Comment sheet polish + likes — mig `0147` adds `activity_comment_reactions` (composite PK `(user_id, comment_id)`, `TO authenticated` policies, `acr_bump_count()` trigger w/ `SECURITY DEFINER` maintaining `like_count` on `activity_comments`). New `toggleCommentReaction` action mirrors `toggleReaction`. Restyled `CommentSheet` to prototype 1: serif "Comments • N" header, 36px avatars, stacked username/timestamp/body, heart+count column, inline muted "Delete" text-link, viewer-avatar + rounded-pill composer w/ inline `N/140` counter and smart Post (text-link disabled / solid pink pill enabled). `BottomSheet.title` widened to ReactNode. `HeartIcon` extracted to shared component. `CommentItem` gains `like_count` + `liked_by_me`; `getCommentSummariesForActivities` takes a `viewerId` arg. | `2026-05-01-comment-sheet-polish-and-likes-design.md` |
 
 ## Queued sub-projects
 
