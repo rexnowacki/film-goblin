@@ -6,7 +6,7 @@ interface Props {
 export default function LoadingShell({ title, heroBg = "bone" }: Props) {
   const isBone = heroBg === "bone";
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
+    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh", paddingTop: "env(safe-area-inset-top)" }}>
       <section
         className={isBone ? "grain-light" : undefined}
         style={{
