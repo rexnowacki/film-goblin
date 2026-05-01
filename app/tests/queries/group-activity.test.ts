@@ -82,6 +82,7 @@ function watchLog(opts: { id: string; actorId: string; minutesAgo: number }): En
       itunes_url: "https://itunes.apple.com/test",
     },
     note: null,
+    recommended: null,
   };
 }
 

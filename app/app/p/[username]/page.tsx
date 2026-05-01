@@ -140,7 +140,7 @@ async function enrichOwnActivity(supabase: any, rows: any[], profile: any, viewe
       case "recommendation_sent": if (film && recipient) out.push({ ...base, kind: "recommendation_sent", film, recipient, note: r.payload.note ?? "" }); break;
       case "review_published":   if (film) out.push({ ...base, kind: "review_published", film, title: r.payload.title ?? "", pullquote: r.payload.pullquote ?? null }); break;
       case "watchlist_added":    if (film) out.push({ ...base, kind: "watchlist_added", film }); break;
-      case "watch_logged":       if (film) out.push({ ...base, kind: "watch_logged", film, note: r.payload.note ?? null }); break;
+      case "watch_logged":       if (film) out.push({ ...base, kind: "watch_logged", film, note: r.payload.note ?? null, recommended: typeof r.payload.recommended === "boolean" ? r.payload.recommended : null }); break;
       case "library_added":      if (film) out.push({ ...base, kind: "library_added", film }); break;
       case "list_created":       if (list) out.push({ ...base, kind: "list_created", list }); break;
       case "list_film_added":    if (list && film) out.push({ ...base, kind: "list_film_added", list, film }); break;
