@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/cached";
 import { getPublicLists, getMySubscribedLists } from "@/lib/queries/lists";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
@@ -6,9 +7,11 @@ import SubscribeButton from "@/components/SubscribeButton";
 
 export default async function ListsPage() {
   const supabase = await createClient();
-  const lists = await getPublicLists(supabase);
-  const { data: { user } } = await supabase.auth.getUser();
-  const mySubs = user ? new Set(await getMySubscribedLists(supabase, user.id)) : new Set<string>();
+  const user = await getServerUser();
+  const [lists, mySubs] = await Promise.all([
+    getPublicLists(supabase),
+    user ? getMySubscribedLists(supabase, user.id).then(ids => new Set(ids)) : Promise.resolve(new Set<string>()),
+  ]);
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>

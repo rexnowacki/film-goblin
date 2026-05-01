@@ -1,12 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/cached";
 import { getEnrichedFeed } from "@/lib/queries/activity";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FeedTabs from "@/components/FeedTabs";
 
 export default async function HomePage() {
+  const user = await getServerUser();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
   const feed = user ? await getEnrichedFeed(supabase, user.id, 50) : [];
 
   return (

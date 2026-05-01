@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/cached";
 import { getFilms, type FilmsSort } from "@/lib/queries/films";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
@@ -24,8 +25,8 @@ export default async function FilmsPage({
   const q = sp.q ?? "";
   const sort = parseSort(sp.sort);
   const page = Math.max(1, Number(sp.page ?? 1));
+  const user = await getServerUser();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
   const { rows: films, total, pageSize } = await getFilms(supabase, { q, sort, page, viewerUserId: user?.id ?? null });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 

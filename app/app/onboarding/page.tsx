@@ -1,13 +1,14 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/cached";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import OnboardingForm, { type DbFilm } from "./OnboardingForm";
 
 export default async function OnboardingPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getServerUser();
   if (!user) redirect("/auth/signin?next=/onboarding");
+  const supabase = await createClient();
 
   const [filmsRes, profileRes] = await Promise.all([
     supabase

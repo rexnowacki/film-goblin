@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/cached";
 import { getWatchedDiary, getWatchedStats } from "@/lib/queries/watched";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
@@ -38,9 +39,9 @@ interface PageProps {
 }
 
 export default async function WatchedPage({ searchParams }: PageProps) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getServerUser();
   if (!user) redirect("/auth/signin?next=/watched");
+  const supabase = await createClient();
   const { rate } = await searchParams;
 
   const [rows, stats] = await Promise.all([

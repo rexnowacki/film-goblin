@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/cached";
 import { getPendingInviteCount } from "@/lib/queries/coven";
 import { getUnreadNotificationCount, getRecentNotifications } from "@/lib/queries/notifications";
 import TopNavChrome from "./TopNavChrome";
@@ -8,8 +9,8 @@ interface TopNavProps {
 }
 
 export default async function TopNav({ current }: TopNavProps) {
+  const user = await getServerUser();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
   let profile: { username: string; display_name: string | null; avatar_url: string | null } | null = null;
   if (user) {

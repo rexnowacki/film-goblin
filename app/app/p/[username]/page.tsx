@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/cached";
 import { getPublicProfileBundle } from "@/lib/queries/profiles";
 import { getCovenStateBetween } from "@/lib/queries/coven";
 import { getReactionsForActivities } from "@/lib/queries/activity-reactions";
@@ -23,7 +24,7 @@ export default async function PublicProfilePage({
   const bundle = await getPublicProfileBundle(supabase, username);
   if (!bundle) notFound();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getServerUser();
 
   let amFollowing = false;
   let coven: { state: "none" | "pending_outbound" | "pending_inbound" | "member"; requestId: string | null } =

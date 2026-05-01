@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/cached";
 import {
   getPendingInvites,
   getMyCovenMembers,
@@ -21,11 +22,9 @@ export default async function CovenPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getServerUser();
   if (!user) redirect("/auth/signin?redirect=/coven");
+  const supabase = await createClient();
 
   const [invites, members] = await Promise.all([
     getPendingInvites(supabase, user.id),
