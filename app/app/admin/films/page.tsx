@@ -5,13 +5,14 @@ import { listFilmsForAdmin } from "@/lib/queries/admin/films";
 export default async function AdminFilmsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; untagged?: string }>;
 }) {
   const sp = await searchParams;
   const q = sp.q ?? "";
   const page = Math.max(1, Number(sp.page ?? 1));
+  const untagged = sp.untagged === "1";
   const supabase = await createClient();
-  const { rows, total, pageSize } = await listFilmsForAdmin(supabase, q, page);
+  const { rows, total, pageSize } = await listFilmsForAdmin(supabase, q, page, untagged);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
@@ -21,7 +22,7 @@ export default async function AdminFilmsPage({
         <Link href="/admin/films/new" className="btn">+ Add film</Link>
       </div>
 
-      <form method="get" style={{ marginBottom: 20 }}>
+      <form method="get" style={{ marginBottom: 12 }}>
         <input
           type="search"
           name="q"
@@ -29,7 +30,21 @@ export default async function AdminFilmsPage({
           placeholder="Search by title…"
           style={{ width: "100%", maxWidth: 480, padding: "10px 14px", background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)", fontFamily: "var(--font-ui)", fontSize: 14 }}
         />
+        {untagged && <input type="hidden" name="untagged" value="1" />}
       </form>
+      <div style={{ marginBottom: 20, display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <Link
+          href={
+            untagged
+              ? (q ? `/admin/films?q=${encodeURIComponent(q)}` : "/admin/films")
+              : (q ? `/admin/films?q=${encodeURIComponent(q)}&untagged=1` : "/admin/films?untagged=1")
+          }
+          className={`tag-edit-pill ${untagged ? "is-selected" : ""}`}
+          style={{ textDecoration: "none" }}
+        >
+          Untagged only
+        </Link>
+      </div>
 
       {rows.length === 0 ? (
         <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>

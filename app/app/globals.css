@@ -1375,3 +1375,30 @@ a { color: inherit; text-decoration: none; }
   color: var(--seafoam);
   font-style: italic;
 }
+
+/* ===== ADMIN TAG EDITOR PILLS ===== */
+
+.tag-edit-pill {
+  background: transparent;
+  color: var(--bone);
+  border: 1px solid var(--muted);
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 100ms, border-color 100ms, color 100ms;
+}
+.tag-edit-pill:hover:not(:disabled) {
+  border-color: var(--bone);
+}
+.tag-edit-pill.is-selected {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+.tag-edit-pill:disabled {
+  cursor: not-allowed;
+}

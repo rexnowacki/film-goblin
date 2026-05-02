@@ -205,6 +205,39 @@ export type Database = {
         }
         Relationships: []
       }
+      film_tags: {
+        Row: {
+          film_id: string
+          tag_id: string
+          created_at: string
+        }
+        Insert: {
+          film_id: string
+          tag_id: string
+          created_at?: string
+        }
+        Update: {
+          film_id?: string
+          tag_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "film_tags_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "film_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       films: {
         Row: {
           artwork_url: string
@@ -726,6 +759,27 @@ export type Database = {
           created_at?: string
           role?: Database["public"]["Enums"]["staff_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          id: string
+          name: string
+          type: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          type: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          type?: string
+          created_at?: string
         }
         Relationships: []
       }
