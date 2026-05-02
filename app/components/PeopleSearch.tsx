@@ -25,6 +25,13 @@ export default function PeopleSearch() {
         <line x1="21" y1="21" x2="16.5" y2="16.5" />
       </svg>
       <input
+        type="search"
+        name="people-search"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        aria-label="Search people"
         value={q}
         onChange={e => update(e.target.value)}
         placeholder="Username or display name…"

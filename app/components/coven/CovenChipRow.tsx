@@ -60,6 +60,12 @@ export default function CovenChipRow({ members }: Props) {
             </svg>
             <input
               type="search"
+              name="coven-search"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              aria-label="Search your coven"
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Search your coven…"
@@ -82,8 +88,8 @@ export default function CovenChipRow({ members }: Props) {
       <div className="coven-chip-row" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         {topChips.map(m => (
           <Link key={m.id} href={`/p/${encodeURIComponent(m.username)}`} className="coven-chip">
-            <Avatar name={m.username} color="var(--accent)" size={36} url={m.avatar_url} />
-            <span style={{ fontFamily: "var(--font-ui)", fontSize: 12 }}>{m.username}</span>
+            <Avatar name={m.username} color="var(--accent)" size={28} url={m.avatar_url} />
+            <span>{m.username}</span>
           </Link>
         ))}
       </div>
