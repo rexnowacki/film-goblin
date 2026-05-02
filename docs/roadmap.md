@@ -5,8 +5,8 @@ shuffle freely as the product finds its shape. When something graduates
 into an actual build, it becomes a spec under `docs/superpowers/specs/`.
 
 See `docs/backlog.md` for unprioritized ideas. Full list of shipped
-sub-projects with spec paths lives in `CLAUDE.md` → "Sub-project
-history" (twenty-four shipped as of 2026-04-30).
+sub-projects with spec paths lives in `docs/sub-project-history.md`
+(thirty-two shipped as of 2026-05-02).
 
 ## High
 
@@ -17,6 +17,11 @@ history" (twenty-four shipped as of 2026-04-30).
   with Resend, swap `NOTIFY_FROM_EMAIL`. Unblocks price-drop digests
   reaching actual users — currently restricted to the account holder's
   inbox by Resend's sandbox.
+- **Curate film tags.** Sub-project 32 shipped the content
+  infrastructure but every film starts untagged. Walk the catalog via
+  `/admin/films?untagged=1`, pick a sub-genre + up to three vibes per
+  film. Unblocks the FYP recommender (sub-project B) and the
+  poster-grid sub-genre pill. Operational, not engineering.
 - **`/settings` handle validation.** Mirror the `/^[a-z0-9._]+$/` regex
   from `OnboardingForm` + `_completeOnboarding` into `SettingsForm` +
   `updateProfile`. Today a user editing later can still set a malformed
@@ -24,10 +29,16 @@ history" (twenty-four shipped as of 2026-04-30).
 
 ## Medium-high
 
-- **Tagging system.** User-defined or staff-curated tags on films; tag
-  pages; filter `/films` by tag.
-- **Recommendations inbox.** Recipient-side "someone recommended you X"
-  surface. Closes a gap flagged during sub-project 6.
+- **FYP recommender (sub-project B of tagging).** Affinity scoring per
+  user from their `watched.recommended` history × `film_tags`; a
+  candidate ranker; a `/for-you` route; tag listing pages at
+  `/tags/<name>`; onboarding lane-picker so new users seed an initial
+  affinity vector. Builds on the content infra shipped in #32.
+- **Rating pills on poster grids.** Surface
+  `films_with_stats.coven_rating_pct` on `FilmPoster` everywhere a
+  rating-eligible grid renders (`/films`, `/library`, `/watched`,
+  `/p/[username]`). Tier the pill by score (Anointed / approved /
+  divided / Cursed) to match `<CovenScore />` on `/film/[id]`.
 - **List detail page `/lists/[id]`.** Activity-feed entries like "added
   X to [list]" currently dead-end on `/lists` root.
 - **Review composer (staff).** The `reviews` table has no UI; add
@@ -35,26 +46,24 @@ history" (twenty-four shipped as of 2026-04-30).
 - **Zine-styled transactional email templates.** Custom reset-password
   + confirm-signup emails via Supabase dashboard, matching the price-
   drop digest aesthetic.
-- **Broader genre seeding.** Deeper horror coverage (giallo, folk, body,
-  found-footage, slow-burn) + arthouse branches Apple under-categorizes.
-- **Threaded comment replies + comment editing.** Today `activity_comments`
-  is flat 140-char one-shots (sub-project 17). Add parent_id + an edit
-  flow + email notifications for comments.
+- **Threaded comment replies + comment editing.** Today
+  `activity_comments` is flat 140-char one-shots (sub-project 17,
+  polished in #25, with like notifications in #27). Add `parent_id` +
+  "Reply" / "View N replies" UI, an edit flow, comment pagination,
+  email notifications for comments, and @-mentions / markdown.
+- **Comment composer enhancements.** Emoji quick-react strip above
+  composer; send-icon header variant (proto 2 from the #25 brainstorm);
+  `LikersBottomSheet` for comment likes (tap the count → see who
+  liked, mirroring the activity-row pattern).
+- **Mobile poster-tap action sheet on `/films` discovery.** Long-press
+  / tap a poster → bottom sheet with watchlist / library / share /
+  recommend, reusing `PosterQuickAdd` patterns. Today the only path is
+  navigating into the film detail page.
 - **Live handle-availability check on signup.** Today the signup action
   pre-checks via `serviceRoleClient` on submit; surface availability
   inline as the user types.
 - **Persist `alert_threshold_pct` on profiles.** Let users change all
   alerts at once via `/settings` instead of per-watchlist-row tuning.
-- **Rate-reminder notification for unrated watches.** Several days
-  after a `watched` row lands with `recommended IS NULL`, fire a
-  notification linking to a dedicated "rate your unrated watches" page
-  — a poster grid of every still-unrated film with inline thumb
-  toggles, so the user can clear the backlog in one pass. New
-  notification kind (`rate_reminder`); a daily cron query for
-  `watched.recommended IS NULL AND watched.created_at < now() - 3 days
-  AND no rate_reminder for this watch yet`; a batch-rate page that
-  PATCHes ratings without re-opening WatchModal each time. Feeds the
-  coven score (sub-project 24) over time as people retroactively rate.
 - **Feed page parity + user-search.** Bring `/home` in line with
   `/library` / `/watchlist` / `/films` visually — bone-stripe hero
   with `.h-display` headline, accent `<em>`, the same body shell.
@@ -87,6 +96,15 @@ history" (twenty-four shipped as of 2026-04-30).
   (B2 follow-ups).
 - **Year-in-review on `/watched`.** Stats hero is in place (sub-project
   14); add a yearly retrospective surface.
+- **Display-name column drop.** After sub-project 26 flipped 37 render
+  sites to bare `username`, `display_name` is only used on
+  `/p/[username]` h1 + main avatar. Decide whether to drop the column
+  entirely (and the `/settings` input) or keep it as a per-profile
+  flourish.
+- **Trailer surfaces on `/film/[id]`.** Mig `0150` and `fg-trailers`
+  populate `films.trailer_url` etc. but no UI reads them yet. Add a
+  trailer button / embedded YouTube player on the film detail page
+  once enough rows are curated.
 
 ## Medium-low
 

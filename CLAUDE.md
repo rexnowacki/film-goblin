@@ -28,7 +28,7 @@ All deployed via `npx vercel deploy --prod --yes` from repo root. Live at https:
 - **Sub-project #29 mobile real-use feedback open.** The chips + textarea layout pushes the "A Whisper" field further down the sheet. On a small phone with the keyboard up, the field could be partially obscured. Cheap fix if it surfaces: shrink chips to 32px or collapse the chip row when the keyboard opens.
 - **Tagging + FYP proposal under review** — `docs/proposals/2026-05-01-tagging-and-fyp-review.md` is local-only. Five open questions; horror-only-vs-broader-catalog is the unblocker. Not greenlit.
 - **`PosterQuickAdd` `initialOnWatchlist` cleanup quick-win** — listed in chat, not yet shipped. CLAUDE.md notes the prop is always `false` post-#40; safe to drop.
-- **Mig `0150_film_trailers.sql` is APPLIED ON PROD but UNTRACKED in git.** Adds trailer metadata columns to `films` (`trailer_url`, `trailer_source`, `trailer_youtube_id`, `trailer_label`, `trailer_verified`, `trailer_updated_at`) + a `films_trailer_missing_idx` partial index. Source is the `fg-trailers` TUI tool (separate project). The migrate runner picked it up automatically when 0148/0149 were applied during the #27 deploy on 2026-05-01. All `ADD COLUMN IF NOT EXISTS` so re-applying is a no-op. Commit it to git when bringing `fg-trailers` into the monorepo properly; until then, types.ts won't reflect these columns and reads from `films.trailer_*` need defensive coding.
+- **`fg-trailers/` is now in the monorepo** alongside the four TS packages. Rust TUI for curating YouTube trailer URLs on `films` rows; talks to Supabase via service-role REST. Build/run with `cargo run --release` from `fg-trailers/`; needs `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` in `fg-trailers/.env` (gitignored). Mig `0150_film_trailers.sql` is the canonical schema for the trailer columns; the mirror at `fg-trailers/sql/add_trailer_fields.sql` is a portability copy.
 - `passwords.txt` at repo root holds Supabase prod pooler URL + password (gitignored). On the second machine `passwords.txt` is missing — pull `DATABASE_URL` via `npx vercel env pull app/.env.local --yes --environment=production` from repo root instead.
 - **Supabase dashboard "Confirm email" toggle stays ON.** Synthetic-email signups bypass it via `email_confirm: true`; toggle now only governs email-CHANGE confirmation from /settings. Don't flip it off.
 - **`tooth tony` handle was patched in prod** (`teeth tony` → `teethtony`, display_name preserved) — see PR #58.
@@ -39,7 +39,7 @@ All deployed via `npx vercel deploy --prod --yes` from repo root. Live at https:
 - **Rate-reminder cron (mig 0146 + `/api/cron/send-rate-reminders`)** runs daily at 11:00 UTC. Inserts one `rate_reminder` notification per user with ≥1 unrated `watched` row older than 7 days, deduped on existing reminders within the past 7 days. Opt-out via `profiles.notify_rate_reminders` (Settings toggle). Bell row deep-links to `/watched?rate=<watched_id>` which auto-opens WatchModal in edit mode for the oldest unrated watch.
 - **B2 deferred:** coven-scoped signals on `/p/[username]`, owned + review badges, most-watched sort on `/films`, badges on `/library`/`/home` marquee/`/watched` strip, `/film/[id]` stat block beyond single caption, compact unit display past 99+. Coven rating pills on poster grids (using new `coven_rating_pct`) is a fast follow-up here.
 - **`PosterQuickAdd` `initialOnWatchlist`** is always `false` for visible films on `/films` (since #40 filtered watchlisted). Kept for defensive correctness if reused on a non-filtering surface.
-- **Types regen.** `app/lib/supabase/types.ts` hand-edited for `profiles.email_added_at`, `profiles.email_*` (4 cols), `profiles.role`, `watched.recommended`, `films_with_stats.coven_rating_*`. Future regen on the other machine will need to preserve all unless every migration has been re-applied locally.
+- **Types regen.** `app/lib/supabase/types.ts` hand-edited for `profiles.email_added_at`, `profiles.email_*` (4 cols), `profiles.role`, `watched.recommended`, `films_with_stats.coven_rating_*`, `films.trailer_*` (6 cols), `tags`, `film_tags`. Future regen on the other machine will need to preserve all unless every migration has been re-applied locally.
 - **`/wrapup` slash command** at `.claude/commands/wrapup.md` (untracked, project-local on this machine only). Open question: commit `.claude/commands/` (gitignoring `.claude/settings.local.json`) so the other machine gets it — or keep both local-only.
 - **`docs/in-repo-tickets-setup.md`** — proposal for `tasks/{todo,in-progress,done}/` file-per-ticket coordination, still local/uncommitted.
 - **PR #30 (activity-comments spec + plan docs)** status unchecked this session.
@@ -76,12 +76,13 @@ I work on the same codebase on two machines, as if I'm two devs. Both follow the
 
 ## Packages in this repo
 
-Five packages, deployed/run independently:
+Six packages, deployed/run independently:
 
 - **`app/`** — production Next.js 15 app (App Router, TS, Supabase SSR). UI, auth, server actions, API routes, cron endpoints. Deployed to Vercel. "The app" / "the UI" = this.
 - **`worker/`** — price-tracking worker (TS, Node). Polls iTunes Search API, writes `price_history`, emits `price_alerts`. CLI (`npm run worker`) or via app's cron route at `app/app/api/cron/refresh-prices`. Tests: pg-mem + MSW.
 - **`db/`** — schema package. All migrations (`db/migrations/0100_*` onward), RLS, triggers, DB-side tests. Applies to Supabase Postgres.
 - **`notifier/`** — notifications package. Email via Resend + web push. Consumed by `app/app/api/cron/send-notifications`.
+- **`fg-trailers/`** — Rust TUI for curating YouTube trailer URLs on `films` rows. Local-only admin tool; talks to Supabase via service-role REST. Build: `cargo run --release` from the package dir. Schema lives in `db/migrations/0150_film_trailers.sql`.
 - **`src/`** — original Vite + React design prototype. Legacy reference, mocked data. Don't make feature changes here; production = `app/`.
 
 Plus `film-goblin/` — original Claude Design handoff bundle (HTML/JSX + chats). Read-only.
