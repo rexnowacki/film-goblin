@@ -13,14 +13,19 @@ import CovenButton from "@/components/CovenButton";
 import RoleBadge from "@/components/RoleBadge";
 import ActivityRow from "@/components/activity/ActivityRow";
 import InviteBanner from "@/components/InviteBanner";
+import ShareProfileButton from "@/components/ShareProfileButton";
 import Link from "next/link";
 
 export default async function PublicProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ invite?: string }>;
 }) {
   const { username } = await params;
+  const { invite } = await searchParams;
+  const isInvited = invite === "1";
   const supabase = await createClient();
   const bundle = await getPublicProfileBundle(supabase, username);
   if (!bundle) notFound();
@@ -51,7 +56,7 @@ export default async function PublicProfilePage({
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
-      {!user && <InviteBanner inviterUsername={bundle.profile.username} />}
+      {!user && isInvited && <InviteBanner inviterUsername={bundle.profile.username} />}
       <TopNav current="coven" />
       <BottomNav current="coven" />
 
@@ -72,6 +77,14 @@ export default async function PublicProfilePage({
               <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
                 <FollowButton userId={bundle.profile.id} username={bundle.profile.username} initialFollowing={amFollowing} />
                 <CovenButton targetUserId={bundle.profile.id} targetUsername={bundle.profile.username} initialState={coven.state} initialRequestId={coven.requestId} />
+              </div>
+            )}
+            {user && user.id === bundle.profile.id && (
+              <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
+                <ShareProfileButton
+                  username={bundle.profile.username}
+                  displayName={bundle.profile.display_name ?? bundle.profile.username}
+                />
               </div>
             )}
           </div>
