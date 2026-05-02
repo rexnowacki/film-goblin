@@ -1417,7 +1417,7 @@ a { color: inherit; text-decoration: none; }
 }
 .coven-chip:hover { border-color: var(--accent); }
 
-.coven-row {
+.pill-row {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1427,9 +1427,13 @@ a { color: inherit; text-decoration: none; }
   background: var(--void-2);
   transition: border-color 120ms ease;
 }
-.coven-row:hover { border-color: var(--accent); }
+.pill-row:hover { border-color: var(--accent); }
+.pill-row.is-large {
+  gap: 14px;
+  padding: 6px 18px 6px 6px;
+}
 
-.coven-search-pill {
+.search-pill {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1439,8 +1443,8 @@ a { color: inherit; text-decoration: none; }
   background: var(--void-2);
   margin-bottom: 16px;
 }
-.coven-search-pill svg { color: var(--muted); flex-shrink: 0; }
-.coven-search-pill input {
+.search-pill svg { color: var(--muted); flex-shrink: 0; }
+.search-pill input {
   flex: 1;
   border: 0;
   background: transparent;
