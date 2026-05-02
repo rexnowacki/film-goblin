@@ -67,13 +67,15 @@ psychedelic, slow-burn, surreal
 `type = 'theme'`. 0–3.
 
 ```
-addiction, body autonomy, breakup horror, class, colonialism, coming-of-age,
+addiction, body autonomy, breakup horror, colonialism, coming-of-age,
 conspiracy, family trauma, grief, isolation, masculinity, motherhood,
 obsession, paranoia, queer, race, relationship horror, religion, revenge,
-sexuality, technology
+sexuality, social class, technology
 ```
 
 `breakup horror` is the new addition requested for v2 — lives in themes (sits adjacent to `relationship horror` and `family trauma`).
+
+`social class` is the canonical name for the class-consciousness theme (renamed from `class` in mig 0153 for clarity — `class` reads ambiguously, the social-class meaning needed pinning).
 
 ### 5. Settings (6)
 `type = 'setting'`. 0–2.
@@ -169,7 +171,7 @@ INSERT INTO tags (name, type) VALUES
   ('surreal','tone'),
   -- 21 themes (incl. breakup horror, the v2 add)
   ('addiction','theme'), ('body autonomy','theme'), ('breakup horror','theme'),
-  ('class','theme'), ('colonialism','theme'), ('coming-of-age','theme'),
+  ('social class','theme'), ('colonialism','theme'), ('coming-of-age','theme'),
   ('conspiracy','theme'), ('family trauma','theme'), ('grief','theme'),
   ('isolation','theme'), ('masculinity','theme'), ('motherhood','theme'),
   ('obsession','theme'), ('paranoia','theme'), ('queer','theme'),
