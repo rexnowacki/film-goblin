@@ -60,11 +60,10 @@ export default async function CovenPage({
         }}
         className="grain-light"
       >
-        <div className="container-wide" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+        <div className="container-wide">
           <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)", margin: 0 }}>
             The <em style={{ color: "var(--accent)" }}>Covenfolk</em>.
           </h1>
-          {myProfile?.username && <InviteFriendButton inviterUsername={myProfile.username} />}
         </div>
       </section>
 
@@ -116,7 +115,10 @@ export default async function CovenPage({
             </div>
 
             <div>
-              <h2 className="eyebrow" style={{ fontSize: 14, color: "var(--accent)", margin: "0 0 16px" }}>Find People</h2>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "0 0 16px", gap: 12, flexWrap: "wrap" }}>
+                <h2 className="eyebrow" style={{ fontSize: 14, color: "var(--accent)", margin: 0 }}>Find People</h2>
+                {myProfile?.username && <InviteFriendButton inviterUsername={myProfile.username} />}
+              </div>
               <PeopleSearch />
               {profiles.length === 0 ? (
                 <div

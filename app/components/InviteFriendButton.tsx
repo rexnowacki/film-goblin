@@ -30,8 +30,8 @@ export default function InviteFriendButton({ inviterUsername }: Props) {
   }
 
   return (
-    <button type="button" className="btn btn-dark btn-sm" onClick={invite}>
-      ✦ Invite a Friend
+    <button type="button" className="invite-pill" onClick={invite}>
+      ✦ Invite a friend
     </button>
   );
 }
