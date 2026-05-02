@@ -15,6 +15,7 @@ export interface TestUser {
   id: string;
   email: string;
   password: string;
+  username: string;
 }
 
 export async function createTestUser(): Promise<TestUser> {
@@ -27,7 +28,12 @@ export async function createTestUser(): Promise<TestUser> {
     email_confirm: true,
   });
   if (error || !data.user) throw new Error(error?.message ?? "no user");
-  return { id: data.user.id, email, password };
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("username")
+    .eq("id", data.user.id)
+    .maybeSingle();
+  return { id: data.user.id, email, password, username: profile?.username ?? "" };
 }
 
 export async function deleteTestUser(id: string): Promise<void> {
