@@ -50,6 +50,14 @@ export default async function HomePage({
       <TopNav current="home" />
       <BottomNav current="home" />
 
+      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
+        <div className="container-wide">
+          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
+            The <em style={{ color: "var(--accent)" }}>Feed</em>.
+          </h1>
+        </div>
+      </section>
+
       <div className="container-wide stackable" style={{ padding: "32px var(--container-pad)", "--stack-template": "220px 1fr 320px", "--stack-gap": "32px" } as React.CSSProperties}>
         <aside className="desktop-only">
           <div className="eyebrow" style={{ color: "var(--muted)", marginBottom: 12 }}>Your Ledger</div>
@@ -58,7 +66,6 @@ export default async function HomePage({
           </div>
         </aside>
         <main>
-          <h2 className="h-display" style={{ marginBottom: 16 }}>The Feed</h2>
           {user && <FeedSearch active={active} />}
           <FeedTabs items={feed} />
         </main>
