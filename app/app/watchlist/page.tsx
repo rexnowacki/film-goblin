@@ -2,10 +2,12 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMyWatchlistWithFilms } from "@/lib/queries/watchlists";
 import { sortWatchlist, computeDropPct, type WatchlistSort } from "@/lib/queries/sort-watchlist";
+import { getMyProfile } from "@/lib/queries/profiles";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FilmPoster from "@/components/FilmPoster";
 import PosterDropBadge from "@/components/PosterDropBadge";
+import PosterMobileActions from "@/components/PosterMobileActions";
 import WatchlistSortChips from "./WatchlistSortChips";
 
 const VALID_SORTS: readonly WatchlistSort[] = ["drop", "recency", "price-low", "alphabetical"] as const;
@@ -38,7 +40,10 @@ export default async function WatchlistPage({
       ? (sortParam as WatchlistSort)
       : "drop";
 
-  const rows = await getMyWatchlistWithFilms(supabase);
+  const [rows, myProfile] = await Promise.all([
+    getMyWatchlistWithFilms(supabase),
+    getMyProfile(supabase),
+  ]);
   const sorted = sortWatchlist(rows, sort);
 
   return (
@@ -70,6 +75,13 @@ export default async function WatchlistPage({
                         <div style={{ position: "relative" }}>
                           <FilmPoster film={r.film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
                           <PosterDropBadge dropPct={dropPct} />
+                          <PosterMobileActions
+                            kind="watchlist"
+                            filmId={r.film.id}
+                            filmTitle={r.film.title}
+                            filmYear={r.film.year}
+                            sharerUsername={myProfile?.username ?? null}
+                          />
                         </div>
                         <div style={{ marginTop: 10 }}>
                           <div className="head" style={{ fontSize: 16, lineHeight: 1.1 }}>{r.film.title}</div>
