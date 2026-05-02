@@ -3,33 +3,55 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { addToWatchlist } from "@/lib/actions/watchlists";
 import { addToLibrary } from "@/lib/actions/library";
+import BottomSheet from "@/components/BottomSheet";
+import { useToast } from "@/components/ToastProvider";
+import { buildShareUrl, buildShareMessage } from "@/components/ShareFilmButton";
 
 interface Props {
   filmId: string;
   initialOnWatchlist: boolean;
   initialInLibrary?: boolean;
+  /** Required for mobile share action (used in the bottom sheet). */
+  filmTitle?: string;
+  filmYear?: number;
+  sharerUsername?: string | null;
   children: ReactNode; // the FilmPoster (or wrapping element) the menu sits inside
 }
 
 /**
- * Hover-revealed quick-add affordance for poster grids on /films. Desktop
- * only (the + button is hidden under 720px via CSS). Click "+" → small menu
- * with two pills: Watchlist / Library. Clicking inside the affordance
- * stops propagation so the surrounding poster <Link> doesn't navigate.
+ * Poster quick-action affordance, two surfaces:
+ *
+ * Desktop (>720px): hover-revealed "+" button → small menu w/ Watchlist /
+ * Library pills. Click "+" → menu open. Click outside → close.
+ *
+ * Mobile (≤720px): "⋯" button at the top-right (always visible — desktop
+ * affordance is hover-driven and doesn't translate to touch). Tap → a
+ * BottomSheet with three rows: Watchlist, Grimoire, Share. Add buttons
+ * mirror the desktop pills' state (✓-disabled when already saved).
  *
  * Default browse on /films excludes already-saved-or-owned films from the
- * grid, so initial flags are usually false. In search mode the exclusion is
- * lifted, so the page passes through real `initialOnWatchlist` /
- * `initialInLibrary` state for matched rows and the pills show ✓ disabled.
+ * grid, so initial flags are usually false. In search mode the exclusion
+ * is lifted, so the page passes through real `initialOnWatchlist` /
+ * `initialInLibrary` state for matched rows and the buttons show
+ * ✓ disabled.
  */
-export default function PosterQuickAdd({ filmId, initialOnWatchlist, initialInLibrary = false, children }: Props) {
+export default function PosterQuickAdd({
+  filmId,
+  initialOnWatchlist,
+  initialInLibrary = false,
+  filmTitle,
+  filmYear,
+  sharerUsername = null,
+  children,
+}: Props) {
   const [open, setOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [onWatchlist, setOnWatchlist] = useState(initialOnWatchlist);
   const [inLibrary, setInLibrary] = useState(initialInLibrary);
   const [pending, setPending] = useState<"wl" | "lib" | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
+  const { toast } = useToast();
 
-  // Close on outside click.
   useEffect(() => {
     if (!open) return;
     function onDocClick(e: MouseEvent) {
@@ -52,11 +74,14 @@ export default function PosterQuickAdd({ filmId, initialOnWatchlist, initialInLi
     setOnWatchlist(true);
     try {
       await addToWatchlist(filmId);
+      toast("Added to watchlist");
     } catch {
       setOnWatchlist(false);
+      toast("Failed to add");
     } finally {
       setPending(null);
       setOpen(false);
+      setSheetOpen(false);
     }
   }
 
@@ -67,17 +92,46 @@ export default function PosterQuickAdd({ filmId, initialOnWatchlist, initialInLi
     setInLibrary(true);
     try {
       await addToLibrary(filmId);
+      toast("Added to grimoire");
     } catch {
       setInLibrary(false);
+      toast("Failed to add");
     } finally {
       setPending(null);
       setOpen(false);
+      setSheetOpen(false);
     }
   }
+
+  async function clickShare(e: React.MouseEvent) {
+    stopAndPrevent(e);
+    if (!filmTitle || !filmYear) return;
+    const url = buildShareUrl(filmId, sharerUsername);
+    const message = buildShareMessage(filmTitle, filmYear, url);
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ text: message });
+        toast("Sharing…");
+      } else {
+        await navigator.clipboard.writeText(message);
+        toast("Link copied");
+      }
+    } catch (err) {
+      const name = err instanceof Error ? err.name : "";
+      if (name === "AbortError") return;
+      toast("Copy failed");
+    } finally {
+      setSheetOpen(false);
+    }
+  }
+
+  const canShare = !!(filmTitle && filmYear);
 
   return (
     <div ref={ref} className="poster-quick-add">
       {children}
+
+      {/* Desktop hover-revealed "+" button */}
       <button
         type="button"
         onClick={(e) => { stopAndPrevent(e); setOpen(o => !o); }}
@@ -107,6 +161,49 @@ export default function PosterQuickAdd({ filmId, initialOnWatchlist, initialInLi
           </button>
         </div>
       )}
+
+      {/* Mobile ⋯ button + bottom sheet */}
+      <button
+        type="button"
+        onClick={(e) => { stopAndPrevent(e); setSheetOpen(true); }}
+        className="poster-quick-add__mobile-btn"
+        aria-label="Film actions"
+      >
+        ⋯
+      </button>
+      <BottomSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        title={filmTitle ?? "Film actions"}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px 4px" }}>
+          <button
+            type="button"
+            className="poster-action-row"
+            disabled={onWatchlist || pending !== null}
+            onClick={clickWatchlist}
+          >
+            {onWatchlist ? "✓ On watchlist" : "+ Add to watchlist"}
+          </button>
+          <button
+            type="button"
+            className="poster-action-row"
+            disabled={inLibrary || pending !== null}
+            onClick={clickLibrary}
+          >
+            {inLibrary ? "✓ In grimoire" : "+ Add to grimoire"}
+          </button>
+          {canShare && (
+            <button
+              type="button"
+              className="poster-action-row"
+              onClick={clickShare}
+            >
+              ✦ Share film
+            </button>
+          )}
+        </div>
+      </BottomSheet>
     </div>
   );
 }

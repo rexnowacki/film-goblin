@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
 import { getFilms, type FilmsSort } from "@/lib/queries/films";
+import { getMyProfile } from "@/lib/queries/profiles";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FilmPoster from "@/components/FilmPoster";
@@ -27,7 +28,10 @@ export default async function FilmsPage({
   const page = Math.max(1, Number(sp.page ?? 1));
   const user = await getServerUser();
   const supabase = await createClient();
-  const { rows: films, total, pageSize } = await getFilms(supabase, { q, sort, page, viewerUserId: user?.id ?? null });
+  const [{ rows: films, total, pageSize }, myProfile] = await Promise.all([
+    getFilms(supabase, { q, sort, page, viewerUserId: user?.id ?? null }),
+    user ? getMyProfile(supabase) : Promise.resolve(null),
+  ]);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   function pageHref(p: number) {
@@ -69,7 +73,14 @@ export default async function FilmsPage({
               {films.map(f => (
                 <Link key={f.id} href={`/film/${f.id}`} style={{ cursor: "pointer", textDecoration: "none", color: "inherit" }}>
                   {user ? (
-                    <PosterQuickAdd filmId={f.id} initialOnWatchlist={f.on_watchlist} initialInLibrary={f.in_library}>
+                    <PosterQuickAdd
+                      filmId={f.id}
+                      initialOnWatchlist={f.on_watchlist}
+                      initialInLibrary={f.in_library}
+                      filmTitle={f.title}
+                      filmYear={f.year}
+                      sharerUsername={myProfile?.username ?? null}
+                    >
                       <FilmPoster film={f as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
                     </PosterQuickAdd>
                   ) : (
