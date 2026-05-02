@@ -72,15 +72,25 @@ export interface FeedFilters {
   actorId?: string;
   // When set, return only activity whose payload references this film_id.
   filmId?: string;
+  // Cursor: return only activity strictly older than this ISO timestamp.
+  // Used by infinite scroll on /home.
+  before?: string;
 }
 
-export async function getEnrichedFeed(
+/**
+ * Returns un-grouped enriched activity rows newest-first. Same fetch +
+ * enrichment logic as getEnrichedFeed but without the groupFeed step,
+ * so the caller can paginate (group across page boundaries) client-side.
+ *
+ * This is what /home calls for the initial render and what loadMoreFeed
+ * calls for subsequent pages.
+ */
+export async function getEnrichedActivity(
   client: Client,
   followerUserId: string,
-  optsOrLimit: number | FeedFilters = {},
-): Promise<FeedItem[]> {
-  const opts: FeedFilters = typeof optsOrLimit === "number" ? { limit: optsOrLimit } : optsOrLimit;
-  const limit = opts.limit ?? 50;
+  opts: FeedFilters = {},
+): Promise<EnrichedActivity[]> {
+  const limit = opts.limit ?? 20;
 
   const { data: followsRows } = await client
     .from("follows")
@@ -107,19 +117,25 @@ export async function getEnrichedFeed(
   if (opts.filmId) {
     primary = primary.filter("payload->>film_id", "eq", opts.filmId);
   }
+  if (opts.before) {
+    primary = primary.lt("created_at", opts.before);
+  }
   primary = primary.limit(limit);
 
   const [byActor, recsToMe] = await Promise.all([
     primary,
     isFiltered
       ? Promise.resolve({ data: [] as Array<{ id: string; kind: string; payload: unknown; created_at: string; actor_user_id: string }>, error: null })
-      : client
-          .from("activity")
-          .select("id, kind, payload, created_at, actor_user_id")
-          .eq("kind", "recommendation_sent")
-          .filter("payload->>to_user_id", "eq", followerUserId)
-          .order("created_at", { ascending: false })
-          .limit(limit),
+      : (() => {
+          let q = client
+            .from("activity")
+            .select("id, kind, payload, created_at, actor_user_id")
+            .eq("kind", "recommendation_sent")
+            .filter("payload->>to_user_id", "eq", followerUserId)
+            .order("created_at", { ascending: false });
+          if (opts.before) q = q.lt("created_at", opts.before);
+          return q.limit(limit);
+        })(),
   ]);
   if (byActor.error) throw byActor.error;
   if (recsToMe.error) throw recsToMe.error;
@@ -191,7 +207,21 @@ export async function getEnrichedFeed(
         break;
     }
   }
-  return groupFeed(out);
+  return out;
+}
+
+/**
+ * Returns the feed already grouped (for callers that don't paginate).
+ * Internally getEnrichedActivity + groupFeed.
+ */
+export async function getEnrichedFeed(
+  client: Client,
+  followerUserId: string,
+  optsOrLimit: number | FeedFilters = {},
+): Promise<FeedItem[]> {
+  const opts: FeedFilters = typeof optsOrLimit === "number" ? { limit: optsOrLimit } : optsOrLimit;
+  const items = await getEnrichedActivity(client, followerUserId, opts);
+  return groupFeed(items);
 }
 
 // Back-compat wrapper. Returns FeedItem[] now that getEnrichedFeed groups internally.
