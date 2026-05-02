@@ -133,9 +133,8 @@ export default async function FilmDetailPage({
               "{film.description}"
             </p>
             <FilmTagsRow
-              subgenre={filmTags.subgenre}
+              visible={filmTags.visible}
               director={film.director}
-              vibes={filmTags.vibes}
             />
             {(film.watchlist_count > 0 || film.watcher_count > 0) && (
               <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, color: "var(--muted)", margin: "0 0 18px" }}>
