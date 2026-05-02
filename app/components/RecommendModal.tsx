@@ -104,56 +104,68 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers, topCov
           Sent. They&rsquo;ll see it in their feed.
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: "8px 0 4px" }}>
+        <div style={{ display: "flex", flexDirection: "column", height: "70dvh", padding: "8px 0 0" }}>
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search covenfolk…"
             className="recommend-picker-search"
+            style={{ flexShrink: 0, marginBottom: 12 }}
           />
 
-          {visibleMembers.length > 0 ? (
-            <div className="recommend-picker-list">
-              {visibleMembers.map(m => {
-                const selected = m.id === selectedUserId;
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => pick(m.id)}
-                    className={`recommend-picker-row ${selected ? "is-selected" : ""}`}
-                    aria-pressed={selected}
-                  >
-                    <Avatar
-                      name={m.username}
-                      color="var(--accent)"
-                      size={36}
-                      url={m.avatar_url}
-                    />
-                    <span className="recommend-picker-row-text">
-                      <span className="recommend-picker-row-username">{m.username}</span>
-                      {m.display_name && (
-                        <span className="recommend-picker-row-display">{m.display_name}</span>
-                      )}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, color: "var(--muted)", padding: "4px 0" }}>
-              No covenfolk match.
-            </div>
-          )}
+          <div style={{ flex: 1, minHeight: 0, overflowY: "auto", marginBottom: 12 }}>
+            {visibleMembers.length > 0 ? (
+              <div className="recommend-picker-list">
+                {visibleMembers.map(m => {
+                  const selected = m.id === selectedUserId;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => pick(m.id)}
+                      className={`recommend-picker-row ${selected ? "is-selected" : ""}`}
+                      aria-pressed={selected}
+                    >
+                      <Avatar
+                        name={m.username}
+                        color="var(--accent)"
+                        size={36}
+                        url={m.avatar_url}
+                      />
+                      <span className="recommend-picker-row-text">
+                        <span className="recommend-picker-row-username">{m.username}</span>
+                        {m.display_name && (
+                          <span className="recommend-picker-row-display">{m.display_name}</span>
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, color: "var(--muted)", padding: "4px 0" }}>
+                No covenfolk match.
+              </div>
+            )}
+          </div>
 
-          <div>
-            <div className="caps" style={{ fontSize: 11, marginBottom: 8, color: "var(--muted)" }}>A Whisper</div>
+          <div
+            style={{
+              flexShrink: 0,
+              borderTop: "1px solid var(--muted)",
+              paddingTop: 12,
+              paddingBottom: "env(keyboard-inset-height, 0px)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+            }}
+          >
             <textarea
               value={note}
               onChange={e => setNote(e.target.value)}
-              rows={3}
-              placeholder="watch this one alone, with the lights off…"
+              rows={2}
+              placeholder="a whisper… (watch this with the lights off)"
               style={{
                 width: "100%",
                 border: "1px solid var(--muted)",
@@ -166,21 +178,21 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers, topCov
                 outline: "none",
               }}
             />
+
+            {error && (
+              <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{error}</div>
+            )}
+
+            <button
+              type="button"
+              disabled={pending || !selectedUserId}
+              onClick={send}
+              className="btn"
+              style={{ width: "100%", justifyContent: "center" }}
+            >
+              {pending ? "Sealing…" : "✦ Seal & Send"}
+            </button>
           </div>
-
-          {error && (
-            <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{error}</div>
-          )}
-
-          <button
-            type="button"
-            disabled={pending || !selectedUserId}
-            onClick={send}
-            className="btn"
-            style={{ width: "100%", justifyContent: "center" }}
-          >
-            {pending ? "Sealing…" : "✦ Seal & Send"}
-          </button>
         </div>
       )}
     </BottomSheet>
