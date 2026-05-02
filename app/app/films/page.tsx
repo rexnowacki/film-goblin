@@ -49,14 +49,12 @@ export default async function FilmsPage({
           <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
             Watch <em style={{ color: "var(--accent)" }}>Weirder</em>.
           </h1>
-          <div style={{ marginTop: 16 }}>
-            <FilmsSearch />
-          </div>
         </div>
       </section>
 
       <section style={{ padding: "24px 0 60px" }}>
         <div className="container-wide">
+          <FilmsSearch />
           <FilmsSortChips currentSort={sort} currentQ={q} />
           <div style={{ marginBottom: 20, fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--muted)" }}>
             {total} {total === 1 ? "film" : "films"}{q ? ` matching "${q}"` : ""}
