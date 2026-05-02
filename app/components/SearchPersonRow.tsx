@@ -36,57 +36,33 @@ export default function SearchPersonRow({ profile, state, incomingRequestId }: S
   const button = (() => {
     if (state === "pending_outbound") {
       return (
-        <button className="btn" disabled style={{ opacity: 0.5 }}>
+        <button className="btn btn-sm" disabled style={{ opacity: 0.5 }}>
           Pending
         </button>
       );
     }
     if (state === "pending_inbound") {
       return (
-        <button className="btn" onClick={handleAccept} disabled={pending}>
+        <button className="btn btn-sm" onClick={handleAccept} disabled={pending}>
           {pending ? "Accepting…" : "Accept"}
         </button>
       );
     }
     return (
-      <button className="btn btn-outline" onClick={handleInvite} disabled={pending}>
+      <button className="btn btn-sm btn-outline" onClick={handleInvite} disabled={pending}>
         {pending ? "Inviting…" : "+ Invite"}
       </button>
     );
   })();
 
   return (
-    <div className="pill-row is-large" style={{ flexWrap: "wrap" }}>
+    <div className="pill-row">
+      <Avatar name={profile.username} color="var(--accent)" size={32} url={profile.avatar_url} />
       <Link
         href={`/p/${encodeURIComponent(profile.username)}`}
-        style={{ display: "flex", alignItems: "center", gap: 14, flex: "1 1 220px", textDecoration: "none", color: "inherit", minWidth: 0 }}
+        style={{ flex: 1, minWidth: 0, color: "var(--bone)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
       >
-        <Avatar name={profile.username} color="var(--accent)" size={48} url={profile.avatar_url} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="head" style={{ fontSize: 18, lineHeight: 1 }}>
-            {profile.username}
-          </div>
-          <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
-            @{profile.username}
-          </div>
-          {profile.bio && (
-            <div
-              style={{
-                fontFamily: "var(--font-serif)",
-                fontSize: 13,
-                fontStyle: "italic",
-                color: "var(--bone)",
-                opacity: 0.8,
-                marginTop: 6,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {profile.bio}
-            </div>
-          )}
-        </div>
+        {profile.username}
       </Link>
       {button}
     </div>
