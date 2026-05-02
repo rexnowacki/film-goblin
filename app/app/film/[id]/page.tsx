@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
 import { getFilm, getLatestPriceHistory } from "@/lib/queries/films";
@@ -7,6 +8,8 @@ import { getWatchCountForFilm } from "@/lib/queries/watched";
 import { getPublishedReviewsForFilm } from "@/lib/queries/reviews";
 import { getMyCovenMembers } from "@/lib/queries/coven";
 import { getTopRecommendedCovenMemberIds } from "@/lib/queries/recommendations";
+import { getMyProfile } from "@/lib/queries/profiles";
+import { getSharerWatchForFilm } from "@/lib/queries/sharer-watch";
 import FilmPoster from "@/components/FilmPoster";
 import Stars from "@/components/Stars";
 import TopNav from "@/components/TopNav";
@@ -15,10 +18,54 @@ import FilmActions from "@/components/FilmActions";
 import RecommendModal from "@/components/RecommendModal";
 import PriceStatBlock from "@/components/PriceStatBlock";
 import CovenScore from "@/components/CovenScore";
+import ShareFilmButton from "@/components/ShareFilmButton";
+import SharerWatchPin from "@/components/SharerWatchPin";
+import FilmCTABanner from "@/components/FilmCTABanner";
 import { compactCount } from "@/lib/format";
 
-export default async function FilmDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
+  const supabase = await createClient();
+  const film = await getFilm(supabase, id);
+  if (!film) return { title: "Film Goblin" };
+
+  const title = `${film.title} (${film.year})`;
+  const description = film.description?.trim() || `${film.director}, ${film.year}.`;
+  const url = `https://film-goblin.vercel.app/film/${film.id}`;
+
+  const ogImages = film.artwork_url ? [{ url: film.artwork_url, alt: film.title }] : [];
+  const twitterImages = film.artwork_url ? [film.artwork_url] : [];
+
+  return {
+    title: `${title} — Film Goblin`,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: ogImages,
+      type: "video.movie",
+      url,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: twitterImages,
+    },
+  };
+}
+
+export default async function FilmDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const { id } = await params;
+  const { from: fromRaw } = await searchParams;
+  const fromUsername = fromRaw && /^[a-z0-9._]+$/.test(fromRaw) ? fromRaw.toLowerCase() : null;
+
   const supabase = await createClient();
   const [film, history, reviews, user] = await Promise.all([
     getFilm(supabase, id),
@@ -26,18 +73,22 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
     getPublishedReviewsForFilm(supabase, id),
     getServerUser(),
   ]);
-  const [covenMembers, onList, owned, watchCount, topCovenMemberIds] = user
+  const [covenMembers, onList, owned, watchCount, topCovenMemberIds, myProfile] = user
     ? await Promise.all([
         getMyCovenMembers(supabase, user.id),
         isOnWatchlist(supabase, id),
         isInLibrary(supabase, user.id, id),
         getWatchCountForFilm(supabase, user.id, id),
         getTopRecommendedCovenMemberIds(supabase, user.id),
+        getMyProfile(supabase),
       ])
-    : [[], false, false, 0, [] as string[]];
+    : [[], false, false, 0, [] as string[], null];
+
+  const sharerWatch = fromUsername ? await getSharerWatchForFilm(fromUsername, id) : null;
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
+      {!user && <FilmCTABanner fromUsername={fromUsername} />}
       <TopNav current="films" />
       <BottomNav current="films" />
 
@@ -61,6 +112,7 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
             />
           </div>
           <div className="film-hero-text">
+            {sharerWatch && <SharerWatchPin watch={sharerWatch} />}
             <div className="eyebrow" style={{ marginBottom: 10, opacity: 0.8 }}>
               {film.genre_primary}
             </div>
@@ -101,6 +153,12 @@ export default async function FilmDetailPage({ params }: { params: Promise<{ id:
                 covenMembers={covenMembers.map(m => ({ id: m.id, username: m.username, display_name: m.display_name, avatar_url: m.avatar_url }))}
                 topCovenMemberIds={topCovenMemberIds}
               />}
+              <ShareFilmButton
+                filmId={film.id}
+                title={film.title}
+                year={film.year}
+                sharerUsername={myProfile?.username ?? null}
+              />
               {film.itunes_url && (
                 <a href={film.itunes_url} target="_blank" rel="noreferrer" className="btn btn-lg">
                   Buy on Apple TV →
