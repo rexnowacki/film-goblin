@@ -5,7 +5,11 @@ import BottomSheet from "@/components/BottomSheet";
 import { useToast } from "@/components/ToastProvider";
 import { addToLibrary, removeFromLibrary } from "@/lib/actions/library";
 import { removeFromWatchlist } from "@/lib/actions/watchlists";
+import { logWatch } from "@/lib/actions/watched";
 import { buildShareUrl, buildShareMessage } from "@/components/ShareFilmButton";
+import WatchModal from "@/components/WatchModal";
+
+const TODAY_ISO = () => new Date().toISOString().slice(0, 10);
 
 type Kind = "watchlist" | "library";
 
@@ -28,6 +32,7 @@ interface Props {
  */
 export default function PosterMobileActions({ kind, filmId, filmTitle, filmYear, sharerUsername }: Props) {
   const [open, setOpen] = useState(false);
+  const [watchOpen, setWatchOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -111,6 +116,13 @@ export default function PosterMobileActions({ kind, filmId, filmTitle, filmYear,
       </button>
       <BottomSheet open={open} onClose={() => setOpen(false)} title={filmTitle}>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px 4px" }}>
+          <button
+            type="button"
+            className="poster-action-row"
+            onClick={(e) => { stopAndPrevent(e); setOpen(false); setWatchOpen(true); }}
+          >
+            ✦ Log a watch
+          </button>
           {kind === "watchlist" && (
             <>
               <button type="button" className="poster-action-row" disabled={pending} onClick={moveToGrimoire}>
@@ -131,6 +143,19 @@ export default function PosterMobileActions({ kind, filmId, filmTitle, filmYear,
           </button>
         </div>
       </BottomSheet>
+
+      <WatchModal
+        open={watchOpen}
+        mode="new"
+        filmTitle={filmTitle}
+        initial={{ watched_at: TODAY_ISO(), note: "", recommended: null }}
+        onSave={async (values) => {
+          await logWatch(filmId, values);
+          toast("Watch logged");
+          setWatchOpen(false);
+        }}
+        onClose={() => setWatchOpen(false)}
+      />
     </>
   );
 }
