@@ -7,11 +7,12 @@ import {
   getRelationshipMap,
 } from "@/lib/queries/coven";
 import { getMyProfile, getProfilesBySearch } from "@/lib/queries/profiles";
+import { getRankedCovenfolk } from "@/lib/queries/coven-interactions";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import Avatar from "@/components/Avatar";
 import CovenInviteActions from "@/components/CovenInviteActions";
-import LeaveCovenButton from "@/components/LeaveCovenButton";
+import CovenChipRow from "@/components/coven/CovenChipRow";
 import PeopleSearch from "@/components/PeopleSearch";
 import SearchPersonRow from "@/components/SearchPersonRow";
 import InviteFriendButton from "@/components/InviteFriendButton";
@@ -27,9 +28,10 @@ export default async function CovenPage({
   if (!user) redirect("/auth/signin?redirect=/coven");
   const supabase = await createClient();
 
-  const [invites, members, myProfile] = await Promise.all([
+  const [invites, members, ranked, myProfile] = await Promise.all([
     getPendingInvites(supabase, user.id),
     getMyCovenMembers(supabase, user.id),
+    getRankedCovenfolk(supabase, user.id),
     getMyProfile(supabase),
   ]);
 
@@ -110,44 +112,7 @@ export default async function CovenPage({
             style={{ "--stack-template": "1fr 1fr", "--stack-gap": "32px", alignItems: "start" } as React.CSSProperties}
           >
             <div>
-              <h2 className="eyebrow" style={{ fontSize: 14, color: "var(--accent)", margin: "0 0 16px" }}>Your Coven</h2>
-              {members.length === 0 ? (
-                <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>
-                  Your coven is empty. Search to your right to find souls to bind with.
-                </div>
-              ) : (
-                <div style={{ display: "grid", gap: 12 }}>
-                  {members.map((m) => (
-                    <div key={m.id} style={{ border: "1px solid var(--muted)", padding: 16 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                        <Avatar
-                          name={m.username}
-                          color="var(--accent)"
-                          size={44}
-                          url={m.avatar_url}
-                        />
-                        <div style={{ flex: 1 }}>
-                          <Link href={`/p/${encodeURIComponent(m.username)}`} style={{ color: "var(--bone)", textDecoration: "none" }}>
-                            <div className="head" style={{ fontSize: 16, lineHeight: 1 }}>
-                              {m.username}
-                            </div>
-                            <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
-                              @{m.username}
-                            </div>
-                          </Link>
-                        </div>
-                      </div>
-                      <div style={{ marginTop: 12 }}>
-                        <LeaveCovenButton
-                          otherUserId={m.id}
-                          otherUsername={m.username}
-                          otherDisplayName={m.username}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <CovenChipRow members={ranked} />
             </div>
 
             <div>
