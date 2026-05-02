@@ -11,32 +11,32 @@ Format per row: `title (year): primary, director, tag1, tag2, …` — visible 5
 - **Barbarian (2022)** — **psychological horror**, _Zach Cregger_, paranoia, claustrophobic, isolation _(tail: mean-spirited, serial killer, urban horror, suburban, gore, violent, splatterpunk)_
 - **Beyond the Black Rainbow (2012)** — **psychological horror**, _Panos Cosmatos_, psychedelic, dreamlike, isolation _(tail: slow-burn, obsession, period setting, techno-horror)_
 - **Black Phone 2 (2025)** — **supernatural horror**, _Scott Derrickson_, family trauma, ghosts, bleak _(tail: atmospheric, creepy kids, serial killer, period setting)_
-- **Bodies Bodies Bodies (2022)** — **slasher**, _Halina Reijn_, paranoia, mean-spirited, queer _(tail: funny, claustrophobic, class, small town, horror comedy)_
+- **Bodies Bodies Bodies (2022)** — **slasher**, _Halina Reijn_, paranoia, mean-spirited, queer _(tail: funny, claustrophobic, social class, small town, horror comedy)_
 - **Body Parts (1991)** — **body horror**, _Eric Red_, paranoia, claustrophobic, obsession _(tail: cursed object, atmospheric, gore)_
 - **Bone Tomahawk (2015)** — **survival horror**, _S. Craig Zahler_, bleak, slow-burn, masculinity _(tail: mean-spirited, cult, wilderness, period setting, colonialism, gore, violent, splatterpunk)_
 - **Bring Her Back (2025)** — **supernatural horror**, _Danny Philippou & Michael Philippou_, grief, bleak, family trauma _(tail: fever dream, ritual, creepy kids, gore, violent)_
-- **Candyman (1992) (1992)** — **supernatural horror**, _Bernard Rose_, race, atmospheric, obsession _(tail: bleak, ghosts, cursed place, class, urban horror, gore, slasher)_
+- **Candyman (1992) (1992)** — **supernatural horror**, _Bernard Rose_, race, atmospheric, obsession _(tail: bleak, ghosts, cursed place, social class, urban horror, gore, slasher)_
 - **Color Out of Space (2020)** — **cosmic horror**, _Richard Stanley_, psychedelic, family trauma, fever dream _(tail: aliens, rural horror, wilderness, gore, body horror)_
 - **Cuckoo (2024)** — **creature feature**, _Tilman Singer_, family trauma, dreamlike, motherhood _(tail: atmospheric, wilderness, body horror)_
 - **Cure (2001)** — **thriller**, _Kiyoshi Kurosawa_, paranoia, slow-burn, atmospheric _(tail: obsession, serial killer, possession, bleak, urban horror)_  
   ↳ Thriller as Primary — horror-adjacent: true. Kurosawa's hypnosis-driven serial killer Kafkaesque.
 - **Daguerrotype (2017)** — **supernatural horror**, _Kiyoshi Kurosawa_, obsession, atmospheric, slow-burn _(tail: ghosts, dreamlike, grief, cursed object, gothic)_
 - **Deep Red (1975)** — **giallo**, _Dario Argento_, serial killer, paranoia, psychedelic _(tail: atmospheric, mean-spirited, urban horror, gore, violent)_
-- **Don't Breathe (2016)** — **home invasion**, _Fede Alvarez_, claustrophobic, mean-spirited, class _(tail: urban horror, violent, thriller)_
-- **Drag Me to Hell (Unrated) (2009)** — **supernatural horror**, _Unknown_, demons, funny, campy _(tail: cursed object, class, gore, horror comedy)_
+- **Don't Breathe (2016)** — **home invasion**, _Fede Alvarez_, claustrophobic, mean-spirited, social class _(tail: urban horror, violent, thriller)_
+- **Drag Me to Hell (Unrated) (2009)** — **supernatural horror**, _Unknown_, demons, funny, campy _(tail: cursed object, social class, gore, horror comedy)_
 - **Ex Machina (2015)** — **techno-horror**, _Alex Garland_, technology, claustrophobic, isolation _(tail: slow-burn, obsession, atmospheric, wilderness, thriller)_  
   ↳ Techno-horror as Primary — sci-fi thriller w/ horror-of-the-mind core. Director-as-creator hubris reads as horror premise.
 - **Eyes Without a Face (1960)** — **body horror**, _Georges Franju_, obsession, dreamlike, family trauma _(tail: atmospheric, slow-burn, body autonomy, period setting, gothic)_
 - **Fright Night (1985)** — **slasher**, _Tom Holland_, vampires, funny, campy _(tail: nostalgic, suburban, horror comedy)_
 - **Gamera vs. Gyaos (1967)** — **creature feature**, _Noriaki Yuasa_, kaiju, campy, nostalgic _(tail: period setting, monster movie)_
 - **George A. Romero's Night of the Living Dead (1968) (In Color & Restored) (1968)** — **survival horror**, _George A. Romero_, zombies, bleak, race _(tail: claustrophobic, paranoia, atmospheric, rural horror, gore, splatterpunk)_
-- **Green Room (2016)** — **survival horror**, _Jeremy Saulnier_, claustrophobic, mean-spirited, bleak _(tail: class, wilderness, gore, violent, thriller)_
+- **Green Room (2016)** — **survival horror**, _Jeremy Saulnier_, claustrophobic, mean-spirited, bleak _(tail: social class, wilderness, gore, violent, thriller)_
 - **Hellraiser (1987)** — **body horror**, _Clive Barker_, demons, sexuality, cursed object _(tail: bleak, obsession, atmospheric, gore, splatter, sexual content, splatterpunk)_
 - **Hellbound: Hellraiser II (1988)** — **body horror**, _Tony Randel_, demons, fever dream, bleak _(tail: sexuality, gore, splatter, splatterpunk)_
 - **Hellraiser III: Hell On Earth (1992)** — **splatterpunk**, _Anthony Hickox_, demons, campy, urban horror _(tail: gore, splatter)_
 - **Henry: Portrait of a Serial Killer (30th Anniversary Edition) (2016)** — **exploitation**, _John McNaughton_, serial killer, bleak, mean-spirited _(tail: nihilistic, masculinity, urban horror, gore, violent)_
 - **Hereditary (2018)** — **supernatural horror**, _Ari Aster_, family trauma, grief, bleak _(tail: fever dream, religion, atmospheric, cult, demons, suburban, religious horror)_
-- **In Fabric (2019)** — **cursed media**, _Peter Strickland_, cursed object, surreal, class _(tail: psychedelic, dreamlike, sexuality, sexual content)_
+- **In Fabric (2019)** — **cursed media**, _Peter Strickland_, cursed object, surreal, social class _(tail: psychedelic, dreamlike, sexuality, sexual content)_
 - **Inferno (1980)** — **giallo**, _Dario Argento_, psychedelic, witches, dreamlike _(tail: atmospheric, urban horror)_
 - **Invasion of the Body Snatchers (1978)** — **body horror**, _Philip Kaufman_, paranoia, aliens, bleak _(tail: claustrophobic, isolation, atmospheric, urban horror, cosmic horror)_
 - **Invasion of the Body Snatchers (1956) (1956)** — **body horror**, _Don Siegel_, paranoia, aliens, bleak _(tail: atmospheric, conspiracy, small town, period setting, cosmic horror)_
