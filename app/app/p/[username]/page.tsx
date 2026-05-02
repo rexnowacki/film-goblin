@@ -8,7 +8,6 @@ import { getCommentSummariesForActivities } from "@/lib/queries/activity-comment
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import Avatar from "@/components/Avatar";
-import FollowButton from "@/components/FollowButton";
 import CovenButton from "@/components/CovenButton";
 import RoleBadge from "@/components/RoleBadge";
 import ActivityRow from "@/components/activity/ActivityRow";
@@ -32,17 +31,9 @@ export default async function PublicProfilePage({
 
   const user = await getServerUser();
 
-  let amFollowing = false;
   let coven: { state: "none" | "pending_outbound" | "pending_inbound" | "member"; requestId: string | null } =
     { state: "none", requestId: null };
   if (user && user.id !== bundle.profile.id) {
-    const { data: follow } = await supabase
-      .from("follows")
-      .select("follower_user_id")
-      .eq("follower_user_id", user.id)
-      .eq("followed_user_id", bundle.profile.id)
-      .maybeSingle();
-    amFollowing = !!follow;
     coven = await getCovenStateBetween(supabase, user.id, bundle.profile.id);
   }
 
@@ -75,7 +66,6 @@ export default async function PublicProfilePage({
             {bundle.profile.bio && <p style={{ fontFamily: "var(--font-serif)", fontSize: 18, fontStyle: "italic", marginTop: 20, maxWidth: 560 }}>{bundle.profile.bio}</p>}
             {user && user.id !== bundle.profile.id && (
               <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
-                <FollowButton userId={bundle.profile.id} username={bundle.profile.username} initialFollowing={amFollowing} />
                 <CovenButton targetUserId={bundle.profile.id} targetUsername={bundle.profile.username} initialState={coven.state} initialRequestId={coven.requestId} />
               </div>
             )}
