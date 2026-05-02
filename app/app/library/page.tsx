@@ -6,13 +6,18 @@ import { getLibrary } from "@/lib/queries/library";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FilmPoster from "@/components/FilmPoster";
+import PosterMobileActions from "@/components/PosterMobileActions";
+import { getMyProfile } from "@/lib/queries/profiles";
 
 export default async function LibraryPage() {
   const user = await getServerUser();
   if (!user) redirect("/auth/signin?next=/library");
   const supabase = await createClient();
 
-  const rows = await getLibrary(supabase, user.id);
+  const [rows, myProfile] = await Promise.all([
+    getLibrary(supabase, user.id),
+    getMyProfile(supabase),
+  ]);
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
@@ -41,7 +46,16 @@ export default async function LibraryPage() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "var(--grid-gap)" }}>
                 {rows.map(r => (
                   <Link key={r.film.id} href={`/film/${r.film.id}`} style={{ cursor: "pointer", textDecoration: "none", color: "inherit" }}>
-                    <FilmPoster film={r.film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
+                    <div style={{ position: "relative" }}>
+                      <FilmPoster film={r.film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
+                      <PosterMobileActions
+                        kind="library"
+                        filmId={r.film.id}
+                        filmTitle={r.film.title}
+                        filmYear={r.film.year}
+                        sharerUsername={myProfile?.username ?? null}
+                      />
+                    </div>
                     <div style={{ marginTop: 10 }}>
                       <div className="head" style={{ fontSize: 16, lineHeight: 1.1 }}>{r.film.title}</div>
                       <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
