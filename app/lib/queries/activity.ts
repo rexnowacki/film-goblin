@@ -92,12 +92,17 @@ export async function getEnrichedActivity(
 ): Promise<EnrichedActivity[]> {
   const limit = opts.limit ?? 20;
 
-  const { data: followsRows } = await client
-    .from("follows")
-    .select("followed_user_id")
-    .eq("follower_user_id", followerUserId);
-  const followedIds = (followsRows ?? []).map(r => r.followed_user_id);
-  const actorIds = Array.from(new Set([followerUserId, ...followedIds]));
+  // Feed scope is the user's coven graph (mutual bonds), not the older
+  // one-directional follows table. coven_members has the user_a_id <
+  // user_b_id invariant; expand both sides into a flat list of mates.
+  const { data: covenRows } = await client
+    .from("coven_members")
+    .select("user_a_id, user_b_id")
+    .or(`user_a_id.eq.${followerUserId},user_b_id.eq.${followerUserId}`);
+  const covenMateIds = (covenRows ?? []).map(r =>
+    r.user_a_id === followerUserId ? r.user_b_id : r.user_a_id,
+  );
+  const actorIds = Array.from(new Set([followerUserId, ...covenMateIds]));
 
   const isFiltered = !!(opts.actorId || opts.filmId);
 
