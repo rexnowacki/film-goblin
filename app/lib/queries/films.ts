@@ -47,12 +47,14 @@ export async function getFilms(
     id: string; itunes_id: number | null; title: string; director: string;
     year: number; runtime_min: number; genre_primary: string; artwork_url: string;
     latest_price: number | null; watchlist_count: number; watcher_count: number;
+    on_watchlist: boolean; in_library: boolean;
   }>;
   total: number;
   pageSize: number;
 }> {
   const sort: FilmsSort = opts.sort ?? "added";
   const page = Math.max(1, opts.page ?? 1);
+  const isSearching = !!(opts.q && opts.q.trim());
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query: any = (client as unknown as { from: (t: string) => any })
@@ -64,21 +66,29 @@ export async function getFilms(
     .eq("tracking", true)
     .eq("available", true);
 
-  if (opts.q && opts.q.trim()) {
+  if (isSearching) {
     query = query.or(`title.ilike.%${opts.q}%,director.ilike.%${opts.q}%`);
   }
 
+  let ownedSet = new Set<string>();
+  let watchlistedSet = new Set<string>();
   if (opts.viewerUserId) {
-    // Discovery hides films the viewer has already saved or owns — keeps the
-    // grid focused on stuff they haven't engaged with yet. Both /library and
-    // /watchlist remain the canonical surfaces for those.
+    // Default browse hides films the viewer has already saved or owns — the
+    // grid is for discovery. When the viewer is searching by query, the
+    // exclusion is lifted so any film they remember by name can be found;
+    // matched rows get tagged with `on_watchlist` / `in_library` so the UI
+    // can render a muted "On watchlist" / "In grimoire" badge.
     const [ownedIds, watchlistedIds] = await Promise.all([
       getOwnedFilmIds(client, opts.viewerUserId),
       getWatchlistedFilmIds(client, opts.viewerUserId),
     ]);
-    const excludeIds = Array.from(new Set([...ownedIds, ...watchlistedIds]));
-    if (excludeIds.length > 0) {
-      query = query.not("id", "in", `(${excludeIds.map(id => `"${id}"`).join(",")})`);
+    ownedSet = new Set(ownedIds);
+    watchlistedSet = new Set(watchlistedIds);
+    if (!isSearching) {
+      const excludeIds = Array.from(new Set([...ownedIds, ...watchlistedIds]));
+      if (excludeIds.length > 0) {
+        query = query.not("id", "in", `(${excludeIds.map(id => `"${id}"`).join(",")})`);
+      }
     }
   }
 
@@ -107,7 +117,12 @@ export async function getFilms(
   const to = from + FILMS_PAGE_SIZE - 1;
   const { data, error, count } = await query.range(from, to);
   if (error) throw error;
-  return { rows: (data ?? []) as never, total: count ?? 0, pageSize: FILMS_PAGE_SIZE };
+  const rows = ((data ?? []) as Array<{ id: string }>).map(r => ({
+    ...r,
+    on_watchlist: watchlistedSet.has(r.id),
+    in_library: ownedSet.has(r.id),
+  }));
+  return { rows: rows as never, total: count ?? 0, pageSize: FILMS_PAGE_SIZE };
 }
 
 export async function getLatestPriceHistory(client: Client, filmId: string, days = 180) {
