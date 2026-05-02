@@ -66,38 +66,60 @@ export interface ActivityGroup {
   latestAt: string; // = items[0].created_at
 }
 
+export interface FeedFilters {
+  limit?: number;
+  // When set, return only this user's activity (overrides the follow-graph scope).
+  actorId?: string;
+  // When set, return only activity whose payload references this film_id.
+  filmId?: string;
+}
+
 export async function getEnrichedFeed(
   client: Client,
   followerUserId: string,
-  limit = 50,
+  optsOrLimit: number | FeedFilters = {},
 ): Promise<FeedItem[]> {
+  const opts: FeedFilters = typeof optsOrLimit === "number" ? { limit: optsOrLimit } : optsOrLimit;
+  const limit = opts.limit ?? 50;
+
   const { data: followsRows } = await client
     .from("follows")
     .select("followed_user_id")
     .eq("follower_user_id", followerUserId);
   const followedIds = (followsRows ?? []).map(r => r.followed_user_id);
-
-  // Activity surfaces that show in the feed:
-  //   - Followed users' public activity (reviews, watchlist adds, lists, coven joins, recs they sent).
-  //   - My own activity (so I can see what I broadcast).
-  //   - Recs sent TO me regardless of whether I follow the sender.
-  // `activity` RLS already allows reads; we filter application-side.
   const actorIds = Array.from(new Set([followerUserId, ...followedIds]));
 
+  const isFiltered = !!(opts.actorId || opts.filmId);
+
+  // Build the primary query. When filtered by actor: scope to that actor.
+  // When filtered by film: scope to follow-graph + film_id payload match.
+  // recsToMe (recs from non-followed strangers) is dropped under any filter
+  // because the user has explicitly asked for one specific axis.
+  let primary = client
+    .from("activity")
+    .select("id, kind, payload, created_at, actor_user_id")
+    .order("created_at", { ascending: false });
+  if (opts.actorId) {
+    primary = primary.eq("actor_user_id", opts.actorId);
+  } else {
+    primary = primary.in("actor_user_id", actorIds);
+  }
+  if (opts.filmId) {
+    primary = primary.filter("payload->>film_id", "eq", opts.filmId);
+  }
+  primary = primary.limit(limit);
+
   const [byActor, recsToMe] = await Promise.all([
-    client
-      .from("activity")
-      .select("id, kind, payload, created_at, actor_user_id")
-      .in("actor_user_id", actorIds)
-      .order("created_at", { ascending: false })
-      .limit(limit),
-    client
-      .from("activity")
-      .select("id, kind, payload, created_at, actor_user_id")
-      .eq("kind", "recommendation_sent")
-      .filter("payload->>to_user_id", "eq", followerUserId)
-      .order("created_at", { ascending: false })
-      .limit(limit),
+    primary,
+    isFiltered
+      ? Promise.resolve({ data: [] as Array<{ id: string; kind: string; payload: unknown; created_at: string; actor_user_id: string }>, error: null })
+      : client
+          .from("activity")
+          .select("id, kind, payload, created_at, actor_user_id")
+          .eq("kind", "recommendation_sent")
+          .filter("payload->>to_user_id", "eq", followerUserId)
+          .order("created_at", { ascending: false })
+          .limit(limit),
   ]);
   if (byActor.error) throw byActor.error;
   if (recsToMe.error) throw recsToMe.error;
