@@ -1402,3 +1402,12 @@ a { color: inherit; text-decoration: none; }
 .tag-edit-pill:disabled {
   cursor: not-allowed;
 }
+.tag-edit-pill.primary {
+  background: var(--accent);
+  color: var(--void);
+  border-color: var(--accent);
+}
+.tag-edit-pill.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
