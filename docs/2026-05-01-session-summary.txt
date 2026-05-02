@@ -56,3 +56,84 @@ Also created locally (not committed):
   runner. Commit when bringing fg-trailers into the monorepo.
 - fg-trailers/ — new untracked directory, source of mig 0150.
   Separate tool the user is working on.
+
+
+Afternoon session — 2026-05-01 (continued)
+============================================
+
+PR #88  Extract sub-project history table — moved 27 rows out of
+        CLAUDE.md into docs/sub-project-history.md so the index file
+        is lighter (273 → 243 lines, ~8KB lighter). New rows now
+        append to the history file as sub-projects ship.
+
+PR #89  Rate-reminder modal opens on same-route soft-nav — diary row
+        was using useState(initialOpen) which only captures on mount,
+        so tapping the bell row while already on /watched soft-nav'd
+        to ?rate=<id> but didn't reopen the modal. Switched to
+        useSearchParams() + useEffect so URL changes always pop the
+        right row. Single source of truth (URL).
+
+PR #90  Drop 'Chapter IV · The Covenfolk' eyebrow above /coven hero
+        to match the cleaner /films / /library look. Section eyebrows
+        ('Pending Invitations', 'Your Coven', 'Find People') stay.
+
+PR #91  Prune 5 stale Open Threads from CLAUDE.md — OAuth email
+        backfill, /settings username regex gate, email_notifications_
+        enabled column drop, watch-note staleness, and the notifier
+        helper inline-ALTER pattern were all already resolved earlier.
+        Open threads now reflect actual reality.
+
+PR #92  /settings 'Saved.' confirmation as a fixed-position toast
+        with auto-hide. Pink pill animates from the bottom for 2s
+        then dismisses. Generic .toast CSS class added for reuse.
+
+PR #93  Shared ToastProvider mounted at the layout root — replaces
+        per-component saved state with a single useToast() hook. New
+        toast surfaces: /settings save / password / email / avatar,
+        RecommendModal send, Coven invite send/cancel/accept/decline,
+        Watched log new/edit/delete (9 silent-feedback mutations).
+        Skipped on high-frequency toggles (heart, watchlist, library,
+        owned) where the button state is its own feedback.
+
+PR #94  Modal visual unification — sub-project #28. RecommendModal
+        converts to BottomSheet (drops the rotated zine-card overlay;
+        ritual copy 'Cast the Rune • {filmTitle}' moves into the
+        sheet header). AvatarEditor keeps its centered overlay but
+        adopts dark #141414 + accent top border + serif title visual
+        language. Spec at 2026-05-01-modal-visual-unification-design.md.
+
+PR #95  RecommendModal picker — sub-project #29. Replaces native
+        <select> (the iOS wheel picker that ignored all our styling)
+        with in-sheet UI: search input + horizontal 'top covenfolk'
+        avatar chips (people the user recommends to most often,
+        computed from activity rows of kind='recommendation_sent') +
+        substring-filtered list as the user types. New query
+        getTopRecommendedCovenMemberIds + pure-function
+        filterCovenMembers extracted for testability (7 unit specs).
+        Spec at 2026-05-01-recommend-modal-picker-design.md.
+
+PR #96  BottomSheet focus-stealing bug — primitive-level issue
+        affecting every consumer. Mount-time focus call shared a
+        useEffect with the escape-key listener, so any parent re-
+        render with a fresh onClose identity stole focus back to the
+        sheet panel. Surfaced when typing in RecommendModal's new
+        search input — every letter dropped focus. Fix: split into
+        two effects (focus on [open], escape on [open, onClose]).
+
+Total: 9 PRs merged, 2 sub-projects shipped (#28 modal visual
+unification, #29 RecommendModal picker), 5 prod deploys. No
+migrations applied this half (0148/0149 came in the morning).
+The deferred 'sub-project #28 cropper-overlay-on-dark' verification
+is still untested in prod; the user opted to roll back if it looks
+washed out.
+
+Also created locally during the afternoon (not committed):
+- docs/proposals/2026-05-01-tagging-and-fyp-review.md — review of
+  an external contributor's tagging + 'For You' recommendation spec.
+  Filtered curation: kept the normalized tags table, the 36-vibe
+  canonical list, the weighted scoring algorithm, the 60/25/15
+  bucket distribution. Dropped the proposed user_films unification,
+  director-as-a-tag, the rating column. Five open questions for the
+  user, with the horror-only-vs-broader-catalog scope decision
+  flagged as the unblocker. Untracked by intent — not a green-lit
+  spec, just a review.
