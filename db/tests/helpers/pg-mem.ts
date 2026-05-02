@@ -105,7 +105,6 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
       .filter(stmt => !/CREATE\s+(OR\s+REPLACE\s+)?VIEW\b/i.test(stmt))
       .filter(stmt => !/DROP\s+VIEW\b/i.test(stmt))
       .filter(stmt => !/CREATE\s+TRIGGER\b/i.test(stmt))
-      .filter(stmt => !/ALTER\s+TABLE\s+\S+\s+(DROP|ADD)\s+CONSTRAINT\b/i.test(stmt))
       .join(";\n");
     if (stripped.trim()) await client.query(stripped);
   }
