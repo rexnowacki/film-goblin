@@ -3,9 +3,13 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { addToWatchlist } from "@/lib/actions/watchlists";
 import { addToLibrary } from "@/lib/actions/library";
+import { logWatch } from "@/lib/actions/watched";
 import BottomSheet from "@/components/BottomSheet";
 import { useToast } from "@/components/ToastProvider";
 import { buildShareUrl, buildShareMessage } from "@/components/ShareFilmButton";
+import WatchModal from "@/components/WatchModal";
+
+const TODAY_ISO = () => new Date().toISOString().slice(0, 10);
 
 interface Props {
   filmId: string;
@@ -46,6 +50,7 @@ export default function PosterQuickAdd({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [watchOpen, setWatchOpen] = useState(false);
   const [onWatchlist, setOnWatchlist] = useState(initialOnWatchlist);
   const [inLibrary, setInLibrary] = useState(initialInLibrary);
   const [pending, setPending] = useState<"wl" | "lib" | null>(null);
@@ -180,6 +185,13 @@ export default function PosterQuickAdd({
           <button
             type="button"
             className="poster-action-row"
+            onClick={(e) => { stopAndPrevent(e); setSheetOpen(false); setWatchOpen(true); }}
+          >
+            ✦ Log a watch
+          </button>
+          <button
+            type="button"
+            className="poster-action-row"
             disabled={onWatchlist || pending !== null}
             onClick={clickWatchlist}
           >
@@ -204,6 +216,21 @@ export default function PosterQuickAdd({
           )}
         </div>
       </BottomSheet>
+
+      {filmTitle && (
+        <WatchModal
+          open={watchOpen}
+          mode="new"
+          filmTitle={filmTitle}
+          initial={{ watched_at: TODAY_ISO(), note: "", recommended: null }}
+          onSave={async (values) => {
+            await logWatch(filmId, values);
+            toast("Watch logged");
+            setWatchOpen(false);
+          }}
+          onClose={() => setWatchOpen(false)}
+        />
+      )}
     </div>
   );
 }
