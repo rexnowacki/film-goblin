@@ -20,15 +20,16 @@ export default async function HomePage({
   const user = await getServerUser();
   const supabase = await createClient();
 
-  const initialItems = user
+  const initialPage = user
     ? await getEnrichedActivity(supabase, user.id, {
         limit: PAGE_SIZE,
         actorId: actorId ?? undefined,
         filmId: filmId ?? undefined,
       })
-    : [];
-  const initialCursor = initialItems.length > 0 ? initialItems[initialItems.length - 1].created_at : null;
-  const initialDone = initialItems.length < PAGE_SIZE;
+    : { items: [], nextCursor: null, done: true };
+  const initialItems = initialPage.items;
+  const initialCursor = initialPage.nextCursor;
+  const initialDone = initialPage.done;
 
   // Resolve the active filter's display data so the chip can render.
   let active: React.ComponentProps<typeof FeedSearch>["active"] = null;

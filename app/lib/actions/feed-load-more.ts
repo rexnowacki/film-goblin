@@ -38,11 +38,10 @@ export async function loadMoreFeed(args: LoadMoreFeedArgs): Promise<LoadMoreFeed
     actorId: args.actorId && UUID_RE.test(args.actorId) ? args.actorId : undefined,
     filmId: args.filmId && UUID_RE.test(args.filmId) ? args.filmId : undefined,
   };
-  const items = await getEnrichedActivity(supabase, user.id, opts);
-  const last = items[items.length - 1];
+  const page = await getEnrichedActivity(supabase, user.id, opts);
   return {
-    items,
-    nextCursor: last ? last.created_at : null,
-    done: items.length < limit,
+    items: page.items,
+    nextCursor: page.nextCursor,
+    done: page.done,
   };
 }
