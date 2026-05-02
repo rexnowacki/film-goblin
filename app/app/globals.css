@@ -16,6 +16,7 @@
   --yellow-deep: #d4b700;
   --blood: #b8221c;
   --moss: #3a5f3a;
+  --plum: #9d6fc4;
   --muted: #8a8578;
   --muted-dark: #6b6558;
 
@@ -1364,8 +1365,8 @@ a { color: inherit; text-decoration: none; }
 }
 .film-tag-director {
   background: transparent;
-  border: 1px solid var(--void);
-  color: var(--void);
+  border: 1px solid var(--plum);
+  color: var(--plum);
 }
 .film-tag-vibe {
   background: transparent;
