@@ -12,6 +12,7 @@ import FollowButton from "@/components/FollowButton";
 import CovenButton from "@/components/CovenButton";
 import RoleBadge from "@/components/RoleBadge";
 import ActivityRow from "@/components/activity/ActivityRow";
+import InviteBanner from "@/components/InviteBanner";
 import Link from "next/link";
 
 export default async function PublicProfilePage({
@@ -50,6 +51,7 @@ export default async function PublicProfilePage({
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
+      {!user && <InviteBanner inviterUsername={bundle.profile.username} />}
       <TopNav current="coven" />
       <BottomNav current="coven" />
 

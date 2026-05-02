@@ -12,6 +12,8 @@ function SignUpInner() {
   const [duplicate, setDuplicate] = useState(false);
   const [pending, setPending] = useState(false);
   const redirectTo = params.get("redirect") || "/home";
+  const inviteRaw = params.get("invite");
+  const invite = inviteRaw && /^[a-z0-9._]+$/.test(inviteRaw) ? inviteRaw : null;
 
   async function submit(formData: FormData) {
     setPending(true);
@@ -49,6 +51,7 @@ function SignUpInner() {
 
         <form action={submit}>
           <input type="hidden" name="redirect" value={redirectTo} />
+          {invite && <input type="hidden" name="invite" value={invite} />}
           <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Username</div>
           <input
             name="username"

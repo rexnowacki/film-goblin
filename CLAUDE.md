@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > **Convention:** This section is updated before each session close so the next session can pick up cold. Update it at the end of every session — what just shipped, what's next, any open threads worth carrying forward.
 
-**Last updated:** 2026-05-01 (long day — morning shipped #25/#26/#27, afternoon shipped #28 modal visual unification + #29 RecommendModal picker + 7 polish/fix PRs including a primitive-level BottomSheet focus-stealing bug)
+**Last updated:** 2026-05-01 (sub-projects #25–#30 — comment polish+likes, username standardization, like_on_comment notification, modal visual unification, RecommendModal picker, sticky invite CTA + auto-coven-request)
 
 **Last shipped:** Five sub-projects + 7 polish/fix PRs across two sessions today. Five sub-projects shipped end-to-end (brainstorm → spec → plan → implementation → migration where applicable → merge → prod deploy). Three new prod migrations (0147, 0148, 0149) plus an unrelated 0150 picked up incidentally — see Open threads.
 
