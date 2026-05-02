@@ -3,6 +3,15 @@
 import { useState, useTransition } from "react";
 import { setFilmTags } from "@/lib/actions/admin/film-tags";
 import type { TagsByFacet, TagOption } from "@/lib/queries/film-tags";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, verticalListSortingStrategy, useSortable, sortableKeyboardCoordinates,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type ModFacet = "subject" | "tone" | "theme" | "setting" | "content";
 type FacetWithCap = {
@@ -39,6 +48,50 @@ interface Props {
   initial: InitialState;
 }
 
+interface OrderedRow {
+  id: string;             // tag id, or "__director__" for the virtual director slot
+  label: string;
+  facet: string;          // "subgenre" / "subject" / etc., or "director"
+  isPrimary: boolean;     // true only for the Primary subgenre tag
+  isVirtual: boolean;     // director row — non-draggable
+  isPrimaryRow: boolean;  // primary subgenre — non-draggable, locked at slot 1
+}
+
+function SortableRowItem({ row }: { row: OrderedRow }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: row.id, disabled: row.isVirtual || row.isPrimaryRow,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  const meta = row.isVirtual
+    ? "director · auto"
+    : row.isPrimaryRow
+      ? "subgenre · Primary"
+      : row.facet === "subgenre"
+        ? "subgenre · Secondary"
+        : row.facet;
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`tag-order-row ${row.isVirtual ? "is-virtual" : ""} ${row.isPrimaryRow ? "is-locked" : ""}`}
+      {...attributes}
+    >
+      <span
+        className="tag-order-handle"
+        {...(row.isVirtual || row.isPrimaryRow ? {} : listeners)}
+      >
+        {row.isVirtual || row.isPrimaryRow ? "—" : "☰"}
+      </span>
+      <span className="tag-order-label">{row.label}</span>
+      <span className="tag-order-meta">{meta}</span>
+    </div>
+  );
+}
+
 export default function FilmTagEditor({ filmId, director, vocab, initial }: Props) {
   const [primary, setPrimary] = useState<string | null>(initial.primarySubgenreId);
   const [secondaries, setSecondaries] = useState<string[]>(initial.secondarySubgenreIds);
@@ -50,6 +103,60 @@ export default function FilmTagEditor({ filmId, director, vocab, initial }: Prop
   const [ordered, setOrdered] = useState<string[]>(initial.orderedTagIds);
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function lookupTag(id: string): { facet: string; name: string } | null {
+    const facets: (keyof TagsByFacet)[] = ["subgenre", "subject", "tone", "theme", "setting", "content"];
+    for (const f of facets) {
+      const found = vocab[f].find(o => o.id === id);
+      if (found) return { facet: f, name: found.name };
+    }
+    return null;
+  }
+
+  const orderedRows: OrderedRow[] = (() => {
+    const rows: OrderedRow[] = [];
+    for (let i = 0; i < ordered.length; i++) {
+      const tagId = ordered[i];
+      const t = lookupTag(tagId);
+      if (!t) continue;
+      rows.push({
+        id: tagId,
+        label: t.name,
+        facet: t.facet,
+        isPrimary: tagId === primary,
+        isVirtual: false,
+        isPrimaryRow: tagId === primary,
+      });
+      // Insert virtual director row right after the Primary subgenre (i=0 case).
+      if (i === 0) {
+        rows.push({
+          id: "__director__",
+          label: director || "(no director set)",
+          facet: "director",
+          isPrimary: false,
+          isVirtual: true,
+          isPrimaryRow: false,
+        });
+      }
+    }
+    return rows;
+  })();
+
+  function onDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    if (active.id === "__director__" || over.id === "__director__") return;
+    if (primary && (active.id === primary || over.id === primary)) return;
+    const oldIdx = ordered.indexOf(String(active.id));
+    const newIdx = ordered.indexOf(String(over.id));
+    if (oldIdx < 0 || newIdx < 0) return;
+    setOrdered(prev => arrayMove(prev, oldIdx, newIdx));
+  }
 
   // Sync ordered when picker selection changes:
   // - filter out ids that aren't picked anymore
@@ -239,15 +346,31 @@ export default function FilmTagEditor({ filmId, director, vocab, initial }: Prop
         </div>
       ))}
 
-      {/* Order stage placeholder — Task 8 replaces this with @dnd-kit drag list. */}
       <div className="eyebrow" style={{ fontSize: 11, marginTop: 24, marginBottom: 8, color: "var(--muted)" }}>Order</div>
-      <div style={{ fontSize: 12, opacity: 0.6, fontStyle: "italic" }}>
-        Drag-to-reorder UI ships in Task 8.
-      </div>
-      {director && (
-        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>
-          Director: <strong style={{ color: "var(--bone)" }}>{director}</strong> (rendered at slot 2)
+      <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 12px" }}>
+        Drag to reorder. Slots above the line show on the film page; slots below feed the recommender silently.
+      </p>
+      {orderedRows.length === 0 ? (
+        <div style={{ fontSize: 12, opacity: 0.6, fontStyle: "italic" }}>
+          Pick a Primary sub-genre + at least one tone to populate this list.
         </div>
+      ) : (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={orderedRows.map(r => r.id)} strategy={verticalListSortingStrategy}>
+            <div className="tag-order-list">
+              {orderedRows.map((row, idx) => (
+                <div key={row.id}>
+                  <SortableRowItem row={row} />
+                  {idx === 4 && (
+                    <div className="tag-order-divider">
+                      <span>visible above · hidden below</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       <div style={{ marginTop: 24, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
