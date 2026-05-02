@@ -207,19 +207,25 @@ export type Database = {
       }
       film_tags: {
         Row: {
-          film_id: string
-          tag_id: string
           created_at: string
+          film_id: string
+          is_primary: boolean
+          position: number
+          tag_id: string
         }
         Insert: {
-          film_id: string
-          tag_id: string
           created_at?: string
+          film_id: string
+          is_primary?: boolean
+          position?: number
+          tag_id: string
         }
         Update: {
-          film_id?: string
-          tag_id?: string
           created_at?: string
+          film_id?: string
+          is_primary?: boolean
+          position?: number
+          tag_id?: string
         }
         Relationships: [
           {
@@ -247,6 +253,7 @@ export type Database = {
           director: string
           first_seen_at: string
           genre_primary: string
+          horror_adjacent: boolean
           id: string
           itunes_id: number | null
           itunes_url: string
@@ -271,6 +278,7 @@ export type Database = {
           director?: string
           first_seen_at?: string
           genre_primary?: string
+          horror_adjacent?: boolean
           id?: string
           itunes_id?: number | null
           itunes_url?: string
@@ -295,6 +303,7 @@ export type Database = {
           director?: string
           first_seen_at?: string
           genre_primary?: string
+          horror_adjacent?: boolean
           id?: string
           itunes_id?: number | null
           itunes_url?: string
@@ -784,19 +793,19 @@ export type Database = {
         Row: {
           id: string
           name: string
-          type: string
+          type: "subgenre" | "subject" | "tone" | "theme" | "setting" | "content"
           created_at: string
         }
         Insert: {
           id?: string
           name: string
-          type: string
+          type: "subgenre" | "subject" | "tone" | "theme" | "setting" | "content"
           created_at?: string
         }
         Update: {
           id?: string
           name?: string
-          type?: string
+          type?: "subgenre" | "subject" | "tone" | "theme" | "setting" | "content"
           created_at?: string
         }
         Relationships: []

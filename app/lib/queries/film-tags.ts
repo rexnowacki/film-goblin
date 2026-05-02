@@ -1,11 +1,56 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "../supabase/types";
+import type { Database } from "@/lib/supabase/types";
 
 type Client = SupabaseClient<Database>;
 
+export type TagFacet = 'subgenre' | 'subject' | 'tone' | 'theme' | 'setting' | 'content';
+
+export interface FilmTagRow {
+  id: string;
+  name: string;
+  type: TagFacet;
+  position: number;
+  is_primary: boolean;
+}
+
 export interface FilmTags {
-  subgenre: string | null;   // tag.name where type='subgenre', or null
-  vibes: string[];           // tag.name list where type='vibe'
+  visible: FilmTagRow[];   // film_tags rows where position <= 4 (max 4; staff guide visible 1-5 includes virtual director slot)
+  hidden: FilmTagRow[];    // film_tags rows where position >= 5 (the FYP tail)
+}
+
+/**
+ * Returns ordered tags for a film, split into visible (positions 1-4 in
+ * film_tags = staff guide positions 1, 3, 4, 5 — guide position 2 is the
+ * virtual director slot from films.director, not in film_tags) and hidden
+ * (positions 5+).
+ *
+ * Hidden tags don't render on the film detail page in v2 but are returned
+ * so the FYP recommender (sub-project B) can read the full ranked list
+ * from the same query.
+ */
+export async function getFilmTags(client: Client, filmId: string): Promise<FilmTags> {
+  const { data, error } = await client
+    .from("film_tags")
+    .select("position, is_primary, tag:tags!inner(id, name, type)")
+    .eq("film_id", filmId)
+    .order("position", { ascending: true });
+  if (error) throw error;
+  const rows = (data ?? []) as unknown as Array<{
+    position: number;
+    is_primary: boolean;
+    tag: { id: string; name: string; type: TagFacet };
+  }>;
+  const ordered: FilmTagRow[] = rows.map(r => ({
+    id: r.tag.id,
+    name: r.tag.name,
+    type: r.tag.type,
+    position: r.position,
+    is_primary: r.is_primary,
+  }));
+  return {
+    visible: ordered.filter(r => r.position <= 4),
+    hidden: ordered.filter(r => r.position >= 5),
+  };
 }
 
 export interface TagOption {
@@ -13,53 +58,24 @@ export interface TagOption {
   name: string;
 }
 
+export type TagsByFacet = Record<TagFacet, TagOption[]>;
+
 /**
- * Returns the curated tag set for a film. Joins film_tags → tags and
- * partitions by type. The schema technically allows multiple subgenre
- * rows per film, but the editor enforces 1; if multiple are present we
- * use the first (alphabetical by name).
+ * Returns the entire canonical tag vocabulary keyed by facet. Drives the
+ * editor's chip-picker stage. Results are alphabetical within each facet.
  */
-export async function getFilmTags(client: Client, filmId: string): Promise<FilmTags> {
+export async function getAllTagsGroupedByType(client: Client): Promise<TagsByFacet> {
   const { data, error } = await client
-    .from("film_tags")
-    .select("tag:tags!inner(name, type)")
-    .eq("film_id", filmId);
+    .from("tags")
+    .select("id, name, type")
+    .order("name", { ascending: true });
   if (error) throw error;
-  const subgenres: string[] = [];
-  const vibes: string[] = [];
-  for (const row of data ?? []) {
-    const tag = (row as unknown as { tag: { name: string; type: string } }).tag;
-    if (tag.type === "subgenre") subgenres.push(tag.name);
-    else if (tag.type === "vibe") vibes.push(tag.name);
-  }
-  subgenres.sort();
-  vibes.sort();
-  return {
-    subgenre: subgenres[0] ?? null,
-    vibes,
+  const grouped: TagsByFacet = {
+    subgenre: [], subject: [], tone: [], theme: [], setting: [], content: [],
   };
-}
-
-/**
- * All sub-genre tags. Cached at the request level — same lists render on
- * every admin editor mount.
- */
-export async function getAllSubgenres(client: Client): Promise<TagOption[]> {
-  const { data, error } = await client
-    .from("tags")
-    .select("id, name")
-    .eq("type", "subgenre")
-    .order("name", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as TagOption[];
-}
-
-export async function getAllVibes(client: Client): Promise<TagOption[]> {
-  const { data, error } = await client
-    .from("tags")
-    .select("id, name")
-    .eq("type", "vibe")
-    .order("name", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as TagOption[];
+  for (const row of data ?? []) {
+    const type = row.type as TagFacet;
+    if (grouped[type]) grouped[type].push({ id: row.id, name: row.name });
+  }
+  return grouped;
 }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import FilmForm from "../../FilmForm";
 import RetireModal from "../../RetireModal";
 import FilmTagEditor from "@/components/admin/FilmTagEditor";
-import { getAllSubgenres, getAllVibes } from "@/lib/queries/film-tags";
+import { getAllTagsGroupedByType, getFilmTags } from "@/lib/queries/film-tags";
 import type { FilmFormFields } from "@/lib/actions/admin/films";
 
 export default async function EditFilmPage({ params }: { params: Promise<{ id: string }> }) {
@@ -17,19 +17,27 @@ export default async function EditFilmPage({ params }: { params: Promise<{ id: s
     .maybeSingle();
   if (!film) notFound();
 
-  const [watchlistCount, listsCount, reviewsCount, activityCount, allSubgenres, allVibes, currentTagsRaw] = await Promise.all([
+  const [watchlistCount, listsCount, reviewsCount, activityCount, vocab, currentTags] = await Promise.all([
     supabase.from("watchlists").select("film_id", { count: "exact", head: true }).eq("film_id", id).then(r => r.count ?? 0),
     supabase.from("list_films").select("film_id", { count: "exact", head: true }).eq("film_id", id).then(r => r.count ?? 0),
     supabase.from("reviews").select("film_id", { count: "exact", head: true }).eq("film_id", id).then(r => r.count ?? 0),
     supabase.from("activity").select("id", { count: "exact", head: true }).contains("payload", { film_id: id } as never).then(r => r.count ?? 0),
-    getAllSubgenres(supabase),
-    getAllVibes(supabase),
-    supabase.from("film_tags").select("tag_id, tag:tags!inner(id, name, type)").eq("film_id", id),
+    getAllTagsGroupedByType(supabase),
+    getFilmTags(supabase, film.id),
   ]);
 
-  const currentTags = (currentTagsRaw.data ?? []) as unknown as Array<{ tag_id: string; tag: { id: string; name: string; type: string } }>;
-  const initialSubgenreId = currentTags.find(t => t.tag.type === "subgenre")?.tag_id ?? null;
-  const initialVibeIds = currentTags.filter(t => t.tag.type === "vibe").map(t => t.tag_id);
+  const orderedAll = [...currentTags.visible, ...currentTags.hidden];
+  const primaryRow = orderedAll.find(t => t.is_primary);
+  const tagInitial = {
+    primarySubgenreId: primaryRow?.id ?? null,
+    secondarySubgenreIds: orderedAll.filter(t => t.type === "subgenre" && !t.is_primary).map(t => t.id),
+    subjectIds: orderedAll.filter(t => t.type === "subject").map(t => t.id),
+    toneIds:    orderedAll.filter(t => t.type === "tone").map(t => t.id),
+    themeIds:   orderedAll.filter(t => t.type === "theme").map(t => t.id),
+    settingIds: orderedAll.filter(t => t.type === "setting").map(t => t.id),
+    contentIds: orderedAll.filter(t => t.type === "content").map(t => t.id),
+    orderedTagIds: orderedAll.map(t => t.id),
+  };
 
   const initial: FilmFormFields = {
     itunes_id: film.itunes_id,
@@ -58,10 +66,9 @@ export default async function EditFilmPage({ params }: { params: Promise<{ id: s
       <FilmForm mode="edit" filmId={film.id} initial={initial} />
       <FilmTagEditor
         filmId={film.id}
-        allSubgenres={allSubgenres}
-        allVibes={allVibes}
-        initialSubgenreId={initialSubgenreId}
-        initialVibeIds={initialVibeIds}
+        director={film.director}
+        vocab={vocab}
+        initial={tagInitial}
       />
     </div>
   );

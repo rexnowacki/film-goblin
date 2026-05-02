@@ -6,7 +6,7 @@ into an actual build, it becomes a spec under `docs/superpowers/specs/`.
 
 See `docs/backlog.md` for unprioritized ideas. Full list of shipped
 sub-projects with spec paths lives in `docs/sub-project-history.md`
-(thirty-two shipped as of 2026-05-02).
+(thirty-three shipped as of 2026-05-02).
 
 ## High
 
@@ -17,11 +17,10 @@ sub-projects with spec paths lives in `docs/sub-project-history.md`
   with Resend, swap `NOTIFY_FROM_EMAIL`. Unblocks price-drop digests
   reaching actual users — currently restricted to the account holder's
   inbox by Resend's sandbox.
-- **Curate film tags.** Sub-project 32 shipped the content
-  infrastructure but every film starts untagged. Walk the catalog via
-  `/admin/films?untagged=1`, pick a sub-genre + up to three vibes per
-  film. Unblocks the FYP recommender (sub-project B) and the
-  poster-grid sub-genre pill. Operational, not engineering.
+- **Curate film tags.** Sub-project 33 shipped the editor UX (six-facet
+  picker + drag-to-reorder list with visible/hidden divider). Walk the
+  catalog via `/admin/films?untagged=1` per the staff style guide v2.
+  Unblocks the FYP recommender. Operational, not engineering.
 - **`/settings` handle validation.** Mirror the `/^[a-z0-9._]+$/` regex
   from `OnboardingForm` + `_completeOnboarding` into `SettingsForm` +
   `updateProfile`. Today a user editing later can still set a malformed
@@ -33,7 +32,9 @@ sub-projects with spec paths lives in `docs/sub-project-history.md`
   user from their `watched.recommended` history × `film_tags`; a
   candidate ranker; a `/for-you` route; tag listing pages at
   `/tags/<name>`; onboarding lane-picker so new users seed an initial
-  affinity vector. Builds on the content infra shipped in #32.
+  affinity vector. Builds on the v2 seven-facet positional schema
+  shipped in #33 — hidden tail (positions 5+ in `film_tags`) is
+  curated specifically to feed the recommender.
 - **Rating pills on poster grids.** Surface
   `films_with_stats.coven_rating_pct` on `FilmPoster` everywhere a
   rating-eligible grid renders (`/films`, `/library`, `/watched`,

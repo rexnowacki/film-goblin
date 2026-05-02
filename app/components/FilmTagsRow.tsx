@@ -1,30 +1,41 @@
+import type { FilmTagRow } from "@/lib/queries/film-tags";
+
 interface Props {
-  subgenre: string | null;
+  visible: FilmTagRow[];
   director: string;
-  vibes: string[];
 }
 
 /**
- * Visual demo of the tagging system shape proposed in the tagging review
- * (docs/proposals/2026-05-01-tagging-and-fyp-review.md). Renders small pills
- * for sub-genre + director + 3 vibes. Currently uses films.genre_primary
- * (iTunes raw category) for sub-genre and a hardcoded vibe array — swap to
- * real film_tags data once the tagging sub-project ships.
+ * Renders the editorial 5-slot capsule on /film/[id] from the v2 tagging
+ * system: pink Primary subgenre pill, plum director pill, up to 3
+ * seafoam-outline distinguishing pills.
+ *
+ * Sparse curation (fewer than 4 visible tags) means fewer pills, no
+ * padding. Empty director omits that slot. Visible array comes from
+ * getFilmTags's positions 1-4; the hidden tail (positions 5+) is not
+ * rendered here — it feeds the FYP recommender.
  */
-export default function FilmTagsRow({ subgenre, director, vibes }: Props) {
+export default function FilmTagsRow({ visible, director }: Props) {
+  if (visible.length === 0 && !director) return null;
+
+  const primary = visible.find(t => t.is_primary);
+  const distinguishing = visible.filter(t => !t.is_primary).slice(0, 3);
+
   return (
     <div className="film-tags-row">
-      {subgenre && (
+      {primary && (
         <span className="film-tag film-tag-subgenre" title="Sub-genre">
-          {subgenre.toLowerCase()}
+          {primary.name}
         </span>
       )}
-      <span className="film-tag film-tag-director" title="Director">
-        {director}
-      </span>
-      {vibes.slice(0, 3).map(v => (
-        <span key={v} className="film-tag film-tag-vibe" title="Vibe">
-          {v}
+      {director && (
+        <span className="film-tag film-tag-director" title="Director">
+          {director}
+        </span>
+      )}
+      {distinguishing.map(t => (
+        <span key={t.id} className="film-tag film-tag-vibe" title={t.type}>
+          {t.name}
         </span>
       ))}
     </div>

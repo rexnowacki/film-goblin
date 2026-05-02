@@ -78,6 +78,11 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
     // Pure-DML backfills aren't DDL the smoke cares about, and pg-mem chokes on
     // their UPDATE … FROM (subquery) shape.
     if (f.includes("backfill")) continue;
+    // Mig 0152 updates CHECK constraints on tags.type and reseeds with new types.
+    // pg-mem's constraint enforcement is strict and doesn't handle constraint
+    // modifications and subsequent INSERTs with new type values. Skip it — the smoke
+    // only asserts table/column presence, not constraint behavior. RLS tests cover the real constraint.
+    if (f === "0152_tagging_system_v2.sql") continue;
     const raw = readFileSync(join(DB_MIGRATIONS, f), "utf8");
     // pg-mem can't parse `LANGUAGE plpgsql SECURITY DEFINER` functions. Skip
     // any migration file that defines one — the smoke only asserts table
