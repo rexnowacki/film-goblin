@@ -18,10 +18,28 @@ import FilmActions from "@/components/FilmActions";
 import RecommendModal from "@/components/RecommendModal";
 import PriceStatBlock from "@/components/PriceStatBlock";
 import CovenScore from "@/components/CovenScore";
+import FilmTagsRow from "@/components/FilmTagsRow";
 import ShareFilmButton from "@/components/ShareFilmButton";
 import SharerWatchPin from "@/components/SharerWatchPin";
 import FilmCTABanner from "@/components/FilmCTABanner";
 import { compactCount } from "@/lib/format";
+
+// Demo-only: deterministic 3-vibe selection from a small pool, hashed from
+// film.id so each film looks varied without needing a real tagging table.
+// Replace once docs/proposals/2026-05-01-tagging-and-fyp-review.md ships.
+const DEMO_VIBES = [
+  "slow-burn", "occult", "surreal", "psychological", "isolation",
+  "ritual", "gore", "arthouse", "supernatural", "paranoia",
+  "bleak", "cult", "grief", "splatter",
+];
+function demoVibesForFilm(id: string): string[] {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0;
+  const a = Math.abs(h) % DEMO_VIBES.length;
+  const b = (a + 3 + (Math.abs(h >> 5) % (DEMO_VIBES.length - 4))) % DEMO_VIBES.length;
+  const c = (b + 5 + (Math.abs(h >> 11) % (DEMO_VIBES.length - 6))) % DEMO_VIBES.length;
+  return [DEMO_VIBES[a], DEMO_VIBES[b], DEMO_VIBES[c]];
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -129,6 +147,14 @@ export default async function FilmDetailPage({
             <p style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontStyle: "italic", lineHeight: 1.35, margin: "28px 0", maxWidth: 620 }}>
               "{film.description}"
             </p>
+            <FilmTagsRow
+              subgenre={film.genre_primary}
+              director={film.director}
+              vibes={demoVibesForFilm(film.id)}
+            />
+            <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 11, color: "var(--muted)", marginBottom: 18 }}>
+              ✦ tag system preview — vibe tags are demo data
+            </div>
             {(film.watchlist_count > 0 || film.watcher_count > 0) && (
               <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, color: "var(--muted)", margin: "0 0 18px" }}>
                 {film.watchlist_count > 0 && (
