@@ -7,7 +7,7 @@ export default function Loading() {
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNavSkeleton />
       <BottomNavSkeleton />
-      <SkeletonGrid />
+      <SkeletonGrid showSortChips />
     </div>
   );
 }
