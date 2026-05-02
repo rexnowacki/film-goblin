@@ -51,18 +51,9 @@ export default function CovenChipRow({ members }: Props) {
         )}
       </div>
 
-      <div className="coven-chip-row" style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: showSearch ? 20 : 0 }}>
-        {topChips.map(m => (
-          <Link key={m.id} href={`/p/${encodeURIComponent(m.username)}`} className="coven-chip">
-            <Avatar name={m.username} color="var(--accent)" size={36} url={m.avatar_url} />
-            <span style={{ fontFamily: "var(--font-ui)", fontSize: 12 }}>{m.username}</span>
-          </Link>
-        ))}
-      </div>
-
       {showSearch && (
         <>
-          <div className="coven-search-pill">
+          <div className="search-pill">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="11" cy="11" r="7" />
               <line x1="21" y1="21" x2="16.5" y2="16.5" />
@@ -76,17 +67,26 @@ export default function CovenChipRow({ members }: Props) {
           </div>
           {query.trim() && (
             filtered.length === 0 ? (
-              <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6, fontSize: 14 }}>
+              <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6, fontSize: 14, marginBottom: 16 }}>
                 No covenfolk match.
               </div>
             ) : (
-              <div style={{ display: "grid", gap: 8 }}>
+              <div style={{ display: "grid", gap: 8, marginBottom: 16 }}>
                 {filtered.map(m => <CovenCompactRow key={m.id} member={m} />)}
               </div>
             )
           )}
         </>
       )}
+
+      <div className="coven-chip-row" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        {topChips.map(m => (
+          <Link key={m.id} href={`/p/${encodeURIComponent(m.username)}`} className="coven-chip">
+            <Avatar name={m.username} color="var(--accent)" size={36} url={m.avatar_url} />
+            <span style={{ fontFamily: "var(--font-ui)", fontSize: 12 }}>{m.username}</span>
+          </Link>
+        ))}
+      </div>
 
       <CovenSeeAllSheet open={seeAllOpen} onClose={() => setSeeAllOpen(false)} members={members} />
     </>
@@ -95,7 +95,7 @@ export default function CovenChipRow({ members }: Props) {
 
 export function CovenCompactRow({ member }: { member: CovenfolkRanked }) {
   return (
-    <div className="coven-row">
+    <div className="pill-row">
       <Avatar name={member.username} color="var(--accent)" size={32} url={member.avatar_url} />
       <Link
         href={`/p/${encodeURIComponent(member.username)}`}

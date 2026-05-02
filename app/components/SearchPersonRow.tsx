@@ -56,7 +56,7 @@ export default function SearchPersonRow({ profile, state, incomingRequestId }: S
   })();
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", border: "2px solid var(--bone)", padding: 16 }}>
+    <div className="pill-row is-large" style={{ flexWrap: "wrap" }}>
       <Link
         href={`/p/${encodeURIComponent(profile.username)}`}
         style={{ display: "flex", alignItems: "center", gap: 14, flex: "1 1 220px", textDecoration: "none", color: "inherit", minWidth: 0 }}
