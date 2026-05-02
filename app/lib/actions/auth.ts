@@ -5,6 +5,7 @@ import { serviceRoleClient } from "@/lib/supabase/service-role";
 import { redirect } from "next/navigation";
 import { friendlyError } from "@/lib/auth/friendly-errors";
 import { safeRedirect } from "@/lib/auth/safe-redirect";
+import { setInviteCookie } from "./invite-cookie";
 
 const USERNAME_RE = /^[a-z0-9._]+$/;
 const SYNTHETIC_EMAIL_DOMAIN = "noreply.film-goblin.app";
@@ -49,6 +50,7 @@ export async function signUp(formData: FormData): Promise<{ error?: string; info
   const username = String(formData.get("username") || "").trim().toLowerCase();
   const redirectIn = String(formData.get("redirect") || "/home");
   const target = safeRedirect(redirectIn);
+  const invite = String(formData.get("invite") || "").trim().toLowerCase();
 
   if (!USERNAME_RE.test(username) || username.length > 24) {
     return { error: "Username: lowercase letters, numbers, dots, underscores only (max 24)." };
@@ -83,6 +85,11 @@ export async function signUp(formData: FormData): Promise<{ error?: string; info
   const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
   if (signInErr) {
     return { error: friendlyError(signInErr) };
+  }
+  if (invite) {
+    try {
+      await setInviteCookie(invite);
+    } catch { /* cookie failure must never break signup */ }
   }
   redirect(target);
 }
