@@ -56,7 +56,7 @@ export default function WatchModal({ open, mode, initial, filmTitle, onSave, onD
 
   return (
     <BottomSheet open={open} onClose={onClose} title={mode === "new" ? "Log a watch" : "Edit watch"}>
-      <div style={{ display: "grid", gap: 14 }}>
+      <div style={{ display: "grid", gap: 14, paddingBottom: "env(keyboard-inset-height, 0px)" }}>
         <div className="caps" style={{ fontSize: 11, opacity: 0.8 }}>
           {filmTitle}
         </div>

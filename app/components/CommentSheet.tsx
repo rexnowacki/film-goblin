@@ -90,7 +90,7 @@ export default function CommentSheet({
 
   return (
     <BottomSheet open={open} onClose={onClose} title={title}>
-      <div style={{ display: "flex", flexDirection: "column", maxHeight: "70dvh" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "70dvh" }}>
         <div style={{ flex: 1, overflowY: "auto", paddingBottom: 8 }}>
           <CommentList
             items={items}
