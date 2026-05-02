@@ -31,25 +31,25 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers, topCov
   const [sent, setSent] = useState(false);
   const [pending, start] = useTransition();
 
-  // Order chips by topCovenMemberIds; if the user has never recommended,
-  // fall back to alphabetical by username so the chip row is still useful
-  // for new accounts.
-  const { chipMembers } = useMemo(() => {
-    const byId = new Map(covenMembers.map(m => [m.id, m]));
-    const top = topCovenMemberIds
-      .map(id => byId.get(id))
-      .filter((m): m is CovenMember => m !== undefined);
-    if (top.length > 0) {
-      return { chipMembers: top.slice(0, 8) };
-    }
-    const alpha = [...covenMembers].sort((a, b) => a.username.localeCompare(b.username));
-    return { chipMembers: alpha.slice(0, 8) };
+  // Sort the full coven list with topCovenMemberIds first (in their existing
+  // order — already ranked by recommendation count desc), then everyone else
+  // alphabetically by username. Surfaces likely picks without dedicated UI.
+  const sortedMembers = useMemo(() => {
+    const topRank = new Map(topCovenMemberIds.map((id, i) => [id, i]));
+    return [...covenMembers].sort((a, b) => {
+      const aRank = topRank.get(a.id);
+      const bRank = topRank.get(b.id);
+      if (aRank !== undefined && bRank !== undefined) return aRank - bRank;
+      if (aRank !== undefined) return -1;
+      if (bRank !== undefined) return 1;
+      return a.username.localeCompare(b.username);
+    });
   }, [covenMembers, topCovenMemberIds]);
 
-  const filtered = useMemo(
-    () => filterCovenMembers(covenMembers, search),
-    [covenMembers, search],
-  );
+  const visibleMembers = useMemo(() => {
+    if (search.trim().length === 0) return sortedMembers;
+    return filterCovenMembers(sortedMembers, search);
+  }, [sortedMembers, search]);
 
   function close() {
     setOpen(false);
@@ -113,32 +113,9 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers, topCov
             className="recommend-picker-search"
           />
 
-          <div className="recommend-picker-chips">
-            {chipMembers.map(m => {
-              const selected = m.id === selectedUserId;
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => pick(m.id)}
-                  className={`recommend-picker-chip ${selected ? "is-selected" : ""}`}
-                  aria-pressed={selected}
-                >
-                  <Avatar
-                    name={m.username}
-                    color="var(--accent)"
-                    size={44}
-                    url={m.avatar_url}
-                  />
-                  <span className="recommend-picker-chip-name">{m.username}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {filtered.length > 0 && (
+          {visibleMembers.length > 0 ? (
             <div className="recommend-picker-list">
-              {filtered.map(m => {
+              {visibleMembers.map(m => {
                 const selected = m.id === selectedUserId;
                 return (
                   <button
@@ -164,8 +141,7 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers, topCov
                 );
               })}
             </div>
-          )}
-          {search.trim().length > 0 && filtered.length === 0 && (
+          ) : (
             <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, color: "var(--muted)", padding: "4px 0" }}>
               No covenfolk match.
             </div>

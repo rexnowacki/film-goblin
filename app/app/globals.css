@@ -1211,51 +1211,6 @@ a { color: inherit; text-decoration: none; }
   color: var(--muted);
 }
 
-.recommend-picker-chips {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.recommend-picker-chips::-webkit-scrollbar { display: none; }
-
-.recommend-picker-chip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  border: 0;
-  padding: 4px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.recommend-picker-chip > :first-child {
-  border-radius: 999px;
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-  transition: outline-color 120ms ease-out;
-}
-.recommend-picker-chip.is-selected > :first-child {
-  outline-color: var(--accent);
-}
-.recommend-picker-chip-name {
-  font-family: var(--font-ui);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--bone);
-  max-width: 64px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.recommend-picker-chip.is-selected .recommend-picker-chip-name {
-  color: var(--accent);
-}
-
 .recommend-picker-list {
   display: flex;
   flex-direction: column;
