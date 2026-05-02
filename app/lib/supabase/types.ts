@@ -255,6 +255,12 @@ export type Database = {
           runtime_min: number
           title: string
           tracking: boolean
+          trailer_label: string | null
+          trailer_source: string | null
+          trailer_updated_at: string | null
+          trailer_url: string | null
+          trailer_verified: boolean
+          trailer_youtube_id: string | null
           year: number
         }
         Insert: {
@@ -273,6 +279,12 @@ export type Database = {
           runtime_min?: number
           title: string
           tracking?: boolean
+          trailer_label?: string | null
+          trailer_source?: string | null
+          trailer_updated_at?: string | null
+          trailer_url?: string | null
+          trailer_verified?: boolean
+          trailer_youtube_id?: string | null
           year?: number
         }
         Update: {
@@ -291,6 +303,12 @@ export type Database = {
           runtime_min?: number
           title?: string
           tracking?: boolean
+          trailer_label?: string | null
+          trailer_source?: string | null
+          trailer_updated_at?: string | null
+          trailer_url?: string | null
+          trailer_verified?: boolean
+          trailer_youtube_id?: string | null
           year?: number
         }
         Relationships: []
