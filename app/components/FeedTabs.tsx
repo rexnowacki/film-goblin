@@ -176,6 +176,20 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
           )}
         </div>
       )}
+
+      {done && filtered.length > 0 && (
+        <div style={{
+          textAlign: "center",
+          padding: "32px 0 8px",
+          fontFamily: "var(--font-serif)",
+          fontStyle: "italic",
+          fontSize: 13,
+          color: "var(--muted)",
+          opacity: 0.6,
+        }}>
+          — you've reached the back of the grimoire —
+        </div>
+      )}
     </div>
   );
 }

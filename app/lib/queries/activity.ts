@@ -77,6 +77,18 @@ export interface FeedFilters {
   before?: string;
 }
 
+export interface EnrichedActivityPage {
+  items: EnrichedActivity[];
+  // Cursor for the next page — the LAST raw row's created_at, not the
+  // last enriched item's. Using the raw boundary means we don't fall off
+  // the end early when enrichment drops rows (e.g., film no longer exists).
+  nextCursor: string | null;
+  // True when the raw fetch was shorter than the limit — i.e., we know
+  // there's nothing older to fetch. Decoupled from items.length so dropped
+  // rows don't fake-out the pagination.
+  done: boolean;
+}
+
 /**
  * Returns un-grouped enriched activity rows newest-first. Same fetch +
  * enrichment logic as getEnrichedFeed but without the groupFeed step,
@@ -89,7 +101,7 @@ export async function getEnrichedActivity(
   client: Client,
   followerUserId: string,
   opts: FeedFilters = {},
-): Promise<EnrichedActivity[]> {
+): Promise<EnrichedActivityPage> {
   const limit = opts.limit ?? 20;
 
   // Feed scope is the user's coven graph (mutual bonds), not the older
@@ -151,7 +163,12 @@ export async function getEnrichedActivity(
   const raw = Array.from(merged.values())
     .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
     .slice(0, limit);
-  if (raw.length === 0) return [];
+  // Pagination signals come from the RAW result before enrichment. If we
+  // asked for `limit` rows and got fewer back, there's nothing older to
+  // fetch — done. Otherwise the cursor is the oldest raw row's timestamp.
+  const rawDone = raw.length < limit;
+  const rawCursor: string | null = raw.length > 0 ? raw[raw.length - 1].created_at : null;
+  if (raw.length === 0) return { items: [], nextCursor: null, done: true };
 
   const rawActorIds = Array.from(new Set(raw.map(r => r.actor_user_id)));
   const filmIds = Array.from(new Set(raw.map(r => (r.payload as any)?.film_id).filter(Boolean)));
@@ -212,7 +229,7 @@ export async function getEnrichedActivity(
         break;
     }
   }
-  return out;
+  return { items: out, nextCursor: rawCursor, done: rawDone };
 }
 
 /**
@@ -225,8 +242,8 @@ export async function getEnrichedFeed(
   optsOrLimit: number | FeedFilters = {},
 ): Promise<FeedItem[]> {
   const opts: FeedFilters = typeof optsOrLimit === "number" ? { limit: optsOrLimit } : optsOrLimit;
-  const items = await getEnrichedActivity(client, followerUserId, opts);
-  return groupFeed(items);
+  const page = await getEnrichedActivity(client, followerUserId, opts);
+  return groupFeed(page.items);
 }
 
 // Back-compat wrapper. Returns FeedItem[] now that getEnrichedFeed groups internally.
