@@ -23,14 +23,11 @@ export async function listFilmsForAdmin(
   untagged = false,
 ): Promise<{ rows: AdminFilmRow[]; total: number; pageSize: number }> {
   if (untagged) {
-    // Two-step query: fetch all film_ids that have a subgenre tag, then
-    // filter the films query to exclude them. PostgREST doesn't support
-    // anti-join in one trip; the indirection is cheap (subgenre tags are
-    // selective and the IN list scales linearly with tagged-count).
+    // V2: a film is untagged iff it has zero film_tags rows. The action
+    // enforces "Primary subgenre required" — any tagged film has ≥1 row.
     const tagged = await client
       .from("film_tags")
-      .select("film_id, tag:tags!inner(type)")
-      .eq("tag.type", "subgenre");
+      .select("film_id");
     if (tagged.error) throw tagged.error;
     const taggedIds = Array.from(new Set((tagged.data ?? []).map(r => r.film_id)));
 
