@@ -7,6 +7,7 @@ import { addToLibrary } from "@/lib/actions/library";
 interface Props {
   filmId: string;
   initialOnWatchlist: boolean;
+  initialInLibrary?: boolean;
   children: ReactNode; // the FilmPoster (or wrapping element) the menu sits inside
 }
 
@@ -16,14 +17,15 @@ interface Props {
  * with two pills: Watchlist / Library. Clicking inside the affordance
  * stops propagation so the surrounding poster <Link> doesn't navigate.
  *
- * The library state is local-only — /films already filters out owned films
- * before render (getFilms uses getOwnedFilmIds), so the initial state is
- * always "not in library" for any film visible in the grid.
+ * Default browse on /films excludes already-saved-or-owned films from the
+ * grid, so initial flags are usually false. In search mode the exclusion is
+ * lifted, so the page passes through real `initialOnWatchlist` /
+ * `initialInLibrary` state for matched rows and the pills show ✓ disabled.
  */
-export default function PosterQuickAdd({ filmId, initialOnWatchlist, children }: Props) {
+export default function PosterQuickAdd({ filmId, initialOnWatchlist, initialInLibrary = false, children }: Props) {
   const [open, setOpen] = useState(false);
   const [onWatchlist, setOnWatchlist] = useState(initialOnWatchlist);
-  const [inLibrary, setInLibrary] = useState(false);
+  const [inLibrary, setInLibrary] = useState(initialInLibrary);
   const [pending, setPending] = useState<"wl" | "lib" | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
 

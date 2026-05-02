@@ -77,7 +77,7 @@ export default async function FilmsPage({
               {films.map(f => (
                 <Link key={f.id} href={`/film/${f.id}`} style={{ cursor: "pointer", textDecoration: "none", color: "inherit" }}>
                   {user ? (
-                    <PosterQuickAdd filmId={f.id} initialOnWatchlist={false}>
+                    <PosterQuickAdd filmId={f.id} initialOnWatchlist={f.on_watchlist} initialInLibrary={f.in_library}>
                       <FilmPoster film={f as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
                     </PosterQuickAdd>
                   ) : (
@@ -99,6 +99,11 @@ export default async function FilmsPage({
                         <span style={{ marginLeft: 6, color: "var(--accent)" }}>
                           · {compactCount(f.watchlist_count)} on watchlists
                         </span>
+                      ) : null}
+                      {f.in_library ? (
+                        <span style={{ marginLeft: 6, color: "var(--accent)" }}>· In grimoire</span>
+                      ) : f.on_watchlist ? (
+                        <span style={{ marginLeft: 6, color: "var(--accent)" }}>· On watchlist</span>
                       ) : null}
                     </div>
                   </div>
