@@ -1215,8 +1215,6 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-direction: column;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
-  max-height: 240px;
-  overflow-y: auto;
 }
 .recommend-picker-row {
   display: flex;
