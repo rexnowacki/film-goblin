@@ -6,7 +6,7 @@ import {
   getMyCovenMembers,
   getRelationshipMap,
 } from "@/lib/queries/coven";
-import { getProfilesBySearch } from "@/lib/queries/profiles";
+import { getMyProfile, getProfilesBySearch } from "@/lib/queries/profiles";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import Avatar from "@/components/Avatar";
@@ -14,6 +14,7 @@ import CovenInviteActions from "@/components/CovenInviteActions";
 import LeaveCovenButton from "@/components/LeaveCovenButton";
 import PeopleSearch from "@/components/PeopleSearch";
 import SearchPersonRow from "@/components/SearchPersonRow";
+import InviteFriendButton from "@/components/InviteFriendButton";
 import Link from "next/link";
 
 export default async function CovenPage({
@@ -26,9 +27,10 @@ export default async function CovenPage({
   if (!user) redirect("/auth/signin?redirect=/coven");
   const supabase = await createClient();
 
-  const [invites, members] = await Promise.all([
+  const [invites, members, myProfile] = await Promise.all([
     getPendingInvites(supabase, user.id),
     getMyCovenMembers(supabase, user.id),
+    getMyProfile(supabase),
   ]);
 
   const memberIds = members.map((m) => m.id);
@@ -56,10 +58,11 @@ export default async function CovenPage({
         }}
         className="grain-light"
       >
-        <div className="container-wide">
-          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
+        <div className="container-wide" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)", margin: 0 }}>
             The <em style={{ color: "var(--accent)" }}>Covenfolk</em>.
           </h1>
+          {myProfile?.username && <InviteFriendButton inviterUsername={myProfile.username} />}
         </div>
       </section>
 
