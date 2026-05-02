@@ -66,7 +66,7 @@ export default function BottomSheet({ open, onClose, title, children }: Props) {
   return createPortal(
     <div
       className="bottom-sheet-overlay"
-      onClick={onClose}
+      onClick={(e) => { e.stopPropagation(); onClose(); }}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -84,7 +84,7 @@ export default function BottomSheet({ open, onClose, title, children }: Props) {
           </h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={(e) => { e.stopPropagation(); onClose(); }}
             className="bottom-sheet-close"
             aria-label="Close"
           >
