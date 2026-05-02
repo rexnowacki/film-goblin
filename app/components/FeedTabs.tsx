@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import FeedRow from "./activity/FeedRow";
 import FeedCardSkeleton from "./skeletons/FeedCardSkeleton";
@@ -35,16 +35,25 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
   const urlTab = (params.get("tab") as Tab) || "all";
   const [tab, setTab] = useState<Tab>(urlTab);
 
-  // Cumulative un-grouped activity, deduped by id. Reset whenever the
-  // server-rendered initial set changes (filter param change → fresh server
-  // render hands new initialItems → wipe local state).
   const [items, setItems] = useState<EnrichedActivity[]>(initialItems);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [done, setDone] = useState<boolean>(initialDone);
   const [loading, setLoading] = useState(false);
+
+  // Refs mirror state for the loadMore callback below, so the
+  // IntersectionObserver doesn't need to be torn down + rebuilt every
+  // time loading / cursor / done changes (iOS Safari is flaky about
+  // re-firing intersection callbacks for newly-attached observers).
+  const loadingRef = useRef(false);
+  const cursorRef = useRef(cursor);
+  const doneRef = useRef(done);
+  useEffect(() => { loadingRef.current = loading; }, [loading]);
+  useEffect(() => { cursorRef.current = cursor; }, [cursor]);
+  useEffect(() => { doneRef.current = done; }, [done]);
+
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  // Reset cumulative state on filter / initialItems change.
+  // Reset cumulative state on filter change (URL flip → fresh server render → new initialItems prop).
   useEffect(() => {
     setItems(initialItems);
     setCursor(initialCursor);
@@ -59,40 +68,43 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
     return () => window.removeEventListener("focus", onFocus);
   }, [router]);
 
-  // IntersectionObserver: when the sentinel enters the viewport, fetch the
-  // next page. Guard against double-fires while a request is in flight.
+  const loadMore = useCallback(async () => {
+    if (loadingRef.current || doneRef.current || !cursorRef.current) return;
+    setLoading(true);
+    try {
+      const res = await loadMoreFeed({
+        before: cursorRef.current,
+        actorId: filters.actorId,
+        filmId: filters.filmId,
+      });
+      setItems(prev => {
+        const seen = new Set(prev.map(i => i.id));
+        const merged = [...prev];
+        for (const it of res.items) if (!seen.has(it.id)) merged.push(it);
+        return merged;
+      });
+      setCursor(res.nextCursor);
+      setDone(res.done);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters.actorId, filters.filmId]);
+
+  // IntersectionObserver — created once per filter scope and observes
+  // the persistent sentinel. Reads loading/cursor/done from refs inside
+  // loadMore so we don't have to disconnect + reconnect on every load cycle.
   useEffect(() => {
-    if (done || !cursor) return;
     const el = sentinelRef.current;
     if (!el) return;
     const io = new IntersectionObserver(
-      async (entries) => {
-        if (!entries[0]?.isIntersecting) return;
-        if (loading || done || !cursor) return;
-        setLoading(true);
-        try {
-          const res = await loadMoreFeed({
-            before: cursor,
-            actorId: filters.actorId,
-            filmId: filters.filmId,
-          });
-          setItems(prev => {
-            const seen = new Set(prev.map(i => i.id));
-            const merged = [...prev];
-            for (const it of res.items) if (!seen.has(it.id)) merged.push(it);
-            return merged;
-          });
-          setCursor(res.nextCursor);
-          setDone(res.done);
-        } finally {
-          setLoading(false);
-        }
+      (entries) => {
+        if (entries[0]?.isIntersecting) void loadMore();
       },
-      { rootMargin: "400px 0px" }, // start fetching ~400px before the sentinel hits the viewport
+      { rootMargin: "600px 0px", threshold: 0 },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [cursor, done, loading, filters.actorId, filters.filmId]);
+  }, [loadMore]);
 
   function pickTab(next: Tab) {
     const p = new URLSearchParams(params);
@@ -100,8 +112,6 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
     router.push(`/home?${p.toString()}`);
   }
 
-  // Group + filter from the cumulative list. Memoized so adding 20 items
-  // doesn't re-group on unrelated re-renders.
   const grouped = useMemo(() => groupFeed(items), [items]);
   const filtered = useMemo(
     () => grouped.filter(i => feedItemMatches(i, MATCHERS[tab])),
@@ -137,12 +147,32 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
       </div>
 
       {!done && cursor && (
-        <div ref={sentinelRef} style={{ minHeight: 1 }}>
-          {loading && (
-            <div style={{ display: "grid", gap: 0, paddingTop: 16 }}>
+        <div ref={sentinelRef} style={{ display: "flex", flexDirection: "column", alignItems: "stretch", marginTop: 16, gap: 12 }}>
+          {loading ? (
+            <div style={{ display: "grid", gap: 0 }}>
               <FeedCardSkeleton />
               <FeedCardSkeleton />
             </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void loadMore()}
+              className="caps"
+              style={{
+                alignSelf: "center",
+                padding: "10px 20px",
+                background: "transparent",
+                border: "1px solid var(--accent)",
+                color: "var(--accent)",
+                fontSize: 11,
+                fontFamily: "var(--font-ui)",
+                fontWeight: 700,
+                cursor: "pointer",
+                letterSpacing: "0.06em",
+              }}
+            >
+              Load more
+            </button>
           )}
         </div>
       )}
