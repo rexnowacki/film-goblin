@@ -1,12 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
-import { getEnrichedFeed } from "@/lib/queries/activity";
+import { getEnrichedActivity } from "@/lib/queries/activity";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FeedTabs from "@/components/FeedTabs";
 import FeedSearch from "@/components/FeedSearch";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PAGE_SIZE = 20;
 
 export default async function HomePage({
   searchParams,
@@ -19,13 +20,15 @@ export default async function HomePage({
   const user = await getServerUser();
   const supabase = await createClient();
 
-  const feed = user
-    ? await getEnrichedFeed(supabase, user.id, {
-        limit: 50,
+  const initialItems = user
+    ? await getEnrichedActivity(supabase, user.id, {
+        limit: PAGE_SIZE,
         actorId: actorId ?? undefined,
         filmId: filmId ?? undefined,
       })
     : [];
+  const initialCursor = initialItems.length > 0 ? initialItems[initialItems.length - 1].created_at : null;
+  const initialDone = initialItems.length < PAGE_SIZE;
 
   // Resolve the active filter's display data so the chip can render.
   let active: React.ComponentProps<typeof FeedSearch>["active"] = null;
@@ -67,7 +70,12 @@ export default async function HomePage({
         </aside>
         <main>
           {user && <FeedSearch active={active} />}
-          <FeedTabs items={feed} />
+          <FeedTabs
+            initialItems={initialItems}
+            initialCursor={initialCursor}
+            initialDone={initialDone}
+            filters={{ actorId: actorId ?? undefined, filmId: filmId ?? undefined }}
+          />
         </main>
         <aside className="desktop-only">
           <div className="eyebrow" style={{ color: "var(--muted)", marginBottom: 12 }}>Popular Grimoires</div>
