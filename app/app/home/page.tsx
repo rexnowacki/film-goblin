@@ -4,11 +4,46 @@ import { getEnrichedFeed } from "@/lib/queries/activity";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FeedTabs from "@/components/FeedTabs";
+import FeedSearch from "@/components/FeedSearch";
 
-export default async function HomePage() {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ actor?: string; film?: string }>;
+}) {
+  const sp = await searchParams;
+  const actorId = sp.actor && UUID_RE.test(sp.actor) ? sp.actor : null;
+  const filmId = sp.film && UUID_RE.test(sp.film) ? sp.film : null;
   const user = await getServerUser();
   const supabase = await createClient();
-  const feed = user ? await getEnrichedFeed(supabase, user.id, 50) : [];
+
+  const feed = user
+    ? await getEnrichedFeed(supabase, user.id, {
+        limit: 50,
+        actorId: actorId ?? undefined,
+        filmId: filmId ?? undefined,
+      })
+    : [];
+
+  // Resolve the active filter's display data so the chip can render.
+  let active: React.ComponentProps<typeof FeedSearch>["active"] = null;
+  if (actorId) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, username, avatar_url")
+      .eq("id", actorId)
+      .maybeSingle();
+    if (data) active = { kind: "actor", id: data.id, label: data.username, avatar_url: data.avatar_url };
+  } else if (filmId) {
+    const { data } = await supabase
+      .from("films")
+      .select("id, title, artwork_url")
+      .eq("id", filmId)
+      .maybeSingle();
+    if (data) active = { kind: "film", id: data.id, label: data.title, artwork_url: data.artwork_url };
+  }
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
@@ -24,6 +59,7 @@ export default async function HomePage() {
         </aside>
         <main>
           <h2 className="h-display" style={{ marginBottom: 16 }}>The Feed</h2>
+          {user && <FeedSearch active={active} />}
           <FeedTabs items={feed} />
         </main>
         <aside className="desktop-only">
