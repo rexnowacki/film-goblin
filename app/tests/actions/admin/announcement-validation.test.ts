@@ -24,6 +24,16 @@ describe("isInternalPath", () => {
     expect(isInternalPath("films")).toBe(false);
     expect(isInternalPath("")).toBe(false);
   });
+
+  it("rejects paths containing .. traversal", () => {
+    expect(isInternalPath("/..")).toBe(false);
+    expect(isInternalPath("/foo/../bar")).toBe(false);
+  });
+
+  it("accepts paths with fragment anchors", () => {
+    expect(isInternalPath("/films#new")).toBe(true);
+    expect(isInternalPath("/film/abc#section-2")).toBe(true);
+  });
 });
 
 describe("validateAnnouncement", () => {
@@ -91,6 +101,22 @@ describe("validateAnnouncement", () => {
       audience: "specific",
       recipient_ids: ["00000000-0000-0000-0000-000000000001"],
     })).toBeNull();
+  });
+
+  it("rejects empty-string CTA label when href is set", () => {
+    expect(validateAnnouncement({ ...validBase, cta_label: "", cta_href: "/x" })).toMatch(/cta/i);
+  });
+
+  it("rejects whitespace-only CTA label", () => {
+    expect(validateAnnouncement({ ...validBase, cta_label: "   ", cta_href: "/x" })).toMatch(/cta/i);
+  });
+
+  it("rejects a CTA href containing .. traversal", () => {
+    expect(validateAnnouncement({ ...validBase, cta_label: "Go", cta_href: "/films/../etc" })).toMatch(/cta/i);
+  });
+
+  it("accepts a CTA href with a fragment anchor", () => {
+    expect(validateAnnouncement({ ...validBase, cta_label: "Jump", cta_href: "/films#new" })).toBeNull();
   });
 
   it("dedupes duplicate recipient ids without raising an error", () => {

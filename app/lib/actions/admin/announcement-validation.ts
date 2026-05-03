@@ -2,7 +2,10 @@ export const TITLE_MAX = 80;
 export const BODY_MAX = 500;
 export const CTA_LABEL_MAX = 24;
 
-const INTERNAL_PATH_RE = /^\/[A-Za-z0-9_\-.?=&%][A-Za-z0-9/_\-.?=&%]*$|^\/$/;
+// Internal app path: must start with `/`, must not be protocol-relative
+// (`//evil.com`), must not contain `..` (traversal), may contain fragment
+// anchors (`/films#section`). Bare `/` is allowed.
+const INTERNAL_PATH_RE = /^\/(?!\/)(?!.*\.\.)[A-Za-z0-9/_\-.#?=&%]*$/;
 
 export function isInternalPath(s: string): boolean {
   return INTERNAL_PATH_RE.test(s);
@@ -20,6 +23,10 @@ export interface AnnouncementInput {
 /**
  * Returns null when valid, or a human-readable error string. The string is
  * surfaced verbatim to the admin UI.
+ *
+ * Note: title and body are validated against their TRIMMED forms, but this
+ * function returns null/string only — callers must re-trim before persisting
+ * (see app/lib/actions/admin/announcements.ts).
  */
 export function validateAnnouncement(input: AnnouncementInput): string | null {
   const title = input.title.trim();
