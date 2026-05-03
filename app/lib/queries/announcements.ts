@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/supabase/types";
+import type { Database } from "../supabase/types";
 
 export interface PendingAnnouncement {
   id: string;
@@ -33,12 +33,19 @@ export async function getPendingAnnouncement(
   const dismissedIds = (dismissed ?? []).map(r => r.announcement_id);
 
   // Sub-2: candidate announcements (published, not dismissed by this user).
+  // Bound the candidate set so this query runs in O(constant) per page load
+  // even if the announcements table grows large. 200 is a generous ceiling —
+  // we expect the active (unarchived) set to stay in the low tens.
   let candidatesQ = client
     .from("announcements")
     .select("id, title, body, cta_label, cta_href, audience, created_at")
     .eq("status", "published")
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(200);
   if (dismissedIds.length > 0) {
+    // PostgREST-js .not() with operator='in' requires the parenthesised string
+    // form; the array form is only available on .in(). Values are UUIDs from
+    // a Supabase query (never user-supplied text), so interpolation is safe.
     candidatesQ = candidatesQ.not("id", "in", `(${dismissedIds.join(",")})`);
   }
   const { data: candidates, error: cErr } = await candidatesQ;
@@ -68,8 +75,8 @@ export async function getPendingAnnouncement(
     specificForMe = specific.filter(s => myRecipientIds.has(s.id));
   }
 
-  // Combined, FIFO. created_at-ascending is preserved across both arrays
-  // because both came from the same ordered query.
+  // Combined, FIFO. Each sub-array is created_at-ascending (from the
+  // candidates query order), but interleaving the two requires a merge sort.
   const eligible = [...everyone, ...specificForMe].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
