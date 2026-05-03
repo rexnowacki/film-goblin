@@ -8,6 +8,7 @@ export default function AdminHome() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "var(--grid-gap)" }}>
         <Tile href="/admin/films" title="Films" blurb="Add, edit, or retire films. iTunes lookup or manual entry." />
         <Tile href="/admin/users" title="Users" blurb="Search accounts, create test users, delete accounts." />
+        <Tile href="/admin/announcements" title="Announcements" blurb="Publish and archive site-wide or targeted announcements." />
       </div>
     </div>
   );
