@@ -247,15 +247,40 @@ export async function getLaneAffinity(
 export const COVEN_PRIOR_SCALE = 0.3;
 
 /**
- * Aggregates each coven mate's own-affinity vector, weighted by the user's
- * 90-day interaction score with that mate (from getRankedCovenfolk in #34).
- * Result is scaled by COVEN_PRIOR_SCALE (0.3) so behavior dominates lanes
- * which dominates the coven prior.
+ * Cosine similarity between two affinity vectors (treating each as sparse
+ * vectors over the tag vocabulary). Returns 0..1 for non-empty vectors,
+ * 0 if either is empty, NaN-safe.
+ */
+export function cosineSimilarity(a: AffinityVector, b: AffinityVector): number {
+  let dot = 0;
+  let aMagSq = 0;
+  let bMagSq = 0;
+  // Sum a · b over a's tags (b's missing tags contribute 0)
+  for (const [tag, va] of Object.entries(a.byTag)) {
+    const vb = b.byTag[tag] ?? 0;
+    dot += va * vb;
+    aMagSq += va * va;
+  }
+  // Sum b's magnitude separately (over b's full tag set)
+  for (const v of Object.values(b.byTag)) bMagSq += v * v;
+  if (aMagSq === 0 || bMagSq === 0) return 0;
+  return dot / (Math.sqrt(aMagSq) * Math.sqrt(bMagSq));
+}
+
+/**
+ * Aggregates each coven mate's own-affinity vector, weighted by COSINE
+ * SIMILARITY between the user's own vector and each mate's vector — close-
+ * taste mates contribute more than distant ones. Negative or zero similarity
+ * mates are excluded entirely. Result is scaled by COVEN_PRIOR_SCALE (0.3).
  *
- * NOTE: This calls getUserOwnAffinity per coven mate — the slow-path the
- * spec documents as the future cache target. A cache wrapper belongs here
- * at mid-scale: replace the per-mate getUserOwnAffinity call with a cached
- * read, keeping the rest of this function unchanged.
+ * Cold-start fallback: when the user's own vector is empty (brand-new user
+ * with covenfolk but no behavioral history), revert to interaction-score
+ * weighting from getRankedCovenfolk so the prior is still meaningful.
+ *
+ * NOTE: calls getUserOwnAffinity per coven mate — the slow-path the spec
+ * documents as the future cache target. A cache wrapper belongs here at
+ * mid-scale: replace the per-mate call with a cached read, keeping the
+ * weighting math unchanged.
  */
 export async function getCovenBorrowedAffinity(
   client: Client,
@@ -264,21 +289,48 @@ export async function getCovenBorrowedAffinity(
   const ranked = await getRankedCovenfolk(client, userId);
   if (ranked.length === 0) return { byTag: {} };
 
-  // Treat all-zero scores (a fresh user with covenfolk but no interactions)
-  // as equal weights so the vector still surfaces something meaningful rather
-  // than dividing by zero.
-  const totalScore = ranked.reduce((s, r) => s + r.score, 0);
-  const useEqualWeights = totalScore === 0;
+  // Need the user's own vector to compute cosine similarity. Cold-start
+  // (empty own vector) → fall back to interaction-score weighting.
+  const ownVec = await getUserOwnAffinity(client, userId);
+  const ownEmpty = Object.keys(ownVec.byTag).length === 0;
+
+  // Pre-fetch all mates' vectors in serial (parallel would also work; serial
+  // is fine at coven sizes ≤ a few dozen and keeps memory pressure low).
+  const mateVecs: Array<{ mateId: string; score: number; vec: AffinityVector }> = [];
+  for (const mate of ranked) {
+    const vec = await getUserOwnAffinity(client, mate.id);
+    mateVecs.push({ mateId: mate.id, score: mate.score, vec });
+  }
+
+  // Compute mate weights.
+  let weights: Map<string, number>;
+  if (ownEmpty) {
+    // Cold-start: use interaction scores; equal weight if all zero.
+    const totalScore = mateVecs.reduce((s, m) => s + m.score, 0);
+    if (totalScore === 0) {
+      const w = 1 / mateVecs.length;
+      weights = new Map(mateVecs.map(m => [m.mateId, w]));
+    } else {
+      weights = new Map(mateVecs.map(m => [m.mateId, m.score / totalScore]));
+    }
+  } else {
+    // Cosine-weighted: similarity to user's own vector. Negatives floored at 0.
+    const sims = mateVecs.map(m => ({ mateId: m.mateId, sim: Math.max(0, cosineSimilarity(ownVec, m.vec)) }));
+    const totalSim = sims.reduce((s, x) => s + x.sim, 0);
+    if (totalSim === 0) {
+      // No mate has any taste overlap with the user. Don't pull the vector
+      // anywhere — return an empty borrow.
+      return { byTag: {} };
+    }
+    weights = new Map(sims.map(x => [x.mateId, x.sim / totalSim]));
+  }
 
   const accum: Record<string, number> = {};
-  for (const mate of ranked) {
-    // Future cache seam: replace this call with a cached affinity read.
-    const mateAffinity = await getUserOwnAffinity(client, mate.id);
-    const weight = useEqualWeights
-      ? 1 / ranked.length
-      : mate.score / totalScore;
-    for (const [tag, val] of Object.entries(mateAffinity.byTag)) {
-      accum[tag] = (accum[tag] ?? 0) + val * weight;
+  for (const m of mateVecs) {
+    const w = weights.get(m.mateId) ?? 0;
+    if (w === 0) continue;
+    for (const [tag, val] of Object.entries(m.vec.byTag)) {
+      accum[tag] = (accum[tag] ?? 0) + val * w;
     }
   }
 

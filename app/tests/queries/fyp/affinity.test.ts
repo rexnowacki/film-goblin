@@ -843,3 +843,124 @@ describe("getUserOwnAffinity — time decay", () => {
     expect(result.byTag["folk horror"]).toBeCloseTo(9.0, 1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// cosineSimilarity (recommender v2 helper)
+// ---------------------------------------------------------------------------
+
+import { cosineSimilarity } from "@/lib/queries/fyp/affinity";
+
+describe("cosineSimilarity", () => {
+  it("identical vectors → 1.0", () => {
+    const v = { byTag: { "folk horror": 9, "fever dream": 4 } };
+    expect(cosineSimilarity(v, v)).toBeCloseTo(1.0);
+  });
+
+  it("orthogonal vectors (no shared tags) → 0", () => {
+    const a = { byTag: { "folk horror": 9 } };
+    const b = { byTag: { gore: 1 } };
+    expect(cosineSimilarity(a, b)).toBe(0);
+  });
+
+  it("partial overlap → between 0 and 1", () => {
+    const a = { byTag: { "folk horror": 9, "fever dream": 4 } };
+    const b = { byTag: { "folk horror": 9, gore: 1 } };
+    const sim = cosineSimilarity(a, b);
+    expect(sim).toBeGreaterThan(0);
+    expect(sim).toBeLessThan(1);
+  });
+
+  it("empty vector → 0 (no NaN)", () => {
+    const empty = { byTag: {} };
+    const v = { byTag: { x: 1 } };
+    expect(cosineSimilarity(empty, v)).toBe(0);
+    expect(cosineSimilarity(v, empty)).toBe(0);
+    expect(cosineSimilarity(empty, empty)).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getCovenBorrowedAffinity — cosine-weighted (recommender v2)
+// ---------------------------------------------------------------------------
+
+describe("getCovenBorrowedAffinity — cosine-weighted", () => {
+  const mockedGetRankedCovenfolk = getRankedCovenfolk as ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    mockedGetRankedCovenfolk.mockReset();
+  });
+
+  it("user with own vector: similar mate (high cosine) outweighs different mate (low cosine)", async () => {
+    // user-main has folk horror 9 (single liked watch).
+    // mate-a has folk horror 9 too (cosine = 1) → strong contributor.
+    // mate-b has gore 1 only (orthogonal, cosine = 0) → zero contributor.
+    mockedGetRankedCovenfolk.mockResolvedValueOnce([
+      { id: "mate-a", username: "matea", display_name: null, avatar_url: null, score: 1 },
+      { id: "mate-b", username: "mateb", display_name: null, avatar_url: null, score: 1 },
+    ]);
+    const client = makeCovenClient({
+      "user-main": {
+        watched: [{ film_id: "f-user", recommended: true }],
+        film_tags: [filmTag("f-user", "folk horror", "subgenre", true)],
+      },
+      "mate-a": {
+        watched: [{ film_id: "f-mate-a", recommended: true }],
+        film_tags: [filmTag("f-mate-a", "folk horror", "subgenre", true)],
+      },
+      "mate-b": {
+        watched: [{ film_id: "f-mate-b", recommended: true }],
+        film_tags: [filmTag("f-mate-b", "gore", "content", false)],
+      },
+    });
+    const result = await getCovenBorrowedAffinity(client, "user-main");
+    // mate-a has cosine 1 → weight = 1; mate-b has cosine 0 → weight = 0.
+    // Borrow = mate-a's vector × 1.0 × 0.3 = { folk horror: 9 × 0.3 } = 2.7.
+    // mate-b's gore contribution is filtered out.
+    expect(result.byTag["folk horror"]).toBeCloseTo(2.7);
+    expect(result.byTag["gore"]).toBeUndefined();
+  });
+
+  it("zero total similarity → empty borrow (don't pull anywhere)", async () => {
+    // User has folk-horror affinity. Both mates have orthogonal vectors
+    // (gore only). Total cosine = 0 → return empty.
+    mockedGetRankedCovenfolk.mockResolvedValueOnce([
+      { id: "mate-a", username: "matea", display_name: null, avatar_url: null, score: 1 },
+      { id: "mate-b", username: "mateb", display_name: null, avatar_url: null, score: 1 },
+    ]);
+    const client = makeCovenClient({
+      "user-main": {
+        watched: [{ film_id: "f-user", recommended: true }],
+        film_tags: [filmTag("f-user", "folk horror", "subgenre", true)],
+      },
+      "mate-a": {
+        watched: [{ film_id: "f-a", recommended: true }],
+        film_tags: [filmTag("f-a", "gore", "content", false)],
+      },
+      "mate-b": {
+        watched: [{ film_id: "f-b", recommended: true }],
+        film_tags: [filmTag("f-b", "splatter", "content", false)],
+      },
+    });
+    const result = await getCovenBorrowedAffinity(client, "user-main");
+    expect(result.byTag).toEqual({});
+  });
+
+  it("empty user vector → cold-start fallback to interaction-score weighting", async () => {
+    // user-main has no behavior. Mates' affinities should still flow through
+    // weighted by interaction score (not cosine, since cosine needs a non-empty
+    // user vector).
+    mockedGetRankedCovenfolk.mockResolvedValueOnce([
+      { id: "mate-a", username: "matea", display_name: null, avatar_url: null, score: 1 },
+    ]);
+    const client = makeCovenClient({
+      "mate-a": {
+        watched: [{ film_id: "f-mate", recommended: true }],
+        film_tags: [filmTag("f-mate", "folk horror", "subgenre", true)],
+      },
+      // user-main intentionally absent → empty own vector → cold-start branch
+    });
+    const result = await getCovenBorrowedAffinity(client, "user-main");
+    // 9.0 × 1.0 (only mate, score-weighted) × 0.3 = 2.7 — matches old behavior.
+    expect(result.byTag["folk horror"]).toBeCloseTo(2.7);
+  });
+});
