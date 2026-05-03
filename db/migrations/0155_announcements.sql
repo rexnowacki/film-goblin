@@ -31,6 +31,7 @@ CREATE TABLE announcement_dismissals (
 
 CREATE INDEX idx_announcements_status_created ON announcements (status, created_at);
 CREATE INDEX idx_announcement_recipients_user ON announcement_recipients (user_id);
+CREATE INDEX idx_announcement_dismissals_user ON announcement_dismissals (user_id);
 
 ALTER TABLE announcements              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE announcement_recipients    ENABLE ROW LEVEL SECURITY;
