@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth/require-admin";
+import { requireAdmin, requireAdminUser } from "@/lib/auth/require-admin";
 import {
   validateAnnouncement,
   type AnnouncementInput,
@@ -21,13 +21,10 @@ export async function adminPublishAnnouncement(
   fields: AnnouncementInput,
 ): Promise<PublishResult | ActionError> {
   const supabase = await createClient();
-  await requireAdmin(supabase);
+  const user = await requireAdminUser(supabase);
 
   const err = validateAnnouncement(fields);
   if (err) return { ok: false, error: err };
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Not signed in." };
 
   const trimmedLabel = fields.cta_label?.trim() ?? null;
   const trimmedHref = fields.cta_href?.trim() ?? null;
@@ -62,7 +59,19 @@ export async function adminPublishAnnouncement(
       .from("announcement_recipients")
       .insert(recipientRows);
     if (recErr) {
-      await supabase.from("announcements").delete().eq("id", created.id);
+      const { error: deleteErr } = await supabase
+        .from("announcements")
+        .delete()
+        .eq("id", created.id);
+      if (deleteErr) {
+        // Rollback failed — orphaned audience='specific' row with no recipients
+        // would otherwise sit silently in the table. Surface a specific error.
+        console.error("Rollback failed for announcement", created.id, deleteErr.message);
+        return {
+          ok: false,
+          error: `Recipient insert failed and cleanup failed (${deleteErr.message}). Announcement ${created.id} may need manual deletion.`,
+        };
+      }
       return { ok: false, error: `Recipient insert failed: ${recErr.message}` };
     }
   }
