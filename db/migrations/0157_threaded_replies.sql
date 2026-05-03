@@ -20,9 +20,11 @@ BEGIN
   IF TG_OP = 'INSERT' AND NEW.parent_id IS NOT NULL THEN
     UPDATE activity_comments SET reply_count = reply_count + 1
      WHERE id = NEW.parent_id;
+    RETURN NEW;
   ELSIF TG_OP = 'DELETE' AND OLD.parent_id IS NOT NULL THEN
     UPDATE activity_comments SET reply_count = GREATEST(reply_count - 1, 0)
      WHERE id = OLD.parent_id;
+    RETURN OLD;
   END IF;
   RETURN NULL;
 END;
