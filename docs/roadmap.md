@@ -6,7 +6,7 @@ into an actual build, it becomes a spec under `docs/superpowers/specs/`.
 
 See `docs/backlog.md` for unprioritized ideas. Full list of shipped
 sub-projects with spec paths lives in `docs/sub-project-history.md`
-(thirty-four shipped as of 2026-05-02).
+(thirty-five shipped as of 2026-05-02).
 
 ## High
 
@@ -28,13 +28,6 @@ sub-projects with spec paths lives in `docs/sub-project-history.md`
 
 ## Medium-high
 
-- **FYP recommender (sub-project B of tagging).** Affinity scoring per
-  user from their `watched.recommended` history × `film_tags`; a
-  candidate ranker; a `/for-you` route; tag listing pages at
-  `/tags/<name>`; onboarding lane-picker so new users seed an initial
-  affinity vector. Builds on the v2 seven-facet positional schema
-  shipped in #33 — hidden tail (positions 5+ in `film_tags`) is
-  curated specifically to feed the recommender.
 - **Rating pills on poster grids.** Surface
   `films_with_stats.coven_rating_pct` on `FilmPoster` everywhere a
   rating-eligible grid renders (`/films`, `/library`, `/watched`,
