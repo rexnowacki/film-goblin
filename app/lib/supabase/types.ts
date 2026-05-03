@@ -160,6 +160,78 @@ export type Database = {
           },
         ]
       }
+      announcement_dismissals: {
+        Row: {
+          user_id: string;
+          announcement_id: string;
+          dismissed_at: string;
+        };
+        Insert: {
+          user_id: string;
+          announcement_id: string;
+          dismissed_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          announcement_id?: string;
+          dismissed_at?: string;
+        };
+        Relationships: [];
+      };
+      announcement_recipients: {
+        Row: {
+          announcement_id: string;
+          user_id: string;
+        };
+        Insert: {
+          announcement_id: string;
+          user_id: string;
+        };
+        Update: {
+          announcement_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      announcements: {
+        Row: {
+          id: string;
+          title: string;
+          body: string;
+          cta_label: string | null;
+          cta_href: string | null;
+          audience: "everyone" | "specific";
+          status: "published" | "archived";
+          created_by: string;
+          created_at: string;
+          archived_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          body: string;
+          cta_label?: string | null;
+          cta_href?: string | null;
+          audience: "everyone" | "specific";
+          status?: "published" | "archived";
+          created_by: string;
+          created_at?: string;
+          archived_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          body?: string;
+          cta_label?: string | null;
+          cta_href?: string | null;
+          audience?: "everyone" | "specific";
+          status?: "published" | "archived";
+          created_by?: string;
+          created_at?: string;
+          archived_at?: string | null;
+        };
+        Relationships: [];
+      };
       coven_members: {
         Row: {
           created_at: string
