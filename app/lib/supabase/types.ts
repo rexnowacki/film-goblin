@@ -80,6 +80,8 @@ export type Database = {
           created_at: string
           id: string
           like_count: number
+          parent_id: string | null
+          reply_count: number
           user_id: string
         }
         Insert: {
@@ -88,6 +90,8 @@ export type Database = {
           created_at?: string
           id?: string
           like_count?: number
+          parent_id?: string | null
+          reply_count?: number | null
           user_id: string
         }
         Update: {
@@ -96,6 +100,8 @@ export type Database = {
           created_at?: string
           id?: string
           like_count?: number
+          parent_id?: string | null
+          reply_count?: number | null
           user_id?: string
         }
         Relationships: [
@@ -1083,6 +1089,7 @@ export type Database = {
         | "comment_on_activity"
         | "like_on_comment"
         | "rate_reminder"
+        | "reply_on_comment"
       review_status: "draft" | "published"
       staff_role: "reviewer" | "admin"
     }
