@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
+import { getRankedCovenfolk } from "@/lib/queries/coven-interactions";
 
 type Client = SupabaseClient<Database>;
 
@@ -164,6 +165,124 @@ export async function getUserOwnAffinity(
   }
 
   // 4. Floor each tag's running score at 0 (after full aggregation).
+  for (const k of Object.keys(byTag)) {
+    if (byTag[k] < 0) byTag[k] = 0;
+  }
+
+  return { byTag };
+}
+
+// ---------------------------------------------------------------------------
+// Lane affinity
+// ---------------------------------------------------------------------------
+
+export const LANE_WEIGHT = 1.5;
+
+/**
+ * Returns +1.5 for each tag in the user's lanes set. Lanes are a deliberate
+ * editorial signal — the user picked these — so they get a flat bump rather
+ * than the facet-multiplier treatment that own behavioral signals get.
+ * Empty lanes = empty vector.
+ */
+export async function getLaneAffinity(
+  client: Client,
+  userId: string,
+): Promise<AffinityVector> {
+  const profile = await client
+    .from("profiles")
+    .select("lane_tag_ids")
+    .eq("id", userId)
+    .maybeSingle();
+  const ids = (profile.data?.lane_tag_ids ?? []) as string[];
+  if (ids.length === 0) return { byTag: {} };
+
+  const tags = await client.from("tags").select("name").in("id", ids);
+  const byTag: Record<string, number> = {};
+  for (const t of tags.data ?? []) {
+    byTag[t.name] = LANE_WEIGHT;
+  }
+  return { byTag };
+}
+
+// ---------------------------------------------------------------------------
+// Coven-borrowed affinity
+// ---------------------------------------------------------------------------
+
+export const COVEN_PRIOR_SCALE = 0.3;
+
+/**
+ * Aggregates each coven mate's own-affinity vector, weighted by the user's
+ * 90-day interaction score with that mate (from getRankedCovenfolk in #34).
+ * Result is scaled by COVEN_PRIOR_SCALE (0.3) so behavior dominates lanes
+ * which dominates the coven prior.
+ *
+ * NOTE: This calls getUserOwnAffinity per coven mate — the slow-path the
+ * spec documents as the future cache target. A cache wrapper belongs here
+ * at mid-scale: replace the per-mate getUserOwnAffinity call with a cached
+ * read, keeping the rest of this function unchanged.
+ */
+export async function getCovenBorrowedAffinity(
+  client: Client,
+  userId: string,
+): Promise<AffinityVector> {
+  const ranked = await getRankedCovenfolk(client, userId);
+  if (ranked.length === 0) return { byTag: {} };
+
+  // Treat all-zero scores (a fresh user with covenfolk but no interactions)
+  // as equal weights so the vector still surfaces something meaningful rather
+  // than dividing by zero.
+  const totalScore = ranked.reduce((s, r) => s + r.score, 0);
+  const useEqualWeights = totalScore === 0;
+
+  const accum: Record<string, number> = {};
+  for (const mate of ranked) {
+    // Future cache seam: replace this call with a cached affinity read.
+    const mateAffinity = await getUserOwnAffinity(client, mate.id);
+    const weight = useEqualWeights
+      ? 1 / ranked.length
+      : mate.score / totalScore;
+    for (const [tag, val] of Object.entries(mateAffinity.byTag)) {
+      accum[tag] = (accum[tag] ?? 0) + val * weight;
+    }
+  }
+
+  for (const k of Object.keys(accum)) {
+    accum[k] *= COVEN_PRIOR_SCALE;
+  }
+
+  return { byTag: accum };
+}
+
+// ---------------------------------------------------------------------------
+// Composed user affinity (the public seam)
+// ---------------------------------------------------------------------------
+
+/**
+ * Sums own + coven-borrowed + lanes, then floors per-tag at 0. This is the
+ * single seam where a future cache wrapper drops in: getUserAffinity becomes
+ * the call site downstream code uses, and a cache lookup (with a fallback to
+ * recompute) sits here without touching any caller.
+ */
+export async function getUserAffinity(
+  client: Client,
+  userId: string,
+): Promise<AffinityVector> {
+  const [own, coven, lanes] = await Promise.all([
+    getUserOwnAffinity(client, userId),
+    getCovenBorrowedAffinity(client, userId),
+    getLaneAffinity(client, userId),
+  ]);
+
+  const byTag: Record<string, number> = {};
+  for (const src of [own, coven, lanes]) {
+    for (const [tag, val] of Object.entries(src.byTag)) {
+      byTag[tag] = (byTag[tag] ?? 0) + val;
+    }
+  }
+
+  // Floor at 0 (defensive — getUserOwnAffinity already floors, but the
+  // composed sum could in theory go negative if future sources contribute
+  // negatives; keep a single authoritative floor here).
   for (const k of Object.keys(byTag)) {
     if (byTag[k] < 0) byTag[k] = 0;
   }
