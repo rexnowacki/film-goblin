@@ -40,6 +40,8 @@ export default function CommentSheet({
       created_at: new Date().toISOString(),
       like_count: 0,
       liked_by_me: false,
+      parent_id: null,
+      reply_count: 0,
     };
     setItems(prev => {
       const next = [...prev, optimistic];

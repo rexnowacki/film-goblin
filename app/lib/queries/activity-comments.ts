@@ -15,6 +15,8 @@ export interface CommentItem {
   created_at: string;
   like_count: number;
   liked_by_me: boolean;
+  parent_id: string | null;
+  reply_count: number;
 }
 
 export interface CommentSummary {
@@ -44,7 +46,7 @@ export async function getCommentSummariesForActivities(
 
   const { data: rows, error } = await client
     .from("activity_comments")
-    .select("id, activity_id, user_id, body, created_at, like_count")
+    .select("id, activity_id, user_id, body, created_at, like_count, parent_id, reply_count")
     .in("activity_id", activityIds)
     .order("created_at", { ascending: true });
   if (error) throw error;
@@ -85,6 +87,8 @@ export async function getCommentSummariesForActivities(
       created_at: row.created_at,
       like_count: row.like_count,
       liked_by_me: likedSet.has(row.id),
+      parent_id: row.parent_id,
+      reply_count: row.reply_count,
     });
     entry.count = entry.items.length;
   }

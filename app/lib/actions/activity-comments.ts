@@ -62,6 +62,8 @@ export async function _addActivityComment(
       created_at: data.created_at,
       like_count: 0,
       liked_by_me: false,
+      parent_id: null,
+      reply_count: 0,
     },
   };
 }
