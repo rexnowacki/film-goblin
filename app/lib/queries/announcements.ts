@@ -1,12 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
 
+export type PanelColor = "pink" | "plum" | "seafoam" | "bone";
+export type TextColor = PanelColor | "void";
+
 export interface PendingAnnouncement {
   id: string;
   title: string;
   body: string;
   cta_label: string | null;
   cta_href: string | null;
+  panel_color: PanelColor;
+  title_color: TextColor;
+  body_color: TextColor;
+  cta_color: PanelColor;
 }
 
 /**
@@ -38,7 +45,7 @@ export async function getPendingAnnouncement(
   // we expect the active (unarchived) set to stay in the low tens.
   let candidatesQ = client
     .from("announcements")
-    .select("id, title, body, cta_label, cta_href, audience, created_at")
+    .select("id, title, body, cta_label, cta_href, audience, created_at, panel_color, title_color, body_color, cta_color")
     .eq("status", "published")
     .order("created_at", { ascending: true })
     .limit(200);
@@ -89,5 +96,9 @@ export async function getPendingAnnouncement(
     body: pick.body,
     cta_label: pick.cta_label,
     cta_href: pick.cta_href,
+    panel_color: pick.panel_color,
+    title_color: pick.title_color,
+    body_color: pick.body_color,
+    cta_color: pick.cta_color,
   };
 }

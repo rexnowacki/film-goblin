@@ -39,6 +39,10 @@ export async function adminPublishAnnouncement(
       cta_href: trimmedHref,
       audience: fields.audience,
       created_by: user.id,
+      panel_color: fields.panel_color,
+      title_color: fields.title_color,
+      body_color: fields.body_color,
+      cta_color: fields.cta_color,
     })
     .select("id")
     .single();

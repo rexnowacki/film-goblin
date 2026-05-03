@@ -4,6 +4,22 @@ import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { dismissAnnouncement } from "@/lib/actions/announcements";
 
+type PanelColor = "pink" | "plum" | "seafoam" | "bone";
+type TextColor = PanelColor | "void";
+
+const COLOR_HEX: Record<TextColor, string> = {
+  pink: "#ff2d88",
+  plum: "#9d6fc4",
+  seafoam: "#7a9d92",
+  bone: "#f3ecd8",
+  void: "#0a0a0a",
+};
+
+// CTA button text color: use void on light backgrounds, bone on the rest.
+function ctaTextHex(bg: PanelColor): string {
+  return bg === "bone" ? COLOR_HEX.void : COLOR_HEX.bone;
+}
+
 export interface AnnouncementOverlayProps {
   announcement: {
     id: string;
@@ -11,6 +27,10 @@ export interface AnnouncementOverlayProps {
     body: string;
     cta_label: string | null;
     cta_href: string | null;
+    panel_color: PanelColor;
+    title_color: TextColor;
+    body_color: TextColor;
+    cta_color: PanelColor;
   };
 }
 
@@ -75,6 +95,16 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
   if (hidden) return null;
 
   const paragraphs = announcement.body.split(/\n\n+/);
+  const panelHex = COLOR_HEX[announcement.panel_color];
+  const titleHex = COLOR_HEX[announcement.title_color];
+  const bodyHex = COLOR_HEX[announcement.body_color];
+  const ctaBgHex = COLOR_HEX[announcement.cta_color];
+  const ctaTextHexValue = ctaTextHex(announcement.cta_color);
+  // Close-X and Got-it secondary use a contrast-safe token against the panel:
+  // void on light panels (bone), bone on dark/colored panels.
+  const onPanelMutedHex = announcement.panel_color === "bone" ? "rgba(10,10,10,0.55)" : "rgba(243,236,216,0.7)";
+  const onPanelBorderHex = announcement.panel_color === "bone" ? "rgba(10,10,10,0.35)" : "rgba(243,236,216,0.4)";
+  const onPanelTextHex = announcement.panel_color === "bone" ? COLOR_HEX.void : COLOR_HEX.bone;
 
   return (
     <div
@@ -110,13 +140,12 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
         ref={panelRef}
         tabIndex={-1}
         style={{
-          background: "#141414",
-          color: "var(--bone)",
+          background: panelHex,
+          color: onPanelTextHex,
           width: "100%",
           maxWidth: 480,
           maxHeight: "calc(100dvh - 96px)",
           overflowY: "auto",
-          borderTop: "3px solid var(--accent)",
           borderRadius: 14,
           padding: "28px 28px 24px",
           position: "relative",
@@ -137,7 +166,7 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
             right: 10,
             background: "none",
             border: 0,
-            color: "var(--muted)",
+            color: onPanelMutedHex,
             fontSize: 26,
             lineHeight: 1,
             padding: "4px 8px",
@@ -156,7 +185,7 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
             lineHeight: 1.15,
             margin: 0,
             marginBottom: 16,
-            color: "var(--accent)",
+            color: titleHex,
           }}
         >
           {announcement.title}
@@ -168,6 +197,7 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
             fontSize: "clamp(15px, 2vw, 16px)",
             lineHeight: 1.55,
             margin: "0 auto 24px",
+            color: bodyHex,
           }}
         >
           {paragraphs.map((p, i) => (
@@ -189,8 +219,8 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
               onClick={() => handleDismiss(announcement.cta_href)}
               disabled={isPending}
               style={{
-                background: "var(--accent)",
-                color: "var(--accent-ink)",
+                background: ctaBgHex,
+                color: ctaTextHexValue,
                 border: "none",
                 padding: "12px 24px",
                 fontFamily: "var(--font-ui, 'IBM Plex Sans', sans-serif)",
@@ -211,8 +241,8 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
             disabled={isPending}
             style={{
               background: "transparent",
-              color: "var(--bone)",
-              border: "2px solid var(--muted-dark)",
+              color: onPanelTextHex,
+              border: `2px solid ${onPanelBorderHex}`,
               padding: "10px 24px",
               fontFamily: "var(--font-ui, 'IBM Plex Sans', sans-serif)",
               fontSize: 13,

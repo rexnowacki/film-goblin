@@ -44,6 +44,10 @@ describe("validateAnnouncement", () => {
     cta_href: null,
     audience: "everyone" as const,
     recipient_ids: [],
+    panel_color: "plum" as const,
+    title_color: "bone" as const,
+    body_color: "bone" as const,
+    cta_color: "pink" as const,
   };
 
   it("passes a minimal valid announcement", () => {

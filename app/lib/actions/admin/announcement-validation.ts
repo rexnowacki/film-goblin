@@ -11,6 +11,12 @@ export function isInternalPath(s: string): boolean {
   return INTERNAL_PATH_RE.test(s);
 }
 
+export type PanelColor = "pink" | "plum" | "seafoam" | "bone";
+export type TextColor = PanelColor | "void";
+
+export const PANEL_COLOR_OPTIONS: PanelColor[] = ["pink", "plum", "seafoam", "bone"];
+export const TEXT_COLOR_OPTIONS: TextColor[] = ["pink", "plum", "seafoam", "bone", "void"];
+
 export interface AnnouncementInput {
   title: string;
   body: string;
@@ -18,6 +24,10 @@ export interface AnnouncementInput {
   cta_href: string | null;
   audience: "everyone" | "specific";
   recipient_ids: string[];
+  panel_color: PanelColor;
+  title_color: TextColor;
+  body_color: TextColor;
+  cta_color: PanelColor;
 }
 
 /**
@@ -52,6 +62,11 @@ export function validateAnnouncement(input: AnnouncementInput): string | null {
     const unique = new Set(input.recipient_ids);
     if (unique.size === 0) return "Pick at least one recipient.";
   }
+
+  if (!PANEL_COLOR_OPTIONS.includes(input.panel_color)) return "Invalid panel color.";
+  if (!TEXT_COLOR_OPTIONS.includes(input.title_color)) return "Invalid title color.";
+  if (!TEXT_COLOR_OPTIONS.includes(input.body_color)) return "Invalid body color.";
+  if (!PANEL_COLOR_OPTIONS.includes(input.cta_color)) return "Invalid CTA color.";
 
   return null;
 }

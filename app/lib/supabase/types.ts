@@ -205,6 +205,10 @@ export type Database = {
           created_by: string
           created_at: string
           archived_at: string | null
+          panel_color: "pink" | "plum" | "seafoam" | "bone"
+          title_color: "pink" | "plum" | "seafoam" | "bone" | "void"
+          body_color: "pink" | "plum" | "seafoam" | "bone" | "void"
+          cta_color: "pink" | "plum" | "seafoam" | "bone"
         }
         Insert: {
           id?: string
@@ -217,6 +221,10 @@ export type Database = {
           created_by: string
           created_at?: string
           archived_at?: string | null
+          panel_color?: "pink" | "plum" | "seafoam" | "bone"
+          title_color?: "pink" | "plum" | "seafoam" | "bone" | "void"
+          body_color?: "pink" | "plum" | "seafoam" | "bone" | "void"
+          cta_color?: "pink" | "plum" | "seafoam" | "bone"
         }
         Update: {
           id?: string
@@ -229,6 +237,10 @@ export type Database = {
           created_by?: string
           created_at?: string
           archived_at?: string | null
+          panel_color?: "pink" | "plum" | "seafoam" | "bone"
+          title_color?: "pink" | "plum" | "seafoam" | "bone" | "void"
+          body_color?: "pink" | "plum" | "seafoam" | "bone" | "void"
+          cta_color?: "pink" | "plum" | "seafoam" | "bone"
         }
         Relationships: []
       }

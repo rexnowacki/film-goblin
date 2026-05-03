@@ -1,21 +1,54 @@
 "use client";
 
+type PanelColor = "pink" | "plum" | "seafoam" | "bone";
+type TextColor = PanelColor | "void";
+
+const COLOR_HEX: Record<TextColor, string> = {
+  pink: "#ff2d88",
+  plum: "#9d6fc4",
+  seafoam: "#7a9d92",
+  bone: "#f3ecd8",
+  void: "#0a0a0a",
+};
+
+function ctaTextHex(bg: PanelColor): string {
+  return bg === "bone" ? COLOR_HEX.void : COLOR_HEX.bone;
+}
+
 interface PreviewProps {
   title: string;
   body: string;
   cta_label: string | null;
   cta_href: string | null;
+  panel_color: PanelColor;
+  title_color: TextColor;
+  body_color: TextColor;
+  cta_color: PanelColor;
 }
 
-/**
- * Mini-render of the popup-style overlay using the admin's CURRENT accent.
- * Recipients will see it in their own accent — caption clarifies this.
- */
-export default function AnnouncementPreview({ title, body, cta_label, cta_href }: PreviewProps) {
+export default function AnnouncementPreview({
+  title,
+  body,
+  cta_label,
+  cta_href,
+  panel_color,
+  title_color,
+  body_color,
+  cta_color,
+}: PreviewProps) {
+  const panelHex = COLOR_HEX[panel_color];
+  const titleHex = COLOR_HEX[title_color];
+  const bodyHex = COLOR_HEX[body_color];
+  const ctaBgHex = COLOR_HEX[cta_color];
+  const ctaTextHexValue = ctaTextHex(cta_color);
+  const onPanelMutedHex = panel_color === "bone" ? "rgba(10,10,10,0.55)" : "rgba(243,236,216,0.7)";
+  const onPanelBorderHex = panel_color === "bone" ? "rgba(10,10,10,0.35)" : "rgba(243,236,216,0.4)";
+  const onPanelTextHex = panel_color === "bone" ? COLOR_HEX.void : COLOR_HEX.bone;
+
   return (
     <div>
       <div className="caps" style={{ fontSize: 11, marginBottom: 6, color: "var(--muted)" }}>
-        Preview (in your accent — recipients see it in theirs)
+        Preview
       </div>
       <div
         style={{
@@ -28,11 +61,10 @@ export default function AnnouncementPreview({ title, body, cta_label, cta_href }
       >
         <div
           style={{
-            background: "#141414",
-            color: "var(--bone)",
+            background: panelHex,
+            color: onPanelTextHex,
             width: "100%",
             maxWidth: 360,
-            borderTop: "3px solid var(--accent)",
             borderRadius: 14,
             padding: "24px 24px 20px",
             position: "relative",
@@ -46,7 +78,7 @@ export default function AnnouncementPreview({ title, body, cta_label, cta_href }
               position: "absolute",
               top: 6,
               right: 10,
-              color: "var(--muted)",
+              color: onPanelMutedHex,
               fontSize: 22,
               lineHeight: 1,
             }}
@@ -60,7 +92,7 @@ export default function AnnouncementPreview({ title, body, cta_label, cta_href }
               lineHeight: 1.15,
               margin: 0,
               marginBottom: 14,
-              color: "var(--accent)",
+              color: titleHex,
             }}
           >
             {title || <span style={{ opacity: 0.5 }}>Title appears here</span>}
@@ -71,6 +103,7 @@ export default function AnnouncementPreview({ title, body, cta_label, cta_href }
               fontSize: 13,
               lineHeight: 1.5,
               marginBottom: 18,
+              color: bodyHex,
               opacity: body ? 1 : 0.5,
             }}
           >
@@ -91,8 +124,8 @@ export default function AnnouncementPreview({ title, body, cta_label, cta_href }
             {cta_label && cta_href && (
               <span
                 style={{
-                  background: "var(--accent)",
-                  color: "var(--accent-ink)",
+                  background: ctaBgHex,
+                  color: ctaTextHexValue,
                   padding: "10px 18px",
                   fontSize: 12,
                   fontWeight: 700,
@@ -105,8 +138,8 @@ export default function AnnouncementPreview({ title, body, cta_label, cta_href }
             )}
             <span
               style={{
-                border: "2px solid var(--muted-dark)",
-                color: "var(--bone)",
+                border: `2px solid ${onPanelBorderHex}`,
+                color: onPanelTextHex,
                 padding: "8px 18px",
                 fontSize: 12,
                 fontWeight: 700,

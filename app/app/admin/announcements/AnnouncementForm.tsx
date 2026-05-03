@@ -7,7 +7,11 @@ import {
   TITLE_MAX,
   BODY_MAX,
   CTA_LABEL_MAX,
+  PANEL_COLOR_OPTIONS,
+  TEXT_COLOR_OPTIONS,
   type AnnouncementInput,
+  type PanelColor,
+  type TextColor,
 } from "@/lib/actions/admin/announcement-validation";
 import RecipientPicker from "./RecipientPicker";
 import AnnouncementPreview from "./AnnouncementPreview";
@@ -15,6 +19,58 @@ import type { Searchable } from "@/components/recommend-modal-search";
 
 interface Props {
   profiles: Searchable[];
+}
+
+const COLOR_HEX: Record<TextColor, string> = {
+  pink: "#ff2d88",
+  plum: "#9d6fc4",
+  seafoam: "#7a9d92",
+  bone: "#f3ecd8",
+  void: "#0a0a0a",
+};
+
+function ColorSwatchRow<T extends string>({
+  label,
+  options,
+  selected,
+  onChange,
+}: {
+  label: string;
+  options: readonly T[];
+  selected: T;
+  onChange: (next: T) => void;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+      <span className="caps" style={{ fontSize: 11, minWidth: 80 }}>{label}</span>
+      <div style={{ display: "flex", gap: 6 }}>
+        {options.map(opt => {
+          const isSelected = opt === selected;
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onChange(opt)}
+              aria-label={opt}
+              aria-pressed={isSelected}
+              title={opt}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                background: COLOR_HEX[opt as TextColor] ?? "#000",
+                border: isSelected ? "2px solid var(--bone)" : "2px solid transparent",
+                outline: isSelected ? "1px solid var(--bone)" : "1px solid var(--muted)",
+                outlineOffset: isSelected ? 1 : 0,
+                cursor: "pointer",
+                padding: 0,
+              }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 const INPUT_STYLE: React.CSSProperties = {
@@ -37,6 +93,10 @@ export default function AnnouncementForm({ profiles }: Props) {
   const [ctaHref, setCtaHref] = useState("");
   const [audience, setAudience] = useState<"everyone" | "specific">("everyone");
   const [recipientIds, setRecipientIds] = useState<string[]>([]);
+  const [panelColor, setPanelColor] = useState<PanelColor>("plum");
+  const [titleColor, setTitleColor] = useState<TextColor>("bone");
+  const [bodyColor, setBodyColor] = useState<TextColor>("bone");
+  const [ctaColor, setCtaColor] = useState<PanelColor>("pink");
   const [err, setErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
@@ -53,6 +113,10 @@ export default function AnnouncementForm({ profiles }: Props) {
         cta_href: ctaOpen ? ctaHref : null,
         audience,
         recipient_ids: audience === "specific" ? recipientIds : [],
+        panel_color: panelColor,
+        title_color: titleColor,
+        body_color: bodyColor,
+        cta_color: ctaColor,
       };
       const result = await adminPublishAnnouncement(input);
       if (!result.ok) {
@@ -199,12 +263,44 @@ export default function AnnouncementForm({ profiles }: Props) {
         )}
       </fieldset>
 
+      <fieldset style={{ border: "1px solid var(--muted)", padding: 14, marginBottom: 14 }}>
+        <legend className="caps" style={{ fontSize: 11, padding: "0 6px" }}>Theme</legend>
+        <ColorSwatchRow
+          label="Panel"
+          options={PANEL_COLOR_OPTIONS}
+          selected={panelColor}
+          onChange={setPanelColor}
+        />
+        <ColorSwatchRow
+          label="Title"
+          options={TEXT_COLOR_OPTIONS}
+          selected={titleColor}
+          onChange={setTitleColor}
+        />
+        <ColorSwatchRow
+          label="Body"
+          options={TEXT_COLOR_OPTIONS}
+          selected={bodyColor}
+          onChange={setBodyColor}
+        />
+        <ColorSwatchRow
+          label="CTA"
+          options={PANEL_COLOR_OPTIONS}
+          selected={ctaColor}
+          onChange={setCtaColor}
+        />
+      </fieldset>
+
       <div style={{ marginBottom: 20 }}>
         <AnnouncementPreview
           title={title}
           body={body}
           cta_label={ctaOpen ? ctaLabel : null}
           cta_href={ctaOpen ? ctaHref : null}
+          panel_color={panelColor}
+          title_color={titleColor}
+          body_color={bodyColor}
+          cta_color={ctaColor}
         />
       </div>
 
