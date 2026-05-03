@@ -44,16 +44,26 @@ export default function AnnouncementPreview({ title, body, cta_label, cta_href }
             lineHeight: 1.5,
             marginBottom: 24,
             opacity: body ? 1 : 0.5,
-            whiteSpace: "pre-wrap",
           }}
         >
-          {body || "Body appears here. Newlines render as paragraph breaks."}
+          {body
+            ? body.split(/\n\n+/).map((p, i) => (
+                <p key={i} style={{ margin: i === 0 ? 0 : "1em 0 0" }}>
+                  {p.split("\n").map((line, j, arr) => (
+                    <span key={j}>
+                      {line}
+                      {j < arr.length - 1 && <br />}
+                    </span>
+                  ))}
+                </p>
+              ))
+            : "Body appears here. Newlines render as paragraph breaks."}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
           {cta_label && cta_href && (
             <span
               style={{
-                background: "var(--accent-ink)",
+                background: "var(--bone)",
                 color: "var(--void)",
                 padding: "8px 20px",
                 fontSize: 12,

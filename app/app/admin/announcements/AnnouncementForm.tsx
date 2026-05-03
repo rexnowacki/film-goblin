@@ -65,6 +65,8 @@ export default function AnnouncementForm({ profiles }: Props) {
     }
   }
 
+  const canSubmit = !(audience === "specific" && recipientIds.length === 0);
+
   return (
     <form onSubmit={onSubmit} style={{ maxWidth: 720 }}>
       <label style={LABEL_STYLE}>
@@ -212,7 +214,7 @@ export default function AnnouncementForm({ profiles }: Props) {
         </div>
       )}
 
-      <button type="submit" className="btn" disabled={saving}>
+      <button type="submit" className="btn" disabled={saving || !canSubmit}>
         {saving ? "Publishing…" : "Publish announcement"}
       </button>
     </form>
