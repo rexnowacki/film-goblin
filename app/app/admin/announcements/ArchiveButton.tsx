@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { adminArchiveAnnouncement } from "@/lib/actions/admin/announcements";
 
@@ -14,6 +14,17 @@ export default function ArchiveButton({ announcementId, title }: Props) {
   const [err, setErr] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+
+  // Escape cancels the pending confirm (matches BottomSheet UX). Only attached
+  // while the confirm UI is visible; cleaned up when collapsed.
+  useEffect(() => {
+    if (!confirming) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setConfirming(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [confirming]);
 
   function archive() {
     setErr(null);

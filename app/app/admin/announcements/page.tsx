@@ -13,7 +13,6 @@ export default async function AdminAnnouncementsPage() {
     supabase
       .from("announcements")
       .select("id, title, audience, status, created_at, archived_at")
-      .order("status", { ascending: true })
       .order("created_at", { ascending: false }),
     supabase.from("announcement_recipients").select("announcement_id"),
     supabase.from("announcement_dismissals").select("announcement_id"),
@@ -91,8 +90,8 @@ export default async function AdminAnnouncementsPage() {
                       fontWeight: 700,
                       textTransform: "uppercase",
                       letterSpacing: "0.08em",
-                      background: a.status === "published" ? "var(--accent)" : "var(--muted)",
-                      color: a.status === "published" ? "var(--accent-ink)" : "var(--bone)",
+                      background: a.status === "published" ? "var(--accent)" : "var(--void-3)",
+                      color: a.status === "published" ? "var(--accent-ink)" : "var(--muted)",
                     }}
                   >
                     {a.status}
