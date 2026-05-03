@@ -22,6 +22,7 @@ export async function _addActivityComment(
   client: Client,
   activityId: string,
   rawBody: string,
+  parentId?: string,
 ): Promise<AddResult> {
   const { data: { user }, error: userErr } = await client.auth.getUser();
   if (userErr || !user) return { ok: false, error: "unauthenticated" };
@@ -36,8 +37,8 @@ export async function _addActivityComment(
   // helper in lib/queries/activity-comments.ts.
   const { data, error } = await client
     .from("activity_comments")
-    .insert({ activity_id: activityId, user_id: user.id, body })
-    .select("id, activity_id, user_id, body, created_at")
+    .insert({ activity_id: activityId, user_id: user.id, body, parent_id: parentId ?? null })
+    .select("id, activity_id, user_id, body, created_at, parent_id")
     .single();
   if (error) return { ok: false, error: error.message };
 
@@ -62,7 +63,7 @@ export async function _addActivityComment(
       created_at: data.created_at,
       like_count: 0,
       liked_by_me: false,
-      parent_id: null,
+      parent_id: data.parent_id,
       reply_count: 0,
     },
   };
@@ -71,9 +72,10 @@ export async function _addActivityComment(
 export async function addActivityComment(
   activityId: string,
   body: string,
+  parentId?: string,
 ): Promise<AddResult> {
   const supabase = await createClient();
-  const result = await _addActivityComment(supabase, activityId, body);
+  const result = await _addActivityComment(supabase, activityId, body, parentId);
   if (result.ok) revalidatePath("/home");
   return result;
 }
