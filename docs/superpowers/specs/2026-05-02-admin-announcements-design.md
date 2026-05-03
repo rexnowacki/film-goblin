@@ -83,28 +83,24 @@ ALTER TABLE announcement_recipients    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE announcement_dismissals    ENABLE ROW LEVEL SECURITY;
 
 -- announcements: anyone authenticated can read; only admins write.
+-- Admin check goes through the `staff` table (canonical pattern, see 0118).
 CREATE POLICY announcements_select_authenticated ON announcements
   FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY announcements_admin_insert ON announcements
-  FOR INSERT TO authenticated WITH CHECK (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
-
-CREATE POLICY announcements_admin_update ON announcements
-  FOR UPDATE TO authenticated USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+CREATE POLICY announcements_admin_write ON announcements
+  FOR ALL TO authenticated
+  USING (EXISTS (SELECT 1 FROM staff WHERE user_id = auth.uid() AND role = 'admin'))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff WHERE user_id = auth.uid() AND role = 'admin'));
 
 -- announcement_recipients: anyone authenticated can read (needed for the
 -- pending-for-user query); only admins write.
 CREATE POLICY ar_select_authenticated ON announcement_recipients
   FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY ar_admin_insert ON announcement_recipients
-  FOR INSERT TO authenticated WITH CHECK (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+CREATE POLICY ar_admin_write ON announcement_recipients
+  FOR ALL TO authenticated
+  USING (EXISTS (SELECT 1 FROM staff WHERE user_id = auth.uid() AND role = 'admin'))
+  WITH CHECK (EXISTS (SELECT 1 FROM staff WHERE user_id = auth.uid() AND role = 'admin'));
 
 -- announcement_dismissals: each user reads/writes only their own rows.
 CREATE POLICY ad_self_select ON announcement_dismissals
