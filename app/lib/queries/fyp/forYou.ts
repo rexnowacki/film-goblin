@@ -1,8 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { getUserAffinity } from "./affinity";
-import { scoreFilms, starterPackScored, type ScoredFilm } from "./score";
+import { scoreFilms, scoreOneFilm, starterPackScored, type ScoredFilm } from "./score";
 import type { FilmTagRow, TagFacet } from "@/lib/queries/film-tags";
+import { buildCalibrationStats, scoreToPercentage } from "./calibration";
 
 type Client = SupabaseClient<Database>;
 
@@ -83,6 +84,7 @@ export async function getForYou(
     lanesProfile,
     covenRatings,
     ownWatchDirectors,
+    ratedRows,
   ] = await Promise.all([
     // 1. All available films — the candidate pool.
     client
@@ -122,17 +124,34 @@ export async function getForYou(
       .from("watched")
       .select("film:films!inner(director)")
       .eq("user_id", userId),
+
+    // 7. Films the user has explicitly rated (recommended IS NOT NULL) —
+    //    used to score calibration anchors. These are typically excluded from
+    //    the candidate pool (watched films are filtered), so we fetch them here.
+    client
+      .from("watched")
+      .select("film_id, recommended, film:films!inner(id, director, artwork_url, title, year)")
+      .eq("user_id", userId)
+      .not("recommended", "is", null),
   ]);
 
   const filmsList = (candidateFilms.data ?? []) as FilmLite[];
   const filmsById = new Map(filmsList.map((f) => [f.id, f]));
   const filmIds = filmsList.map((f) => f.id);
 
-  // ── Fetch all tags for the candidate set in one indexed round trip ───────
+  // ── Collect rated film ids for a combined tags query ─────────────────────
+  type RatedRow = { film_id: string; recommended: boolean; film: { id: string; director: string; artwork_url: string | null; title: string; year: number } };
+  const ratedList = (ratedRows.data ?? []) as unknown as RatedRow[];
+  const ratedFilmIds = ratedList.map((r) => r.film_id);
+
+  // Union of candidate + rated ids for a single film_tags round-trip.
+  const allFilmIdsForTags = Array.from(new Set([...filmIds, ...ratedFilmIds]));
+
+  // ── Fetch all tags for candidates + rated films in one indexed round trip ─
   const { data: allTags } = await client
     .from("film_tags")
     .select("film_id, position, is_primary, tag:tags!inner(id, name, type)")
-    .in("film_id", filmIds);
+    .in("film_id", allFilmIdsForTags);
 
   // Build film_id → FilmTagRow[] map. Includes all positions (hidden tail too).
   const tagsByFilmId = new Map<string, FilmTagRow[]>();
@@ -165,6 +184,23 @@ export async function getForYou(
     lanesByTag = new Set((lanesTags.data ?? []).map((t) => t.name));
   }
 
+  // ── Compute IDF over the candidate pool ──────────────────────────────────
+  // idf(tag) = log(N / df(tag))  where N = total candidate films,
+  // df = number of candidate films tagged with that tag.
+  // Tags not in the map default to 1.0 in scoreOneFilm (no boost).
+  const N = filmsList.length;
+  const dfByTag = new Map<string, number>();
+  for (const filmId of filmIds) {
+    const tags = tagsByFilmId.get(filmId) ?? [];
+    const seen = new Set<string>();
+    for (const t of tags) seen.add(t.name);
+    for (const name of seen) dfByTag.set(name, (dfByTag.get(name) ?? 0) + 1);
+  }
+  const idfByTag = new Map<string, number>();
+  for (const [name, df] of dfByTag) {
+    idfByTag.set(name, Math.log(N / df));
+  }
+
   // ── Build ScoreContext ───────────────────────────────────────────────────
   const ctx = {
     userWatchedFilmIds: new Set(
@@ -190,9 +226,10 @@ export async function getForYou(
         .filter(Boolean),
     ),
     lanesByTag,
+    idfByTag,
   };
 
-  // ── Score + paginate ─────────────────────────────────────────────────────
+  // ── Score candidates ─────────────────────────────────────────────────────
   const scored = scoreFilms(
     filmsList.map((f) => ({
       id: f.id,
@@ -203,12 +240,40 @@ export async function getForYou(
     ctx,
   );
 
-  const slice = scored.slice(offset, offset + limit);
+  // ── Score rated films for calibration anchors ────────────────────────────
+  // Rated films are excluded from the candidate pool (they're in the watched
+  // set), so we score them separately using scoreOneFilm which bypasses the
+  // exclusion sets. Films not found in the tags map (e.g. deleted from
+  // catalog) are skipped.
+  const ratedFilmScores = ratedList
+    .map(({ film_id, recommended, film: rFilm }) => {
+      const tags = tagsByFilmId.get(film_id);
+      if (!tags) return null; // film removed from catalog — skip
+      const filmInput = { id: film_id, director: rFilm.director, tags };
+      const { score } = scoreOneFilm(filmInput, affinity, ctx);
+      return { filmId: film_id, score, recommended: recommended as boolean };
+    })
+    .filter((x): x is NonNullable<typeof x> => x != null);
+
+  const candidateScores = scored.map((s) => s.score);
+  const calibration = buildCalibrationStats({ ratedFilmScores, candidateScores });
+
+  // ── Attach match pct / verbal to each scored film ────────────────────────
+  const enriched = scored.map((s) => {
+    const result = scoreToPercentage(s.score, calibration);
+    return {
+      ...s,
+      matchPercent: result.mode === "calibrated" ? result.pct : null,
+      matchVerbal: result.mode === "verbal" ? result.verbalKind : null,
+    };
+  });
+
+  const slice = enriched.slice(offset, offset + limit);
 
   return {
     items: slice,
     filmsById,
-    nextCursor: offset + limit < scored.length ? String(offset + limit) : null,
-    done: offset + limit >= scored.length,
+    nextCursor: offset + limit < enriched.length ? String(offset + limit) : null,
+    done: offset + limit >= enriched.length,
   };
 }

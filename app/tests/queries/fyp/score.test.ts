@@ -15,15 +15,19 @@ const TAG = (
   name: string,
   type: "subgenre" | "tone" | "theme" | "subject" | "setting" | "content",
   is_primary = false,
-) => ({ id: `t-${name}`, name, type, position: 1, is_primary } as const);
+  position = 6, // default to hidden-tail position so existing tests aren't boosted
+) => ({ id: `t-${name}`, name, type, position, is_primary } as const);
 
-/** Empty context — no watches, no dislikes, no ratings, no directors, no lanes. */
+/** Empty context — no watches, no dislikes, no ratings, no directors, no lanes.
+ *  IDF defaults to 1.0 for any tag not in the map (no boost / no penalty),
+ *  so the existing tests stay valid without listing every tag. */
 const EMPTY_CTX: ScoreContext = {
   userWatchedFilmIds: new Set<string>(),
   userDislikedFilmIds: new Set<string>(),
   covenRatingByFilm: new Map<string, number>(),
   ownDirectors: new Set<string>(),
   lanesByTag: new Set<string>(),
+  idfByTag: new Map<string, number>(),
 };
 
 // ---------------------------------------------------------------------------
@@ -317,5 +321,75 @@ describe("starterPackScored", () => {
 
   it("returns empty array for empty input", () => {
     expect(starterPackScored([])).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TF-IDF tag weighting (recommender v2)
+// ---------------------------------------------------------------------------
+
+describe("scoreFilms — TF-IDF tag weighting", () => {
+  it("rare tag scores higher than common tag, all else equal", () => {
+    const TAG_AT = (name: string, position: number) =>
+      ({ id: `t-${name}`, name, type: "tone" as const, position, is_primary: false });
+    const films: FilmInput[] = [
+      { id: "f1", director: "x", tags: [TAG_AT("rare", 6)] },
+      { id: "f2", director: "x", tags: [TAG_AT("common", 6)] },
+    ];
+    // Affinity equal for both; IDF differs.
+    const aff = { byTag: { rare: 1, common: 1 } };
+    const ctx: ScoreContext = {
+      ...EMPTY_CTX,
+      idfByTag: new Map([
+        ["rare", 3.0],   // log(150/5) ≈ 3.4 — rare in catalog
+        ["common", 0.5], // log(150/90) ≈ 0.5 — near-universal
+      ]),
+    };
+    const result = scoreFilms(films, aff, ctx);
+    expect(result[0].filmId).toBe("f1");      // rare wins
+    expect(result[0].score).toBeCloseTo(1 * 1.5 * 3.0); // aff × tone-mult × idf
+    expect(result[1].score).toBeCloseTo(1 * 1.5 * 0.5);
+  });
+
+  it("missing IDF entry defaults to 1.0 (no boost)", () => {
+    const films: FilmInput[] = [
+      { id: "f1", director: "x", tags: [TAG("folk horror", "subgenre", true)] },
+    ];
+    const aff = { byTag: { "folk horror": 2 } };
+    // No entry for "folk horror" — defaults to 1.0
+    const result = scoreFilms(films, aff, { ...EMPTY_CTX, idfByTag: new Map() });
+    expect(result[0].score).toBeCloseTo(2 * 3.0 * 1.0); // aff × primary-mult × idf-default
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Visible-tag position boost (positions 1-4 ≥ 1.3×)
+// ---------------------------------------------------------------------------
+
+describe("scoreFilms — visible-tag position boost", () => {
+  it("position 1 contributes 1.3× a position 6 tag", () => {
+    const TAG_AT = (position: number) =>
+      ({ id: `t`, name: "shared", type: "tone" as const, position, is_primary: false });
+    const visibleFilm: FilmInput = { id: "fA", director: "x", tags: [TAG_AT(1)] };
+    const hiddenFilm: FilmInput = { id: "fB", director: "x", tags: [TAG_AT(6)] };
+    const aff = { byTag: { shared: 5 } };
+
+    const result = scoreFilms([visibleFilm, hiddenFilm], aff, EMPTY_CTX);
+    expect(result[0].filmId).toBe("fA");
+    expect(result[0].score).toBeCloseTo(5 * 1.5 * 1.3);  // tone × visible boost
+    expect(result[1].score).toBeCloseTo(5 * 1.5 * 1.0);  // tone × no boost
+    expect(result[0].score / result[1].score).toBeCloseTo(1.3);
+  });
+
+  it("position exactly 4 still gets the boost; position 5 does not", () => {
+    const TAG_AT = (position: number) =>
+      ({ id: `t`, name: "x", type: "tone" as const, position, is_primary: false });
+    const at4: FilmInput = { id: "fA", director: "x", tags: [TAG_AT(4)] };
+    const at5: FilmInput = { id: "fB", director: "x", tags: [TAG_AT(5)] };
+    const aff = { byTag: { x: 1 } };
+    const r = scoreFilms([at4, at5], aff, EMPTY_CTX);
+    expect(r[0].filmId).toBe("fA");  // position 4 wins
+    expect(r[0].score).toBeCloseTo(1 * 1.5 * 1.3);
+    expect(r[1].score).toBeCloseTo(1 * 1.5 * 1.0);
   });
 });

@@ -29,6 +29,35 @@ export const FACET_MULTIPLIERS = {
   content: 0.5,
 } as const;
 
+/**
+ * Per-tag affinity ceiling. Prevents one runaway tag (e.g. `atmospheric`,
+ * which appears on most horror films) from dominating the vector and
+ * drowning out distinctive taste markers.
+ */
+export const AFFINITY_CAP = 30;
+
+/**
+ * Time-decay half-life in years. A 1-year-old signal contributes 0.5×; a
+ * 2-year-old signal 0.25×. Recent signals dominate; ancient ones fade.
+ * Tune up (longer half-life) if recent-bias feels too aggressive.
+ */
+export const DECAY_HALF_LIFE_YEARS = 1;
+
+const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000;
+
+/**
+ * Returns the decay multiplier for a signal observed at `createdAt`.
+ * `0.5 ^ (years_since_created / DECAY_HALF_LIFE_YEARS)`.
+ * Future timestamps (clock skew etc.) clamp to 1.0.
+ */
+function timeDecay(createdAt: string | null | undefined, now: number = Date.now()): number {
+  if (!createdAt) return 1.0;
+  const t = Date.parse(createdAt);
+  if (Number.isNaN(t)) return 1.0;
+  const yearsOld = Math.max(0, (now - t) / MS_PER_YEAR);
+  return Math.pow(0.5, yearsOld / DECAY_HALF_LIFE_YEARS);
+}
+
 type TagFacet = "subgenre" | "subject" | "tone" | "theme" | "setting" | "content";
 
 interface FilmTagRowRaw {
@@ -83,55 +112,61 @@ export async function getUserOwnAffinity(
   const [watched, library, watchlist, recsSent, reactions] = await Promise.all([
     client
       .from("watched")
-      .select("film_id, recommended")
+      .select("film_id, recommended, created_at")
       .eq("user_id", userId),
     client
       .from("library")
-      .select("film_id")
+      .select("film_id, created_at")
       .eq("user_id", userId),
     client
       .from("watchlists")
-      .select("film_id")
+      .select("film_id, created_at")
       .eq("user_id", userId),
     client
       .from("activity")
-      .select("payload")
+      .select("payload, created_at")
       .eq("actor_user_id", userId)
       .eq("kind", "recommendation_sent"),
     client
       .from("activity_reactions")
-      .select("activity:activity!inner(payload)")
+      .select("created_at, activity:activity!inner(payload)")
       .eq("user_id", userId),
   ]);
 
+  const now = Date.now();
+
   // watched: recommended === true → liked, === false → disliked, null → no signal
+  // Apply time decay per row.
   for (const w of watched.data ?? []) {
+    const decay = timeDecay(w.created_at, now);
     if (w.recommended === true) {
-      addSignal(w.film_id, SIGNAL_WEIGHTS.watch_liked);
+      addSignal(w.film_id, SIGNAL_WEIGHTS.watch_liked * decay);
     } else if (w.recommended === false) {
-      addSignal(w.film_id, SIGNAL_WEIGHTS.watch_disliked);
+      addSignal(w.film_id, SIGNAL_WEIGHTS.watch_disliked * decay);
     }
     // recommended === null → unrated watch, no contribution
   }
 
   for (const l of library.data ?? []) {
-    addSignal(l.film_id, SIGNAL_WEIGHTS.library_added);
+    addSignal(l.film_id, SIGNAL_WEIGHTS.library_added * timeDecay(l.created_at, now));
   }
 
   for (const wl of watchlist.data ?? []) {
-    addSignal(wl.film_id, SIGNAL_WEIGHTS.watchlist_added);
+    addSignal(wl.film_id, SIGNAL_WEIGHTS.watchlist_added * timeDecay(wl.created_at, now));
   }
 
   for (const r of recsSent.data ?? []) {
     const filmId = (r.payload as { film_id?: string })?.film_id;
-    if (filmId) addSignal(filmId, SIGNAL_WEIGHTS.recommendation_sent);
+    if (filmId) addSignal(filmId, SIGNAL_WEIGHTS.recommendation_sent * timeDecay(r.created_at, now));
   }
 
   for (const rxn of reactions.data ?? []) {
-    const filmId = (
-      rxn as unknown as { activity: { payload: { film_id?: string } } }
-    ).activity?.payload?.film_id;
-    if (filmId) addSignal(filmId, SIGNAL_WEIGHTS.reaction);
+    const r = rxn as unknown as {
+      created_at: string;
+      activity: { payload: { film_id?: string } };
+    };
+    const filmId = r.activity?.payload?.film_id;
+    if (filmId) addSignal(filmId, SIGNAL_WEIGHTS.reaction * timeDecay(r.created_at, now));
   }
 
   if (filmWeights.size === 0) return { byTag: {} };
@@ -164,9 +199,10 @@ export async function getUserOwnAffinity(
     byTag[r.tag.name] = (byTag[r.tag.name] ?? 0) + signalWeight * mult;
   }
 
-  // 4. Floor each tag's running score at 0 (after full aggregation).
+  // 4. Floor at 0 + cap at AFFINITY_CAP, after full aggregation.
   for (const k of Object.keys(byTag)) {
     if (byTag[k] < 0) byTag[k] = 0;
+    else if (byTag[k] > AFFINITY_CAP) byTag[k] = AFFINITY_CAP;
   }
 
   return { byTag };
@@ -211,15 +247,40 @@ export async function getLaneAffinity(
 export const COVEN_PRIOR_SCALE = 0.3;
 
 /**
- * Aggregates each coven mate's own-affinity vector, weighted by the user's
- * 90-day interaction score with that mate (from getRankedCovenfolk in #34).
- * Result is scaled by COVEN_PRIOR_SCALE (0.3) so behavior dominates lanes
- * which dominates the coven prior.
+ * Cosine similarity between two affinity vectors (treating each as sparse
+ * vectors over the tag vocabulary). Returns 0..1 for non-empty vectors,
+ * 0 if either is empty, NaN-safe.
+ */
+export function cosineSimilarity(a: AffinityVector, b: AffinityVector): number {
+  let dot = 0;
+  let aMagSq = 0;
+  let bMagSq = 0;
+  // Sum a · b over a's tags (b's missing tags contribute 0)
+  for (const [tag, va] of Object.entries(a.byTag)) {
+    const vb = b.byTag[tag] ?? 0;
+    dot += va * vb;
+    aMagSq += va * va;
+  }
+  // Sum b's magnitude separately (over b's full tag set)
+  for (const v of Object.values(b.byTag)) bMagSq += v * v;
+  if (aMagSq === 0 || bMagSq === 0) return 0;
+  return dot / (Math.sqrt(aMagSq) * Math.sqrt(bMagSq));
+}
+
+/**
+ * Aggregates each coven mate's own-affinity vector, weighted by COSINE
+ * SIMILARITY between the user's own vector and each mate's vector — close-
+ * taste mates contribute more than distant ones. Negative or zero similarity
+ * mates are excluded entirely. Result is scaled by COVEN_PRIOR_SCALE (0.3).
  *
- * NOTE: This calls getUserOwnAffinity per coven mate — the slow-path the
- * spec documents as the future cache target. A cache wrapper belongs here
- * at mid-scale: replace the per-mate getUserOwnAffinity call with a cached
- * read, keeping the rest of this function unchanged.
+ * Cold-start fallback: when the user's own vector is empty (brand-new user
+ * with covenfolk but no behavioral history), revert to interaction-score
+ * weighting from getRankedCovenfolk so the prior is still meaningful.
+ *
+ * NOTE: calls getUserOwnAffinity per coven mate — the slow-path the spec
+ * documents as the future cache target. A cache wrapper belongs here at
+ * mid-scale: replace the per-mate call with a cached read, keeping the
+ * weighting math unchanged.
  */
 export async function getCovenBorrowedAffinity(
   client: Client,
@@ -228,21 +289,48 @@ export async function getCovenBorrowedAffinity(
   const ranked = await getRankedCovenfolk(client, userId);
   if (ranked.length === 0) return { byTag: {} };
 
-  // Treat all-zero scores (a fresh user with covenfolk but no interactions)
-  // as equal weights so the vector still surfaces something meaningful rather
-  // than dividing by zero.
-  const totalScore = ranked.reduce((s, r) => s + r.score, 0);
-  const useEqualWeights = totalScore === 0;
+  // Need the user's own vector to compute cosine similarity. Cold-start
+  // (empty own vector) → fall back to interaction-score weighting.
+  const ownVec = await getUserOwnAffinity(client, userId);
+  const ownEmpty = Object.keys(ownVec.byTag).length === 0;
+
+  // Pre-fetch all mates' vectors in serial (parallel would also work; serial
+  // is fine at coven sizes ≤ a few dozen and keeps memory pressure low).
+  const mateVecs: Array<{ mateId: string; score: number; vec: AffinityVector }> = [];
+  for (const mate of ranked) {
+    const vec = await getUserOwnAffinity(client, mate.id);
+    mateVecs.push({ mateId: mate.id, score: mate.score, vec });
+  }
+
+  // Compute mate weights.
+  let weights: Map<string, number>;
+  if (ownEmpty) {
+    // Cold-start: use interaction scores; equal weight if all zero.
+    const totalScore = mateVecs.reduce((s, m) => s + m.score, 0);
+    if (totalScore === 0) {
+      const w = 1 / mateVecs.length;
+      weights = new Map(mateVecs.map(m => [m.mateId, w]));
+    } else {
+      weights = new Map(mateVecs.map(m => [m.mateId, m.score / totalScore]));
+    }
+  } else {
+    // Cosine-weighted: similarity to user's own vector. Negatives floored at 0.
+    const sims = mateVecs.map(m => ({ mateId: m.mateId, sim: Math.max(0, cosineSimilarity(ownVec, m.vec)) }));
+    const totalSim = sims.reduce((s, x) => s + x.sim, 0);
+    if (totalSim === 0) {
+      // No mate has any taste overlap with the user. Don't pull the vector
+      // anywhere — return an empty borrow.
+      return { byTag: {} };
+    }
+    weights = new Map(sims.map(x => [x.mateId, x.sim / totalSim]));
+  }
 
   const accum: Record<string, number> = {};
-  for (const mate of ranked) {
-    // Future cache seam: replace this call with a cached affinity read.
-    const mateAffinity = await getUserOwnAffinity(client, mate.id);
-    const weight = useEqualWeights
-      ? 1 / ranked.length
-      : mate.score / totalScore;
-    for (const [tag, val] of Object.entries(mateAffinity.byTag)) {
-      accum[tag] = (accum[tag] ?? 0) + val * weight;
+  for (const m of mateVecs) {
+    const w = weights.get(m.mateId) ?? 0;
+    if (w === 0) continue;
+    for (const [tag, val] of Object.entries(m.vec.byTag)) {
+      accum[tag] = (accum[tag] ?? 0) + val * w;
     }
   }
 
@@ -280,11 +368,13 @@ export async function getUserAffinity(
     }
   }
 
-  // Floor at 0 (defensive — getUserOwnAffinity already floors, but the
-  // composed sum could in theory go negative if future sources contribute
-  // negatives; keep a single authoritative floor here).
+  // Floor at 0 + cap at AFFINITY_CAP, after composing all sources.
+  // Defensive — own/lane/coven layers each cap individually, but lane (1.5)
+  // + coven prior + own (≤ cap) could in theory exceed the cap when summed;
+  // re-clamp here so the composed vector matches the documented bound.
   for (const k of Object.keys(byTag)) {
     if (byTag[k] < 0) byTag[k] = 0;
+    else if (byTag[k] > AFFINITY_CAP) byTag[k] = AFFINITY_CAP;
   }
 
   return { byTag };

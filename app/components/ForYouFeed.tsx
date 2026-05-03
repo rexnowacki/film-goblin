@@ -81,7 +81,15 @@ export default function ForYouFeed({ initialItems, initialFilmsById, initialCurs
         {items.map(scored => {
           const film = filmsById.get(scored.filmId);
           if (!film) return null;
-          return <ForYouRow key={scored.filmId} film={film} reason={scored.topReason} />;
+          return (
+            <ForYouRow
+              key={scored.filmId}
+              film={film}
+              reason={scored.topReason}
+              matchPercent={scored.matchPercent}
+              matchVerbal={scored.matchVerbal}
+            />
+          );
         })}
       </div>
       {!done && cursor && (
