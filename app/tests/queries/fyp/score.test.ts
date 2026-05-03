@@ -53,9 +53,9 @@ describe("scoreFilms", () => {
 
     expect(result).toHaveLength(2);
     expect(result[0].filmId).toBe("f1");
-    expect(result[0].score).toBeCloseTo(15.0); // 5.0 × 3.0 (primary subgenre)
+    expect(result[0].score).toBeCloseTo(5.0); // 5.0 × 1.0 (idf default) × 1.0 (β) / sqrt(1)
     expect(result[1].filmId).toBe("f2");
-    expect(result[1].score).toBeCloseTo(3.0);  // 1.0 × 3.0
+    expect(result[1].score).toBeCloseTo(1.0); // 1.0 × 1.0 × 1.0 / sqrt(1)
   });
 
   // ── 2. Exclusions ─────────────────────────────────────────────────────────
@@ -80,10 +80,11 @@ describe("scoreFilms", () => {
 
   // ── 3. topReason: tag ─────────────────────────────────────────────────────
 
-  it("attributes top reason to the strongest tag by weighted contribution", () => {
-    // folk horror primary (×3.0): 5×3.0 = 15
-    // gore content (×0.5): 10×0.5 = 5
-    // → folk horror wins despite lower raw affinity
+  it("attributes top reason to the tag with the highest raw affinity (no μ at scoring)", () => {
+    // v3: μ is no longer applied at scoring time — raw affinity dominates.
+    // folk horror primary: 5 × 1.0 (idf) × 1.0 (β) = 5
+    // gore content: 10 × 1.0 × 1.0 = 10
+    // → gore wins because raw affinity is higher (5 vs 10), μ no longer inflates subgenre
     const films: FilmInput[] = [
       {
         id: "f1",
@@ -96,9 +97,10 @@ describe("scoreFilms", () => {
       { byTag: { "folk horror": 5, gore: 10 } },
       EMPTY_CTX,
     );
+    // total = (5 + 10) / sqrt(2) ≈ 10.607; topTag = gore with 10 / sqrt(2) ≈ 7.071
     expect(result[0].topReason.kind).toBe("tag");
-    expect(result[0].topReason.tagName).toBe("folk horror");
-    expect(result[0].topReason.contribution).toBeCloseTo(15.0);
+    expect(result[0].topReason.tagName).toBe("gore");
+    expect(result[0].topReason.contribution).toBeCloseTo(10 / Math.sqrt(2));
   });
 
   // ── 4. topReason: lane ────────────────────────────────────────────────────
@@ -113,9 +115,10 @@ describe("scoreFilms", () => {
     expect(result[0].topReason.tagName).toBe("folk horror");
   });
 
-  it("does not attribute lane reason when a non-lane tag has a higher contribution", () => {
-    // gothic (lane) secondary (×1.5): 5×1.5 = 7.5
-    // folk horror (non-lane) primary (×3.0): 4×3.0 = 12 → higher → tag reason
+  it("does not attribute lane reason when a non-lane tag has a higher raw affinity", () => {
+    // v3: without μ, raw affinity decides the winner.
+    // folk horror (non-lane) primary: 6 × 1.0 × 1.0 = 6
+    // gothic (lane) secondary: 5 × 1.0 × 1.0 = 5 → lower → tag reason
     const films: FilmInput[] = [
       {
         id: "f1",
@@ -129,7 +132,7 @@ describe("scoreFilms", () => {
     const ctx: ScoreContext = { ...EMPTY_CTX, lanesByTag: new Set(["gothic"]) };
     const result = scoreFilms(
       films,
-      { byTag: { "folk horror": 4, gothic: 5 } },
+      { byTag: { "folk horror": 6, gothic: 5 } },
       ctx,
     );
     expect(result[0].topReason.kind).toBe("tag");
@@ -139,8 +142,8 @@ describe("scoreFilms", () => {
   // ── 5. topReason: coven_rating ────────────────────────────────────────────
 
   it("attributes coven_rating reason when it exceeds the top tag contribution", () => {
-    // folk horror primary (×3.0): 0.1×3.0 = 0.3
-    // coven bonus for 90% rating: 0.9 → exceeds 0.3
+    // folk horror: 0.1 × 1.0 (idf) × 1.0 (β) / sqrt(1) = 0.1
+    // coven bonus for 90% rating: 0.9 → exceeds 0.1 → coven_rating reason
     const films: FilmInput[] = [
       { id: "f1", director: "x", tags: [TAG("folk horror", "subgenre", true)] },
     ];
@@ -154,7 +157,7 @@ describe("scoreFilms", () => {
   });
 
   it("does not attribute coven_rating reason when tag contribution is higher", () => {
-    // folk horror primary (×3.0): 5×3.0 = 15 >> coven bonus 0.9
+    // folk horror: 5 × 1.0 × 1.0 / sqrt(1) = 5.0 >> coven bonus 0.9 → tag reason
     const films: FilmInput[] = [
       { id: "f1", director: "x", tags: [TAG("folk horror", "subgenre", true)] },
     ];
@@ -169,7 +172,7 @@ describe("scoreFilms", () => {
   // ── 6. topReason: director ────────────────────────────────────────────────
 
   it("attributes director reason when director matches and no strong tag exists", () => {
-    // gore content (×0.5): 2×0.5 = 1.0 < 1.5 threshold → director reason
+    // v3: no μ at scoring. gore content: 1 × 1.0 (idf) × 1.0 (β) = 1.0 < 1.5 threshold → director reason
     const films: FilmInput[] = [
       { id: "f1", director: "Ari Aster", tags: [TAG("gore", "content")] },
     ];
@@ -177,12 +180,12 @@ describe("scoreFilms", () => {
       ...EMPTY_CTX,
       ownDirectors: new Set(["Ari Aster"]),
     };
-    const result = scoreFilms(films, { byTag: { gore: 2 } }, ctx);
+    const result = scoreFilms(films, { byTag: { gore: 1 } }, ctx);
     expect(result[0].topReason.kind).toBe("director");
   });
 
   it("does not attribute director reason when a strong tag match exists (contrib >= 1.5)", () => {
-    // folk horror primary (×3.0): 1×3.0 = 3.0 >= 1.5 → tag reason wins over director
+    // v3: no μ at scoring. folk horror: 2 × 1.0 (idf) × 1.0 (β) = 2.0 >= 1.5 → tag reason wins over director
     const films: FilmInput[] = [
       {
         id: "f1",
@@ -194,7 +197,7 @@ describe("scoreFilms", () => {
       ...EMPTY_CTX,
       ownDirectors: new Set(["Ari Aster"]),
     };
-    const result = scoreFilms(films, { byTag: { "folk horror": 1 } }, ctx);
+    const result = scoreFilms(films, { byTag: { "folk horror": 2 } }, ctx);
     expect(result[0].topReason.kind).toBe("tag");
   });
 
@@ -232,8 +235,8 @@ describe("scoreFilms", () => {
   // ── 9. Coven rating threshold ──────────────────────────────────────────────
 
   it("applies no coven bonus for ratings below 70", () => {
-    // folk horror primary (×3.0): 0.1×3.0 = 0.3
-    // coven rating 69% → no bonus → total stays 0.3
+    // folk horror: 0.1 × 1.0 × 1.0 / sqrt(1) = 0.1
+    // coven rating 69% → no bonus → total stays 0.1
     const films: FilmInput[] = [
       { id: "f1", director: "x", tags: [TAG("folk horror", "subgenre", true)] },
     ];
@@ -242,13 +245,13 @@ describe("scoreFilms", () => {
       covenRatingByFilm: new Map([["f1", 69]]),
     };
     const result = scoreFilms(films, { byTag: { "folk horror": 0.1 } }, ctx);
-    expect(result[0].score).toBeCloseTo(0.3);
+    expect(result[0].score).toBeCloseTo(0.1);
     expect(result[0].topReason.kind).toBe("tag"); // no coven reason
   });
 
   it("applies coven bonus exactly at 70", () => {
-    // folk horror primary (×3.0): 0.1×3.0 = 0.3
-    // coven rating 70% → bonus 0.7 → total 1.0 — coven wins
+    // folk horror: 0.1 × 1.0 × 1.0 / sqrt(1) = 0.1
+    // coven rating 70% → bonus 0.7 → total 0.8 — coven wins (0.7 > 0.1)
     const films: FilmInput[] = [
       { id: "f1", director: "x", tags: [TAG("folk horror", "subgenre", true)] },
     ];
@@ -257,16 +260,16 @@ describe("scoreFilms", () => {
       covenRatingByFilm: new Map([["f1", 70]]),
     };
     const result = scoreFilms(films, { byTag: { "folk horror": 0.1 } }, ctx);
-    expect(result[0].score).toBeCloseTo(1.0);
+    expect(result[0].score).toBeCloseTo(0.8);
     expect(result[0].topReason.kind).toBe("coven_rating");
   });
 
   // ── 10. Multi-tag score accumulation ──────────────────────────────────────
 
-  it("accumulates contributions from multiple tags", () => {
-    // folk horror primary (×3.0): 2×3.0 = 6.0
-    // arthouse tone (×1.5): 1×1.5 = 1.5
-    // total = 7.5
+  it("accumulates contributions from multiple tags (with length penalty)", () => {
+    // v3: folk horror: 2 × 1.0 × 1.0 = 2; arthouse: 1 × 1.0 × 1.0 = 1
+    // sum = 3; length penalty: 3 / sqrt(2) ≈ 2.121
+    // topTag = folk horror with 2 / sqrt(2) ≈ 1.414
     const films: FilmInput[] = [
       {
         id: "f1",
@@ -282,9 +285,10 @@ describe("scoreFilms", () => {
       { byTag: { "folk horror": 2, arthouse: 1 } },
       EMPTY_CTX,
     );
-    expect(result[0].score).toBeCloseTo(7.5);
+    expect(result[0].score).toBeCloseTo(3 / Math.sqrt(2));
     expect(result[0].topReason.kind).toBe("tag");
     expect(result[0].topReason.tagName).toBe("folk horror");
+    expect(result[0].topReason.contribution).toBeCloseTo(2 / Math.sqrt(2));
   });
 
   // ── 11. Empty input ────────────────────────────────────────────────────────
@@ -347,8 +351,8 @@ describe("scoreFilms — TF-IDF tag weighting", () => {
     };
     const result = scoreFilms(films, aff, ctx);
     expect(result[0].filmId).toBe("f1");      // rare wins
-    expect(result[0].score).toBeCloseTo(1 * 1.5 * 3.0); // aff × tone-mult × idf
-    expect(result[1].score).toBeCloseTo(1 * 1.5 * 0.5);
+    expect(result[0].score).toBeCloseTo(1 * 3.0); // aff × idf (no μ; sqrt(1)=1)
+    expect(result[1].score).toBeCloseTo(1 * 0.5);
   });
 
   it("missing IDF entry defaults to 1.0 (no boost)", () => {
@@ -358,7 +362,7 @@ describe("scoreFilms — TF-IDF tag weighting", () => {
     const aff = { byTag: { "folk horror": 2 } };
     // No entry for "folk horror" — defaults to 1.0
     const result = scoreFilms(films, aff, { ...EMPTY_CTX, idfByTag: new Map() });
-    expect(result[0].score).toBeCloseTo(2 * 3.0 * 1.0); // aff × primary-mult × idf-default
+    expect(result[0].score).toBeCloseTo(2 * 1.0); // aff × idf-default (no μ; sqrt(1)=1)
   });
 });
 
@@ -376,8 +380,8 @@ describe("scoreFilms — visible-tag position boost", () => {
 
     const result = scoreFilms([visibleFilm, hiddenFilm], aff, EMPTY_CTX);
     expect(result[0].filmId).toBe("fA");
-    expect(result[0].score).toBeCloseTo(5 * 1.5 * 1.3);  // tone × visible boost
-    expect(result[1].score).toBeCloseTo(5 * 1.5 * 1.0);  // tone × no boost
+    expect(result[0].score).toBeCloseTo(5 * 1.3);  // aff × β(pos 1) / sqrt(1); no μ
+    expect(result[1].score).toBeCloseTo(5 * 1.0);  // aff × β(pos 6) / sqrt(1)
     expect(result[0].score / result[1].score).toBeCloseTo(1.3);
   });
 
@@ -389,7 +393,94 @@ describe("scoreFilms — visible-tag position boost", () => {
     const aff = { byTag: { x: 1 } };
     const r = scoreFilms([at4, at5], aff, EMPTY_CTX);
     expect(r[0].filmId).toBe("fA");  // position 4 wins
-    expect(r[0].score).toBeCloseTo(1 * 1.5 * 1.3);
-    expect(r[1].score).toBeCloseTo(1 * 1.5 * 1.0);
+    expect(r[0].score).toBeCloseTo(1 * 1.3);  // aff × β(pos 4); no μ
+    expect(r[1].score).toBeCloseTo(1 * 1.0);  // aff × β(pos 5)
+  });
+});
+
+// ---------------------------------------------------------------------------
+// v3 new behaviour specs
+// ---------------------------------------------------------------------------
+
+describe("scoreFilms — v3 length penalty", () => {
+  it("4-tag film scores 2× a 1-tag film when per-tag contribution is equal", () => {
+    // Each tag has aff=3, idf=1, β=1 → per-tag raw contrib = 3.
+    // 1-tag film: total = 3 / sqrt(1) = 3.
+    // 4-tag film: total = 12 / sqrt(4) = 6.
+    // Ratio = 2× (breadth rewarded, but only at the sqrt rate, not linearly).
+    const oneTag: FilmInput = {
+      id: "f1",
+      director: "x",
+      tags: [TAG("slasher", "subgenre", false)],
+    };
+    const fourTag: FilmInput = {
+      id: "f2",
+      director: "x",
+      tags: [
+        TAG("slasher", "subgenre", false),
+        TAG("gore", "content"),
+        TAG("suspense", "tone"),
+        TAG("urban", "setting"),
+      ],
+    };
+    const aff = { byTag: { slasher: 3, gore: 3, suspense: 3, urban: 3 } };
+    const result = scoreFilms([oneTag, fourTag], aff, EMPTY_CTX);
+    expect(result[0].filmId).toBe("f2"); // 4-tag film wins
+    expect(result[0].score).toBeCloseTo(3 * 4 / Math.sqrt(4)); // = 6
+    expect(result[1].score).toBeCloseTo(3 / Math.sqrt(1));     // = 3
+    expect(result[0].score / result[1].score).toBeCloseTo(2);
+  });
+});
+
+describe("scoreFilms — v3 μ no longer applied at scoring", () => {
+  it("content tag and primary-subgenre tag with equal affinity now contribute equally", () => {
+    // Old formula: primary subgenre ×3.0 vs content ×0.5 → 6× difference.
+    // v3: both contribute aff × 1.0 × 1.0 = same raw contrib.
+    const filmPrimary: FilmInput = {
+      id: "f1",
+      director: "x",
+      tags: [TAG("folk horror", "subgenre", true)],
+    };
+    const filmContent: FilmInput = {
+      id: "f2",
+      director: "x",
+      tags: [TAG("gore", "content")],
+    };
+    const aff = { byTag: { "folk horror": 4, gore: 4 } };
+    const result = scoreFilms([filmPrimary, filmContent], aff, EMPTY_CTX);
+    // Both films have 1 tag, aff=4, idf=1, β=1 → score = 4 each.
+    expect(result[0].score).toBeCloseTo(result[1].score);
+    expect(result[0].score).toBeCloseTo(4.0);
+  });
+});
+
+describe("scoreFilms — v3 IDF still applied", () => {
+  it("high-IDF tag outscores low-IDF tag with the same affinity", () => {
+    // Both films: 1 tag, aff=2, β=1. IDF differs: 4.0 vs 0.25.
+    // f1 (distinctive): 2 × 4.0 / sqrt(1) = 8.0
+    // f2 (common):      2 × 0.25 / sqrt(1) = 0.5
+    const highIdf: FilmInput = {
+      id: "f1",
+      director: "x",
+      tags: [TAG("slow burn", "tone")],
+    };
+    const lowIdf: FilmInput = {
+      id: "f2",
+      director: "x",
+      tags: [TAG("atmospheric", "tone")],
+    };
+    const aff = { byTag: { "slow burn": 2, atmospheric: 2 } };
+    const ctx: ScoreContext = {
+      ...EMPTY_CTX,
+      idfByTag: new Map([
+        ["slow burn", 4.0],    // distinctive — appears in few films
+        ["atmospheric", 0.25], // near-universal — appears in almost everything
+      ]),
+    };
+    const result = scoreFilms([highIdf, lowIdf], aff, ctx);
+    expect(result[0].filmId).toBe("f1");
+    expect(result[0].score).toBeCloseTo(2 * 4.0);
+    expect(result[1].score).toBeCloseTo(2 * 0.25);
+    expect(result[0].score / result[1].score).toBeCloseTo(16);
   });
 });

@@ -44,6 +44,14 @@ const VISIBLE_POSITION_BOOST = 1.3;
 const VISIBLE_POSITION_THRESHOLD = 4;
 
 /**
+ * Length-penalty exponent γ. Score is divided by |tags(F)|^γ so heavily-
+ * tagged films don't accumulate raw score advantage purely from breadth.
+ * γ=0 is no penalty (sum), γ=1 is mean-per-tag (probably too harsh),
+ * γ=0.5 (sqrt) is the recommended middle ground per math review.
+ */
+const LENGTH_PENALTY_GAMMA = 0.5;
+
+/**
  * Maps a FilmTagRow to the facet multiplier it contributes to the affinity
  * score. Delegates to the shared FACET_MULTIPLIERS constant from affinity.ts
  * so both the vector builder and the scorer use exactly the same numbers.
@@ -93,7 +101,11 @@ export function scoreOneFilm(
     const idf = ctx.idfByTag.get(tag.name) ?? 1.0;
     const positionBoost =
       tag.position <= VISIBLE_POSITION_THRESHOLD ? VISIBLE_POSITION_BOOST : 1.0;
-    const contrib = aff * facetMultiplier(tag) * idf * positionBoost;
+    // v3 (math review): drop μ at scoring time. The user vector already
+    // encodes facet importance because μ is applied at affinity-construction.
+    // Re-applying μ here squared the effect (Primary subgenre 36× content).
+    // Score per tag = affinity × idf × position-boost.
+    const contrib = aff * idf * positionBoost;
     total += contrib;
     if (contrib > topTagContrib) {
       topTagContrib = contrib;
@@ -105,10 +117,17 @@ export function scoreOneFilm(
     }
   }
 
+  // v3 (math review): soft length penalty so heavily-tagged films don't
+  // accumulate raw advantage from breadth alone. Divide by |tags(F)|^γ.
+  if (film.tags.length > 0) {
+    total /= Math.pow(film.tags.length, LENGTH_PENALTY_GAMMA);
+    topTagContrib /= Math.pow(film.tags.length, LENGTH_PENALTY_GAMMA);
+    laneContrib /= Math.pow(film.tags.length, LENGTH_PENALTY_GAMMA);
+  }
+
   // Coven-rating bonus: soft tiebreaker for highly-rated films.
-  // Only applies for ratings >= 70. NOT multiplied by any facet weight —
-  // it's a film-level signal, not a tag-level one.
-  // A 90% coven rating contributes 0.9; a 70% contributes 0.7.
+  // Only applies for ratings >= 70. NOT subject to length penalty —
+  // it's a film-level signal, not a per-tag accumulation.
   const covenRating = ctx.covenRatingByFilm.get(film.id);
   const covenContrib =
     covenRating != null && covenRating >= 70 ? covenRating / 100 : 0;

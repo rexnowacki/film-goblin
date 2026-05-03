@@ -184,9 +184,11 @@ export async function getForYou(
     lanesByTag = new Set((lanesTags.data ?? []).map((t) => t.name));
   }
 
-  // ── Compute IDF over the candidate pool ──────────────────────────────────
-  // idf(tag) = log(N / df(tag))  where N = total candidate films,
-  // df = number of candidate films tagged with that tag.
+  // ── Compute smoothed + clamped IDF over the candidate pool ──────────────
+  // v3 (math review): with N≈150 films, raw log(N/df) is volatile —
+  // singleton tags get explosive IDF; common tags drop close to 0 and shift
+  // a lot when films are added/removed. Smoothed form `log(1 + N/(1+df))`
+  // dampens both extremes; clamping to [0.75, 3.0] gives guardrails.
   // Tags not in the map default to 1.0 in scoreOneFilm (no boost).
   const N = filmsList.length;
   const dfByTag = new Map<string, number>();
@@ -196,9 +198,12 @@ export async function getForYou(
     for (const t of tags) seen.add(t.name);
     for (const name of seen) dfByTag.set(name, (dfByTag.get(name) ?? 0) + 1);
   }
+  const IDF_FLOOR = 0.75;
+  const IDF_CEIL = 3.0;
   const idfByTag = new Map<string, number>();
   for (const [name, df] of dfByTag) {
-    idfByTag.set(name, Math.log(N / df));
+    const raw = Math.log(1 + N / (1 + df));
+    idfByTag.set(name, Math.max(IDF_FLOOR, Math.min(IDF_CEIL, raw)));
   }
 
   // ── Build ScoreContext ───────────────────────────────────────────────────
