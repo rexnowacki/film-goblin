@@ -5,6 +5,7 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "*.mzstatic.com" },
+      { protocol: "https", hostname: "image.tmdb.org" },
     ],
   },
   webpack(config) {

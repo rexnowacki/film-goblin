@@ -4,6 +4,7 @@ import { useState } from "react";
 import FilmForm from "../FilmForm";
 import AppleTvSearchBox from "../AppleTvSearchBox";
 import ITunesPasteBox from "../iTunesPasteBox";
+import TmdbSearchBox from "../TmdbSearchBox";
 import type { ITunesSearchHit } from "@/lib/actions/admin/films";
 import type { FilmFormFields } from "@/lib/actions/admin/films";
 
@@ -64,10 +65,13 @@ export default function AddFilmClient() {
           </section>
 
           <section>
-            <h2 className="head" style={{ fontSize: 22, marginBottom: 10 }}>Option 3 — No Apple TV match?</h2>
-            <button type="button" className="btn btn-outline" onClick={startManual}>
-              Enter manually
-            </button>
+            <h2 className="head" style={{ fontSize: 22, marginBottom: 10 }}>Option 3 — No Apple TV match? Search TMDB</h2>
+            <TmdbSearchBox onPick={fields => { setInitial(fields); setFormKey(k => k + 1); }} />
+            <div style={{ marginTop: 14 }}>
+              <button type="button" className="btn btn-sm btn-outline" onClick={startManual}>
+                Skip — enter completely manually
+              </button>
+            </div>
           </section>
         </>
       )}
