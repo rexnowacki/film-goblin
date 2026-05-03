@@ -1,11 +1,14 @@
 import Link from "next/link";
 import FilmPoster from "./FilmPoster";
+import MatchPill from "./MatchPill";
 import type { ScoredFilm } from "@/lib/queries/fyp/score";
 import type { FilmLite } from "@/lib/queries/fyp/forYou";
 
 interface Props {
   film: FilmLite;
   reason: ScoredFilm["topReason"];
+  matchPercent: number | null;
+  matchVerbal: ScoredFilm["matchVerbal"];
 }
 
 function reasonText(r: ScoredFilm["topReason"]): string {
@@ -18,7 +21,7 @@ function reasonText(r: ScoredFilm["topReason"]): string {
   }
 }
 
-export default function ForYouRow({ film, reason }: Props) {
+export default function ForYouRow({ film, reason, matchPercent, matchVerbal }: Props) {
   return (
     <Link
       href={`/film/${film.id}`}
@@ -31,7 +34,10 @@ export default function ForYouRow({ film, reason }: Props) {
         color: "inherit",
       } as React.CSSProperties}
     >
-      <FilmPoster film={film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
+      <div style={{ position: "relative" }}>
+        <FilmPoster film={film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
+        <MatchPill pct={matchPercent} verbalKind={matchVerbal} />
+      </div>
       <div>
         <div className="head" style={{ fontSize: 22, lineHeight: 1.05 }}>{film.title}</div>
         <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 6 }}>

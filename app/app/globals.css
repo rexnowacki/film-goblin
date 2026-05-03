@@ -1599,6 +1599,29 @@ a { color: inherit; text-decoration: none; }
 }
 .feed-active-filter-close:hover { background: var(--accent); color: var(--bone); border-color: var(--accent); }
 
+.match-pill {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: var(--accent);
+  color: var(--void);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  z-index: 2;
+  border: 1px solid var(--void);
+  pointer-events: none;
+  letter-spacing: 0.04em;
+}
+.match-pill.match-verbal {
+  background: var(--bone);
+  color: var(--void);
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
 .invite-pill {
   display: inline-flex;
   align-items: center;
