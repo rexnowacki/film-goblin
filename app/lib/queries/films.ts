@@ -9,7 +9,6 @@ export async function getLandingMarquee(client: Client) {
   const { data, error } = await client
     .from("films")
     .select("id, itunes_id, title, director, year, runtime_min, genre_primary, artwork_url, itunes_url")
-    .eq("tracking", true)
     .eq("available", true)
     .order("last_priced_at", { ascending: false, nullsFirst: false })
     .limit(10);
@@ -63,7 +62,6 @@ export async function getFilms(
       "id, itunes_id, title, director, year, runtime_min, genre_primary, artwork_url, latest_price, watchlist_count, watcher_count",
       { count: "exact" },
     )
-    .eq("tracking", true)
     .eq("available", true);
 
   if (isSearching) {
