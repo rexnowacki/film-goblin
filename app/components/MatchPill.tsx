@@ -6,10 +6,11 @@ interface Props {
 }
 
 const BAND_COPY: Record<MatchBand, { label: string; cls: string }> = {
-  hexed:        { label: "Hexed for You", cls: "match-pill match-band-hexed" },
-  strong:       { label: "Strong Match",  cls: "match-pill match-band-strong" },
-  good_omen:    { label: "Good Omen",     cls: "match-pill match-band-good" },
-  strange_pull: { label: "Strange Pull",  cls: "match-pill match-band-strange" },
+  hexed:           { label: "Hexed for You",   cls: "match-pill match-band-hexed" },
+  strong_omen:     { label: "Strong Omen",     cls: "match-pill match-band-strong" },
+  good_omen:       { label: "Good Omen",       cls: "match-pill match-band-good" },
+  strange_pull:    { label: "Strange Pull",    cls: "match-pill match-band-strange" },
+  cursed_artifact: { label: "Cursed Artifact", cls: "match-pill match-band-cursed" },
 };
 
 /**

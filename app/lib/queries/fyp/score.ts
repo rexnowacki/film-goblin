@@ -15,14 +15,22 @@ export type ReasonKind = "tag" | "coven_rating" | "lane" | "director" | "starter
  * is honest about ranking-relative position without overpromising.
  *
  * Mapping (rank percentile, where 0 = best, 1 = worst):
- *   0.00–0.10  → "hexed"          (top 10%)
- *   0.10–0.35  → "strong"         (next 25%)
- *   0.35–0.65  → "good_omen"      (middle 30%)
- *   0.65–0.85  → "strange_pull"   (next 20%)
- *   0.85–1.00  → null             (bottom 15%, suppressed — film still in
- *                                  the feed but no badge)
+ *   0.00–0.10  → "hexed"            (top 10%)
+ *   0.10–0.35  → "strong_omen"      (next 25%)
+ *   0.35–0.65  → "good_omen"        (middle 30%)
+ *   0.65–0.85  → "strange_pull"     (next 20%)
+ *   0.85–1.00  → "cursed_artifact"  (bottom 15%)
+ *
+ * Verdict-color treatment: top tiers use seafoam (the thumbs-up green from
+ * watched verdicts), middle tiers use bone/void (neutral editorial), bottom
+ * tier uses plum (off-axis, "weird pull" rather than "you'll dislike this").
  */
-export type MatchBand = "hexed" | "strong" | "good_omen" | "strange_pull";
+export type MatchBand =
+  | "hexed"
+  | "strong_omen"
+  | "good_omen"
+  | "strange_pull"
+  | "cursed_artifact";
 
 export interface ScoredFilm {
   filmId: string;
@@ -272,23 +280,23 @@ export function scoreFilms(
  * mapping — no math change to ranking.
  *
  * Rank percentile p ∈ [0, 1) where 0 = top:
- *   p < 0.10        → "hexed"          (top 10%)
- *   0.10 ≤ p < 0.35 → "strong"
+ *   p < 0.10        → "hexed"
+ *   0.10 ≤ p < 0.35 → "strong_omen"
  *   0.35 ≤ p < 0.65 → "good_omen"
  *   0.65 ≤ p < 0.85 → "strange_pull"
- *   p ≥ 0.85        → null  (suppressed, no badge)
+ *   p ≥ 0.85        → "cursed_artifact"
  */
 function attachMatchBands(sorted: ScoredFilm[]): void {
   const n = sorted.length;
   if (n === 0) return;
   for (let i = 0; i < n; i++) {
     const p = i / n;
-    let band: MatchBand | null;
+    let band: MatchBand;
     if (p < 0.10) band = "hexed";
-    else if (p < 0.35) band = "strong";
+    else if (p < 0.35) band = "strong_omen";
     else if (p < 0.65) band = "good_omen";
     else if (p < 0.85) band = "strange_pull";
-    else band = null;
+    else band = "cursed_artifact";
     sorted[i].matchBand = band;
   }
 }
