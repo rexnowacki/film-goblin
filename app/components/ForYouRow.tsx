@@ -7,8 +7,8 @@ import type { FilmLite } from "@/lib/queries/fyp/forYou";
 interface Props {
   film: FilmLite;
   reason: ScoredFilm["topReason"];
-  matchPercent: number | null;
-  matchVerbal: ScoredFilm["matchVerbal"];
+  band: ScoredFilm["matchBand"];
+  covenFavorite: boolean;
 }
 
 function reasonText(r: ScoredFilm["topReason"]): string {
@@ -21,7 +21,7 @@ function reasonText(r: ScoredFilm["topReason"]): string {
   }
 }
 
-export default function ForYouRow({ film, reason, matchPercent, matchVerbal }: Props) {
+export default function ForYouRow({ film, reason, band, covenFavorite }: Props) {
   return (
     <Link
       href={`/film/${film.id}`}
@@ -36,7 +36,7 @@ export default function ForYouRow({ film, reason, matchPercent, matchVerbal }: P
     >
       <div style={{ position: "relative" }}>
         <FilmPoster film={film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
-        <MatchPill pct={matchPercent} verbalKind={matchVerbal} />
+        <MatchPill band={band} covenFavorite={covenFavorite} />
       </div>
       <div>
         <div className="head" style={{ fontSize: 22, lineHeight: 1.05 }}>{film.title}</div>

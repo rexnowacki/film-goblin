@@ -8,14 +8,37 @@ export type { AffinityVector };
 
 export type ReasonKind = "tag" | "coven_rating" | "lane" | "director" | "starter";
 
+/**
+ * Display band for a scored film, based on rank percentile within the
+ * user's candidate pool. Per math review: a "94%" pill implies probability
+ * we cannot guarantee at small data volumes; a labeled band ("Hexed for You")
+ * is honest about ranking-relative position without overpromising.
+ *
+ * Mapping (rank percentile, where 0 = best, 1 = worst):
+ *   0.00–0.10  → "hexed"          (top 10%)
+ *   0.10–0.35  → "strong"         (next 25%)
+ *   0.35–0.65  → "good_omen"      (middle 30%)
+ *   0.65–0.85  → "strange_pull"   (next 20%)
+ *   0.85–1.00  → null             (bottom 15%, suppressed — film still in
+ *                                  the feed but no badge)
+ */
+export type MatchBand = "hexed" | "strong" | "good_omen" | "strange_pull";
+
 export interface ScoredFilm {
   filmId: string;
   score: number;
   topReason: { kind: ReasonKind; tagName?: string; contribution: number };
-  /** 0–100 when calibrated mode; null in verbal/cold-start mode. Set by orchestrator. */
+  /** 0–100 when calibrated mode; null in verbal/cold-start mode. Internal-only;
+   *  not displayed in v3 since percentage implies probability we can't validate. */
   matchPercent: number | null;
-  /** Verbal kind when in verbal/cold-start mode; null otherwise. Set by orchestrator. */
+  /** Verbal kind when in verbal/cold-start mode; null otherwise. Internal-only in v3. */
   matchVerbal: VerbalKind | null;
+  /** Display band for the row's match pill. Null in bottom 15% (suppressed)
+   *  or true cold-start (starter pack). Set by the orchestrator after sorting. */
+  matchBand: MatchBand | null;
+  /** True when this film has a non-zero coven-rating bonus contribution.
+   *  Surfaces as a separate "Coven Favorite" badge alongside the band. */
+  covenFavorite: boolean;
 }
 
 export interface FilmInput {
@@ -221,7 +244,16 @@ export function scoreFilms(
 
     if (score <= 0) continue;
 
-    out.push({ filmId: f.id, score, topReason, matchPercent: null, matchVerbal: null });
+    const covenFavorite = (ctx.covenRatingByFilm.get(f.id) ?? 0) >= 70;
+    out.push({
+      filmId: f.id,
+      score,
+      topReason,
+      matchPercent: null,
+      matchVerbal: null,
+      matchBand: null, // populated in attachMatchBands after sort
+      covenFavorite,
+    });
   }
 
   // Sort by score DESC. Tie-break by filmId ASC for deterministic output.
@@ -230,7 +262,35 @@ export function scoreFilms(
     return a.filmId < b.filmId ? -1 : a.filmId > b.filmId ? 1 : 0;
   });
 
+  attachMatchBands(out);
   return out;
+}
+
+/**
+ * Mutates a sorted `ScoredFilm[]` (highest first) to populate `matchBand`
+ * based on each film's rank percentile. This is purely a display-layer
+ * mapping — no math change to ranking.
+ *
+ * Rank percentile p ∈ [0, 1) where 0 = top:
+ *   p < 0.10        → "hexed"          (top 10%)
+ *   0.10 ≤ p < 0.35 → "strong"
+ *   0.35 ≤ p < 0.65 → "good_omen"
+ *   0.65 ≤ p < 0.85 → "strange_pull"
+ *   p ≥ 0.85        → null  (suppressed, no badge)
+ */
+function attachMatchBands(sorted: ScoredFilm[]): void {
+  const n = sorted.length;
+  if (n === 0) return;
+  for (let i = 0; i < n; i++) {
+    const p = i / n;
+    let band: MatchBand | null;
+    if (p < 0.10) band = "hexed";
+    else if (p < 0.35) band = "strong";
+    else if (p < 0.65) band = "good_omen";
+    else if (p < 0.85) band = "strange_pull";
+    else band = null;
+    sorted[i].matchBand = band;
+  }
 }
 
 /**
@@ -246,5 +306,7 @@ export function starterPackScored(filmIds: string[]): ScoredFilm[] {
     topReason: { kind: "starter" as const, contribution: 0 },
     matchPercent: null,
     matchVerbal: null,
+    matchBand: null, // no rank in starter pack — alphabetical, not personalized
+    covenFavorite: false,
   }));
 }
