@@ -64,14 +64,26 @@ export async function getForYou(
 
   if (!hasAnySignal) {
     // Editorial starter pack: skip scoring, return curated list alphabetically.
-    const { data: starters } = await client
-      .from("films")
-      .select("id, title, year, director, artwork_url")
-      .eq("editorial_starter", true)
-      .eq("available", true)
-      .order("title");
+    // Exclude films the user has already watched — even cold-start users may
+    // have logged watches without rating (recommended = null) which doesn't
+    // contribute affinity signal but still means "they've seen it."
+    const [startersRes, watchedRes] = await Promise.all([
+      client
+        .from("films")
+        .select("id, title, year, director, artwork_url")
+        .eq("editorial_starter", true)
+        .eq("available", true)
+        .order("title"),
+      client
+        .from("watched")
+        .select("film_id")
+        .eq("user_id", userId),
+    ]);
 
-    const starterList = (starters ?? []) as FilmLite[];
+    const watchedIds = new Set((watchedRes.data ?? []).map((w) => w.film_id));
+    const starterList = ((startersRes.data ?? []) as FilmLite[]).filter(
+      (f) => !watchedIds.has(f.id),
+    );
     const filmsById = new Map(starterList.map((f) => [f.id, f]));
     const allItems = starterPackScored(starterList.map((s) => s.id));
     const slice = allItems.slice(offset, offset + limit);
