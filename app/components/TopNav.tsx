@@ -46,6 +46,7 @@ export default async function TopNav({ current }: TopNavProps) {
   const items = user
     ? [
         { id: "home", label: "Home", href: "/home" },
+        { id: "for-you", label: "For You", href: "/for-you" },
         { id: "films", label: "Discovery", href: "/films" },
         { id: "watchlist", label: "Watchlist", href: "/watchlist" },
         { id: "library", label: "Your Grimoire", href: "/library" },

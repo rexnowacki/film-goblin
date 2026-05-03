@@ -251,6 +251,7 @@ export type Database = {
           content_advisory: string
           description: string
           director: string
+          editorial_starter: boolean
           first_seen_at: string
           genre_primary: string
           horror_adjacent: boolean
@@ -276,6 +277,7 @@ export type Database = {
           content_advisory?: string
           description?: string
           director?: string
+          editorial_starter?: boolean
           first_seen_at?: string
           genre_primary?: string
           horror_adjacent?: boolean
@@ -301,6 +303,7 @@ export type Database = {
           content_advisory?: string
           description?: string
           director?: string
+          editorial_starter?: boolean
           first_seen_at?: string
           genre_primary?: string
           horror_adjacent?: boolean
@@ -613,10 +616,11 @@ export type Database = {
           email_coven_invites: boolean
           email_coven_recs: boolean
           email_price_drops: boolean
+          id: string
+          lane_tag_ids: string[]
           notify_comment_likes: boolean
           notify_rate_reminders: boolean
           username: string
-          id: string
           onboarded_at: string | null
           role: "goblin" | "witch" | "high_goblin"
           unsubscribe_token: string
@@ -635,10 +639,11 @@ export type Database = {
           email_coven_invites?: boolean
           email_coven_recs?: boolean
           email_price_drops?: boolean
+          id: string
+          lane_tag_ids?: string[]
           notify_comment_likes?: boolean
           notify_rate_reminders?: boolean
           username: string
-          id: string
           onboarded_at?: string | null
           role?: "goblin" | "witch" | "high_goblin"
           unsubscribe_token?: string
@@ -657,10 +662,11 @@ export type Database = {
           email_coven_invites?: boolean
           email_coven_recs?: boolean
           email_price_drops?: boolean
+          id?: string
+          lane_tag_ids?: string[]
           notify_comment_likes?: boolean
           notify_rate_reminders?: boolean
           username?: string
-          id?: string
           onboarded_at?: string | null
           role?: "goblin" | "witch" | "high_goblin"
           unsubscribe_token?: string

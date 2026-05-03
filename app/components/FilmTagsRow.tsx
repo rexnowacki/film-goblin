@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { FilmTagRow } from "@/lib/queries/film-tags";
 
 interface Props {
@@ -14,6 +15,8 @@ interface Props {
  * padding. Empty director omits that slot. Visible array comes from
  * getFilmTags's positions 1-4; the hidden tail (positions 5+) is not
  * rendered here — it feeds the FYP recommender.
+ *
+ * Non-director pills link to /tags/[name] listing pages.
  */
 export default function FilmTagsRow({ visible, director }: Props) {
   if (visible.length === 0 && !director) return null;
@@ -24,9 +27,11 @@ export default function FilmTagsRow({ visible, director }: Props) {
   return (
     <div className="film-tags-row">
       {primary && (
-        <span className="film-tag film-tag-subgenre" title="Sub-genre">
-          {primary.name}
-        </span>
+        <Link href={`/tags/${encodeURIComponent(primary.name)}`} style={{ textDecoration: "none", color: "inherit" }}>
+          <span className="film-tag film-tag-subgenre" title="Sub-genre">
+            {primary.name}
+          </span>
+        </Link>
       )}
       {director && (
         <span className="film-tag film-tag-director" title="Director">
@@ -34,9 +39,11 @@ export default function FilmTagsRow({ visible, director }: Props) {
         </span>
       )}
       {distinguishing.map(t => (
-        <span key={t.id} className="film-tag film-tag-vibe" title={t.type}>
-          {t.name}
-        </span>
+        <Link key={t.id} href={`/tags/${encodeURIComponent(t.name)}`} style={{ textDecoration: "none", color: "inherit" }}>
+          <span className="film-tag film-tag-vibe" title={t.type}>
+            {t.name}
+          </span>
+        </Link>
       ))}
     </div>
   );

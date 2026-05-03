@@ -76,6 +76,49 @@ describe("RLS: profiles", () => {
     } finally { await rollback(db.client); }
   });
 
+  it("user can update their own lane_tag_ids", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    const tag = await db.client.query<{ id: string }>(
+      `SELECT id FROM tags WHERE name = 'folk horror' AND type = 'subgenre' LIMIT 1`
+    );
+    await rollback(db.client);
+
+    await beginAs(db.client, fx.userA.id, "authenticated");
+    try {
+      const r = await db.client.query<{ lane_tag_ids: string[] }>(
+        `UPDATE profiles SET lane_tag_ids = ARRAY[$1::uuid] WHERE id = $2 RETURNING lane_tag_ids`,
+        [tag.rows[0].id, fx.userA.id]
+      );
+      expect(r.rowCount).toBe(1);
+      expect(r.rows[0].lane_tag_ids).toEqual([tag.rows[0].id]);
+    } finally { await rollback(db.client); }
+  });
+
+  it("user cannot update another user's lane_tag_ids", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, fx.userA.id, "authenticated");
+    try {
+      const r = await db.client.query(
+        `UPDATE profiles SET lane_tag_ids = ARRAY[]::uuid[] WHERE id = $1`,
+        [fx.userB.id]
+      );
+      expect(r.rowCount).toBe(0); // RLS filters out the row
+    } finally { await rollback(db.client); }
+  });
+
+  it("lane_tag_ids defaults to empty array on a fresh profile", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, fx.userA.id, "authenticated");
+    try {
+      const r = await db.client.query<{ lane_tag_ids: string[] }>(
+        `SELECT lane_tag_ids FROM profiles WHERE id = $1`,
+        [fx.userA.id]
+      );
+      expect(r.rows[0].lane_tag_ids).toEqual([]);
+    } finally { await rollback(db.client); }
+  });
+
   it("username uniqueness is case-insensitive", async () => {
     const fx = await seedFixtures(db.client);
     await beginAs(db.client, null, "service_role");
