@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { getUserAffinity } from "./affinity";
+import { getUserAffinity, getUserAversion } from "./affinity";
 import { scoreFilms, scoreOneFilm, starterPackScored, type ScoredFilm } from "./score";
 import type { FilmTagRow, TagFacet } from "@/lib/queries/film-tags";
 import { buildCalibrationStats, scoreToPercentage } from "./calibration";
@@ -49,7 +49,11 @@ export async function getForYou(
   // ── Cold-start detection ─────────────────────────────────────────────────
   // getUserAffinity composes own + coven-borrowed + lanes. If the resulting
   // vector is empty, the user has no signals at all → editorial starter path.
-  const affinity = await getUserAffinity(client, userId);
+  // Fetch aversion in parallel — empty vector for users with no dislikes.
+  const [affinity, aversion] = await Promise.all([
+    getUserAffinity(client, userId),
+    getUserAversion(client, userId),
+  ]);
   const hasAnySignal = Object.keys(affinity.byTag).length > 0;
 
   if (!hasAnySignal) {
@@ -232,6 +236,7 @@ export async function getForYou(
     ),
     lanesByTag,
     idfByTag,
+    aversion,
   };
 
   // ── Score candidates ─────────────────────────────────────────────────────

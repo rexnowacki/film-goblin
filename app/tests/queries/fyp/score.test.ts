@@ -28,6 +28,7 @@ const EMPTY_CTX: ScoreContext = {
   ownDirectors: new Set<string>(),
   lanesByTag: new Set<string>(),
   idfByTag: new Map<string, number>(),
+  aversion: { byTag: {} },
 };
 
 // ---------------------------------------------------------------------------
@@ -482,5 +483,83 @@ describe("scoreFilms — v3 IDF still applied", () => {
     expect(result[0].score).toBeCloseTo(2 * 4.0);
     expect(result[1].score).toBeCloseTo(2 * 0.25);
     expect(result[0].score / result[1].score).toBeCloseTo(16);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// v3 aversion vector
+// ---------------------------------------------------------------------------
+
+describe("scoreFilms — aversion", () => {
+  it("empty aversion vector → score equals previous formula output (unchanged)", () => {
+    // Aversion byTag = {} → aversionTotal = 0 → total unchanged.
+    const films: FilmInput[] = [
+      { id: "f1", director: "x", tags: [TAG("folk horror", "subgenre", true)] },
+    ];
+    const aff = { byTag: { "folk horror": 5 } };
+    const noAversion: ScoreContext = { ...EMPTY_CTX, aversion: { byTag: {} } };
+    const result = scoreFilms(films, aff, noAversion);
+    // 5 × 1.0 (idf) × 1.0 (β) / sqrt(1) = 5
+    expect(result).toHaveLength(1);
+    expect(result[0].score).toBeCloseTo(5.0);
+  });
+
+  it("equal positive and aversion on matching tag → score = (5 - 0.8 × 5) × per-tag-factors", () => {
+    // 1-tag film: idf=1, β=1, length-denom=sqrt(1)=1
+    // positive contrib = 5 × 1 × 1 / 1 = 5
+    // aversion contrib = 5 × 1 × 1 / 1 = 5
+    // final score = 5 - 0.8 × 5 = 1.0
+    const films: FilmInput[] = [
+      { id: "f1", director: "x", tags: [TAG("folk horror", "subgenre", true)] },
+    ];
+    const aff = { byTag: { "folk horror": 5 } };
+    const ctx: ScoreContext = {
+      ...EMPTY_CTX,
+      aversion: { byTag: { "folk horror": 5 } },
+    };
+    const result = scoreFilms(films, aff, ctx);
+    expect(result).toHaveLength(1);
+    expect(result[0].score).toBeCloseTo(1.0); // 5 - 0.8 × 5 = 1
+  });
+
+  it("aversion exceeds positive → film excluded (total ≤ 0)", () => {
+    // positive contrib = 3; aversion contrib = 6 (stronger dislike)
+    // final = 3 - 0.8 × 6 = 3 - 4.8 = -1.8 → filtered out
+    const films: FilmInput[] = [
+      { id: "f1", director: "x", tags: [TAG("slasher", "subgenre", true)] },
+      { id: "f2", director: "x", tags: [TAG("gothic", "subgenre", true)] }, // no aversion
+    ];
+    const aff = { byTag: { slasher: 3, gothic: 4 } };
+    const ctx: ScoreContext = {
+      ...EMPTY_CTX,
+      aversion: { byTag: { slasher: 6 } }, // f1 aversion suppresses it
+    };
+    const result = scoreFilms(films, aff, ctx);
+    expect(result).toHaveLength(1);
+    expect(result[0].filmId).toBe("f2");
+  });
+
+  it("aversion on a tag the user has no positive affinity for → still penalises", () => {
+    // f1: 2 tags — "folk horror" (aff=4) and "gore" (aff=0 but aversion=3)
+    // positive total = 4 × 1 × 1 = 4; length denom = sqrt(2)
+    // positive after denom = 4 / sqrt(2) ≈ 2.828
+    // aversion total = 3 × 1 × 1 / sqrt(2) ≈ 2.121
+    // final = 2.828 - 0.8 × 2.121 ≈ 2.828 - 1.697 ≈ 1.131
+    const films: FilmInput[] = [
+      {
+        id: "f1",
+        director: "x",
+        tags: [TAG("folk horror", "subgenre", true), TAG("gore", "content")],
+      },
+    ];
+    const aff = { byTag: { "folk horror": 4 } }; // no affinity for gore
+    const ctx: ScoreContext = {
+      ...EMPTY_CTX,
+      aversion: { byTag: { gore: 3 } },
+    };
+    const result = scoreFilms(films, aff, ctx);
+    expect(result).toHaveLength(1);
+    const expected = 4 / Math.sqrt(2) - 0.8 * (3 / Math.sqrt(2));
+    expect(result[0].score).toBeCloseTo(expected);
   });
 });

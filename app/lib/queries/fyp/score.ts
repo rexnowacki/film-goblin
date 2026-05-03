@@ -35,6 +35,10 @@ export interface ScoreContext {
   // pool — `idf(t) = log(N / df(t))`. Distinctive tags (rare) score higher;
   // near-universal tags (atmospheric, bleak) score lower.
   idfByTag: Map<string, number>;
+  /** User's aversion vector (positive magnitudes of dislike per tag).
+   *  scoreOneFilm subtracts λ × aversion-mass from the raw positive score.
+   *  Empty vector when user has no thumbs-down ratings. */
+  aversion: AffinityVector;
 }
 
 // Tags at film_tags.position 1-4 are the editorial visible capsule per the
@@ -50,6 +54,14 @@ const VISIBLE_POSITION_THRESHOLD = 4;
  * γ=0.5 (sqrt) is the recommended middle ground per math review.
  */
 const LENGTH_PENALTY_GAMMA = 0.5;
+
+/**
+ * Aversion penalty weight λ. The aversion mass (built from explicit dislikes)
+ * is multiplied by λ and subtracted from the positive score after length
+ * penalty. λ=0.8 means a strong dislike signal meaningfully suppresses a
+ * match but doesn't completely dominate moderate positive signals.
+ */
+const AVERSION_LAMBDA = 0.8;
 
 /**
  * Maps a FilmTagRow to the facet multiplier it contributes to the affinity
@@ -94,36 +106,53 @@ export function scoreOneFilm(
   let topTagName: string | undefined;
   let laneContrib = 0;
   let laneTagName: string | undefined;
+  let aversionTotal = 0;
 
   for (const tag of film.tags) {
     const aff = affinity.byTag[tag.name] ?? 0;
-    if (aff === 0) continue;
     const idf = ctx.idfByTag.get(tag.name) ?? 1.0;
     const positionBoost =
       tag.position <= VISIBLE_POSITION_THRESHOLD ? VISIBLE_POSITION_BOOST : 1.0;
-    // v3 (math review): drop μ at scoring time. The user vector already
-    // encodes facet importance because μ is applied at affinity-construction.
-    // Re-applying μ here squared the effect (Primary subgenre 36× content).
-    // Score per tag = affinity × idf × position-boost.
-    const contrib = aff * idf * positionBoost;
-    total += contrib;
-    if (contrib > topTagContrib) {
-      topTagContrib = contrib;
-      topTagName = tag.name;
+
+    if (aff !== 0) {
+      // v3 (math review): drop μ at scoring time. The user vector already
+      // encodes facet importance because μ is applied at affinity-construction.
+      // Re-applying μ here squared the effect (Primary subgenre 36× content).
+      // Score per tag = affinity × idf × position-boost.
+      const contrib = aff * idf * positionBoost;
+      total += contrib;
+      if (contrib > topTagContrib) {
+        topTagContrib = contrib;
+        topTagName = tag.name;
+      }
+      if (ctx.lanesByTag.has(tag.name) && contrib > laneContrib) {
+        laneContrib = contrib;
+        laneTagName = tag.name;
+      }
     }
-    if (ctx.lanesByTag.has(tag.name) && contrib > laneContrib) {
-      laneContrib = contrib;
-      laneTagName = tag.name;
+
+    // Aversion: same idf × position-boost factors; μ NOT re-applied
+    // (single-application rule — aversion vector was built with μ already baked in).
+    const aversionMag = ctx.aversion.byTag[tag.name] ?? 0;
+    if (aversionMag !== 0) {
+      aversionTotal += aversionMag * idf * positionBoost;
     }
   }
 
   // v3 (math review): soft length penalty so heavily-tagged films don't
   // accumulate raw advantage from breadth alone. Divide by |tags(F)|^γ.
   if (film.tags.length > 0) {
-    total /= Math.pow(film.tags.length, LENGTH_PENALTY_GAMMA);
-    topTagContrib /= Math.pow(film.tags.length, LENGTH_PENALTY_GAMMA);
-    laneContrib /= Math.pow(film.tags.length, LENGTH_PENALTY_GAMMA);
+    const denom = Math.pow(film.tags.length, LENGTH_PENALTY_GAMMA);
+    total /= denom;
+    topTagContrib /= denom;
+    laneContrib /= denom;
+    aversionTotal /= denom;
   }
+
+  // v3 aversion: subtract λ × aversion mass from positive score.
+  // Films where aversion-mass exceeds positive score will have total ≤ 0
+  // and be filtered out by the scoreFilms loop.
+  total -= AVERSION_LAMBDA * aversionTotal;
 
   // Coven-rating bonus: soft tiebreaker for highly-rated films.
   // Only applies for ratings >= 70. NOT subject to length penalty —
