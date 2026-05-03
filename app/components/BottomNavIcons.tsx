@@ -45,6 +45,15 @@ export function CovenIcon({ className }: { className?: string }) {
   );
 }
 
+export function ForYouIcon({ className }: { className?: string }) {
+  return (
+    <svg {...baseProps} className={className} aria-hidden="true">
+      <path d="M32 10 C18 10 10 20 10 32 C10 44 18 54 32 54 C46 54 54 44 54 32 C54 20 46 10 32 10 Z" />
+      <path d="M24 32 L30 38 L40 26" strokeWidth={3} />
+    </svg>
+  );
+}
+
 export function CollectionsIcon({ className }: { className?: string }) {
   return (
     <svg {...baseProps} className={className} aria-hidden="true">
