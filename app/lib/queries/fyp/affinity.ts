@@ -209,6 +209,80 @@ export async function getUserOwnAffinity(
 }
 
 // ---------------------------------------------------------------------------
+// Aversion vector (explicit dislikes)
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds the user's aversion vector — per-tag accumulated MAGNITUDE of
+ * negative-rated watch signals (recommended = false). Returned as POSITIVE
+ * numbers (it's the magnitude of dislike, not a negative affinity).
+ *
+ * Same time decay + facet multiplier + cap as getUserOwnAffinity. Each
+ * disliked watch contributes |watch_disliked weight| × decay × μ(facet)
+ * to every tag on that film.
+ *
+ * Used by scoreOneFilm in v3 to subtract aversion mass from raw score.
+ */
+export async function getUserAversion(
+  client: Client,
+  userId: string,
+): Promise<AffinityVector> {
+  const { data: disliked } = await client
+    .from("watched")
+    .select("film_id, created_at")
+    .eq("user_id", userId)
+    .eq("recommended", false);
+
+  if (!disliked || disliked.length === 0) return { byTag: {} };
+
+  const now = Date.now();
+  const filmWeights = new Map<string, number>();
+  const aversionSignalWeight = Math.abs(SIGNAL_WEIGHTS.watch_disliked); // 4.0
+
+  for (const w of disliked) {
+    const decay = timeDecay(w.created_at, now);
+    filmWeights.set(
+      w.film_id,
+      (filmWeights.get(w.film_id) ?? 0) + aversionSignalWeight * decay,
+    );
+  }
+
+  const { data: filmTags, error } = await client
+    .from("film_tags")
+    .select("film_id, position, is_primary, tag:tags!inner(name, type)")
+    .in("film_id", Array.from(filmWeights.keys()));
+  if (error) throw error;
+
+  const byTag: Record<string, number> = {};
+  for (const row of filmTags ?? []) {
+    const r = row as unknown as {
+      film_id: string;
+      position: number;
+      is_primary: boolean;
+      tag: { name: string; type: TagFacet };
+    };
+    const signalWeight = filmWeights.get(r.film_id);
+    if (signalWeight == null) continue;
+    const mult = facetMultiplier({
+      film_id: r.film_id,
+      position: r.position,
+      is_primary: r.is_primary,
+      tag_name: r.tag.name,
+      tag_type: r.tag.type,
+    });
+    byTag[r.tag.name] = (byTag[r.tag.name] ?? 0) + signalWeight * mult;
+  }
+
+  // Floor at 0 (always non-negative) + cap at AFFINITY_CAP.
+  for (const k of Object.keys(byTag)) {
+    if (byTag[k] < 0) byTag[k] = 0;
+    else if (byTag[k] > AFFINITY_CAP) byTag[k] = AFFINITY_CAP;
+  }
+
+  return { byTag };
+}
+
+// ---------------------------------------------------------------------------
 // Lane affinity
 // ---------------------------------------------------------------------------
 

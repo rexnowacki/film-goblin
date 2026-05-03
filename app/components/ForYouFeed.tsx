@@ -86,8 +86,8 @@ export default function ForYouFeed({ initialItems, initialFilmsById, initialCurs
               key={scored.filmId}
               film={film}
               reason={scored.topReason}
-              matchPercent={scored.matchPercent}
-              matchVerbal={scored.matchVerbal}
+              band={scored.matchBand}
+              covenFavorite={scored.covenFavorite}
             />
           );
         })}

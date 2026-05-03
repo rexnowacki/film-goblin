@@ -6,7 +6,7 @@ into an actual build, it becomes a spec under `docs/superpowers/specs/`.
 
 See `docs/backlog.md` for unprioritized ideas. Full list of shipped
 sub-projects with spec paths lives in `docs/sub-project-history.md`
-(thirty-six shipped as of 2026-05-02).
+(thirty-seven shipped as of 2026-05-02).
 
 ## High
 

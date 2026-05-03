@@ -8,14 +8,37 @@ export type { AffinityVector };
 
 export type ReasonKind = "tag" | "coven_rating" | "lane" | "director" | "starter";
 
+/**
+ * Display band for a scored film, based on rank percentile within the
+ * user's candidate pool. Per math review: a "94%" pill implies probability
+ * we cannot guarantee at small data volumes; a labeled band ("Hexed for You")
+ * is honest about ranking-relative position without overpromising.
+ *
+ * Mapping (rank percentile, where 0 = best, 1 = worst):
+ *   0.00–0.10  → "hexed"          (top 10%)
+ *   0.10–0.35  → "strong"         (next 25%)
+ *   0.35–0.65  → "good_omen"      (middle 30%)
+ *   0.65–0.85  → "strange_pull"   (next 20%)
+ *   0.85–1.00  → null             (bottom 15%, suppressed — film still in
+ *                                  the feed but no badge)
+ */
+export type MatchBand = "hexed" | "strong" | "good_omen" | "strange_pull";
+
 export interface ScoredFilm {
   filmId: string;
   score: number;
   topReason: { kind: ReasonKind; tagName?: string; contribution: number };
-  /** 0–100 when calibrated mode; null in verbal/cold-start mode. Set by orchestrator. */
+  /** 0–100 when calibrated mode; null in verbal/cold-start mode. Internal-only;
+   *  not displayed in v3 since percentage implies probability we can't validate. */
   matchPercent: number | null;
-  /** Verbal kind when in verbal/cold-start mode; null otherwise. Set by orchestrator. */
+  /** Verbal kind when in verbal/cold-start mode; null otherwise. Internal-only in v3. */
   matchVerbal: VerbalKind | null;
+  /** Display band for the row's match pill. Null in bottom 15% (suppressed)
+   *  or true cold-start (starter pack). Set by the orchestrator after sorting. */
+  matchBand: MatchBand | null;
+  /** True when this film has a non-zero coven-rating bonus contribution.
+   *  Surfaces as a separate "Coven Favorite" badge alongside the band. */
+  covenFavorite: boolean;
 }
 
 export interface FilmInput {
@@ -35,6 +58,10 @@ export interface ScoreContext {
   // pool — `idf(t) = log(N / df(t))`. Distinctive tags (rare) score higher;
   // near-universal tags (atmospheric, bleak) score lower.
   idfByTag: Map<string, number>;
+  /** User's aversion vector (positive magnitudes of dislike per tag).
+   *  scoreOneFilm subtracts λ × aversion-mass from the raw positive score.
+   *  Empty vector when user has no thumbs-down ratings. */
+  aversion: AffinityVector;
 }
 
 // Tags at film_tags.position 1-4 are the editorial visible capsule per the
@@ -42,6 +69,22 @@ export interface ScoreContext {
 // to honor that editorial intent.
 const VISIBLE_POSITION_BOOST = 1.3;
 const VISIBLE_POSITION_THRESHOLD = 4;
+
+/**
+ * Length-penalty exponent γ. Score is divided by |tags(F)|^γ so heavily-
+ * tagged films don't accumulate raw score advantage purely from breadth.
+ * γ=0 is no penalty (sum), γ=1 is mean-per-tag (probably too harsh),
+ * γ=0.5 (sqrt) is the recommended middle ground per math review.
+ */
+const LENGTH_PENALTY_GAMMA = 0.5;
+
+/**
+ * Aversion penalty weight λ. The aversion mass (built from explicit dislikes)
+ * is multiplied by λ and subtracted from the positive score after length
+ * penalty. λ=0.8 means a strong dislike signal meaningfully suppresses a
+ * match but doesn't completely dominate moderate positive signals.
+ */
+const AVERSION_LAMBDA = 0.8;
 
 /**
  * Maps a FilmTagRow to the facet multiplier it contributes to the affinity
@@ -86,29 +129,57 @@ export function scoreOneFilm(
   let topTagName: string | undefined;
   let laneContrib = 0;
   let laneTagName: string | undefined;
+  let aversionTotal = 0;
 
   for (const tag of film.tags) {
     const aff = affinity.byTag[tag.name] ?? 0;
-    if (aff === 0) continue;
     const idf = ctx.idfByTag.get(tag.name) ?? 1.0;
     const positionBoost =
       tag.position <= VISIBLE_POSITION_THRESHOLD ? VISIBLE_POSITION_BOOST : 1.0;
-    const contrib = aff * facetMultiplier(tag) * idf * positionBoost;
-    total += contrib;
-    if (contrib > topTagContrib) {
-      topTagContrib = contrib;
-      topTagName = tag.name;
+
+    if (aff !== 0) {
+      // v3 (math review): drop μ at scoring time. The user vector already
+      // encodes facet importance because μ is applied at affinity-construction.
+      // Re-applying μ here squared the effect (Primary subgenre 36× content).
+      // Score per tag = affinity × idf × position-boost.
+      const contrib = aff * idf * positionBoost;
+      total += contrib;
+      if (contrib > topTagContrib) {
+        topTagContrib = contrib;
+        topTagName = tag.name;
+      }
+      if (ctx.lanesByTag.has(tag.name) && contrib > laneContrib) {
+        laneContrib = contrib;
+        laneTagName = tag.name;
+      }
     }
-    if (ctx.lanesByTag.has(tag.name) && contrib > laneContrib) {
-      laneContrib = contrib;
-      laneTagName = tag.name;
+
+    // Aversion: same idf × position-boost factors; μ NOT re-applied
+    // (single-application rule — aversion vector was built with μ already baked in).
+    const aversionMag = ctx.aversion.byTag[tag.name] ?? 0;
+    if (aversionMag !== 0) {
+      aversionTotal += aversionMag * idf * positionBoost;
     }
   }
 
+  // v3 (math review): soft length penalty so heavily-tagged films don't
+  // accumulate raw advantage from breadth alone. Divide by |tags(F)|^γ.
+  if (film.tags.length > 0) {
+    const denom = Math.pow(film.tags.length, LENGTH_PENALTY_GAMMA);
+    total /= denom;
+    topTagContrib /= denom;
+    laneContrib /= denom;
+    aversionTotal /= denom;
+  }
+
+  // v3 aversion: subtract λ × aversion mass from positive score.
+  // Films where aversion-mass exceeds positive score will have total ≤ 0
+  // and be filtered out by the scoreFilms loop.
+  total -= AVERSION_LAMBDA * aversionTotal;
+
   // Coven-rating bonus: soft tiebreaker for highly-rated films.
-  // Only applies for ratings >= 70. NOT multiplied by any facet weight —
-  // it's a film-level signal, not a tag-level one.
-  // A 90% coven rating contributes 0.9; a 70% contributes 0.7.
+  // Only applies for ratings >= 70. NOT subject to length penalty —
+  // it's a film-level signal, not a per-tag accumulation.
   const covenRating = ctx.covenRatingByFilm.get(film.id);
   const covenContrib =
     covenRating != null && covenRating >= 70 ? covenRating / 100 : 0;
@@ -173,7 +244,16 @@ export function scoreFilms(
 
     if (score <= 0) continue;
 
-    out.push({ filmId: f.id, score, topReason, matchPercent: null, matchVerbal: null });
+    const covenFavorite = (ctx.covenRatingByFilm.get(f.id) ?? 0) >= 70;
+    out.push({
+      filmId: f.id,
+      score,
+      topReason,
+      matchPercent: null,
+      matchVerbal: null,
+      matchBand: null, // populated in attachMatchBands after sort
+      covenFavorite,
+    });
   }
 
   // Sort by score DESC. Tie-break by filmId ASC for deterministic output.
@@ -182,7 +262,35 @@ export function scoreFilms(
     return a.filmId < b.filmId ? -1 : a.filmId > b.filmId ? 1 : 0;
   });
 
+  attachMatchBands(out);
   return out;
+}
+
+/**
+ * Mutates a sorted `ScoredFilm[]` (highest first) to populate `matchBand`
+ * based on each film's rank percentile. This is purely a display-layer
+ * mapping — no math change to ranking.
+ *
+ * Rank percentile p ∈ [0, 1) where 0 = top:
+ *   p < 0.10        → "hexed"          (top 10%)
+ *   0.10 ≤ p < 0.35 → "strong"
+ *   0.35 ≤ p < 0.65 → "good_omen"
+ *   0.65 ≤ p < 0.85 → "strange_pull"
+ *   p ≥ 0.85        → null  (suppressed, no badge)
+ */
+function attachMatchBands(sorted: ScoredFilm[]): void {
+  const n = sorted.length;
+  if (n === 0) return;
+  for (let i = 0; i < n; i++) {
+    const p = i / n;
+    let band: MatchBand | null;
+    if (p < 0.10) band = "hexed";
+    else if (p < 0.35) band = "strong";
+    else if (p < 0.65) band = "good_omen";
+    else if (p < 0.85) band = "strange_pull";
+    else band = null;
+    sorted[i].matchBand = band;
+  }
 }
 
 /**
@@ -198,5 +306,7 @@ export function starterPackScored(filmIds: string[]): ScoredFilm[] {
     topReason: { kind: "starter" as const, contribution: 0 },
     matchPercent: null,
     matchVerbal: null,
+    matchBand: null, // no rank in starter pack — alphabetical, not personalized
+    covenFavorite: false,
   }));
 }
