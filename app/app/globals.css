@@ -1613,19 +1613,20 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-/* v3 score bands (math review): rank-percentile-driven label instead of a
-   probability-flavored percent. Top band uses solid accent, descending bands
-   reduce intensity. */
+/* v3 score bands: rank-percentile labels. Top tiers use seafoam (the
+   thumbs-up verdict color). Middle two stay neutral (bone / void). Bottom
+   "Cursed Artifact" uses plum — off-axis "weird pull" rather than implying
+   active dislike. Pink reserved for the orthogonal "Coven Favorite" badge. */
 .match-pill.match-band-hexed {
   top: 6px;
-  background: var(--accent);
+  background: var(--seafoam, #7a9d92);
   color: var(--void);
 }
 .match-pill.match-band-strong {
   top: 6px;
-  background: var(--accent);
+  background: var(--seafoam, #7a9d92);
   color: var(--void);
-  opacity: 0.85;
+  opacity: 0.75;
 }
 .match-pill.match-band-good {
   top: 6px;
@@ -1638,12 +1639,19 @@ a { color: inherit; text-decoration: none; }
   color: var(--bone);
   border-color: var(--muted);
 }
-/* "Coven Favorite" sits below the rank band when both are present.
-   It's an orthogonal social signal, so a distinct visual treatment. */
-.match-pill.match-coven-favorite {
-  top: 36px;
+.match-pill.match-band-cursed {
+  top: 6px;
   background: var(--plum, #9d6fc4);
   color: var(--bone);
+  border-color: var(--void);
+}
+/* "Coven Favorite" sits below the rank band when both are present.
+   It's an orthogonal social signal — uses pink to stay distinct from the
+   plum "Cursed Artifact" rank band. */
+.match-pill.match-coven-favorite {
+  top: 36px;
+  background: var(--accent);
+  color: var(--void);
   border-color: var(--void);
   text-transform: none;
 }
