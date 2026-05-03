@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { dismissAnnouncement } from "@/lib/actions/announcements";
 
@@ -16,8 +16,14 @@ export interface AnnouncementOverlayProps {
 
 export default function AnnouncementOverlay({ announcement }: AnnouncementOverlayProps) {
   const [hidden, setHidden] = useState(false);
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const router = useRouter();
+
+  // Ref to the outer dialog div for focus management (Fix 2).
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Stable ref to handleDismiss so the Escape listener never goes stale (Fix 3).
+  const dismissRef = useRef<(navigateTo: string | null) => void>(() => {});
 
   function handleDismiss(navigateTo: string | null) {
     setHidden(true); // optimistic: hide immediately
@@ -33,6 +39,48 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
     });
   }
 
+  // Keep dismissRef current so the keydown handler always calls the latest version.
+  dismissRef.current = handleDismiss;
+
+  // Fix 2: Focus the dialog on mount so keyboard/SR users land inside it.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { containerRef.current?.focus(); }, []);
+
+  // Fix 3: Escape dismisses the overlay, matching BottomSheet behavior.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") dismissRef.current(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fix 6: Lock body scroll while the overlay is mounted (iOS-safe pattern from BottomSheet).
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const prev = {
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    };
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+    return () => {
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.width = prev.width;
+      body.style.overflow = prev.overflow;
+      window.scrollTo(0, scrollY);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (hidden) return null;
 
   // Body: paragraph breaks on \n\n, line breaks on single \n.
@@ -40,15 +88,17 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
 
   return (
     <div
+      ref={containerRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby="announcement-title"
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 100,
+        zIndex: 400, // Fix 5: above toasts (200) and AvatarEditor (200)
         background: "var(--accent)",
-        color: "var(--bone)",
+        color: "var(--accent-ink)", // Fix 1: contrast-safe text-on-accent token
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -104,9 +154,10 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
             <button
               type="button"
               onClick={() => handleDismiss(announcement.cta_href)}
+              disabled={isPending} // Fix 4: block double-taps during transition
               style={{
                 background: "var(--bone)",
-                color: "var(--accent)",
+                color: "var(--void)", // Fix 1: void is universally readable on bone
                 border: "none",
                 padding: "14px 32px",
                 fontFamily: "var(--font-ui, 'IBM Plex Sans', sans-serif)",
@@ -116,6 +167,7 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
                 textTransform: "uppercase",
                 cursor: "pointer",
                 minWidth: 180,
+                opacity: isPending ? 0.6 : 1, // Fix 4: visual disabled state
               }}
             >
               {announcement.cta_label}
@@ -124,10 +176,11 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
           <button
             type="button"
             onClick={() => handleDismiss(null)}
+            disabled={isPending} // Fix 4: block double-taps during transition
             style={{
               background: "transparent",
-              color: "var(--bone)",
-              border: "2px solid var(--bone)",
+              color: "var(--accent-ink)", // Fix 1: contrast-safe text-on-accent token
+              border: "2px solid var(--accent-ink)", // Fix 1: border must be visible too
               padding: "12px 30px",
               fontFamily: "var(--font-ui, 'IBM Plex Sans', sans-serif)",
               fontSize: 14,
@@ -136,6 +189,7 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
               textTransform: "uppercase",
               cursor: "pointer",
               minWidth: 180,
+              opacity: isPending ? 0.6 : 1, // Fix 4: visual disabled state
             }}
           >
             Got it
