@@ -49,6 +49,17 @@ export async function _logWatch(
     .single();
   if (error || !data) throw error ?? new Error("insert failed");
 
+  // Enforce single verdict per film: a user gets one vote, not one per watch.
+  // When the new watch carries a verdict, clear it from all prior rows.
+  if (opts?.recommended != null) {
+    await client
+      .from("watched")
+      .update({ recommended: null })
+      .eq("user_id", user.id)
+      .eq("film_id", filmId)
+      .neq("id", data.id);
+  }
+
   // Auto-remove from watchlist (silent — no error if it wasn't there).
   await client
     .from("watchlists")
@@ -71,6 +82,24 @@ export async function _editWatch(
   if (patch.watched_at !== undefined) update.watched_at = patch.watched_at;
   if (patch.note !== undefined) update.note = patch.note;
   if (patch.recommended !== undefined) update.recommended = patch.recommended;
+
+  // Enforce single verdict: when setting a non-null verdict, clear it from
+  // all other watched rows for this (user, film) first.
+  if (patch.recommended != null) {
+    const { data: row } = await client
+      .from("watched")
+      .select("film_id")
+      .eq("id", watchId)
+      .single();
+    if (row) {
+      await client
+        .from("watched")
+        .update({ recommended: null })
+        .eq("user_id", user.id)
+        .eq("film_id", row.film_id)
+        .neq("id", watchId);
+    }
+  }
 
   const { error } = await client
     .from("watched")

@@ -100,6 +100,85 @@ describe.skipIf(!hasEnv)("actions/watched", () => {
     expect(data).toHaveLength(3);
   });
 
+  it("_logWatch with verdict clears recommended from all prior watches for same film", async () => {
+    const admin = adminClient();
+    const { data: prior } = await admin
+      .from("watched")
+      .insert({ user_id: userA.id, film_id: filmId, watched_at: "2026-01-01", recommended: true })
+      .select("id")
+      .single();
+
+    const c = await signedInClient(userA.email, userA.password);
+    const { id: newId } = await _logWatch(c as any, filmId, { watched_at: "2026-04-01", recommended: false });
+
+    const { data: priorRow } = await admin.from("watched").select("recommended").eq("id", prior!.id).single();
+    expect(priorRow?.recommended).toBeNull();
+
+    const { data: newRow } = await admin.from("watched").select("recommended").eq("id", newId).single();
+    expect(newRow?.recommended).toBe(false);
+  });
+
+  it("_logWatch without verdict leaves prior watch's verdict intact", async () => {
+    const admin = adminClient();
+    const { data: prior } = await admin
+      .from("watched")
+      .insert({ user_id: userA.id, film_id: filmId, watched_at: "2026-01-01", recommended: true })
+      .select("id")
+      .single();
+
+    const c = await signedInClient(userA.email, userA.password);
+    await _logWatch(c as any, filmId, { watched_at: "2026-04-01" });
+
+    const { data: priorRow } = await admin.from("watched").select("recommended").eq("id", prior!.id).single();
+    expect(priorRow?.recommended).toBe(true);
+  });
+
+  it("_editWatch setting verdict clears recommended from other watches for same film", async () => {
+    const admin = adminClient();
+    const { data: row1 } = await admin
+      .from("watched")
+      .insert({ user_id: userA.id, film_id: filmId, watched_at: "2026-01-01", recommended: true })
+      .select("id")
+      .single();
+    const { data: row2 } = await admin
+      .from("watched")
+      .insert({ user_id: userA.id, film_id: filmId, watched_at: "2026-04-01" })
+      .select("id")
+      .single();
+
+    const c = await signedInClient(userA.email, userA.password);
+    await _editWatch(c as any, row2!.id, { recommended: false });
+
+    const { data: r1 } = await admin.from("watched").select("recommended").eq("id", row1!.id).single();
+    expect(r1?.recommended).toBeNull();
+
+    const { data: r2 } = await admin.from("watched").select("recommended").eq("id", row2!.id).single();
+    expect(r2?.recommended).toBe(false);
+  });
+
+  it("_editWatch clearing verdict leaves other watches untouched", async () => {
+    const admin = adminClient();
+    const { data: row1 } = await admin
+      .from("watched")
+      .insert({ user_id: userA.id, film_id: filmId, watched_at: "2026-01-01", recommended: true })
+      .select("id")
+      .single();
+    const { data: row2 } = await admin
+      .from("watched")
+      .insert({ user_id: userA.id, film_id: filmId, watched_at: "2026-04-01", recommended: true })
+      .select("id")
+      .single();
+
+    const c = await signedInClient(userA.email, userA.password);
+    await _editWatch(c as any, row2!.id, { recommended: null });
+
+    const { data: r1 } = await admin.from("watched").select("recommended").eq("id", row1!.id).single();
+    expect(r1?.recommended).toBe(true);
+
+    const { data: r2 } = await admin.from("watched").select("recommended").eq("id", row2!.id).single();
+    expect(r2?.recommended).toBeNull();
+  });
+
   it("_editWatch updates watched_at + note", async () => {
     const c = await signedInClient(userA.email, userA.password);
     const { id } = await _logWatch(c as any, filmId, { watched_at: "2026-04-01", note: "old" });
