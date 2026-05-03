@@ -19,19 +19,14 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  // Ref to the outer dialog div for focus management (Fix 2).
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Stable ref to handleDismiss so the Escape listener never goes stale (Fix 3).
+  const panelRef = useRef<HTMLDivElement>(null);
   const dismissRef = useRef<(navigateTo: string | null) => void>(() => {});
 
   function handleDismiss(navigateTo: string | null) {
-    setHidden(true); // optimistic: hide immediately
+    setHidden(true);
     startTransition(async () => {
       const res = await dismissAnnouncement(announcement.id);
       if (!res.ok) {
-        // Rare: server failed to record. Re-show so the user can retry.
-        // (Network errors during transitions surface as ok=false.)
         setHidden(false);
         return;
       }
@@ -39,14 +34,11 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
     });
   }
 
-  // Keep dismissRef current so the keydown handler always calls the latest version.
   dismissRef.current = handleDismiss;
 
-  // Fix 2: Focus the dialog on mount so keyboard/SR users land inside it.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { containerRef.current?.focus(); }, []);
+  useEffect(() => { panelRef.current?.focus(); }, []);
 
-  // Fix 3: Escape dismisses the overlay, matching BottomSheet behavior.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") dismissRef.current(null);
@@ -56,7 +48,6 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fix 6: Lock body scroll while the overlay is mounted (iOS-safe pattern from BottomSheet).
   useEffect(() => {
     if (typeof document === "undefined") return;
     const scrollY = window.scrollY;
@@ -83,46 +74,89 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
 
   if (hidden) return null;
 
-  // Body: paragraph breaks on \n\n, line breaks on single \n.
   const paragraphs = announcement.body.split(/\n\n+/);
 
   return (
     <div
-      ref={containerRef}
-      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby="announcement-title"
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 400, // Fix 5: above toasts (200) and AvatarEditor (200)
-        background: "var(--accent)",
-        color: "var(--accent-ink)", // Fix 1: contrast-safe text-on-accent token
+        zIndex: 400,
+        background: "rgba(10, 10, 10, 0.6)",
+        backdropFilter: "blur(3px)",
+        WebkitBackdropFilter: "blur(3px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "calc(env(safe-area-inset-top) + 32px) 24px calc(env(safe-area-inset-bottom) + 32px)",
-        animation: "announcement-in 200ms ease-out",
-        overflowY: "auto",
+        padding: "calc(env(safe-area-inset-top) + 24px) 20px calc(env(safe-area-inset-bottom) + 24px)",
+        animation: "announcement-fade-in 150ms ease-out",
       }}
     >
       <style>{`
-        @keyframes announcement-in {
-          from { opacity: 0; transform: translateY(8px); }
-          to   { opacity: 1; transform: translateY(0); }
+        @keyframes announcement-fade-in {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes announcement-pop-in {
+          from { opacity: 0; transform: scale(0.94) translateY(8px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
         }
       `}</style>
 
-      <div style={{ maxWidth: 560, width: "100%", textAlign: "center" }}>
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        style={{
+          background: "#141414",
+          color: "var(--bone)",
+          width: "100%",
+          maxWidth: 480,
+          maxHeight: "calc(100dvh - 96px)",
+          overflowY: "auto",
+          borderTop: "3px solid var(--accent)",
+          borderRadius: 14,
+          padding: "28px 28px 24px",
+          position: "relative",
+          textAlign: "center",
+          animation: "announcement-pop-in 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+          outline: "none",
+          boxShadow: "0 24px 60px rgba(0, 0, 0, 0.5)",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => handleDismiss(null)}
+          disabled={isPending}
+          aria-label="Dismiss"
+          style={{
+            position: "absolute",
+            top: 8,
+            right: 10,
+            background: "none",
+            border: 0,
+            color: "var(--muted)",
+            fontSize: 26,
+            lineHeight: 1,
+            padding: "4px 8px",
+            cursor: "pointer",
+            opacity: isPending ? 0.6 : 1,
+          }}
+        >
+          ×
+        </button>
+
         <h1
           id="announcement-title"
           style={{
             fontFamily: "var(--font-head, 'DM Serif Display', serif)",
-            fontSize: "clamp(36px, 6vw, 48px)",
-            lineHeight: 1.1,
+            fontSize: "clamp(28px, 5vw, 36px)",
+            lineHeight: 1.15,
             margin: 0,
-            marginBottom: 24,
+            marginBottom: 16,
+            color: "var(--accent)",
           }}
         >
           {announcement.title}
@@ -131,14 +165,13 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
         <div
           style={{
             fontFamily: "var(--font-ui, 'IBM Plex Sans', sans-serif)",
-            fontSize: "clamp(16px, 2.4vw, 18px)",
-            lineHeight: 1.5,
-            maxWidth: 520,
-            margin: "0 auto 32px",
+            fontSize: "clamp(15px, 2vw, 16px)",
+            lineHeight: 1.55,
+            margin: "0 auto 24px",
           }}
         >
           {paragraphs.map((p, i) => (
-            <p key={i} style={{ margin: i === 0 ? 0 : "1em 0 0" }}>
+            <p key={i} style={{ margin: i === 0 ? 0 : "0.85em 0 0" }}>
               {p.split("\n").map((line, j, arr) => (
                 <span key={j}>
                   {line}
@@ -149,25 +182,24 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
           ))}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "stretch" }}>
           {announcement.cta_label && announcement.cta_href && (
             <button
               type="button"
               onClick={() => handleDismiss(announcement.cta_href)}
-              disabled={isPending} // Fix 4: block double-taps during transition
+              disabled={isPending}
               style={{
-                background: "var(--bone)",
-                color: "var(--void)", // Fix 1: void is universally readable on bone
+                background: "var(--accent)",
+                color: "var(--accent-ink)",
                 border: "none",
-                padding: "14px 32px",
+                padding: "12px 24px",
                 fontFamily: "var(--font-ui, 'IBM Plex Sans', sans-serif)",
                 fontSize: 14,
                 fontWeight: 700,
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
                 cursor: "pointer",
-                minWidth: 180,
-                opacity: isPending ? 0.6 : 1, // Fix 4: visual disabled state
+                opacity: isPending ? 0.6 : 1,
               }}
             >
               {announcement.cta_label}
@@ -176,20 +208,19 @@ export default function AnnouncementOverlay({ announcement }: AnnouncementOverla
           <button
             type="button"
             onClick={() => handleDismiss(null)}
-            disabled={isPending} // Fix 4: block double-taps during transition
+            disabled={isPending}
             style={{
               background: "transparent",
-              color: "var(--accent-ink)", // Fix 1: contrast-safe text-on-accent token
-              border: "2px solid var(--accent-ink)", // Fix 1: border must be visible too
-              padding: "12px 30px",
+              color: "var(--bone)",
+              border: "2px solid var(--muted-dark)",
+              padding: "10px 24px",
               fontFamily: "var(--font-ui, 'IBM Plex Sans', sans-serif)",
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: 700,
               letterSpacing: "0.08em",
               textTransform: "uppercase",
               cursor: "pointer",
-              minWidth: 180,
-              opacity: isPending ? 0.6 : 1, // Fix 4: visual disabled state
+              opacity: isPending ? 0.6 : 1,
             }}
           >
             Got it
