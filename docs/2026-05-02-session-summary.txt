@@ -1,0 +1,191 @@
+Session shipped — 2026-05-02
+=============================
+
+A long session: 30 PRs landed, six full sub-projects (#32 closeout
++ #33–#37), plus a heavy editorial tag pass and a flotilla of
+search-pill / poster-action / hero-consistency polish.
+
+SUB-PROJECTS
+------------
+
+PR #108  Tag content infrastructure (sub-project #32) — closed out the
+         work begun the prior day. Mig 0151 + tags/film_tags tables +
+         FilmTagEditor + Untagged-only filter. Two-facet system
+         (subgenre + vibe). Replaced demo FilmTagsRow with real data.
+
+PR #112  Tagging system v2 (sub-project #33) — replaced #32's two-
+         facet system with the seven-facet positional system from
+         the v2 staff style guide. Mig 0152 truncates v1 + reseeds
+         88 canonical tags across six types, expands tags.type CHECK,
+         adds film_tags.position + is_primary + films.horror_adjacent.
+         setFilmTags rewritten with 14 validation paths. New two-stage
+         FilmTagEditor (chip-group picker + @dnd-kit drag-to-reorder
+         list with Primary locked + virtual director slot + visible/
+         hidden divider). FilmTagsRow renders the 5-slot capsule from
+         {visible, hidden} shape.
+
+PR #115  Coven page chip rework (sub-project #34) — replaced /coven
+         left-pane card grid with a top-4 chip row + search + "See
+         all (N)" BottomSheet. New getRankedCovenfolk scores covenfolk
+         by 90-day interaction (rec_sent + reactions + comments,
+         equal weight). Empty / 1–4 / 5+ states each get appropriate
+         chrome.
+
+PR #134  FYP recommender (sub-project #35) — new /for-you route,
+         /tags/[name] listing pages, lane-picker on /settings.
+         Affinity from 6 weighted user signals × per-facet
+         multipliers, floored at 0. Cold start is 4 additive layers
+         (editorial starter pack → coven-borrowed → lanes → own
+         behavior). Mig 0154 adds profiles.lane_tag_ids +
+         films.editorial_starter. Spec at
+         docs/superpowers/specs/2026-05-02-fyp-recommender-design.md.
+
+PR #135  Recommender v2 (sub-project #36) — six layered improvements
+         over #35: TF-IDF tag weighting, affinity cap (30), visible-
+         tag boost (1.3×), time decay (0.5^years half-life), cosine-
+         weighted coven borrowing, verdict-anchored calibration with
+         a MatchPill on each /for-you poster.
+
+PR #136  Recommender v3 (sub-project #37) — patches the math expert's
+         review of algo.md. Drops μ at scoring time (was being applied
+         twice, compounding to μ² → 36× spread). Adds length penalty
+         (sqrt(tag count)). Smooths + clamps IDF for small-catalog
+         stability. Adds aversion vector so explicit dislikes
+         actively suppress. Replaces calibrated % pill with rank-
+         percentile bands.
+
+CATALOG
+-------
+
+PR #109  fg-trailers + mig 0150 brought into the monorepo. Rust TUI
+         for trailer curation tracked alongside the four TS packages.
+         Six trailer columns on films + films_trailer_missing_idx.
+         No prod migration needed — already applied during #27 deploy
+         the prior session; this commit just brings the SQL into git.
+
+PR #113  Editorial v2 tag pass — 115 of 157 films tagged per the v2
+         staff style guide. db/scripts/tag-films.ts holds the tag
+         plan as TypeScript data and applies via service-role
+         transactions. goblin_tagged.md is the human-readable
+         record. 42 films skipped (16 non-horror catalog cleanup,
+         26 needing manual editorial review).
+
+PR #114  Renamed `class` theme → `social class` for clarity. Mig
+         0153 in-place tag rename — UUID unchanged, six film_tags
+         references migrate automatically.
+
+FEED REDESIGN
+-------------
+
+PR #126  Infinite scroll on /home — 20-at-a-time, IntersectionObserver
+         + Load-more button fallback. Replaces the prior 50-item cap.
+         Cumulative un-grouped EnrichedActivity[] in client state;
+         groupFeed runs over the full list each render so groupings
+         span page boundaries.
+
+PR #127  Coven-scoped feed — feed previously read from `follows`
+         table; switched to `coven_members` so anyone in your coven
+         shows in your feed regardless of follow state. FollowButton
+         removed from /p/[username]; CovenButton is the only
+         relationship affordance now. Schema preserved (reversible).
+
+PR #128  Fixed infinite scroll firing on iOS — moved IntersectionObserver
+         state into refs so it doesn't tear down on every loading
+         toggle. Plus a manual "Load more" button as escape hatch.
+
+PR #129  Fixed feed truncation — getEnrichedActivity now returns
+         {items, nextCursor, done} where done comes from RAW row
+         count, not enriched count. Fixed cursor stalling when
+         enrichment dropped any rows.
+
+MOBILE POSTER ACTIONS
+---------------------
+
+PR #130  Mobile ⋯ button on /films posters → BottomSheet with Add to
+         watchlist / Add to grimoire / Share. Closes the gap where
+         the desktop hover '+' had no touch equivalent.
+
+PR #131  BottomSheet primitive fix — close-click was bubbling through
+         React portal back up the component tree, navigating wrapping
+         <Link>s. Added e.stopPropagation() on the overlay + ×
+         button. Helps every BottomSheet consumer.
+
+PR #132  Same poster ⋯ pattern extended to /watchlist (Hoard) and
+         /library (Grimoire) with kind-specific action sheets. Drop
+         badge moved bottom-left to free top-right for the ⋯ button.
+
+PR #133  All three poster action sheets gain "✦ Log a watch" as the
+         first row → opens WatchModal pre-filled with today's date.
+         Sheet-in-sheet transition rather than overlapping.
+
+SEARCH-PILL CONVERGENCE
+-----------------------
+
+PR #111  Discover (/films) search includes watchlist/grimoire films
+         when q is non-empty (otherwise default browse hides them).
+         Per-row flags on_watchlist / in_library tag results so
+         already-collected films show "On watchlist" / "In grimoire"
+         badge.
+
+PR #116  Coven chips/cards/rows rounded to 999px pill aesthetic.
+         Matches the comment-composer pill rounding from #25.
+
+PR #117  Flipped search above chips on /coven left pane. Right-pane
+         Find People also adopts the rounded pill (PeopleSearch
+         self-contains styling now). CSS classes generalized to
+         .search-pill / .pill-row.
+
+PR #118  Shrunk coven chips (avatar 36 → 28) so they mirror the
+         search-pill height. Also hardened both search inputs
+         against Safari autofill (was prompting iCloud Keychain
+         on the unnamed Find People input).
+
+PR #119  Find People SearchPersonRow rewritten as a single-line pill
+         (was wrapping the Invite button to a second row on mobile,
+         doubling the row height).
+
+PR #120  Search pills retoned: bone bg, void border, pink hard
+         dropshadow. Buttons inside .pill-row auto-rounded via a
+         single CSS rule.
+
+PR #121  /films search adopts the same rounded-bone search-pill
+         aesthetic. Self-contains; drops the page-level wrapper.
+
+PR #122  /films hero made title-only — search moved into the body
+         section so the hero matches /coven, /library, /watchlist,
+         /watched in height.
+
+PR #123  Combined typeahead feed search on /home — type → debounced
+         dropdown with Users + Films sections, tap to filter feed by
+         actor or film. URL params drive the filter; active-filter
+         chip with × to clear. getEnrichedFeed gains FeedFilters
+         opts.
+
+PR #124  Hero unification + Invite-a-friend relocation. /home gets
+         a proper bone-grain "The Feed." hero (matching the others).
+         /coven hero stripped of the Invite-a-friend button, which
+         moved into the Find People pane header and was restyled as
+         a new .invite-pill.
+
+PR #137  Match band colors + Goblin names: pink top tiers swapped
+         to seafoam (verdict green) for readability. Bottom 15%
+         no longer suppressed — gets a new "Cursed Artifact" plum
+         band. "Strong Match" renamed to "Strong Omen" for tonal
+         consistency with "Good Omen".
+
+OTHER POLISH
+------------
+
+PR #110  Profile invite banner gated on ?invite=1 query param —
+         was showing "@user invited you to Film Goblin" for any
+         signed-out viewer of /p/[username]. New ShareProfileButton
+         on own-profile generates the invite link.
+
+Also created locally (not committed):
+- algo.md — full algorithm description for the math expert who
+  reviewed the recommender. Sits at repo root; consider committing
+  for future reference / re-reviews.
+- film-goblin-dossier.md / .pdf — pre-existing locally, untouched
+  this session.
+- docs/in-repo-tickets-setup.md, docs/mobile-navigation-
+  responsiveness-audit.md, docs/proposals/ — pre-existing locally.
