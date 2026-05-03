@@ -13,7 +13,8 @@ export interface RecipientPickerProps {
 export default function RecipientPicker({ profiles, selectedIds, onChange }: RecipientPickerProps) {
   const [query, setQuery] = useState("");
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-  const matches = filterCovenMembers(profiles, query).slice(0, 30);
+  const allMatches = filterCovenMembers(profiles, query);
+  const matches = allMatches.slice(0, 30);
 
   const selectedProfiles = profiles.filter(p => selectedSet.has(p.id));
 
@@ -44,9 +45,9 @@ export default function RecipientPicker({ profiles, selectedIds, onChange }: Rec
                 cursor: "pointer",
                 borderRadius: 0,
               }}
-              aria-label={`Remove ${p.username}`}
+              aria-label={`Remove ${p.display_name ?? p.username}`}
             >
-              {p.username} ✕
+              {p.display_name ?? p.username} ✕
             </button>
           ))}
         </div>
@@ -57,6 +58,10 @@ export default function RecipientPicker({ profiles, selectedIds, onChange }: Rec
         value={query}
         onChange={e => setQuery(e.target.value)}
         placeholder="Search by username…"
+        role="combobox"
+        aria-expanded={query.trim().length > 0}
+        aria-controls="recipient-picker-listbox"
+        aria-autocomplete="list"
         style={{
           width: "100%",
           padding: 10,
@@ -69,38 +74,60 @@ export default function RecipientPicker({ profiles, selectedIds, onChange }: Rec
       />
 
       {query.trim().length > 0 && (
-        <div style={{ marginTop: 8, maxHeight: 240, overflowY: "auto", border: "1px solid var(--muted)" }}>
+        <div
+          id="recipient-picker-listbox"
+          role="listbox"
+          style={{ marginTop: 8, maxHeight: 240, overflowY: "auto", border: "1px solid var(--muted)" }}
+        >
           {matches.length === 0 ? (
             <div style={{ padding: 10, color: "var(--muted)", fontSize: 13, fontStyle: "italic" }}>
               No matches.
             </div>
           ) : (
-            matches.map(p => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => toggle(p.id)}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  textAlign: "left",
-                  background: selectedSet.has(p.id) ? "var(--void-2)" : "transparent",
-                  color: "var(--bone)",
-                  border: "none",
-                  borderBottom: "1px solid var(--muted)",
-                  padding: "8px 10px",
-                  fontFamily: "var(--font-ui)",
-                  fontSize: 14,
-                  cursor: "pointer",
-                }}
-              >
-                {p.username}
-                {p.display_name && p.display_name !== p.username && (
-                  <span style={{ color: "var(--muted)", marginLeft: 8 }}>({p.display_name})</span>
-                )}
-                {selectedSet.has(p.id) && <span style={{ float: "right" }}>✓</span>}
-              </button>
-            ))
+            <>
+              {matches.map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="option"
+                  aria-selected={selectedSet.has(p.id)}
+                  onClick={() => toggle(p.id)}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    textAlign: "left",
+                    background: selectedSet.has(p.id) ? "var(--void-2)" : "transparent",
+                    color: "var(--bone)",
+                    border: "none",
+                    borderBottom: "1px solid var(--muted)",
+                    padding: "8px 10px",
+                    fontFamily: "var(--font-ui)",
+                    fontSize: 14,
+                    cursor: "pointer",
+                  }}
+                >
+                  {p.username}
+                  {p.display_name && p.display_name !== p.username && (
+                    <span style={{ color: "var(--muted)", marginLeft: 8 }}>({p.display_name})</span>
+                  )}
+                  {selectedSet.has(p.id) && <span style={{ float: "right" }}>✓</span>}
+                </button>
+              ))}
+              {allMatches.length > 30 && (
+                <div
+                  style={{
+                    padding: "8px 10px",
+                    color: "var(--muted)",
+                    fontSize: 12,
+                    fontStyle: "italic",
+                    textAlign: "center",
+                    borderTop: "1px solid var(--muted)",
+                  }}
+                >
+                  Showing 30 of {allMatches.length}. Refine your search.
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
