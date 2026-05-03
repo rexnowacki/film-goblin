@@ -28,10 +28,10 @@ import { getRankedCovenfolk } from "@/lib/queries/coven-interactions";
 // ---------------------------------------------------------------------------
 
 interface TableData {
-  watched?: Array<{ film_id: string; recommended: boolean | null }>;
-  library?: Array<{ film_id: string }>;
-  watchlists?: Array<{ film_id: string }>;
-  activity?: Array<{ payload: Record<string, unknown> }>;
+  watched?: Array<{ film_id: string; recommended: boolean | null; created_at?: string | null }>;
+  library?: Array<{ film_id: string; created_at?: string | null }>;
+  watchlists?: Array<{ film_id: string; created_at?: string | null }>;
+  activity?: Array<{ payload: Record<string, unknown>; created_at?: string | null }>;
   activity_reactions?: Array<unknown>;
   film_tags?: Array<unknown>;
 }
@@ -778,5 +778,68 @@ describe("getUserAffinity", () => {
       expect(v).toBeGreaterThanOrEqual(0);
     }
     expect(result.byTag).toEqual({});
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Affinity cap + time decay (recommender v2)
+// ---------------------------------------------------------------------------
+
+describe("getUserOwnAffinity — affinity cap", () => {
+  it("clips per-tag affinity at AFFINITY_CAP (30)", async () => {
+    // 5 watch+liked of the same primary-folk-horror film:
+    // raw aggregate = 5 × 3.0 × 3.0 = 45 → capped at 30.
+    const today = new Date().toISOString();
+    const client = makeAffinityClient({
+      watched: Array.from({ length: 5 }, () => ({
+        film_id: "f1", recommended: true, created_at: today,
+      })),
+      film_tags: [filmTag("f1", "folk horror", "subgenre", true)],
+    });
+    const result = await getUserOwnAffinity(client, "user-1");
+    expect(result.byTag["folk horror"]).toBe(30);
+  });
+});
+
+describe("getUserOwnAffinity — time decay", () => {
+  it("today's signal contributes ~ full weight (decay ≈ 1)", async () => {
+    const today = new Date().toISOString();
+    const client = makeAffinityClient({
+      watched: [{ film_id: "f1", recommended: true, created_at: today }],
+      film_tags: [filmTag("f1", "folk horror", "subgenre", true)],
+    });
+    const result = await getUserOwnAffinity(client, "user-1");
+    expect(result.byTag["folk horror"]).toBeCloseTo(9.0, 1);
+  });
+
+  it("1-year-old signal contributes ~ 0.5×", async () => {
+    const oneYearAgo = new Date(Date.now() - 365.25 * 24 * 60 * 60 * 1000).toISOString();
+    const client = makeAffinityClient({
+      watched: [{ film_id: "f1", recommended: true, created_at: oneYearAgo }],
+      film_tags: [filmTag("f1", "folk horror", "subgenre", true)],
+    });
+    const result = await getUserOwnAffinity(client, "user-1");
+    // 3.0 × 3.0 × 0.5 = 4.5
+    expect(result.byTag["folk horror"]).toBeCloseTo(4.5, 1);
+  });
+
+  it("2-year-old signal contributes ~ 0.25×", async () => {
+    const twoYearsAgo = new Date(Date.now() - 2 * 365.25 * 24 * 60 * 60 * 1000).toISOString();
+    const client = makeAffinityClient({
+      watched: [{ film_id: "f1", recommended: true, created_at: twoYearsAgo }],
+      film_tags: [filmTag("f1", "folk horror", "subgenre", true)],
+    });
+    const result = await getUserOwnAffinity(client, "user-1");
+    // 3.0 × 3.0 × 0.25 = 2.25
+    expect(result.byTag["folk horror"]).toBeCloseTo(2.25, 1);
+  });
+
+  it("missing created_at falls back to no decay (full weight)", async () => {
+    const client = makeAffinityClient({
+      watched: [{ film_id: "f1", recommended: true, created_at: null }],
+      film_tags: [filmTag("f1", "folk horror", "subgenre", true)],
+    });
+    const result = await getUserOwnAffinity(client, "user-1");
+    expect(result.byTag["folk horror"]).toBeCloseTo(9.0, 1);
   });
 });

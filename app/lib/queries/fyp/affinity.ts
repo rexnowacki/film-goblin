@@ -29,6 +29,35 @@ export const FACET_MULTIPLIERS = {
   content: 0.5,
 } as const;
 
+/**
+ * Per-tag affinity ceiling. Prevents one runaway tag (e.g. `atmospheric`,
+ * which appears on most horror films) from dominating the vector and
+ * drowning out distinctive taste markers.
+ */
+export const AFFINITY_CAP = 30;
+
+/**
+ * Time-decay half-life in years. A 1-year-old signal contributes 0.5×; a
+ * 2-year-old signal 0.25×. Recent signals dominate; ancient ones fade.
+ * Tune up (longer half-life) if recent-bias feels too aggressive.
+ */
+export const DECAY_HALF_LIFE_YEARS = 1;
+
+const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000;
+
+/**
+ * Returns the decay multiplier for a signal observed at `createdAt`.
+ * `0.5 ^ (years_since_created / DECAY_HALF_LIFE_YEARS)`.
+ * Future timestamps (clock skew etc.) clamp to 1.0.
+ */
+function timeDecay(createdAt: string | null | undefined, now: number = Date.now()): number {
+  if (!createdAt) return 1.0;
+  const t = Date.parse(createdAt);
+  if (Number.isNaN(t)) return 1.0;
+  const yearsOld = Math.max(0, (now - t) / MS_PER_YEAR);
+  return Math.pow(0.5, yearsOld / DECAY_HALF_LIFE_YEARS);
+}
+
 type TagFacet = "subgenre" | "subject" | "tone" | "theme" | "setting" | "content";
 
 interface FilmTagRowRaw {
@@ -83,55 +112,61 @@ export async function getUserOwnAffinity(
   const [watched, library, watchlist, recsSent, reactions] = await Promise.all([
     client
       .from("watched")
-      .select("film_id, recommended")
+      .select("film_id, recommended, created_at")
       .eq("user_id", userId),
     client
       .from("library")
-      .select("film_id")
+      .select("film_id, created_at")
       .eq("user_id", userId),
     client
       .from("watchlists")
-      .select("film_id")
+      .select("film_id, created_at")
       .eq("user_id", userId),
     client
       .from("activity")
-      .select("payload")
+      .select("payload, created_at")
       .eq("actor_user_id", userId)
       .eq("kind", "recommendation_sent"),
     client
       .from("activity_reactions")
-      .select("activity:activity!inner(payload)")
+      .select("created_at, activity:activity!inner(payload)")
       .eq("user_id", userId),
   ]);
 
+  const now = Date.now();
+
   // watched: recommended === true → liked, === false → disliked, null → no signal
+  // Apply time decay per row.
   for (const w of watched.data ?? []) {
+    const decay = timeDecay(w.created_at, now);
     if (w.recommended === true) {
-      addSignal(w.film_id, SIGNAL_WEIGHTS.watch_liked);
+      addSignal(w.film_id, SIGNAL_WEIGHTS.watch_liked * decay);
     } else if (w.recommended === false) {
-      addSignal(w.film_id, SIGNAL_WEIGHTS.watch_disliked);
+      addSignal(w.film_id, SIGNAL_WEIGHTS.watch_disliked * decay);
     }
     // recommended === null → unrated watch, no contribution
   }
 
   for (const l of library.data ?? []) {
-    addSignal(l.film_id, SIGNAL_WEIGHTS.library_added);
+    addSignal(l.film_id, SIGNAL_WEIGHTS.library_added * timeDecay(l.created_at, now));
   }
 
   for (const wl of watchlist.data ?? []) {
-    addSignal(wl.film_id, SIGNAL_WEIGHTS.watchlist_added);
+    addSignal(wl.film_id, SIGNAL_WEIGHTS.watchlist_added * timeDecay(wl.created_at, now));
   }
 
   for (const r of recsSent.data ?? []) {
     const filmId = (r.payload as { film_id?: string })?.film_id;
-    if (filmId) addSignal(filmId, SIGNAL_WEIGHTS.recommendation_sent);
+    if (filmId) addSignal(filmId, SIGNAL_WEIGHTS.recommendation_sent * timeDecay(r.created_at, now));
   }
 
   for (const rxn of reactions.data ?? []) {
-    const filmId = (
-      rxn as unknown as { activity: { payload: { film_id?: string } } }
-    ).activity?.payload?.film_id;
-    if (filmId) addSignal(filmId, SIGNAL_WEIGHTS.reaction);
+    const r = rxn as unknown as {
+      created_at: string;
+      activity: { payload: { film_id?: string } };
+    };
+    const filmId = r.activity?.payload?.film_id;
+    if (filmId) addSignal(filmId, SIGNAL_WEIGHTS.reaction * timeDecay(r.created_at, now));
   }
 
   if (filmWeights.size === 0) return { byTag: {} };
@@ -164,9 +199,10 @@ export async function getUserOwnAffinity(
     byTag[r.tag.name] = (byTag[r.tag.name] ?? 0) + signalWeight * mult;
   }
 
-  // 4. Floor each tag's running score at 0 (after full aggregation).
+  // 4. Floor at 0 + cap at AFFINITY_CAP, after full aggregation.
   for (const k of Object.keys(byTag)) {
     if (byTag[k] < 0) byTag[k] = 0;
+    else if (byTag[k] > AFFINITY_CAP) byTag[k] = AFFINITY_CAP;
   }
 
   return { byTag };
@@ -280,11 +316,13 @@ export async function getUserAffinity(
     }
   }
 
-  // Floor at 0 (defensive — getUserOwnAffinity already floors, but the
-  // composed sum could in theory go negative if future sources contribute
-  // negatives; keep a single authoritative floor here).
+  // Floor at 0 + cap at AFFINITY_CAP, after composing all sources.
+  // Defensive — own/lane/coven layers each cap individually, but lane (1.5)
+  // + coven prior + own (≤ cap) could in theory exceed the cap when summed;
+  // re-clamp here so the composed vector matches the documented bound.
   for (const k of Object.keys(byTag)) {
     if (byTag[k] < 0) byTag[k] = 0;
+    else if (byTag[k] > AFFINITY_CAP) byTag[k] = AFFINITY_CAP;
   }
 
   return { byTag };
