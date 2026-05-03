@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/components/ToastProvider";
+import { getServerUser } from "@/lib/supabase/cached";
+import { createClient } from "@/lib/supabase/server";
+import { getPendingAnnouncement } from "@/lib/queries/announcements";
+import AnnouncementOverlay from "@/components/AnnouncementOverlay";
 
 export const metadata: Metadata = {
   title: "Film Goblin — Watch Weirder",
@@ -39,7 +43,14 @@ export const viewport: Viewport = {
   themeColor: "#0A0A0A",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const user = await getServerUser();
+  let pending = null;
+  if (user) {
+    const supabase = await createClient();
+    pending = await getPendingAnnouncement(supabase, user.id);
+  }
+
   return (
     <html lang="en">
       <head>
@@ -56,6 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ToastProvider>{children}</ToastProvider>
+        {pending && <AnnouncementOverlay announcement={pending} />}
       </body>
     </html>
   );
