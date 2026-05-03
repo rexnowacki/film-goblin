@@ -25,7 +25,18 @@ export interface ScoreContext {
   covenRatingByFilm: Map<string, number>; // film_id → coven_rating_pct (0-100)
   ownDirectors: Set<string>; // directors the user has watched at least one film by
   lanesByTag: Set<string>; // tag names the user has selected as lanes in /settings
+  // Per-tag inverse-document-frequency over the catalog. Tags missing from the
+  // map default to 1.0 (no boost). Computed once per request from the candidate
+  // pool — `idf(t) = log(N / df(t))`. Distinctive tags (rare) score higher;
+  // near-universal tags (atmospheric, bleak) score lower.
+  idfByTag: Map<string, number>;
 }
+
+// Tags at film_tags.position 1-4 are the editorial visible capsule per the
+// staff style guide. They get a small boost on top of the facet multiplier
+// to honor that editorial intent.
+const VISIBLE_POSITION_BOOST = 1.3;
+const VISIBLE_POSITION_THRESHOLD = 4;
 
 /**
  * Maps a FilmTagRow to the facet multiplier it contributes to the affinity
@@ -91,7 +102,10 @@ export function scoreFilms(
     for (const tag of f.tags) {
       const aff = affinity.byTag[tag.name] ?? 0;
       if (aff === 0) continue;
-      const contrib = aff * facetMultiplier(tag);
+      const idf = ctx.idfByTag.get(tag.name) ?? 1.0;
+      const positionBoost =
+        tag.position <= VISIBLE_POSITION_THRESHOLD ? VISIBLE_POSITION_BOOST : 1.0;
+      const contrib = aff * facetMultiplier(tag) * idf * positionBoost;
       total += contrib;
       if (contrib > topTagContrib) {
         topTagContrib = contrib;

@@ -190,6 +190,7 @@ export async function getForYou(
         .filter(Boolean),
     ),
     lanesByTag,
+    idfByTag: new Map<string, number>(), // populated in Task 5; empty default = 1.0 for all tags
   };
 
   // ── Score + paginate ─────────────────────────────────────────────────────
