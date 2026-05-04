@@ -22,8 +22,8 @@ export default function ActivityWatchLogged({ item }: { item: Item }) {
                 marginLeft: 8,
                 padding: "1px 6px",
                 fontSize: 9,
-                background: item.recommended ? "var(--accent)" : "var(--blood)",
-                color: item.recommended ? "var(--accent-ink)" : "var(--bone)",
+                background: item.recommended ? "#F5D300" : "var(--blood)",
+                color: item.recommended ? "var(--void)" : "var(--bone)",
               }}
             >
               {item.recommended ? "consecrated" : "cursed"}

@@ -1445,8 +1445,8 @@ a { color: inherit; text-decoration: none; }
   font-weight: 700;
 }
 .sharer-watch-pin-verdict.loved {
-  background: var(--accent);
-  color: var(--accent-ink);
+  background: #F5D300;
+  color: var(--void);
 }
 .sharer-watch-pin-verdict.didnt {
   background: var(--blood);

@@ -104,9 +104,9 @@ export default function WatchModal({ open, mode, initial, filmTitle, onSave, onD
                   style={{
                     flex: 1, minWidth: 120,
                     padding: "10px 14px",
-                    background: active ? (opt.value ? "var(--accent)" : "var(--blood)") : "transparent",
-                    color: active ? (opt.value ? "var(--accent-ink)" : "var(--bone)") : "var(--bone)",
-                    border: `2px solid ${active ? (opt.value ? "var(--accent)" : "var(--blood)") : "var(--muted)"}`,
+                    background: active ? (opt.value ? "#F5D300" : "var(--blood)") : "transparent",
+                    color: active ? (opt.value ? "var(--void)" : "var(--bone)") : "var(--bone)",
+                    border: `2px solid ${active ? (opt.value ? "#F5D300" : "var(--blood)") : "var(--muted)"}`,
                     fontFamily: "var(--font-ui)",
                     fontWeight: 700,
                     fontSize: 11,
