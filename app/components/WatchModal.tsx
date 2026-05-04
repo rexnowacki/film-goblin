@@ -92,8 +92,8 @@ export default function WatchModal({ open, mode, initial, filmTitle, onSave, onD
           <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Verdict (optional)</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {[
-              { value: true, label: "Loved it" },
-              { value: false, label: "Didn't love it" },
+              { value: true, label: "Consecrated" },
+              { value: false, label: "Cursed" },
             ].map(opt => {
               const active = recommended === opt.value;
               return (

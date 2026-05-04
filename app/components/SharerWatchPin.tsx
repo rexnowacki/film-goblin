@@ -26,7 +26,7 @@ export default function SharerWatchPin({ watch }: Props) {
         watched this in {monthName(watch.watched_at)}.
         {watch.recommended !== null && (
           <span className={`sharer-watch-pin-verdict ${watch.recommended ? "loved" : "didnt"}`}>
-            {watch.recommended ? "loved it" : "didn't love it"}
+            {watch.recommended ? "consecrated" : "cursed"}
           </span>
         )}
       </div>

@@ -26,7 +26,7 @@ export default function ActivityWatchLogged({ item }: { item: Item }) {
                 color: item.recommended ? "var(--accent-ink)" : "var(--bone)",
               }}
             >
-              {item.recommended ? "loved it" : "didn't love it"}
+              {item.recommended ? "consecrated" : "cursed"}
             </span>
           )}
           {"."}
