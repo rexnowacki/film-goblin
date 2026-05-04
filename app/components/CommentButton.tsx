@@ -8,14 +8,15 @@ interface Props {
   onOpen: () => void;
 }
 
-function SpeechIcon({ filled }: { filled: boolean }) {
+function SpeechIcon({ fill }: { fill: "accent" | "bone" | "none" }) {
   // Simple speech bubble — sharp corners + miter joins to match HeartIcon.
+  const color = fill === "accent" ? "var(--accent)" : fill === "bone" ? "var(--bone)" : "var(--muted)";
   return (
     <svg viewBox="0 0 18 16" width="16" height="14" aria-hidden="true">
       <path
         d="M2 2 L16 2 L16 11 L9 11 L5 14 L5 11 L2 11 Z"
-        fill={filled ? "var(--accent)" : "none"}
-        stroke={filled ? "var(--accent)" : "var(--muted)"}
+        fill={fill === "none" ? "none" : color}
+        stroke={color}
         strokeWidth="1.5"
         strokeLinejoin="miter"
       />
@@ -24,6 +25,7 @@ function SpeechIcon({ filled }: { filled: boolean }) {
 }
 
 export default function CommentButton({ count, open, onOpen }: Props) {
+  const iconFill = open ? "accent" : count > 0 ? "bone" : "none";
   return (
     <button
       type="button"
@@ -33,7 +35,7 @@ export default function CommentButton({ count, open, onOpen }: Props) {
       aria-haspopup="dialog"
       aria-expanded={open}
     >
-      <SpeechIcon filled={open} />
+      <SpeechIcon fill={iconFill} />
       {count > 0 && (
         <span className="heart-count" style={{ pointerEvents: "none" }}>{compactCount(count)}</span>
       )}

@@ -28,7 +28,7 @@ export default function ActivityWatchLoggedGroup({ group }: Props) {
         <Avatar
           name={actor.username}
           color="var(--accent)"
-          size={40}
+          size={36}
           url={actor.avatar_url}
         />
         <div style={{ flex: 1, minWidth: 0 }}>
