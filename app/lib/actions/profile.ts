@@ -22,6 +22,7 @@ export interface ProfileFields {
   email_coven_invites?: boolean;
   notify_rate_reminders?: boolean;
   notify_comment_likes?: boolean;
+  discoverable?: boolean;
 }
 
 type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];

@@ -708,6 +708,7 @@ export type Database = {
           email_price_drops: boolean
           id: string
           lane_tag_ids: string[]
+          discoverable: boolean
           notify_comment_likes: boolean
           notify_rate_reminders: boolean
           username: string
@@ -731,6 +732,7 @@ export type Database = {
           email_price_drops?: boolean
           id: string
           lane_tag_ids?: string[]
+          discoverable?: boolean
           notify_comment_likes?: boolean
           notify_rate_reminders?: boolean
           username: string
@@ -754,6 +756,7 @@ export type Database = {
           email_price_drops?: boolean
           id?: string
           lane_tag_ids?: string[]
+          discoverable?: boolean
           notify_comment_likes?: boolean
           notify_rate_reminders?: boolean
           username?: string

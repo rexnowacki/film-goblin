@@ -1,0 +1,2 @@
+ALTER TABLE profiles
+  ADD COLUMN discoverable BOOLEAN NOT NULL DEFAULT true;
