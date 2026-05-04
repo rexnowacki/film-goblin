@@ -1071,7 +1071,14 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_coven_watchers_for_film: {
+        Args: { p_user_id: string; p_film_id: string }
+        Returns: { id: string; username: string; avatar_url: string | null }[]
+      }
+      get_other_watchers_for_film: {
+        Args: { p_user_id: string; p_film_id: string }
+        Returns: { id: string; username: string; avatar_url: string | null }[]
+      }
     }
     Enums: {
       activity_kind:
