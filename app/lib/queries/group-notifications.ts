@@ -7,16 +7,22 @@ const MIN_GROUP_SIZE_LIKE = 2;
 
 // Kind-aware grouping key. Most kinds group per-actor; like_on_comment groups
 // per-comment so multiple likers on the same comment fold into one row.
+// reply_on_comment similarly groups per parent-comment so multiple repliers fold.
 function groupKey(n: EnrichedNotification): string {
   if (n.kind === "like_on_comment") {
     const commentId = (n.payload as { comment_id?: string }).comment_id ?? "?";
     return `like_on_comment:${commentId}`;
   }
+  if (n.kind === "reply_on_comment") {
+    const parentCommentId = (n.payload as { parent_comment_id?: string }).parent_comment_id ?? "?";
+    return `reply_on_comment:${parentCommentId}`;
+  }
   return `${n.kind}:${n.actor?.id ?? "system"}`;
 }
 
 function minSize(kind: NotificationKind): number {
-  return kind === "like_on_comment" ? MIN_GROUP_SIZE_LIKE : MIN_GROUP_SIZE_DEFAULT;
+  if (kind === "like_on_comment" || kind === "reply_on_comment") return MIN_GROUP_SIZE_LIKE;
+  return MIN_GROUP_SIZE_DEFAULT;
 }
 
 /**
