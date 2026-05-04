@@ -64,6 +64,7 @@ export default function SearchPersonRow({ profile, state, incomingRequestId }: S
     <div className="pill-row">
       <Avatar name={profile.username} color="var(--accent)" size={32} url={profile.avatar_url} />
       <Link
+        prefetch={false}
         href={`/p/${encodeURIComponent(profile.username)}`}
         style={{ flex: 1, minWidth: 0, color: "var(--bone)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
       >

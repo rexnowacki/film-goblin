@@ -105,6 +105,7 @@ export default function NotificationGroupRow({ group, onNavigate }: Props) {
           <div style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--muted)", marginTop: 2, display: "flex", gap: 10, alignItems: "center" }}>
             <span>{relativeTime(group.latestAt)}</span>
             <Link
+              prefetch={false}
               href={headerHref(group)}
               data-toggle="false"
               onClick={onNavigate}

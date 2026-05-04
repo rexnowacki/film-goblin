@@ -11,9 +11,9 @@ export default function ActivityCovenJoined({ item }: { item: Item }) {
       <Avatar name={item.actor.username} color="var(--accent)" size={36} url={item.actor.avatar_url} />
       <div style={{ flex: 1 }}>
         <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, lineHeight: 1.4 }}>
-          <Link href={`/p/${encodeURIComponent(item.actor.username)}`} style={{ color: "var(--bone)", fontWeight: 700 }}>{item.actor.username}</Link>
+          <Link prefetch={false} href={`/p/${encodeURIComponent(item.actor.username)}`} style={{ color: "var(--bone)", fontWeight: 700 }}>{item.actor.username}</Link>
           {" joined "}
-          <Link href={`/p/${encodeURIComponent(item.other.username)}`} style={{ color: "var(--accent)", fontWeight: 700 }}>{item.other.username}</Link>
+          <Link prefetch={false} href={`/p/${encodeURIComponent(item.other.username)}`} style={{ color: "var(--accent)", fontWeight: 700 }}>{item.other.username}</Link>
           {"'s coven."}
         </div>
         <ActivityFooter item={item} />

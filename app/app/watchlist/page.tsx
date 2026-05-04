@@ -72,7 +72,7 @@ export default async function WatchlistPage({
                   const dropPct = computeDropPct(r);
                   return (
                     <div key={r.id} className="watchlist-card">
-                      <Link href={`/film/${r.film.id}`} style={{ display: "block", textDecoration: "none", color: "inherit" }}>
+                      <Link prefetch={false} href={`/film/${r.film.id}`} style={{ display: "block", textDecoration: "none", color: "inherit" }}>
                         <div style={{ position: "relative" }}>
                           <FilmPoster film={r.film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
                           <PosterDropBadge dropPct={dropPct} />

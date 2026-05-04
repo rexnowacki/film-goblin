@@ -24,6 +24,7 @@ function reasonText(r: ScoredFilm["topReason"]): string {
 export default function ForYouRow({ film, reason, band, covenFavorite }: Props) {
   return (
     <Link
+      prefetch={false}
       href={`/film/${film.id}`}
       className="stackable"
       style={{

@@ -12,14 +12,14 @@ export default function ActivityWatchlistAdded({ item }: { item: Item }) {
       <Avatar name={item.actor.username} color="var(--accent)" size={36} url={item.actor.avatar_url} />
       <div style={{ flex: 1 }}>
         <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, lineHeight: 1.4 }}>
-          <Link href={`/p/${encodeURIComponent(item.actor.username)}`} style={{ color: "var(--bone)", fontWeight: 700 }}>{item.actor.username}</Link>
+          <Link prefetch={false} href={`/p/${encodeURIComponent(item.actor.username)}`} style={{ color: "var(--bone)", fontWeight: 700 }}>{item.actor.username}</Link>
           {" added "}
-          <Link href={`/film/${item.film.id}`} style={{ color: "var(--accent)", fontStyle: "italic" }}>{item.film.title}</Link>
+          <Link prefetch={false} href={`/film/${item.film.id}`} style={{ color: "var(--accent)", fontStyle: "italic" }}>{item.film.title}</Link>
           {" to their watchlist."}
         </div>
         <ActivityFooter item={item} />
       </div>
-      <Link href={`/film/${item.film.id}`}>
+      <Link prefetch={false} href={`/film/${item.film.id}`}>
         <Image src={item.film.artwork_url} alt={item.film.title} width={40} height={60} style={{ display: "block", objectFit: "cover", border: "1px solid var(--void)" }} />
       </Link>
     </div>

@@ -87,7 +87,7 @@ export default function CovenChipRow({ members }: Props) {
 
       <div className="coven-chip-row" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         {topChips.map(m => (
-          <Link key={m.id} href={`/p/${encodeURIComponent(m.username)}`} className="coven-chip">
+          <Link key={m.id} prefetch={false} href={`/p/${encodeURIComponent(m.username)}`} className="coven-chip">
             <Avatar name={m.username} color="var(--accent)" size={28} url={m.avatar_url} />
             <span>{m.username}</span>
           </Link>
@@ -104,6 +104,7 @@ export function CovenCompactRow({ member }: { member: CovenfolkRanked }) {
     <div className="pill-row">
       <Avatar name={member.username} color="var(--accent)" size={32} url={member.avatar_url} />
       <Link
+        prefetch={false}
         href={`/p/${encodeURIComponent(member.username)}`}
         style={{ flex: 1, color: "var(--bone)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 14 }}
       >

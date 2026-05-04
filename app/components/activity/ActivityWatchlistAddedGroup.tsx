@@ -36,6 +36,7 @@ export default function ActivityWatchlistAddedGroup({ group }: Props) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, lineHeight: 1.4 }}>
             <Link
+              prefetch={false}
               href={`/p/${encodeURIComponent(actor.username)}`}
               onClick={e => e.stopPropagation()}
               style={{ color: "var(--bone)", fontWeight: 700 }}
@@ -44,6 +45,7 @@ export default function ActivityWatchlistAddedGroup({ group }: Props) {
             </Link>
             {" added "}
             <Link
+              prefetch={false}
               href={`/film/${firstItem.film.id}`}
               onClick={e => e.stopPropagation()}
               style={{ color: "var(--accent)", fontStyle: "italic" }}

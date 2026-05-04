@@ -20,7 +20,7 @@ export default function SharerWatchPin({ watch }: Props) {
     <div className="sharer-watch-pin">
       <div className="sharer-watch-pin-line">
         ✦{" "}
-        <Link href={`/p/${encodeURIComponent(watch.username)}`} className="sharer-watch-pin-username">
+        <Link prefetch={false} href={`/p/${encodeURIComponent(watch.username)}`} className="sharer-watch-pin-username">
           {watch.username}
         </Link>{" "}
         watched this in {monthName(watch.watched_at)}.
