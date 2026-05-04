@@ -36,9 +36,14 @@ export default function SearchPersonRow({ profile, state, incomingRequestId }: S
   const button = (() => {
     if (state === "pending_outbound") {
       return (
-        <button className="btn btn-sm" disabled style={{ opacity: 0.5 }}>
+        <span style={{
+          fontFamily: "var(--font-ui)", fontSize: 10, letterSpacing: "0.08em",
+          textTransform: "uppercase", color: "var(--muted)",
+          border: "1px solid var(--muted)", borderRadius: 4, padding: "2px 6px",
+          flexShrink: 0,
+        }}>
           Pending
-        </button>
+        </span>
       );
     }
     if (state === "pending_inbound") {
