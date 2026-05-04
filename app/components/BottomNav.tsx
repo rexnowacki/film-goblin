@@ -23,7 +23,7 @@ export default async function BottomNav({ current }: Props) {
   const active = activeTab(current);
   const tabs = [
     { id: "feed",      label: "Feed",      href: "/home",      Icon: HomeIcon },
-    { id: "discovery", label: "Discovery", href: "/films",     Icon: DiscoverIcon },
+    { id: "discovery", label: "Discover", href: "/films",     Icon: DiscoverIcon },
     { id: "coven",     label: "Coven",     href: "/coven",     Icon: CovenIcon },
     { id: "hoard",     label: "Hoard",     href: "/watchlist", Icon: CollectionsIcon },
   ] as const;
