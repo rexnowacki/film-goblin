@@ -22,6 +22,7 @@ export default function CommentNode({
   comment, childrenMap, depth, viewerId, actorUserId,
   expandedIds, onExpand, onReply, onDelete,
 }: Props) {
+  const isTemp = comment.id.startsWith("temp-");
   const canDelete = viewerId !== null && (viewerId === comment.user_id || viewerId === actorUserId);
   const children = childrenMap.get(comment.id) ?? [];
   const replyCount = children.length;
@@ -49,7 +50,7 @@ export default function CommentNode({
           </div>
           <div className="comment-row-text">{comment.body}</div>
           <div style={{ display: "flex", gap: 10, marginTop: 4, alignItems: "center" }}>
-            {viewerId !== null && (
+            {viewerId !== null && !isTemp && (
               <button
                 type="button"
                 style={{
@@ -62,7 +63,7 @@ export default function CommentNode({
                 Reply
               </button>
             )}
-            {canDelete && (
+            {canDelete && !isTemp && (
               <button
                 type="button"
                 onClick={() => onDelete(comment.id)}
@@ -88,6 +89,7 @@ export default function CommentNode({
             type="button"
             className="comment-view-replies"
             onClick={() => onExpand(comment.id)}
+            aria-expanded={isExpanded}
           >
             {isExpanded
               ? "Hide replies"

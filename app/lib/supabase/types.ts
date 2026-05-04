@@ -91,7 +91,7 @@ export type Database = {
           id?: string
           like_count?: number
           parent_id?: string | null
-          reply_count?: number | null
+          reply_count?: number
           user_id: string
         }
         Update: {
@@ -101,7 +101,7 @@ export type Database = {
           id?: string
           like_count?: number
           parent_id?: string | null
-          reply_count?: number | null
+          reply_count?: number
           user_id?: string
         }
         Relationships: [
