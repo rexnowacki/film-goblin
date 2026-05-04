@@ -24,6 +24,8 @@ import SharerWatchPin from "@/components/SharerWatchPin";
 import FilmCTABanner from "@/components/FilmCTABanner";
 import { compactCount } from "@/lib/format";
 import { getFilmTags } from "@/lib/queries/film-tags";
+import { getCovenWatchersForFilm, getOtherWatchersForFilm } from "@/lib/queries/film-watchers";
+import FilmWatchersStrip from "@/components/FilmWatchersStrip";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -75,7 +77,7 @@ export default async function FilmDetailPage({
     getPublishedReviewsForFilm(supabase, id),
     getServerUser(),
   ]);
-  const [covenMembers, onList, owned, watchCount, topCovenMemberIds, myProfile] = user
+  const [covenMembers, onList, owned, watchCount, topCovenMemberIds, myProfile, covenWatchers, otherWatchersResult] = user
     ? await Promise.all([
         getMyCovenMembers(supabase, user.id),
         isOnWatchlist(supabase, id),
@@ -83,8 +85,10 @@ export default async function FilmDetailPage({
         getWatchCountForFilm(supabase, user.id, id),
         getTopRecommendedCovenMemberIds(supabase, user.id),
         getMyProfile(supabase),
+        getCovenWatchersForFilm(supabase, user.id, id),
+        getOtherWatchersForFilm(supabase, user.id, id),
       ])
-    : [[], false, false, 0, [] as string[], null];
+    : [[], false, false, 0, [] as string[], null, [], { users: [], totalCount: 0 }];
 
   const sharerWatch = fromUsername ? await getSharerWatchForFilm(fromUsername, id) : null;
   const filmTags = await getFilmTags(supabase, id);
@@ -172,6 +176,13 @@ export default async function FilmDetailPage({
                 </a>
               )}
             </div>
+            {user && (
+              <FilmWatchersStrip
+                covenWatchers={covenWatchers}
+                otherWatchers={otherWatchersResult.users}
+                otherCount={otherWatchersResult.totalCount}
+              />
+            )}
           </div>
         </div>
       </section>
