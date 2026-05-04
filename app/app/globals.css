@@ -668,9 +668,11 @@ a { color: inherit; text-decoration: none; }
   max-width: 560px;
   border-top: 2px solid var(--accent);
   border-radius: 16px 16px 0 0;
-  padding: 12px 20px 24px;
+  padding: 12px 20px 0;
   max-height: 80vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   overscroll-behavior: contain;
   position: relative;
   z-index: 1;
@@ -705,7 +707,11 @@ a { color: inherit; text-decoration: none; }
   color: var(--accent);
 }
 .bottom-sheet-body {
-  padding-top: 4px;
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 4px 0 24px;
 }
 
 @keyframes bottom-sheet-fade-in {
