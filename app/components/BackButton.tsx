@@ -16,6 +16,7 @@ export default function BackButton({ fallback = "/films" }: { fallback?: string 
   return (
     <button
       type="button"
+      aria-label="Go back"
       onClick={() => {
         if (window.history.length > 1) {
           router.back();
@@ -26,19 +27,15 @@ export default function BackButton({ fallback = "/films" }: { fallback?: string 
       style={{
         background: "transparent",
         border: "none",
-        padding: 0,
+        padding: "4px 8px 4px 0",
         color: "var(--muted)",
-        fontFamily: "var(--font-ui)",
-        fontSize: 12,
-        letterSpacing: "0.08em",
-        textTransform: "uppercase",
+        fontSize: 20,
+        lineHeight: 1,
         cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
+        flexShrink: 0,
       }}
     >
-      ← Back
+      ‹
     </button>
   );
 }

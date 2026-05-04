@@ -6,9 +6,10 @@ import TopNavChrome from "./TopNavChrome";
 
 interface TopNavProps {
   current?: string;
+  showBack?: boolean;
 }
 
-export default async function TopNav({ current }: TopNavProps) {
+export default async function TopNav({ current, showBack }: TopNavProps) {
   const user = await getServerUser();
   const supabase = await createClient();
 
@@ -65,6 +66,7 @@ export default async function TopNav({ current }: TopNavProps) {
       isAdmin={isAdmin}
       unreadNotifCount={unreadNotifCount}
       notifItems={notifItems}
+      showBack={showBack}
     />
   );
 }

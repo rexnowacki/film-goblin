@@ -26,7 +26,6 @@ import { compactCount } from "@/lib/format";
 import { getFilmTags } from "@/lib/queries/film-tags";
 import { getCovenWatchersForFilm, getOtherWatchersForFilm } from "@/lib/queries/film-watchers";
 import FilmWatchersStrip from "@/components/FilmWatchersStrip";
-import BackButton from "@/components/BackButton";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -97,12 +96,8 @@ export default async function FilmDetailPage({
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       {!user && <FilmCTABanner fromUsername={fromUsername} />}
-      <TopNav current="films" />
+      <TopNav current="films" showBack />
       <BottomNav current="films" />
-
-      <div className="container" style={{ padding: "10px 20px 0" }}>
-        <BackButton />
-      </div>
 
       <section style={{
         background: "var(--void-2)", color: "var(--bone)",
