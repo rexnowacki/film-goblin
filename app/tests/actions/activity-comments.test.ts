@@ -36,6 +36,7 @@ beforeEach(async () => {
   const admin = adminClient();
   await admin.from("activity_comments" as never).delete().eq("activity_id", activityId);
   await admin.from("notifications").delete().eq("kind", "comment_on_activity");
+  await admin.from("notifications").delete().eq("kind", "reply_on_comment");
 });
 
 afterAll(async () => {
@@ -100,5 +101,25 @@ describe.skipIf(!hasEnv)("actions/activity-comments", () => {
     const cCarol = await signedInClient(carol.email, carol.password);
     const del = await _deleteActivityComment(cCarol, add.comment.id);
     expect(del.ok).toBe(false);
+  });
+
+  it("_addActivityComment with parentId returns comment with parent_id set", async () => {
+    const c = await signedInClient(bob.email, bob.password);
+    const parent = await _addActivityComment(c, activityId, "parent comment");
+    if (!parent.ok) throw new Error("parent insert failed");
+
+    const reply = await _addActivityComment(c, activityId, "reply body", parent.comment.id);
+    expect(reply.ok).toBe(true);
+    if (!reply.ok) return;
+    expect(reply.comment.parent_id).toBe(parent.comment.id);
+    expect(reply.comment.reply_count).toBe(0);
+  });
+
+  it("_addActivityComment without parentId returns comment with parent_id null", async () => {
+    const c = await signedInClient(bob.email, bob.password);
+    const r = await _addActivityComment(c, activityId, "top-level");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.comment.parent_id).toBeNull();
   });
 });

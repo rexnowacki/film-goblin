@@ -213,3 +213,56 @@ describe("groupNotifications: like_on_comment per-comment grouping (threshold 2)
     }
   });
 });
+
+describe("groupNotifications: reply_on_comment per-parent grouping (threshold 2)", () => {
+  function rep(
+    id: string,
+    actor: typeof ACTOR_A | null,
+    createdAt: string,
+    parentCommentId: string,
+  ): EnrichedNotification {
+    return {
+      id,
+      kind: "reply_on_comment",
+      created_at: createdAt,
+      read_at: null,
+      actor,
+      payload: {
+        activity_id: "act1",
+        parent_comment_id: parentCommentId,
+        comment_id: id,
+        body: "a reply",
+        film_id: FILM.id,
+      },
+      film: FILM,
+    };
+  }
+
+  it("1 reply_on_comment → emits as single", () => {
+    const out = groupNotifications([rep("1", ACTOR_A, "2026-05-03T12:00:00Z", "pc1")]);
+    expect(out[0].type).toBe("single");
+  });
+
+  it("2 reply_on_comment on SAME parent → emits as group of 2", () => {
+    const items = [
+      rep("2", ACTOR_B, "2026-05-03T12:00:00Z", "pc1"),
+      rep("1", ACTOR_A, "2026-05-03T11:50:00Z", "pc1"),
+    ];
+    const out = groupNotifications(items);
+    expect(out).toHaveLength(1);
+    expect(out[0].type).toBe("group");
+    if (out[0].type === "group") {
+      expect(out[0].group.count).toBe(2);
+      expect(out[0].group.kind).toBe("reply_on_comment");
+    }
+  });
+
+  it("2 reply_on_comment on DIFFERENT parents → emits as 2 singles", () => {
+    const items = [
+      rep("2", ACTOR_A, "2026-05-03T12:00:00Z", "pcA"),
+      rep("1", ACTOR_A, "2026-05-03T11:55:00Z", "pcB"),
+    ];
+    const out = groupNotifications(items);
+    expect(out.map(o => o.type)).toEqual(["single", "single"]);
+  });
+});
