@@ -197,6 +197,116 @@ describe("RLS: activity_comments", () => {
     expect(n.rowCount).toBe(0);
   });
 
+  it("reply INSERT sets parent_id and bumps parent reply_count to 1", async () => {
+    await beginAs(db.client, null, "service_role");
+    const parent = await db.client.query<{ id: string }>(
+      `INSERT INTO activity_comments (activity_id, user_id, body)
+       VALUES ($1, $2, 'parent') RETURNING id`,
+      [activityId, fx.userB.id]
+    );
+    await commit(db.client);
+    const parentId = parent.rows[0].id;
+
+    await beginAs(db.client, fx.userC.id, "authenticated");
+    await db.client.query(
+      `INSERT INTO activity_comments (activity_id, user_id, body, parent_id)
+       VALUES ($1, $2, 'reply', $3)`,
+      [activityId, fx.userC.id, parentId]
+    );
+    await commit(db.client);
+
+    await beginAs(db.client, null, "service_role");
+    const r = await db.client.query<{ reply_count: number }>(
+      `SELECT reply_count FROM activity_comments WHERE id = $1`,
+      [parentId]
+    );
+    await commit(db.client);
+    expect(r.rows[0].reply_count).toBe(1);
+  });
+
+  it("reply DELETE decrements parent reply_count back to 0", async () => {
+    await beginAs(db.client, null, "service_role");
+    const parent = await db.client.query<{ id: string }>(
+      `INSERT INTO activity_comments (activity_id, user_id, body)
+       VALUES ($1, $2, 'parent') RETURNING id`,
+      [activityId, fx.userB.id]
+    );
+    await commit(db.client);
+    const parentId = parent.rows[0].id;
+
+    await beginAs(db.client, null, "service_role");
+    const reply = await db.client.query<{ id: string }>(
+      `INSERT INTO activity_comments (activity_id, user_id, body, parent_id)
+       VALUES ($1, $2, 'reply', $3) RETURNING id`,
+      [activityId, fx.userC.id, parentId]
+    );
+    const replyId = reply.rows[0].id;
+    await commit(db.client);
+
+    await beginAs(db.client, fx.userC.id, "authenticated");
+    await db.client.query(`DELETE FROM activity_comments WHERE id = $1`, [replyId]);
+    await commit(db.client);
+
+    await beginAs(db.client, null, "service_role");
+    const r = await db.client.query<{ reply_count: number }>(
+      `SELECT reply_count FROM activity_comments WHERE id = $1`,
+      [parentId]
+    );
+    await commit(db.client);
+    expect(r.rows[0].reply_count).toBe(0);
+  });
+
+  it("deleting parent cascades and removes its reply", async () => {
+    await beginAs(db.client, null, "service_role");
+    const parent = await db.client.query<{ id: string }>(
+      `INSERT INTO activity_comments (activity_id, user_id, body)
+       VALUES ($1, $2, 'parent') RETURNING id`,
+      [activityId, fx.userB.id]
+    );
+    const parentId = parent.rows[0].id;
+    const reply = await db.client.query<{ id: string }>(
+      `INSERT INTO activity_comments (activity_id, user_id, body, parent_id)
+       VALUES ($1, $2, 'child', $3) RETURNING id`,
+      [activityId, fx.userC.id, parentId]
+    );
+    const replyId = reply.rows[0].id;
+    await commit(db.client);
+
+    await beginAs(db.client, fx.userB.id, "authenticated");
+    await db.client.query(`DELETE FROM activity_comments WHERE id = $1`, [parentId]);
+    await commit(db.client);
+
+    await beginAs(db.client, null, "service_role");
+    const r = await db.client.query(
+      `SELECT id FROM activity_comments WHERE id = $1`,
+      [replyId]
+    );
+    await commit(db.client);
+    expect(r.rowCount).toBe(0);
+  });
+
+  it("reply INSERT as another user is blocked by RLS", async () => {
+    await beginAs(db.client, null, "service_role");
+    const parent = await db.client.query<{ id: string }>(
+      `INSERT INTO activity_comments (activity_id, user_id, body)
+       VALUES ($1, $2, 'parent') RETURNING id`,
+      [activityId, fx.userB.id]
+    );
+    await commit(db.client);
+    const parentId = parent.rows[0].id;
+
+    await beginAs(db.client, fx.userC.id, "authenticated");
+    try {
+      await expect(
+        db.client.query(
+          `INSERT INTO activity_comments (activity_id, user_id, body, parent_id)
+           VALUES ($1, $2, 'spoof', $3)`,
+          [activityId, fx.userB.id, parentId]   // userC inserting as userB
+        )
+      ).rejects.toThrow();
+    } finally { await rollback(db.client); }
+  });
+
   it("cascade: delete activity removes its comments", async () => {
     await beginAs(db.client, null, "service_role");
     await db.client.query(
