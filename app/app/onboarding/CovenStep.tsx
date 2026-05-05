@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Avatar from "@/components/Avatar";
+import { initialSelection, toggleFollower } from "./coven-step-logic";
 
 export interface StarterProfile {
   id: string;
@@ -18,10 +19,10 @@ interface Props {
 }
 
 export default function CovenStep({ starters, onSubmit, onBack, submitting }: Props) {
-  const [selected, setSelected] = useState<string[]>(starters.map(s => s.id));
+  const [selected, setSelected] = useState<string[]>(initialSelection(starters));
 
   function toggleStarter(id: string) {
-    setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+    setSelected(s => toggleFollower(s, id));
   }
 
   return (
