@@ -60,7 +60,7 @@ export default function TasteStep({ initialUsername, laneTagMap, onNext }: Props
         <p className="caps" style={{ fontSize: 11, color: "var(--muted)", marginBottom: 14 }}>
           What draws you to horror? (pick any)
         </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
           {FLAVOR_CARDS.map(card => {
             const isSelected = selected.includes(card.label);
             return (
