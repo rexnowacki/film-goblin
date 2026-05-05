@@ -707,6 +707,8 @@ export type Database = {
           email_coven_recs: boolean
           email_price_drops: boolean
           id: string
+          is_starter: boolean
+          starter_order: number | null
           lane_tag_ids: string[]
           discoverable: boolean
           notify_comment_likes: boolean
@@ -731,6 +733,8 @@ export type Database = {
           email_coven_recs?: boolean
           email_price_drops?: boolean
           id: string
+          is_starter?: boolean
+          starter_order?: number | null
           lane_tag_ids?: string[]
           discoverable?: boolean
           notify_comment_likes?: boolean
@@ -755,6 +759,8 @@ export type Database = {
           email_coven_recs?: boolean
           email_price_drops?: boolean
           id?: string
+          is_starter?: boolean
+          starter_order?: number | null
           lane_tag_ids?: string[]
           discoverable?: boolean
           notify_comment_likes?: boolean

@@ -1,0 +1,3 @@
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS is_starter    BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS starter_order INT;
