@@ -89,7 +89,7 @@ Progress indicator: three dots (filled = current/complete, outlined = pending) a
 | Flesh Trouble | body horror |
 | Star Madness | cosmic horror |
 | Holy Terror | religious horror |
-| Slow Doom | arthouse horror |
+| Slow Doom | arthouse |
 | Trash Magic | midnight movie |
 
 Each card shows the flavor label in display font + a one-line descriptor in serif italic. Cards are toggleable; selected state gets accent border + background tint. No minimum selection required — a user who picks nothing gets the editorial-starter fallback on step 2.
@@ -205,7 +205,7 @@ export interface OnboardingPayload {
    for (const targetId of p.starterFollowIds) {
      const { error } = await client
        .from("follows")
-       .insert({ follower_id: user.id, followed_id: targetId });
+       .insert({ follower_user_id: user.id, followed_user_id: targetId });
      if (error && error.code !== "23505") throw error;
    }
    ```
@@ -227,7 +227,7 @@ export async function getFollowedActivity(
 ```
 
 Implementation:
-1. Fetch `follows WHERE follower_id = userId` → array of `followed_id`
+1. Fetch `follows WHERE follower_user_id = userId` → array of `followed_user_id`
 2. If empty, return `[]` immediately
 3. Fetch `activity WHERE user_id IN (followedIds)` ordered `created_at DESC` LIMIT 10, with the same actor + film + list + recipient joins as the existing `getActivity` helper
 4. Enrich with reactions + comments using existing helpers
