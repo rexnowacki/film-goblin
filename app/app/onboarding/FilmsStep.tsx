@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import FilmPoster from "@/components/FilmPoster";
-import { filterFilmsByLanes, type DbFilm } from "./films-step-logic";
+import { filterFilmsByLanes, canProceed, MIN_PICKS, type DbFilm } from "./films-step-logic";
 
 interface Props {
   films: DbFilm[];
@@ -11,7 +11,6 @@ interface Props {
   onBack: () => void;
 }
 
-const MIN_PICKS = 3;
 const MAX_PICKS = 10;
 
 export default function FilmsStep({ films, laneTagIds, onNext, onBack }: Props) {
@@ -22,7 +21,7 @@ export default function FilmsStep({ films, laneTagIds, onNext, onBack }: Props) 
     setSelected(s => s.includes(id) ? s.filter(x => x !== id) : s.length < MAX_PICKS ? [...s, id] : s);
   }
 
-  const canProceed = selected.length >= MIN_PICKS;
+  const proceed = canProceed(selected.length);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -37,7 +36,7 @@ export default function FilmsStep({ films, laneTagIds, onNext, onBack }: Props) 
               style={{ background: "transparent", border: "none", padding: 0, cursor: "pointer", position: "relative" }}
             >
               <FilmPoster
-                film={film as any}
+                film={film as never}
                 size="sm"
                 style={{
                   width: "100%",
@@ -45,7 +44,7 @@ export default function FilmsStep({ films, laneTagIds, onNext, onBack }: Props) 
                   aspectRatio: "2 / 3",
                   outline: isSelected ? "3px solid var(--accent)" : "none",
                   outlineOffset: 2,
-                  opacity: !canProceed || isSelected ? 1 : 0.6,
+                  opacity: !proceed || isSelected ? 1 : 0.6,
                 }}
               />
             </button>
@@ -54,8 +53,8 @@ export default function FilmsStep({ films, laneTagIds, onNext, onBack }: Props) 
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button type="button" onClick={onBack} className="btn btn-outline btn-sm">← Back</button>
-        <button type="button" onClick={() => onNext(selected)} disabled={!canProceed}
-          className="btn btn-lg" style={{ opacity: canProceed ? 1 : 0.4 }}>
+        <button type="button" onClick={() => onNext(selected)} disabled={!proceed}
+          className="btn btn-lg" style={{ opacity: proceed ? 1 : 0.4 }}>
           Next → ({selected.length}/{MIN_PICKS}+)
         </button>
       </div>

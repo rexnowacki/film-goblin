@@ -12,6 +12,12 @@ export interface DbFilm {
 
 const LANE_FILTER_MIN = 6;
 
+export const MIN_PICKS = 3;
+
+export function canProceed(selectedCount: number): boolean {
+  return selectedCount >= MIN_PICKS;
+}
+
 export function filterFilmsByLanes(films: DbFilm[], laneTagIds: string[]): DbFilm[] {
   if (laneTagIds.length === 0) return films;
   const matched = films.filter(f => laneTagIds.some(id => f.tagIds.includes(id)));

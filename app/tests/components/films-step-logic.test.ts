@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { filterFilmsByLanes, type DbFilm } from "@/app/onboarding/films-step-logic";
+import { filterFilmsByLanes, canProceed, MIN_PICKS, type DbFilm } from "@/app/onboarding/films-step-logic";
 
 function makeFilm(id: string, tagIds: string[]): DbFilm {
   return { id, itunes_id: null, title: id, director: "D", year: 2024, genre_primary: "Horror", artwork_url: "", editorial_starter: false, tagIds };
@@ -34,5 +34,16 @@ describe("filterFilmsByLanes", () => {
     ];
     const result = filterFilmsByLanes(films, [folkId, gialloId]);
     expect(result).toHaveLength(6);
+  });
+});
+
+describe("canProceed", () => {
+  it("returns false below MIN_PICKS", () => {
+    expect(canProceed(0)).toBe(false);
+    expect(canProceed(MIN_PICKS - 1)).toBe(false);
+  });
+  it("returns true at MIN_PICKS", () => {
+    expect(canProceed(MIN_PICKS)).toBe(true);
+    expect(canProceed(MIN_PICKS + 1)).toBe(true);
   });
 });
