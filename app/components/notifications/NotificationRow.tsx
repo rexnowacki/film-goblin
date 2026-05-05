@@ -37,6 +37,10 @@ function targetFor(n: EnrichedNotification): string {
       const watchedId = (n.payload as { watched_id?: string }).watched_id;
       return watchedId ? `/watched?rate=${encodeURIComponent(watchedId)}` : "/watched";
     }
+    case "theater_showing_match": {
+      const showingId = (n.payload as { showing_id?: string }).showing_id;
+      return showingId ? `/local-haunts/${encodeURIComponent(showingId)}` : "/home";
+    }
   }
 }
 
@@ -77,6 +81,10 @@ function copyFor(n: EnrichedNotification): React.ReactNode {
       return count > 1
         ? <>You have <strong>{count}</strong> unrated watches. Tell the coven what you thought.</>
         : <>Got a verdict on <em>{title}</em>? Rate it for the coven.</>;
+    }
+    case "theater_showing_match": {
+      const payload = n.payload as { title?: string; theater_name?: string; date_label?: string };
+      return <><strong>Your Hoard has found a screen.</strong> <em>{payload.title ?? title}</em> is coming to {payload.theater_name ?? "a local theater"}{payload.date_label ? ` — ${payload.date_label}` : ""}.</>;
     }
   }
 }

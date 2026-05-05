@@ -88,7 +88,7 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
     // any migration file that defines one — the smoke only asserts table
     // presence, so trigger files don't need to execute. Match the full phrase
     // so prose comments like "-- (SECURITY DEFINER)" don't trigger the skip.
-    if (/LANGUAGE\s+plpgsql\s+SECURITY\s+DEFINER/i.test(raw)) continue;
+    if (/LANGUAGE\s+(?:plpgsql|sql)\s+SECURITY\s+DEFINER/i.test(raw)) continue;
     // Strip plpgsql function bodies before splitting on ';' — dollar-quoted
     // bodies contain embedded semicolons that break the statement splitter.
     // pg-mem doesn't support LANGUAGE plpgsql at all (no interpreter registered).

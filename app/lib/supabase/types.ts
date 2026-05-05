@@ -597,6 +597,24 @@ export type Database = {
         }
         Relationships: []
       }
+      cron_locks: {
+        Row: {
+          key: string
+          locked_until: string
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          locked_until: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          locked_until?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           actor_user_id: string | null
@@ -624,6 +642,197 @@ export type Database = {
           payload?: Json
           read_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      theater_showing_matches: {
+        Row: {
+          confidence: number
+          created_at: string
+          film_id: string
+          id: string
+          match_type: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          showing_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          film_id: string
+          id?: string
+          match_type: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          showing_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          film_id?: string
+          id?: string
+          match_type?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          showing_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "theater_showing_matches_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "theater_showing_matches_showing_id_fkey"
+            columns: ["showing_id"]
+            isOneToOne: false
+            referencedRelation: "theater_showings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      theater_showings: {
+        Row: {
+          category_labels: string[]
+          created_at: string
+          date_label: string | null
+          date_precision: string
+          description: string | null
+          first_seen_at: string
+          id: string
+          is_active: boolean
+          last_seen_at: string
+          normalized_title: string
+          poster_url: string | null
+          rating_label: string | null
+          runtime_label: string | null
+          showtime_label: string | null
+          source_hash: string
+          source_id: string | null
+          source_url: string
+          starts_at: string | null
+          starts_on: string | null
+          theater_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category_labels?: string[]
+          created_at?: string
+          date_label?: string | null
+          date_precision?: string
+          description?: string | null
+          first_seen_at?: string
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string
+          normalized_title: string
+          poster_url?: string | null
+          rating_label?: string | null
+          runtime_label?: string | null
+          showtime_label?: string | null
+          source_hash: string
+          source_id?: string | null
+          source_url: string
+          starts_at?: string | null
+          starts_on?: string | null
+          theater_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category_labels?: string[]
+          created_at?: string
+          date_label?: string | null
+          date_precision?: string
+          description?: string | null
+          first_seen_at?: string
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string
+          normalized_title?: string
+          poster_url?: string | null
+          rating_label?: string | null
+          runtime_label?: string | null
+          showtime_label?: string | null
+          source_hash?: string
+          source_id?: string | null
+          source_url?: string
+          starts_at?: string | null
+          starts_on?: string | null
+          theater_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "theater_showings_theater_id_fkey"
+            columns: ["theater_id"]
+            isOneToOne: false
+            referencedRelation: "theaters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      theaters: {
+        Row: {
+          base_url: string
+          city: string | null
+          coming_soon_url: string
+          country: string
+          created_at: string
+          id: string
+          is_active: boolean
+          latitude: number | null
+          longitude: number | null
+          name: string
+          postal_code: string | null
+          region: string | null
+          slug: string
+          street_address: string | null
+          timezone: string
+        }
+        Insert: {
+          base_url: string
+          city?: string | null
+          coming_soon_url: string
+          country?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          postal_code?: string | null
+          region?: string | null
+          slug: string
+          street_address?: string | null
+          timezone?: string
+        }
+        Update: {
+          base_url?: string
+          city?: string | null
+          coming_soon_url?: string
+          country?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          postal_code?: string | null
+          region?: string | null
+          slug?: string
+          street_address?: string | null
+          timezone?: string
         }
         Relationships: []
       }
@@ -1106,6 +1315,13 @@ export type Database = {
       }
     }
     Functions: {
+      acquire_cron_lock: {
+        Args: {
+          p_key: string
+          p_locked_until: string
+        }
+        Returns: boolean
+      }
       get_coven_watchers_for_film: {
         Args: { p_user_id: string; p_film_id: string }
         Returns: { id: string; username: string; avatar_url: string | null }[]
@@ -1135,6 +1351,7 @@ export type Database = {
         | "like_on_comment"
         | "rate_reminder"
         | "reply_on_comment"
+        | "theater_showing_match"
       review_status: "draft" | "published"
       staff_role: "reviewer" | "admin"
     }
@@ -1283,4 +1500,3 @@ export const Constants = {
     },
   },
 } as const
-
