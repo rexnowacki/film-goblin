@@ -31,16 +31,20 @@ describe("parseLoftComingSoon", () => {
 describe("parseGuildComingSoon", () => {
   it("extracts title years, descriptions, date ranges, and showtime labels", () => {
     const html = `
-      <h4>FERRIS BUELLER'S DAY OFF (1986)</h4>
-      <p>A NM Entertainment Magazine 40th Anniversary special screening.</p>
-      <p>May 8</p>
-      <p>Fri 10:30pm only</p>
-      <a href="/ferris">Read More</a>
-      <h4>NORMAL</h4>
-      <p>Ben Wheatley's newest outrageous neo-western.</p>
-      <p>May 9 thru 11</p>
-      <p>Sat to Mon 5:30pm only!</p>
-      <a href="/normal">Read More</a>
+      <div role="listitem">
+        <h4>FERRIS BUELLER'S DAY OFF (1986)</h4>
+        <p>A NM Entertainment Magazine 40th Anniversary special screening.</p>
+        <p>May 8</p>
+        <p>Fri 10:30pm only</p>
+        <a href="/ferris" aria-label="Read More">Read More</a>
+      </div>
+      <div role="listitem">
+        <h4>NORMAL</h4>
+        <p>Ben Wheatley's newest outrageous neo-western.</p>
+        <p>May 9 thru 11</p>
+        <p>Sat to Mon 5:30pm only!</p>
+        <a href="/normal" aria-label="Read More">Read More</a>
+      </div>
     `;
     const rows = parseGuildComingSoon(html, now);
     expect(rows).toHaveLength(2);
@@ -48,6 +52,7 @@ describe("parseGuildComingSoon", () => {
       title: "FERRIS BUELLER'S DAY OFF",
       rawTitle: "FERRIS BUELLER'S DAY OFF (1986)",
       sourceId: "FERRIS BUELLER'S DAY OFF-1986",
+      sourceUrl: "https://www.guildcinema.com/ferris",
       startsOn: "2026-05-08",
       showtimeLabel: "Fri 10:30pm only",
     });

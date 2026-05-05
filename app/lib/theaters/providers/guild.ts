@@ -27,15 +27,22 @@ function isDateLine(line: string): boolean {
     || /^apr(il)?\s+\d/i.test(line);
 }
 
-function readMoreLinks(html: string): string[] {
-  const links: string[] = [];
-  const re = /<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*(?:<[^>]+>\s*)*read more/gi;
+interface GuildBlock {
+  html: string;
+  link: string | undefined;
+}
+
+function itemBlocks(html: string): GuildBlock[] {
+  const blocks: GuildBlock[] = [];
+  const re = /(<div role=["']listitem["'][\s\S]*?)(?=<div role=["']listitem["']|<\/body>|$)/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html))) {
-    const url = absoluteUrl(SOURCE_URL, m[1]);
-    if (url) links.push(url);
+    const block = m[1];
+    const linkMatch = block.match(/<a\b[^>]*href=["']([^"']+)["'][^>]*aria-label=["']Read More["']/i)
+      ?? block.match(/<a\b[^>]*aria-label=["']Read More["'][^>]*href=["']([^"']+)["']/i);
+    blocks.push({ html: block, link: absoluteUrl(SOURCE_URL, linkMatch?.[1]) });
   }
-  return links;
+  return blocks.length ? blocks : [{ html, link: undefined }];
 }
 
 function nextPageUrl(html: string): string | null {
@@ -45,41 +52,41 @@ function nextPageUrl(html: string): string | null {
 }
 
 export function parseGuildComingSoon(html: string, now = new Date()): ScrapedTheaterShowing[] {
-  const lines = htmlToLines(html);
-  const links = readMoreLinks(html);
   const out: ScrapedTheaterShowing[] = [];
-  let linkIdx = 0;
+  for (const block of itemBlocks(html)) {
+    const lines = htmlToLines(block.html);
+    for (let i = 0; i < lines.length; i++) {
+      const rawTitle = lines[i];
+      if (!isTitle(rawTitle)) continue;
+      const dateIdx = [i + 2, i + 3, i + 4].find((idx) => isDateLine(lines[idx] ?? ""));
+      if (dateIdx == null) continue;
 
-  for (let i = 0; i < lines.length; i++) {
-    const rawTitle = lines[i];
-    if (!isTitle(rawTitle)) continue;
-    const dateIdx = [i + 2, i + 3, i + 4].find((idx) => isDateLine(lines[idx] ?? ""));
-    if (dateIdx == null) continue;
+      const description = lines.slice(i + 1, dateIdx).filter((line) => !/^read more$/i.test(line)).join(" ") || undefined;
+      const dateLabel = lines[dateIdx];
+      const showtimeLabel = lines[dateIdx + 1] && !isTitle(lines[dateIdx + 1]) && !/^read more$/i.test(lines[dateIdx + 1])
+        ? lines[dateIdx + 1]
+        : undefined;
+      const parsed = parseDateLabel(dateLabel, now);
+      const year = extractYearFromTitle(rawTitle);
+      const title = stripYearFromTitle(rawTitle);
 
-    const description = lines.slice(i + 1, dateIdx).filter((line) => !/^read more$/i.test(line)).join(" ") || undefined;
-    const dateLabel = lines[dateIdx];
-    const showtimeLabel = lines[dateIdx + 1] && !isTitle(lines[dateIdx + 1]) && !/^read more$/i.test(lines[dateIdx + 1])
-      ? lines[dateIdx + 1]
-      : undefined;
-    const parsed = parseDateLabel(dateLabel, now);
-    const year = extractYearFromTitle(rawTitle);
-    const title = stripYearFromTitle(rawTitle);
-
-    out.push({
-      title,
-      rawTitle,
-      sourceId: year ? `${title}-${year}` : undefined,
-      theaterSlug: "guild-cinema",
-      sourceUrl: links[linkIdx++] ?? SOURCE_URL,
-      description,
-      categoryLabels: [],
-      dateLabel: parsed.dateLabel,
-      rawDateText: dateLabel,
-      startsOn: parsed.startsOn ?? undefined,
-      datePrecision: parsed.datePrecision,
-      showtimeLabel,
-      rawShowtimeText: showtimeLabel,
-    });
+      out.push({
+        title,
+        rawTitle,
+        sourceId: year ? `${title}-${year}` : undefined,
+        theaterSlug: "guild-cinema",
+        sourceUrl: block.link ?? SOURCE_URL,
+        description,
+        categoryLabels: [],
+        dateLabel: parsed.dateLabel,
+        rawDateText: dateLabel,
+        startsOn: parsed.startsOn ?? undefined,
+        datePrecision: parsed.datePrecision,
+        showtimeLabel,
+        rawShowtimeText: showtimeLabel,
+      });
+      break;
+    }
   }
 
   return out;
