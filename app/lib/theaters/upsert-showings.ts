@@ -13,6 +13,20 @@ export interface UpsertShowingsResult {
   showingIds: string[];
 }
 
+function todayIsoDate(timeZone = "UTC"): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  if (!year || !month || !day) return new Date().toISOString().slice(0, 10);
+  return `${year}-${month}-${day}`;
+}
+
 export async function upsertShowingsForTheater(
   client: Client,
   theaterSlug: string,
@@ -20,7 +34,7 @@ export async function upsertShowingsForTheater(
 ): Promise<UpsertShowingsResult> {
   const { data: theater, error: theaterErr } = await client
     .from("theaters")
-    .select("id")
+    .select("id, timezone")
     .eq("slug", theaterSlug)
     .single();
   if (theaterErr) throw theaterErr;
@@ -68,14 +82,16 @@ export async function upsertShowingsForTheater(
   }
 
   let staleMarkedInactive = 0;
+  const today = todayIsoDate(theater.timezone);
   const active = await client
     .from("theater_showings")
-    .select("id, source_hash")
+    .select("id, source_hash, starts_on")
     .eq("theater_id", theater.id)
     .eq("is_active", true);
   if (active.error) throw active.error;
   const staleIds = (active.data ?? [])
     .filter((row) => !hashes.includes(row.source_hash))
+    .filter((row) => row.starts_on == null || row.starts_on < today)
     .map((row) => row.id);
   if (staleIds.length > 0) {
     const { error } = await client

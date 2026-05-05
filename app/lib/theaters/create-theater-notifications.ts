@@ -7,79 +7,45 @@ export interface CreateTheaterNotificationsResult {
   notificationsCreated: number;
 }
 
-export async function createTheaterNotifications(
+function todayIsoDate(timeZone = "UTC"): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  if (!year || !month || !day) return new Date().toISOString().slice(0, 10);
+  return `${year}-${month}-${day}`;
+}
+
+function isEligibleShowing(showing: any): boolean {
+  if (showing?.date_label?.toLowerCase() === "now playing") return false;
+  const theater = Array.isArray(showing?.theater) ? showing.theater[0] : showing?.theater;
+  const theaterToday = todayIsoDate(theater?.timezone ?? "UTC");
+  if (showing?.starts_on && showing.starts_on < theaterToday) return false;
+  return true;
+}
+
+type NotificationInsert = {
+  user_id: string;
+  kind: "theater_showing_match";
+  actor_user_id: null;
+  payload: {
+    showing_id: string;
+    film_id: string;
+    theater_name: string;
+    title: string;
+    date_label: string | null;
+  };
+};
+
+async function insertDedupedNotifications(
   client: Client,
-  showingIds?: string[],
+  rows: NotificationInsert[],
 ): Promise<CreateTheaterNotificationsResult> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query: any = (client as unknown as { from: (table: string) => any })
-    .from("theater_showing_matches")
-    .select(`
-      showing_id,
-      film_id,
-      confidence,
-      status,
-      showing:theater_showings!inner(
-        id,
-        title,
-        date_label,
-        date_precision,
-        is_active,
-        theater:theaters!inner(name)
-      )
-    `)
-    .in("status", ["auto", "confirmed"])
-    .gte("confidence", 0.95)
-    .eq("showing.is_active", true);
-  if (showingIds && showingIds.length > 0) query = query.in("showing_id", showingIds);
-  const { data, error } = await query;
-  if (error) throw error;
-
-  const eligible = (data ?? []).filter((row: any) => {
-    const showing = Array.isArray(row.showing) ? row.showing[0] : row.showing;
-    return showing?.date_label?.toLowerCase() !== "now playing";
-  });
-  if (eligible.length === 0) return { notificationsCreated: 0 };
-
-  const filmIds: string[] = Array.from(new Set<string>(eligible.map((row: any) => String(row.film_id))));
-  const watchlists = await client
-    .from("watchlists")
-    .select("user_id, film_id")
-    .in("film_id", filmIds);
-  if (watchlists.error) throw watchlists.error;
-
-  const rows: Array<{
-    user_id: string;
-    kind: "theater_showing_match";
-    actor_user_id: null;
-    payload: {
-      showing_id: string;
-      film_id: string;
-      theater_name: string;
-      title: string;
-      date_label: string | null;
-    };
-  }> = [];
-  for (const match of eligible) {
-    const showing = Array.isArray(match.showing) ? match.showing[0] : match.showing;
-    const theater = Array.isArray(showing.theater) ? showing.theater[0] : showing.theater;
-    for (const w of watchlists.data ?? []) {
-      if (w.film_id !== match.film_id) continue;
-      rows.push({
-        user_id: w.user_id,
-        kind: "theater_showing_match" as const,
-        actor_user_id: null,
-        payload: {
-          showing_id: match.showing_id,
-          film_id: match.film_id,
-          theater_name: theater?.name ?? "a local theater",
-          title: showing.title,
-          date_label: showing.date_label,
-        },
-      });
-    }
-  }
-
   if (rows.length === 0) return { notificationsCreated: 0 };
   const showingIdsForRows = Array.from(new Set(rows.map((row) => String(row.payload.showing_id))));
   const userIdsForRows = Array.from(new Set(rows.map((row) => row.user_id)));
@@ -106,4 +72,130 @@ export async function createTheaterNotifications(
     .select("id");
   if (insertErr) throw insertErr;
   return { notificationsCreated: inserted?.length ?? 0 };
+}
+
+export async function createTheaterNotifications(
+  client: Client,
+  showingIds?: string[],
+): Promise<CreateTheaterNotificationsResult> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query: any = (client as unknown as { from: (table: string) => any })
+    .from("theater_showing_matches")
+    .select(`
+      showing_id,
+      film_id,
+      confidence,
+      status,
+      showing:theater_showings!inner(
+        id,
+        title,
+        date_label,
+        starts_on,
+        date_precision,
+        is_active,
+        theater:theaters!inner(name, timezone)
+      )
+    `)
+    .in("status", ["auto", "confirmed"])
+    .gte("confidence", 0.95)
+    .eq("showing.is_active", true);
+  if (showingIds && showingIds.length > 0) query = query.in("showing_id", showingIds);
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const eligible = (data ?? []).filter((row: any) => {
+    const showing = Array.isArray(row.showing) ? row.showing[0] : row.showing;
+    return isEligibleShowing(showing);
+  });
+  if (eligible.length === 0) return { notificationsCreated: 0 };
+
+  const filmIds: string[] = Array.from(new Set<string>(eligible.map((row: any) => String(row.film_id))));
+  const watchlists = await client
+    .from("watchlists")
+    .select("user_id, film_id")
+    .in("film_id", filmIds);
+  if (watchlists.error) throw watchlists.error;
+  const library = await client
+    .from("library")
+    .select("user_id, film_id")
+    .in("film_id", filmIds);
+  if (library.error) throw library.error;
+  const userFilms = new Set([
+    ...(watchlists.data ?? []).map((row) => `${row.user_id}:${row.film_id}`),
+    ...(library.data ?? []).map((row) => `${row.user_id}:${row.film_id}`),
+  ]);
+
+  const rows: NotificationInsert[] = [];
+  for (const match of eligible) {
+    const showing = Array.isArray(match.showing) ? match.showing[0] : match.showing;
+    const theater = Array.isArray(showing.theater) ? showing.theater[0] : showing.theater;
+    for (const userFilm of userFilms) {
+      const [userId, userFilmId] = userFilm.split(":");
+      if (userFilmId !== match.film_id) continue;
+      rows.push({
+        user_id: userId,
+        kind: "theater_showing_match" as const,
+        actor_user_id: null,
+        payload: {
+          showing_id: match.showing_id,
+          film_id: match.film_id,
+          theater_name: theater?.name ?? "a local theater",
+          title: showing.title,
+          date_label: showing.date_label,
+        },
+      });
+    }
+  }
+
+  return insertDedupedNotifications(client, rows);
+}
+
+export async function createTheaterNotificationsForUserFilm(
+  client: Client,
+  userId: string,
+  filmId: string,
+): Promise<CreateTheaterNotificationsResult> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (client as unknown as { from: (table: string) => any })
+    .from("theater_showing_matches")
+    .select(`
+      showing_id,
+      film_id,
+      confidence,
+      status,
+      showing:theater_showings!inner(
+        id,
+        title,
+        date_label,
+        starts_on,
+        is_active,
+        theater:theaters!inner(name, timezone)
+      )
+    `)
+    .eq("film_id", filmId)
+    .in("status", ["auto", "confirmed"])
+    .gte("confidence", 0.95)
+    .eq("showing.is_active", true);
+  if (error) throw error;
+
+  const rows: NotificationInsert[] = [];
+  for (const match of data ?? []) {
+    const showing = Array.isArray(match.showing) ? match.showing[0] : match.showing;
+    if (!isEligibleShowing(showing)) continue;
+    const theater = Array.isArray(showing.theater) ? showing.theater[0] : showing.theater;
+    rows.push({
+      user_id: userId,
+      kind: "theater_showing_match",
+      actor_user_id: null,
+      payload: {
+        showing_id: match.showing_id,
+        film_id: match.film_id,
+        theater_name: theater?.name ?? "a local theater",
+        title: showing.title,
+        date_label: showing.date_label,
+      },
+    });
+  }
+
+  return insertDedupedNotifications(client, rows);
 }

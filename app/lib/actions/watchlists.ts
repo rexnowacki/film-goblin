@@ -5,6 +5,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 import { fetchPrices, parseFilm } from "film-goblin-worker";
+import { serviceRoleClient } from "@/lib/supabase/service-role";
+import { createTheaterNotificationsForUserFilm } from "@/lib/theaters/create-theater-notifications";
 
 type Client = SupabaseClient<Database>;
 
@@ -106,6 +108,10 @@ export async function _removeFromWatchlist(
 export async function addToWatchlist(filmId: string, maxPriceUsd?: number) {
   const supabase = await createClient();
   const result = await _addToWatchlist(supabase, filmId, maxPriceUsd);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    await createTheaterNotificationsForUserFilm(serviceRoleClient(), user.id, filmId);
+  }
   revalidatePath("/home");
   revalidatePath("/watchlist");
   revalidatePath(`/film/${filmId}`);
