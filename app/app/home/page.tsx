@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
 import { getEnrichedActivity } from "@/lib/queries/activity";
+import { getFollowedActivity } from "@/lib/queries/followed-activity";
+import FollowedActivityFeed from "@/components/FollowedActivityFeed";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FeedTabs from "@/components/FeedTabs";
@@ -30,6 +32,8 @@ export default async function HomePage({
   const initialItems = initialPage.items;
   const initialCursor = initialPage.nextCursor;
   const initialDone = initialPage.done;
+
+  const followedActivity = user ? await getFollowedActivity(supabase, user.id) : [];
 
   // Resolve the active filter's display data so the chip can render.
   let active: React.ComponentProps<typeof FeedSearch>["active"] = null;
@@ -77,6 +81,14 @@ export default async function HomePage({
             initialDone={initialDone}
             filters={{ actorId: actorId ?? undefined, filmId: filmId ?? undefined }}
           />
+          {followedActivity.length > 0 && (
+            <section style={{ marginTop: 48, paddingBottom: 48 }}>
+              <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 14 }}>
+                From the Goblins
+              </div>
+              <FollowedActivityFeed items={followedActivity} />
+            </section>
+          )}
         </main>
         <aside className="desktop-only">
           <div className="eyebrow" style={{ color: "var(--muted)", marginBottom: 12 }}>Popular Grimoires</div>
