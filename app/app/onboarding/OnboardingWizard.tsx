@@ -22,6 +22,7 @@ export default function OnboardingWizard({ initialUsername, films, starters, lan
   const [laneTagIds, setLaneTagIds] = useState<string[]>([]);
   const [watchlistFilmIds, setWatchlistFilmIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   function handleTasteNext(u: string, tags: string[]) {
     setUsername(u);
@@ -36,10 +37,12 @@ export default function OnboardingWizard({ initialUsername, films, starters, lan
 
   async function handleSubmit(followIds: string[]) {
     setSubmitting(true);
+    setSubmitError("");
     try {
       await completeOnboarding({ username, watchlistFilmIds, laneTagIds, starterFollowIds: followIds });
     } catch {
       setSubmitting(false);
+      setSubmitError("Something went wrong — go back and try a different username.");
     }
     // On success, completeOnboarding redirects — submitting stays true intentionally
   }
@@ -83,6 +86,11 @@ export default function OnboardingWizard({ initialUsername, films, starters, lan
             onBack={() => setStep(2)}
             submitting={submitting}
           />
+        )}
+        {step === 3 && submitError && (
+          <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, color: "var(--accent)", marginTop: 12, textAlign: "center" }}>
+            {submitError}
+          </p>
         )}
       </div>
     </div>
