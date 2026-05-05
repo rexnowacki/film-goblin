@@ -16,8 +16,8 @@ beforeAll(async () => {
   [user, starterUser] = await Promise.all([createTestUser(), createTestUser()]);
   const admin = adminClient();
   const [a, b] = await Promise.all([
-    admin.from("films").insert({ itunes_id: 700000 + Math.floor(Math.random() * 10000), title: "A", director: "D", year: 2024 }).select("id").single(),
-    admin.from("films").insert({ itunes_id: 700000 + Math.floor(Math.random() * 10000), title: "B", director: "D", year: 2024 }).select("id").single(),
+    admin.from("films").insert({ itunes_id: 9_000_000 + Math.floor(Math.random() * 9_000_000), title: "A", director: "D", year: 2024 }).select("id").single(),
+    admin.from("films").insert({ itunes_id: 9_000_000 + Math.floor(Math.random() * 9_000_000), title: "B", director: "D", year: 2024 }).select("id").single(),
   ]);
   filmA = a.data!.id;
   filmB = b.data!.id;
