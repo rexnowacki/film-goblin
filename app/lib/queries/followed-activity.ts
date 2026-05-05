@@ -13,11 +13,17 @@ export async function getFollowedActivity(
 ): Promise<EnrichedActivity[]> {
   const { data: followRows } = await client
     .from("follows")
-    .select("followed_user_id, profile:profiles!followed_user_id(is_starter)")
+    .select("followed_user_id")
     .eq("follower_user_id", userId);
-  const followedIds = (followRows ?? [])
-    .filter(r => (r.profile as any)?.is_starter === true)
-    .map(r => r.followed_user_id);
+  const allFollowedIds = (followRows ?? []).map(r => r.followed_user_id);
+  if (allFollowedIds.length === 0) return [];
+
+  const { data: starterRows } = await client
+    .from("profiles")
+    .select("id")
+    .in("id", allFollowedIds)
+    .eq("is_starter", true);
+  const followedIds = (starterRows ?? []).map(r => r.id);
   if (followedIds.length === 0) return [];
 
   const { data: raw, error } = await client
