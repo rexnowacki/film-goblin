@@ -1,53 +1,13 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
-import TopNav from "@/components/TopNav";
-import BottomNav from "@/components/BottomNav";
-import OnboardingForm, { type DbFilm } from "./OnboardingForm";
 
 export default async function OnboardingPage() {
   const user = await getServerUser();
   if (!user) redirect("/auth/signin?next=/onboarding");
-  const supabase = await createClient();
-
-  const [filmsRes, profileRes] = await Promise.all([
-    supabase
-      .from("films")
-      .select("id, itunes_id, title, director, year, genre_primary, artwork_url")
-      .eq("tracking", true)
-      .eq("available", true)
-      .limit(24),
-    supabase.from("profiles").select("username").eq("id", user.id).single(),
-  ]);
-  const films = (filmsRes.data ?? []) as DbFilm[];
-  const initialUsername = profileRes.data?.username ?? "";
-
+  // Wizard coming in a later task
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
-      <TopNav />
-      <BottomNav />
-
-      <section
-        style={{
-          background: "var(--bone)",
-          color: "var(--void)",
-          borderBottom: "3px solid var(--void)",
-          padding: "22px 0 18px",
-        }}
-        className="grain-light"
-      >
-        <div className="container-wide">
-          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
-            Welcome to the <em style={{ color: "var(--accent)" }}>Coven</em>.
-          </h1>
-        </div>
-      </section>
-
-      <section style={{ padding: "24px 0 60px" }}>
-        <div className="container-wide">
-          <OnboardingForm initialFilms={films} initialUsername={initialUsername} />
-        </div>
-      </section>
+    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic" }}>Loading ritual…</p>
     </div>
   );
 }
