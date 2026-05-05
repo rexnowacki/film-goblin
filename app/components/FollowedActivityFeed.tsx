@@ -19,6 +19,14 @@ function activityLine(item: EnrichedActivity): string {
   }
 }
 
+function relativeTime(iso: string): string {
+  const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (secs < 60) return `${secs}s`;
+  if (secs < 3600) return `${Math.floor(secs / 60)}m`;
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h`;
+  return `${Math.floor(secs / 86400)}d`;
+}
+
 function filmFromItem(item: EnrichedActivity): { id: string; title: string; director: string; year: number; artwork_url?: string | null } | null {
   if ("film" in item) return item.film;
   return null;
@@ -50,6 +58,9 @@ export default function FollowedActivityFeed({ items }: Props) {
                 <FilmPoster film={film} size="xs" style={{ width: 28, height: 42, borderRadius: 2 }} />
               </Link>
             )}
+            <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--muted)", flexShrink: 0, whiteSpace: "nowrap" }}>
+              {relativeTime(item.created_at)}
+            </span>
           </div>
         );
       })}
