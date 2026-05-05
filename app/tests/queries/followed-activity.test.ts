@@ -56,7 +56,8 @@ describe.skipIf(!hasEnv)("getFollowedActivity", () => {
 
   afterAll(async () => {
     if (!hasEnv) return;
-    await client.from("activity").delete().in("id", [activityFollowed, activityUnfollowed]);
+    const toDelete = [activityFollowed, activityUnfollowed].filter(Boolean);
+    if (toDelete.length) await client.from("activity").delete().in("id", toDelete as string[]);
     await client.from("follows").delete().eq("follower_user_id", viewer);
     await client.from("films").delete().eq("id", filmId);
     await Promise.all([
