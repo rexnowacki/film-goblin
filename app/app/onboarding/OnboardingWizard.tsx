@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { completeOnboarding } from "@/lib/actions/onboarding";
 import TasteStep from "./TasteStep";
 import FilmsStep from "./FilmsStep";
@@ -40,11 +41,11 @@ export default function OnboardingWizard({ initialUsername, films, starters, lan
     setSubmitError("");
     try {
       await completeOnboarding({ username, watchlistFilmIds, laneTagIds, starterFollowIds: followIds });
-    } catch {
+    } catch (error) {
+      if (isRedirectError(error)) throw error;
       setSubmitting(false);
       setSubmitError("Something went wrong — go back and try a different username.");
     }
-    // On success, completeOnboarding redirects — submitting stays true intentionally
   }
 
   const dotStyle = (active: boolean): React.CSSProperties => ({
