@@ -433,6 +433,35 @@ export type Database = {
         }
         Relationships: []
       }
+      goblin_pick: {
+        Row: {
+          film_id: string
+          id: number
+          set_at: string
+          set_by: string | null
+        }
+        Insert: {
+          film_id: string
+          id?: number
+          set_at?: string
+          set_by?: string | null
+        }
+        Update: {
+          film_id?: string
+          id?: number
+          set_at?: string
+          set_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goblin_pick_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       library: {
         Row: {
           created_at: string
