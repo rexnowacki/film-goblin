@@ -16,7 +16,8 @@ export default async function TagPage({ params }: { params: Promise<{ name: stri
   const { data: filmTags } = await supabase
     .from("film_tags")
     .select("film:films!inner(id, title, year, director, artwork_url, available)")
-    .eq("tag_id", tag.id);
+    .eq("tag_id", tag.id)
+    .lte("position", 4);
 
   const { data: stats } = await supabase
     .from("films_with_stats")
