@@ -98,15 +98,15 @@ describe("groupFeed", () => {
     expect(out[0].type).toBe("single");
   });
 
-  it("returns two singles for 2 same-actor events in window (v1.0 walk-back)", () => {
+  it("groups 2 same-actor events in window (MIN_GROUP_SIZE=2)", () => {
     const items = [
       watchlist({ id: "a", actorId: "u1", minutesAgo: 5 }),
       watchlist({ id: "b", actorId: "u1", minutesAgo: 15 }),
     ];
     const out = groupFeed(items);
-    expect(out).toHaveLength(2);
-    expect(out[0].type).toBe("single");
-    expect(out[1].type).toBe("single");
+    expect(out).toHaveLength(1);
+    expect(out[0].type).toBe("group");
+    if (out[0].type === "group") expect(out[0].group.count).toBe(2);
   });
 
   it("returns one group of 3 for 3 same-actor events in window", () => {
@@ -141,7 +141,7 @@ describe("groupFeed", () => {
     }
   });
 
-  it("splits when interrupted by a different actor's event", () => {
+  it("splits on different actor — each actor's pairs still group independently", () => {
     const items = [
       watchlist({ id: "a", actorId: "u1", minutesAgo: 5 }),
       watchlist({ id: "b", actorId: "u1", minutesAgo: 10 }),
@@ -150,11 +150,14 @@ describe("groupFeed", () => {
       watchlist({ id: "e", actorId: "u1", minutesAgo: 25 }),
     ];
     const out = groupFeed(items);
-    expect(out).toHaveLength(5);
-    expect(out.every(i => i.type === "single")).toBe(true);
+    // u1(a,b) → group, u2(c) → single, u1(d,e) → group
+    expect(out).toHaveLength(3);
+    expect(out[0].type).toBe("group");
+    expect(out[1].type).toBe("single");
+    expect(out[2].type).toBe("group");
   });
 
-  it("splits when interrupted by same actor's different kind", () => {
+  it("bridges over same-actor different-kind interruption, emitting it after the group", () => {
     const items: EnrichedActivity[] = [
       watchlist({ id: "a", actorId: "u1", minutesAgo: 5 }),
       watchlist({ id: "b", actorId: "u1", minutesAgo: 10 }),
@@ -163,8 +166,24 @@ describe("groupFeed", () => {
       watchlist({ id: "e", actorId: "u1", minutesAgo: 25 }),
     ];
     const out = groupFeed(items);
-    expect(out).toHaveLength(5);
-    expect(out.every(i => i.type === "single")).toBe(true);
+    expect(out).toHaveLength(2);
+    expect(out[0].type).toBe("group");
+    if (out[0].type === "group") expect(out[0].group.count).toBe(4);
+    expect(out[1].type).toBe("single");
+    if (out[1].type === "single") expect(out[1].activity.id).toBe("c");
+  });
+
+  it("emits 2 watchlist + 1 interrupting as 3 singles in original order when run is only 1", () => {
+    // Only one watchlist_added after bridging: not enough to group, all come out as singles.
+    const items: EnrichedActivity[] = [
+      watchlist({ id: "a", actorId: "u1", minutesAgo: 5 }),
+      rec({ id: "c", actorId: "u1", minutesAgo: 15 }),
+    ];
+    const out = groupFeed(items);
+    expect(out).toHaveLength(2);
+    expect(out.every(x => x.type === "single")).toBe(true);
+    if (out[0].type === "single") expect(out[0].activity.id).toBe("a");
+    if (out[1].type === "single") expect(out[1].activity.id).toBe("c");
   });
 
   it("seals the run when 30-min gap rule fires", () => {
@@ -175,14 +194,13 @@ describe("groupFeed", () => {
       watchlist({ id: "d", actorId: "u1", minutesAgo: 75 }),
       watchlist({ id: "e", actorId: "u1", minutesAgo: 90 }),
     ];
+    // gap a→b=15min ok; gap b→c=40min breaks; then c,d,e all within 30min
     const out = groupFeed(items);
-    expect(out).toHaveLength(3);
-    expect(out[0].type).toBe("single");
-    expect(out[1].type).toBe("single");
-    expect(out[2].type).toBe("group");
-    if (out[2].type === "group") {
-      expect(out[2].group.count).toBe(3);
-    }
+    expect(out).toHaveLength(2);
+    expect(out[0].type).toBe("group");
+    if (out[0].type === "group") expect(out[0].group.count).toBe(2);
+    expect(out[1].type).toBe("group");
+    if (out[1].type === "group") expect(out[1].group.count).toBe(3);
   });
 
   it("seals the run when 24-hour span ceiling fires", () => {
@@ -225,23 +243,31 @@ describe("groupFeed: watch_logged", () => {
     }
   });
 
-  it("doesn't group 2 events (below MIN_GROUP_SIZE)", () => {
+  it("groups 2 watch_logged events within window (MIN_GROUP_SIZE=2)", () => {
     const items: EnrichedActivity[] = [
       watchLog({ id: "2", actorId: "u1", minutesAgo: 0 }),
       watchLog({ id: "1", actorId: "u1", minutesAgo: 5 }),
     ];
     const out = groupFeed(items);
-    expect(out).toHaveLength(2);
-    expect(out.every(x => x.type === "single")).toBe(true);
+    expect(out).toHaveLength(1);
+    expect(out[0].type).toBe("group");
+    if (out[0].type === "group") expect(out[0].group.count).toBe(2);
   });
 
-  it("doesn't group across kinds (watchlist_added + watch_logged interleave)", () => {
+  it("bridges watchlist_added interruption to group two watch_logged events", () => {
     const items: EnrichedActivity[] = [
       watchLog({ id: "3", actorId: "u1", minutesAgo: 0 }),
       watchlist({ id: "2", actorId: "u1", minutesAgo: 5 }),
       watchLog({ id: "1", actorId: "u1", minutesAgo: 10 }),
     ];
     const out = groupFeed(items);
-    expect(out.every(x => x.type === "single")).toBe(true);
+    expect(out).toHaveLength(2);
+    expect(out[0].type).toBe("group");
+    if (out[0].type === "group") {
+      expect(out[0].group.kind).toBe("watch_logged");
+      expect(out[0].group.count).toBe(2);
+    }
+    expect(out[1].type).toBe("single");
+    if (out[1].type === "single") expect(out[1].activity.id).toBe("2");
   });
 });
