@@ -6,21 +6,18 @@ const DUMMY_EDITORIAL_REVIEWS = [
     publication: "Bloody Disgusting",
     pullquote: "A new benchmark for American horror. Terrifying, beautiful, and impossible to shake.",
     rating: "5/5",
-    url: "#",
     artworkUrl: "https://a5.mzstatic.com/us/r1000/0/Music/v4/a6/c2/b5/a6c2b5b0-5d2f-4b50-a7b7-e87de1e08e8b/cover.jpg",
   },
   {
     publication: "The Film Stage",
     pullquote: "Uncompromising and visceral. Genre filmmaking at its most essential.",
     rating: "A−",
-    url: "#",
     artworkUrl: null,
   },
   {
     publication: "Letterboxd — Popular Reviews",
     pullquote: "Watched this alone at midnight. Big mistake.",
     rating: "★★★★½",
-    url: "#",
     artworkUrl: null,
   },
 ];
@@ -70,10 +67,9 @@ export default function GoblinRecommends({ film }: { film: GoblinPickFilm | null
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {DUMMY_EDITORIAL_REVIEWS.map(r => (
-                <a
+                <div
                   key={r.publication}
-                  href={r.url}
-                  style={{ display: "flex", gap: 10, alignItems: "flex-start", textDecoration: "none" }}
+                  style={{ display: "flex", gap: 10, alignItems: "flex-start" }}
                 >
                   <div style={{ width: 32, height: 48, flexShrink: 0, background: "var(--void-2)", border: "1px solid #333", overflow: "hidden" }}>
                     {r.artworkUrl && (
@@ -93,7 +89,7 @@ export default function GoblinRecommends({ film }: { film: GoblinPickFilm | null
                       "{r.pullquote}"
                     </p>
                   </div>
-                </a>
+                </div>
               ))}
             </div>
           </div>

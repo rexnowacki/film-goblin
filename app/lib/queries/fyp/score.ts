@@ -1,7 +1,8 @@
 import { FACET_MULTIPLIERS } from "./affinity";
 import type { AffinityVector } from "./affinity";
 import type { FilmTagRow } from "@/lib/queries/film-tags";
-import type { VerbalKind } from "./calibration";
+
+export type VerbalKind = "strong" | "good" | "neutral" | "weak";
 
 // Re-export so consumers can reference the type without touching affinity.ts.
 export type { AffinityVector };
