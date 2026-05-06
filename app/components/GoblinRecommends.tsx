@@ -59,16 +59,23 @@ export default function GoblinRecommends({ film }: { film: GoblinPickFilm | null
                   <div className="eyebrow" style={{ color: "var(--accent)", fontSize: 9, marginBottom: 8, letterSpacing: "0.12em" }}>
                     The Goblin Whispers
                   </div>
-                  <p style={{
-                    fontFamily: "var(--font-serif)", fontSize: 14,
-                    color: "var(--bone)", lineHeight: 1.55, margin: 0,
-                    display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
-                  }}>
-                    "{film.whisper_text}"
-                  </p>
-                  <div style={{ fontFamily: "var(--font-ui)", fontSize: 10, color: "var(--muted)", marginTop: 8, letterSpacing: "0.06em" }}>
-                    Read more →
-                  </div>
+                  {(() => {
+                    const words = film.whisper_text.split(" ");
+                    const truncated = words.slice(0, 20).join(" ");
+                    const isTruncated = words.length > 20;
+                    return (
+                      <>
+                        <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--bone)", lineHeight: 1.55, margin: 0 }}>
+                          "{truncated}{isTruncated ? "…" : ""}"
+                        </p>
+                        {isTruncated && (
+                          <div style={{ fontFamily: "var(--font-ui)", fontSize: 10, color: "var(--muted)", marginTop: 8, letterSpacing: "0.06em" }}>
+                            Read more →
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </button>
               </div>
 
