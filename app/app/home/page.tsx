@@ -39,7 +39,7 @@ export default async function HomePage({
 
   const followedActivity = user ? await getFollowedActivity(supabase, user.id) : [];
   const [priceDropFilms, goblinPick] = await Promise.all([
-    user ? getWatchlistPriceDropFilms(supabase, user.id) : Promise.resolve([]),
+    user ? getWatchlistPriceDropFilms(supabase, user.id, 5) : Promise.resolve([]),
     getGoblinPick(supabase),
   ]);
 

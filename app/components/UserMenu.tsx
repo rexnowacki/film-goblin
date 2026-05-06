@@ -10,9 +10,10 @@ interface Props {
   displayName: string;
   avatarUrl?: string | null;
   isAdmin?: boolean;
+  onAddFilm?: () => void;
 }
 
-export default function UserMenu({ username, displayName, avatarUrl, isAdmin }: Props) {
+export default function UserMenu({ username, displayName, avatarUrl, isAdmin, onAddFilm }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -71,14 +72,23 @@ export default function UserMenu({ username, displayName, avatarUrl, isAdmin }: 
             Diary
           </Link>
           {isAdmin && (
-            <Link
-              href="/admin"
-              prefetch={false}
-            onClick={() => setOpen(false)}
-              style={{ display: "block", padding: "10px 14px", color: "var(--accent-deep)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: "1px solid var(--void)" }}
-            >
-              Admin
-            </Link>
+            <>
+              <button
+                type="button"
+                onClick={() => { setOpen(false); onAddFilm?.(); }}
+                style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 14px", background: "transparent", border: 0, cursor: "pointer", color: "var(--accent)", fontFamily: "var(--font-ui)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: "1px solid var(--void)" }}
+              >
+                + Add Film
+              </button>
+              <Link
+                href="/admin"
+                prefetch={false}
+                onClick={() => setOpen(false)}
+                style={{ display: "block", padding: "10px 14px", color: "var(--accent-deep)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: "1px solid var(--void)" }}
+              >
+                Admin
+              </Link>
+            </>
           )}
           <Link
             href="/settings"
