@@ -151,7 +151,7 @@ export default function PosterQuickAdd({
           <button
             type="button"
             className="poster-quick-add__pill"
-            disabled={onWatchlist || pending !== null}
+            disabled={onWatchlist || pending === "wl"}
             onClick={clickWatchlist}
           >
             {onWatchlist ? "✓ On Watchlist" : "+ Watchlist"}
@@ -159,7 +159,7 @@ export default function PosterQuickAdd({
           <button
             type="button"
             className="poster-quick-add__pill"
-            disabled={inLibrary || pending !== null}
+            disabled={inLibrary || pending === "lib"}
             onClick={clickLibrary}
           >
             {inLibrary ? "✓ In Library" : "+ Library"}
@@ -192,7 +192,7 @@ export default function PosterQuickAdd({
           <button
             type="button"
             className="poster-action-row"
-            disabled={onWatchlist || pending !== null}
+            disabled={onWatchlist || pending === "wl"}
             onClick={clickWatchlist}
           >
             {onWatchlist ? "✓ On watchlist" : "+ Add to watchlist"}
@@ -200,7 +200,7 @@ export default function PosterQuickAdd({
           <button
             type="button"
             className="poster-action-row"
-            disabled={inLibrary || pending !== null}
+            disabled={inLibrary || pending === "lib"}
             onClick={clickLibrary}
           >
             {inLibrary ? "✓ In grimoire" : "+ Add to grimoire"}

@@ -183,6 +183,31 @@ describe("trigger: activity fan-out", () => {
       expect(r.rows[0].payload.film_id).toBe(fx.filmId);
     } finally { await rollback(db.client); }
   });
+
+  it("watchlist delete removes matching watchlist_added activity", async () => {
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    try {
+      await db.client.query(`UPDATE profiles SET broadcast_watchlist_adds = TRUE WHERE id = $1`, [fx.userA.id]);
+      await db.client.query(`INSERT INTO watchlists (user_id, film_id) VALUES ($1, $2)`, [fx.userA.id, fx.filmId]);
+      await db.client.query(
+        `INSERT INTO activity (actor_user_id, kind, payload)
+         VALUES ($1, 'watchlist_added', jsonb_build_object('film_id', $2::uuid))`,
+        [fx.userA.id, fx.filmId]
+      );
+      await db.client.query(`DELETE FROM watchlists WHERE user_id = $1 AND film_id = $2`, [fx.userA.id, fx.filmId]);
+
+      const r = await db.client.query(
+        `SELECT count(*)::int AS n
+         FROM activity
+         WHERE actor_user_id = $1
+           AND kind = 'watchlist_added'
+           AND payload->>'film_id' = $2`,
+        [fx.userA.id, fx.filmId]
+      );
+      expect(r.rows[0].n).toBe(0);
+    } finally { await rollback(db.client); }
+  });
 });
 
 describe("trigger: review draft→published", () => {
