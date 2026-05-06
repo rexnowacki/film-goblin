@@ -60,8 +60,8 @@ export default function GoblinRecommends({ film }: { film: GoblinPickFilm | null
                     The Goblin Whispers
                   </div>
                   <p style={{
-                    fontFamily: "var(--font-display)", fontSize: 14,
-                    color: "var(--bone)", lineHeight: 1.5, margin: 0,
+                    fontFamily: "var(--font-serif)", fontSize: 14,
+                    color: "var(--bone)", lineHeight: 1.55, margin: 0,
                     display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
                   }}>
                     "{film.whisper_text}"
@@ -79,7 +79,7 @@ export default function GoblinRecommends({ film }: { film: GoblinPickFilm | null
               >
                 <div style={{ padding: "4px 4px 16px" }}>
                   <p style={{
-                    fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15,
+                    fontFamily: "var(--font-serif)", fontSize: 16,
                     color: "var(--bone)", lineHeight: 1.7, margin: "0 0 20px",
                   }}>
                     "{film.whisper_text}"
