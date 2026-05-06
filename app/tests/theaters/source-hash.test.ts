@@ -30,4 +30,18 @@ describe("sourceHash", () => {
       sourceHash({ ...base, theaterSlug: "loft-cinema" }),
     );
   });
+
+  it("separates same-day showings with different showtime labels", () => {
+    const base = {
+      theaterSlug: "guild-cinema",
+      title: "The Hills Have Eyes",
+      sourceUrl: "https://www.guildcinema.com/movies/hills-have-eyes-(1977)",
+      sourceId: "The Hills Have Eyes-1977",
+      startsOn: "2026-05-23",
+      dateLabel: "May 23",
+    };
+    expect(sourceHash({ ...base, showtimeLabel: "Sat 7:00pm only!" }, { includeShowtime: true })).not.toBe(
+      sourceHash({ ...base, showtimeLabel: "Sat 10:30pm only!" }, { includeShowtime: true }),
+    );
+  });
 });

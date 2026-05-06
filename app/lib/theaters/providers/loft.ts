@@ -1,5 +1,5 @@
 import { htmlToLines, absoluteUrl } from "../html";
-import { normalizeTitle } from "../normalize-title";
+import { extractYearFromTitle, normalizeTitle, stripYearFromTitle } from "../normalize-title";
 import { parseDateLabel } from "../date-label";
 import type { ScrapedTheaterShowing, TheaterScraperProvider } from "../types";
 
@@ -37,8 +37,8 @@ export function parseLoftComingSoon(html: string, now = new Date()): ScrapedThea
   const out: ScrapedTheaterShowing[] = [];
 
   for (let i = 0; i < lines.length; i++) {
-    const title = lines[i];
-    if (!title || title.length > 120) continue;
+    const rawTitle = lines[i];
+    if (!rawTitle || rawTitle.length > 120) continue;
     if (!isRuntime(lines[i + 1] ?? "")) continue;
 
     const { runtimeLabel, ratingLabel } = splitRuntimeRating(lines[i + 1]);
@@ -56,11 +56,14 @@ export function parseLoftComingSoon(html: string, now = new Date()): ScrapedThea
     if (!dateLabel) continue;
     const categoryLabels = labels.filter((label) => label !== dateLabel);
     const parsed = parseDateLabel(dateLabel, now);
+    const year = extractYearFromTitle(rawTitle);
+    const title = stripYearFromTitle(rawTitle);
     out.push({
       title,
-      rawTitle: title,
+      rawTitle,
+      sourceId: year ? `${title}-${year}` : undefined,
       theaterSlug: "loft-cinema",
-      sourceUrl: links.get(normalizeTitle(title)) ?? SOURCE_URL,
+      sourceUrl: links.get(normalizeTitle(rawTitle)) ?? SOURCE_URL,
       runtimeLabel,
       ratingLabel,
       categoryLabels,

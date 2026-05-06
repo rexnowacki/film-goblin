@@ -66,12 +66,22 @@ async function insertDedupedNotifications(
   const newRows = rows.filter((row) => !existingKeys.has(`${row.user_id}:${row.payload.showing_id}`));
   if (newRows.length === 0) return { notificationsCreated: 0 };
 
-  const { data: inserted, error: insertErr } = await client
-    .from("notifications")
-    .insert(newRows)
-    .select("id");
-  if (insertErr) throw insertErr;
-  return { notificationsCreated: inserted?.length ?? 0 };
+  let notificationsCreated = 0;
+  for (const row of newRows) {
+    const { data: inserted, error: insertErr } = await client
+      .from("notifications")
+      .insert(row)
+      .select("id")
+      .maybeSingle();
+    if (insertErr) {
+      // Concurrent cron/user-action paths can race after the app-level
+      // dedupe query. The DB unique index is the final guard.
+      if (insertErr.code === "23505") continue;
+      throw insertErr;
+    }
+    if (inserted?.id) notificationsCreated += 1;
+  }
+  return { notificationsCreated };
 }
 
 export async function createTheaterNotifications(

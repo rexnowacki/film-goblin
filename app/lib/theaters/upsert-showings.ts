@@ -13,6 +13,22 @@ export interface UpsertShowingsResult {
   showingIds: string[];
 }
 
+function hashesForScrapedShowings(scraped: ScrapedTheaterShowing[]): string[] {
+  const baseHashes = scraped.map((showing) => sourceHash(showing));
+  const baseCounts = new Map<string, number>();
+  for (const hash of baseHashes) {
+    baseCounts.set(hash, (baseCounts.get(hash) ?? 0) + 1);
+  }
+  const seen = new Map<string, number>();
+  return scraped.map((showing, index) => {
+    const baseHash = baseHashes[index];
+    const occurrence = seen.get(baseHash) ?? 0;
+    seen.set(baseHash, occurrence + 1);
+    if ((baseCounts.get(baseHash) ?? 0) < 2 || occurrence === 0) return baseHash;
+    return sourceHash(showing, { includeShowtime: true });
+  });
+}
+
 function todayIsoDate(timeZone = "UTC"): string {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,
@@ -39,7 +55,7 @@ export async function upsertShowingsForTheater(
     .single();
   if (theaterErr) throw theaterErr;
 
-  const hashes = scraped.map(sourceHash);
+  const hashes = hashesForScrapedShowings(scraped);
   const existing = hashes.length
     ? await client
         .from("theater_showings")
@@ -50,11 +66,11 @@ export async function upsertShowingsForTheater(
   if (existing.error) throw existing.error;
   const existingHashes = new Set((existing.data ?? []).map((row) => row.source_hash));
 
-  const rows = scraped.map((showing) => ({
+  const rows = scraped.map((showing, index) => ({
     theater_id: theater.id,
     source_url: showing.sourceUrl,
     source_id: showing.sourceId ?? null,
-    source_hash: sourceHash(showing),
+    source_hash: hashes[index],
     title: showing.title,
     normalized_title: normalizeTitle(showing.title),
     starts_at: showing.startsAt ?? null,

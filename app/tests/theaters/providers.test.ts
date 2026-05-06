@@ -26,6 +26,22 @@ describe("parseLoftComingSoon", () => {
       startsOn: "2026-05-08",
     });
   });
+
+  it("strips display years into source ids for matching", () => {
+    const html = `
+      <h3><a href="/film/hills-have-eyes/">The Hills Have Eyes (1977)</a></h3>
+      <h4>1 HR 30 MIN | R</h4>
+      <h5>Starts May 23</h5>
+    `;
+    const rows = parseLoftComingSoon(html, now);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      title: "The Hills Have Eyes",
+      rawTitle: "The Hills Have Eyes (1977)",
+      sourceId: "The Hills Have Eyes-1977",
+      sourceUrl: "https://loftcinema.org/film/hills-have-eyes/",
+    });
+  });
 });
 
 describe("parseGuildComingSoon", () => {
