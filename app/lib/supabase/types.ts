@@ -1,3 +1,23 @@
+// ⚠️  HAND-EDITED — do NOT run `npm run gen:types` and blindly commit the result.
+// The following columns were added manually after migrations that Supabase's
+// type-generator didn't pick up (local Docker unavailable on this machine):
+//
+//   films:         horror_adjacent, trailer_label, trailer_source,
+//                  trailer_updated_at, trailer_url, trailer_verified,
+//                  trailer_youtube_id
+//   film_tags:     position (SMALLINT), is_primary (BOOLEAN)
+//   profiles:      email_added_at, is_starter, starter_order, lane_tag_ids,
+//                  role (Enum or string), notify_* opt-out columns
+//   watched:       recommended (BOOLEAN | null)
+//   films_with_stats (view): coven_rating_pct, coven_rating_count
+//   tags:          type is a 6-value literal union, not generic string
+//
+// Workflow when regen is needed on the other machine:
+//   1. Run `npm run gen:types` to get fresh output.
+//   2. Diff against this file and re-apply every entry listed above.
+//   3. Keep the `tags.type` literal union (not string).
+//   4. Commit the merged result in its own PR.
+
 export type Json =
   | string
   | number
