@@ -3,6 +3,7 @@
 import Link from "next/link";
 import UserMenu from "./UserMenu";
 import NotificationBell from "./NotificationBell";
+import BackButton from "./BackButton";
 import type { NotificationFeedItem } from "@/lib/queries/notifications";
 
 interface NavItem { id: string; label: string; href: string; badge?: number }
@@ -16,13 +17,15 @@ interface Props {
   isAdmin: boolean;
   unreadNotifCount: number;
   notifItems: NotificationFeedItem[];
+  showBack?: boolean;
 }
 
-export default function TopNavChrome({ items, current, user, profile, isAdmin, unreadNotifCount, notifItems }: Props) {
+export default function TopNavChrome({ items, current, user, profile, isAdmin, unreadNotifCount, notifItems, showBack }: Props) {
   return (
     <div style={{ borderBottom: "1px solid #2a2a2a", background: "var(--void-2)", position: "sticky", top: 0, zIndex: 20, paddingTop: "env(safe-area-inset-top)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", maxWidth: 1280, margin: "0 auto", width: "100%" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 28, minWidth: 0 }}>
+          {showBack && <BackButton />}
           <Link href={user ? "/home" : "/"} prefetch={false} style={{ fontFamily: "var(--font-display)", fontSize: 26, lineHeight: 1, color: "var(--bone)", textDecoration: "none", flexShrink: 0 }}>
             Film<span style={{ color: "var(--accent)" }}>Goblin</span>
           </Link>

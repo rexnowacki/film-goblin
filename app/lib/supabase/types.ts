@@ -433,6 +433,35 @@ export type Database = {
         }
         Relationships: []
       }
+      goblin_pick: {
+        Row: {
+          film_id: string
+          id: number
+          set_at: string
+          set_by: string | null
+        }
+        Insert: {
+          film_id: string
+          id?: number
+          set_at?: string
+          set_by?: string | null
+        }
+        Update: {
+          film_id?: string
+          id?: number
+          set_at?: string
+          set_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goblin_pick_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       library: {
         Row: {
           created_at: string
@@ -916,7 +945,10 @@ export type Database = {
           email_coven_recs: boolean
           email_price_drops: boolean
           id: string
+          is_starter: boolean
+          starter_order: number | null
           lane_tag_ids: string[]
+          discoverable: boolean
           notify_comment_likes: boolean
           notify_rate_reminders: boolean
           username: string
@@ -939,7 +971,10 @@ export type Database = {
           email_coven_recs?: boolean
           email_price_drops?: boolean
           id: string
+          is_starter?: boolean
+          starter_order?: number | null
           lane_tag_ids?: string[]
+          discoverable?: boolean
           notify_comment_likes?: boolean
           notify_rate_reminders?: boolean
           username: string
@@ -962,7 +997,10 @@ export type Database = {
           email_coven_recs?: boolean
           email_price_drops?: boolean
           id?: string
+          is_starter?: boolean
+          starter_order?: number | null
           lane_tag_ids?: string[]
+          discoverable?: boolean
           notify_comment_likes?: boolean
           notify_rate_reminders?: boolean
           username?: string
@@ -1283,6 +1321,14 @@ export type Database = {
           p_locked_until: string
         }
         Returns: boolean
+      }
+      get_coven_watchers_for_film: {
+        Args: { p_user_id: string; p_film_id: string }
+        Returns: { id: string; username: string; avatar_url: string | null }[]
+      }
+      get_other_watchers_for_film: {
+        Args: { p_user_id: string; p_film_id: string }
+        Returns: { id: string; username: string; avatar_url: string | null }[]
       }
     }
     Enums: {

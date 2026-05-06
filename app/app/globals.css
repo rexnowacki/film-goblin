@@ -668,9 +668,11 @@ a { color: inherit; text-decoration: none; }
   max-width: 560px;
   border-top: 2px solid var(--accent);
   border-radius: 16px 16px 0 0;
-  padding: 12px 20px 24px;
+  padding: 12px 20px 0;
   max-height: 80vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   overscroll-behavior: contain;
   position: relative;
   z-index: 1;
@@ -705,7 +707,11 @@ a { color: inherit; text-decoration: none; }
   color: var(--accent);
 }
 .bottom-sheet-body {
-  padding-top: 4px;
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 4px 0 24px;
 }
 
 @keyframes bottom-sheet-fade-in {
@@ -1034,8 +1040,8 @@ a { color: inherit; text-decoration: none; }
 }
 .activity-group-row {
   display: flex;
-  gap: 14px;
-  padding: 14px 0;
+  gap: 12px;
+  padding: 12px 0;
   border-bottom: 1px solid #2a2a2a;
   cursor: pointer;
 }
@@ -1445,8 +1451,8 @@ a { color: inherit; text-decoration: none; }
   font-weight: 700;
 }
 .sharer-watch-pin-verdict.loved {
-  background: var(--accent);
-  color: var(--accent-ink);
+  background: #F5D300;
+  color: var(--void);
 }
 .sharer-watch-pin-verdict.didnt {
   background: var(--blood);

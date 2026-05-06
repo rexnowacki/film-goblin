@@ -59,19 +59,20 @@ export default async function WatchlistPage({
         </div>
       </section>
 
-      <section style={{ padding: "24px 0 60px" }}>
+      <section style={{ padding: "16px 0 calc(80px + env(safe-area-inset-bottom))" }}>
         <div className="container-wide">
           {rows.length === 0 ? (
             <WatchlistEmpty />
           ) : (
             <>
+              <div style={{ fontFamily: "var(--font-ui)", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 8 }}>Sort by</div>
               <WatchlistSortChips currentSort={sort} />
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "var(--grid-gap)" }}>
                 {sorted.map(r => {
                   const dropPct = computeDropPct(r);
                   return (
                     <div key={r.id} className="watchlist-card">
-                      <Link href={`/film/${r.film.id}`} style={{ display: "block", textDecoration: "none", color: "inherit" }}>
+                      <Link prefetch={false} href={`/film/${r.film.id}`} style={{ display: "block", textDecoration: "none", color: "inherit" }}>
                         <div style={{ position: "relative" }}>
                           <FilmPoster film={r.film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
                           <PosterDropBadge dropPct={dropPct} />
@@ -85,7 +86,7 @@ export default async function WatchlistPage({
                         </div>
                         <div style={{ marginTop: 10 }}>
                           <div className="head" style={{ fontSize: 16, lineHeight: 1.1 }}>{r.film.title}</div>
-                          <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
+                          <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {r.film.year}
                             {r.film.director ? <span> · {r.film.director}</span> : null}
                           </div>

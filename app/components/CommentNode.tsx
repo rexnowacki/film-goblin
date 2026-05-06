@@ -41,6 +41,7 @@ export default function CommentNode({
         <div className="comment-row-body">
           <div className="comment-row-meta">
             <Link
+              prefetch={false}
               href={`/p/${encodeURIComponent(comment.user.username)}`}
               className="comment-row-username"
             >

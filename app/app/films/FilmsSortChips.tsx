@@ -11,7 +11,7 @@ interface Props {
 
 const CHIPS: { value: FilmsSort; label: string }[] = [
   { value: "added", label: "Recently added" },
-  { value: "price_low", label: "Lowest price" },
+  { value: "price_low", label: "Price drops" },
   { value: "watchlisted", label: "Most watchlisted" },
   { value: "release", label: "Release year" },
 ];

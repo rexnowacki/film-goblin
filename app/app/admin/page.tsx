@@ -9,6 +9,7 @@ export default function AdminHome() {
         <Tile href="/admin/films" title="Films" blurb="Add, edit, or retire films. iTunes lookup or manual entry." />
         <Tile href="/admin/users" title="Users" blurb="Search accounts, create test users, delete accounts." />
         <Tile href="/admin/announcements" title="Announcements" blurb="Publish and archive site-wide or targeted announcements." />
+        <Tile href="/admin/goblin-pick" title="Goblin Pick" blurb="Set the weekly film recommendation shown on the home feed." />
       </div>
     </div>
   );

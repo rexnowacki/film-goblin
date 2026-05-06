@@ -12,7 +12,8 @@ type Client = SupabaseClient<Database>;
 export interface OnboardingPayload {
   username: string;
   watchlistFilmIds: string[];
-  thresholdPct: number; // 10–75
+  laneTagIds: string[];
+  starterFollowIds: string[];
 }
 
 const USERNAME_RE = /^[a-z0-9._]+$/;
@@ -30,6 +31,7 @@ export async function _completeOnboarding(client: Client, p: OnboardingPayload):
     .from("profiles")
     .update({
       username,
+      lane_tag_ids: p.laneTagIds,
       broadcast_watchlist_adds: true,
       onboarded_at: new Date().toISOString(),
     })
@@ -37,23 +39,17 @@ export async function _completeOnboarding(client: Client, p: OnboardingPayload):
   if (pErr) throw pErr;
 
   for (const filmId of p.watchlistFilmIds) {
-    const { data: history } = await client
-      .from("price_history")
-      .select("price_usd")
-      .eq("film_id", filmId)
-      .order("captured_at", { ascending: false })
-      .limit(1);
-    const latest = history?.[0]?.price_usd ? Number(history[0].price_usd) : null;
-    const maxPriceUsd = latest ? latest * (1 - p.thresholdPct / 100) : null;
-
     const { error: wErr } = await client
       .from("watchlists")
-      .insert({
-        user_id: user.id,
-        film_id: filmId,
-        max_price_usd: maxPriceUsd,
-      });
+      .insert({ user_id: user.id, film_id: filmId, max_price_usd: null });
     if (wErr && wErr.code !== "23505") throw wErr;
+  }
+
+  for (const targetId of p.starterFollowIds) {
+    const { error: fErr } = await client
+      .from("follows")
+      .insert({ follower_user_id: user.id, followed_user_id: targetId });
+    if (fErr && fErr.code !== "23505") throw fErr;
   }
 
   const inviteUsername = await readInviteCookie();
@@ -66,18 +62,8 @@ export async function _completeOnboarding(client: Client, p: OnboardingPayload):
   }
 }
 
-/**
- * If a valid `fg_invite` cookie is present and the inviter exists and isn't
- * the same person, insert a `coven_request` row from inviter -> new user.
- * Idempotency is enforced by `coven_requests.UNIQUE (from_user_id, to_user_id)`
- * — duplicate inserts return error code 23505 which we swallow. Self-invites
- * are rejected by the table's CHECK constraint at the DB level; we still
- * pre-guard to avoid a noisy error. The cookie is cleared by the caller
- * regardless of outcome.
- */
 async function maybeCreateInviteCovenRequest(newUserId: string, inviterUsername: string): Promise<void> {
   const admin = serviceRoleClient();
-
   const { data: inviter } = await admin
     .from("profiles")
     .select("id")
@@ -85,8 +71,6 @@ async function maybeCreateInviteCovenRequest(newUserId: string, inviterUsername:
     .maybeSingle();
   if (!inviter || inviter.id === newUserId) return;
 
-  // Already coven members? Walk both directions of the (user_a < user_b)
-  // edge invariant.
   const a = inviter.id < newUserId ? inviter.id : newUserId;
   const b = inviter.id < newUserId ? newUserId : inviter.id;
   const { data: bond } = await admin
@@ -97,7 +81,6 @@ async function maybeCreateInviteCovenRequest(newUserId: string, inviterUsername:
     .maybeSingle();
   if (bond) return;
 
-  // Existing pending request in either direction? Skip.
   const { data: existingFwd } = await admin
     .from("coven_requests")
     .select("id")
@@ -116,7 +99,6 @@ async function maybeCreateInviteCovenRequest(newUserId: string, inviterUsername:
   const { error } = await admin
     .from("coven_requests")
     .insert({ from_user_id: inviter.id, to_user_id: newUserId, status: "pending" });
-  // 23505 = unique violation; safe to swallow (raced with another path)
   if (error && (error as { code?: string }).code !== "23505") throw error;
 }
 

@@ -1,6 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
 import { getEnrichedActivity } from "@/lib/queries/activity";
+import { getFollowedActivity } from "@/lib/queries/followed-activity";
+import { getWatchlistPriceDropFilms } from "@/lib/queries/ledger";
+import { getGoblinPick } from "@/lib/queries/goblin-pick";
+import FollowedActivityFeed from "@/components/FollowedActivityFeed";
+import LedgerPanel from "@/components/LedgerPanel";
+import GoblinRecommends from "@/components/GoblinRecommends";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FeedTabs from "@/components/FeedTabs";
@@ -30,6 +36,12 @@ export default async function HomePage({
   const initialItems = initialPage.items;
   const initialCursor = initialPage.nextCursor;
   const initialDone = initialPage.done;
+
+  const followedActivity = user ? await getFollowedActivity(supabase, user.id) : [];
+  const [priceDropFilms, goblinPick] = await Promise.all([
+    user ? getWatchlistPriceDropFilms(supabase, user.id) : Promise.resolve([]),
+    getGoblinPick(supabase),
+  ]);
 
   // Resolve the active filter's display data so the chip can render.
   let active: React.ComponentProps<typeof FeedSearch>["active"] = null;
@@ -62,12 +74,21 @@ export default async function HomePage({
         </div>
       </section>
 
-      <div className="container-wide stackable" style={{ padding: "32px var(--container-pad)", "--stack-template": "220px 1fr 320px", "--stack-gap": "32px" } as React.CSSProperties}>
-        <aside className="desktop-only">
-          <div className="eyebrow" style={{ color: "var(--muted)", marginBottom: 12 }}>Your Ledger</div>
-          <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13 }}>
-            Your watchlist and deals summary land here in a later sub-project.
-          </div>
+      <div className="container-wide stackable" style={{ padding: "32px var(--container-pad)", "--stack-template": "220px 1fr 320px", "--stack-gap": "32px", alignItems: "start" } as React.CSSProperties}>
+        <aside
+          className="desktop-only"
+          style={{ position: "sticky", top: "calc(46px + env(safe-area-inset-top))", maxHeight: "calc(100vh - 46px - env(safe-area-inset-top))", overflowY: "auto", paddingBottom: 32 }}
+        >
+          {user ? (
+            <LedgerPanel films={priceDropFilms} />
+          ) : (
+            <div>
+              <div className="eyebrow" style={{ color: "var(--muted)", marginBottom: 12 }}>Your Ledger</div>
+              <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, color: "var(--muted)" }}>
+                Sign in to see price drops on your watchlist.
+              </p>
+            </div>
+          )}
         </aside>
         <main>
           {user && <FeedSearch active={active} />}
@@ -77,12 +98,20 @@ export default async function HomePage({
             initialDone={initialDone}
             filters={{ actorId: actorId ?? undefined, filmId: filmId ?? undefined }}
           />
+          {followedActivity.length > 0 && (
+            <section style={{ marginTop: 48, paddingBottom: 48 }}>
+              <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 14 }}>
+                From the Goblins
+              </div>
+              <FollowedActivityFeed items={followedActivity} />
+            </section>
+          )}
         </main>
-        <aside className="desktop-only">
-          <div className="eyebrow" style={{ color: "var(--muted)", marginBottom: 12 }}>Popular Grimoires</div>
-          <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13 }}>
-            Lives in a later sub-project.
-          </div>
+        <aside
+          className="desktop-only"
+          style={{ position: "sticky", top: "calc(46px + env(safe-area-inset-top))", maxHeight: "calc(100vh - 46px - env(safe-area-inset-top))", overflowY: "auto", paddingBottom: 32 }}
+        >
+          <GoblinRecommends film={goblinPick} />
         </aside>
       </div>
     </div>

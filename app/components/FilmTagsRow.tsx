@@ -27,7 +27,7 @@ export default function FilmTagsRow({ visible, director }: Props) {
   return (
     <div className="film-tags-row">
       {primary && (
-        <Link href={`/tags/${encodeURIComponent(primary.name)}`} style={{ textDecoration: "none", color: "inherit" }}>
+        <Link prefetch={false} href={`/tags/${encodeURIComponent(primary.name)}`} style={{ textDecoration: "none", color: "inherit" }}>
           <span className="film-tag film-tag-subgenre" title="Sub-genre">
             {primary.name}
           </span>
@@ -39,7 +39,7 @@ export default function FilmTagsRow({ visible, director }: Props) {
         </span>
       )}
       {distinguishing.map(t => (
-        <Link key={t.id} href={`/tags/${encodeURIComponent(t.name)}`} style={{ textDecoration: "none", color: "inherit" }}>
+        <Link key={t.id} prefetch={false} href={`/tags/${encodeURIComponent(t.name)}`} style={{ textDecoration: "none", color: "inherit" }}>
           <span className="film-tag film-tag-vibe" title={t.type}>
             {t.name}
           </span>

@@ -31,7 +31,7 @@ export default function CovenChipRow({ members }: Props) {
 
   const topChips = members.slice(0, TOP_CHIP_COUNT);
   const showSeeAll = members.length > TOP_CHIP_COUNT;
-  const showSearch = members.length > TOP_CHIP_COUNT;
+  const showSearch = members.length >= 12;
   const filtered = query.trim() ? filterCovenMembers(members, query) : [];
 
   return (
@@ -46,7 +46,7 @@ export default function CovenChipRow({ members }: Props) {
             onClick={() => setSeeAllOpen(true)}
             style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--accent)", background: "transparent", border: "none", textDecoration: "underline", cursor: "pointer", padding: 0 }}
           >
-            See all ({members.length})
+            View all ({members.length})
           </button>
         )}
       </div>
@@ -87,7 +87,7 @@ export default function CovenChipRow({ members }: Props) {
 
       <div className="coven-chip-row" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         {topChips.map(m => (
-          <Link key={m.id} href={`/p/${encodeURIComponent(m.username)}`} className="coven-chip">
+          <Link key={m.id} prefetch={false} href={`/p/${encodeURIComponent(m.username)}`} className="coven-chip">
             <Avatar name={m.username} color="var(--accent)" size={28} url={m.avatar_url} />
             <span>{m.username}</span>
           </Link>
@@ -104,6 +104,7 @@ export function CovenCompactRow({ member }: { member: CovenfolkRanked }) {
     <div className="pill-row">
       <Avatar name={member.username} color="var(--accent)" size={32} url={member.avatar_url} />
       <Link
+        prefetch={false}
         href={`/p/${encodeURIComponent(member.username)}`}
         style={{ flex: 1, color: "var(--bone)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 14 }}
       >

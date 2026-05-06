@@ -127,6 +127,7 @@ export default function SettingsForm() {
         email_coven_invites: fd.get("email_coven_invites") === "on",
         notify_rate_reminders: fd.get("notify_rate_reminders") === "on",
         notify_comment_likes: fd.get("notify_comment_likes") === "on",
+        discoverable: fd.get("discoverable") === "on",
       });
       toast("Saved");
     } finally { setSaving(false); }
@@ -225,6 +226,14 @@ export default function SettingsForm() {
         <input type="checkbox" name="notify_comment_likes" defaultChecked={profile.notify_comment_likes ?? true} />
         <span className="check-zine__box" aria-hidden="true" />
         <span className="caps" style={{ fontSize: 11 }}>Notify me when someone likes my comment</span>
+      </label>
+      <label className="check-zine">
+        <input type="checkbox" name="discoverable" defaultChecked={profile.discoverable ?? true} />
+        <span className="check-zine__box" aria-hidden="true" />
+        <span>
+          <span className="caps" style={{ fontSize: 11 }}>Show me in &ldquo;who&rsquo;s watching&rdquo; on film pages</span>
+          <span style={{ display: "block", fontSize: 11, color: "var(--muted)", marginTop: 2, fontFamily: "var(--font-serif)", fontStyle: "italic" }}>Other members can see you&rsquo;re tracking a film when they visit its page.</span>
+        </span>
       </label>
       <div style={{ borderTop: "1px solid #333", marginTop: 8, paddingTop: 16 }}>
         <div className="caps" style={{ fontSize: 11, marginBottom: 12, color: "var(--accent)" }}>Email me when…</div>

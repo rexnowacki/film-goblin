@@ -93,6 +93,7 @@ export default function NotificationRow({ notification, onNavigate }: Props) {
   const href = targetFor(notification);
   return (
     <Link
+      prefetch={false}
       href={href}
       onClick={onNavigate}
       style={{

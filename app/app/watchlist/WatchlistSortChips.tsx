@@ -9,7 +9,7 @@ interface Props {
 }
 
 const CHIPS: { value: WatchlistSort; label: string }[] = [
-  { value: "drop", label: "Drop %" },
+  { value: "drop", label: "Biggest drop" },
   { value: "recency", label: "Recently added" },
   { value: "price-low", label: "Lowest price" },
   { value: "alphabetical", label: "A→Z" },

@@ -36,9 +36,14 @@ export default function SearchPersonRow({ profile, state, incomingRequestId }: S
   const button = (() => {
     if (state === "pending_outbound") {
       return (
-        <button className="btn btn-sm" disabled style={{ opacity: 0.5 }}>
+        <span style={{
+          fontFamily: "var(--font-ui)", fontSize: 10, letterSpacing: "0.08em",
+          textTransform: "uppercase", color: "var(--muted)",
+          border: "1px solid var(--muted)", borderRadius: 4, padding: "2px 6px",
+          flexShrink: 0,
+        }}>
           Pending
-        </button>
+        </span>
       );
     }
     if (state === "pending_inbound") {
@@ -59,6 +64,7 @@ export default function SearchPersonRow({ profile, state, incomingRequestId }: S
     <div className="pill-row">
       <Avatar name={profile.username} color="var(--accent)" size={32} url={profile.avatar_url} />
       <Link
+        prefetch={false}
         href={`/p/${encodeURIComponent(profile.username)}`}
         style={{ flex: 1, minWidth: 0, color: "var(--bone)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
       >

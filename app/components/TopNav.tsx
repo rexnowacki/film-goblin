@@ -6,9 +6,10 @@ import TopNavChrome from "./TopNavChrome";
 
 interface TopNavProps {
   current?: string;
+  showBack?: boolean;
 }
 
-export default async function TopNav({ current }: TopNavProps) {
+export default async function TopNav({ current, showBack }: TopNavProps) {
   const user = await getServerUser();
   const supabase = await createClient();
 
@@ -46,14 +47,14 @@ export default async function TopNav({ current }: TopNavProps) {
   const items = user
     ? [
         { id: "home", label: "Home", href: "/home" },
-        { id: "films", label: "Discovery", href: "/films" },
+        { id: "films", label: "Discover", href: "/films" },
         { id: "watchlist", label: "Watchlist", href: "/watchlist" },
         { id: "library", label: "Your Grimoire", href: "/library" },
         { id: "watched", label: "Diary", href: "/watched" },
         { id: "coven", label: "Covenfolk", href: "/coven", badge: pendingInviteCount },
       ]
     : [
-        { id: "films", label: "Discovery", href: "/films" },
+        { id: "films", label: "Discover", href: "/films" },
       ];
 
   return (
@@ -65,6 +66,7 @@ export default async function TopNav({ current }: TopNavProps) {
       isAdmin={isAdmin}
       unreadNotifCount={unreadNotifCount}
       notifItems={notifItems}
+      showBack={showBack}
     />
   );
 }
