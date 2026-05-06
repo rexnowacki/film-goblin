@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import UserMenu from "./UserMenu";
 import NotificationBell from "./NotificationBell";
 import BackButton from "./BackButton";
+import AddFilmModal from "./AddFilmModal";
 import type { NotificationFeedItem } from "@/lib/queries/notifications";
 
 interface NavItem { id: string; label: string; href: string; badge?: number }
@@ -21,7 +23,9 @@ interface Props {
 }
 
 export default function TopNavChrome({ items, current, user, profile, isAdmin, unreadNotifCount, notifItems, showBack }: Props) {
+  const [addFilmOpen, setAddFilmOpen] = useState(false);
   return (
+    <>
     <div style={{ borderBottom: "1px solid #2a2a2a", background: "var(--void-2)", position: "sticky", top: 0, zIndex: 20, paddingTop: "env(safe-area-inset-top)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", maxWidth: 1280, margin: "0 auto", width: "100%" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 28, minWidth: 0 }}>
@@ -59,6 +63,7 @@ export default function TopNavChrome({ items, current, user, profile, isAdmin, u
                 displayName={profile?.username ?? "You"}
                 avatarUrl={profile?.avatar_url}
                 isAdmin={isAdmin}
+                onAddFilm={() => setAddFilmOpen(true)}
               />
             </>
           ) : (
@@ -69,5 +74,7 @@ export default function TopNavChrome({ items, current, user, profile, isAdmin, u
         </div>
       </div>
     </div>
+    {isAdmin && addFilmOpen && <AddFilmModal onClose={() => setAddFilmOpen(false)} />}
+    </>
   );
 }

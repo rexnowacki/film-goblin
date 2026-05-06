@@ -8,6 +8,7 @@ interface Props {
   mode: "create" | "edit";
   filmId?: string; // required when mode=edit
   initial: FilmFormFields;
+  onSuccess?: () => void; // if provided, called instead of navigating (e.g. modal context)
 }
 
 const INPUT_STYLE: React.CSSProperties = {
@@ -23,7 +24,7 @@ const INPUT_STYLE: React.CSSProperties = {
 const LABEL_STYLE: React.CSSProperties = { display: "block", marginBottom: 14 };
 const CAPS_STYLE: React.CSSProperties = { fontSize: 11, marginBottom: 6 };
 
-export default function FilmForm({ mode, filmId, initial }: Props) {
+export default function FilmForm({ mode, filmId, initial, onSuccess }: Props) {
   const [fields, setFields] = useState<FilmFormFields>(initial);
   const [err, setErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -45,7 +46,13 @@ export default function FilmForm({ mode, filmId, initial }: Props) {
         setErr(result.error);
         return;
       }
-      router.push("/admin/films");
+      if (onSuccess) {
+        onSuccess();
+      } else if (mode === "create") {
+        router.push("/admin/films/new");
+      } else {
+        router.push("/admin/films");
+      }
     } finally { setSaving(false); }
   }
 

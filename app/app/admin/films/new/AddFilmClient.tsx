@@ -23,7 +23,7 @@ const BLANK: FilmFormFields = {
   available: true,
 };
 
-export default function AddFilmClient() {
+export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } = {}) {
   const [initial, setInitial] = useState<FilmFormFields | null>(null);
   const [formKey, setFormKey] = useState(0);
 
@@ -83,7 +83,7 @@ export default function AddFilmClient() {
               ← Start over
             </button>
           </div>
-          <FilmForm key={formKey} mode="create" initial={initial} />
+          <FilmForm key={formKey} mode="create" initial={initial} onSuccess={onSuccess} />
         </section>
       )}
     </div>
