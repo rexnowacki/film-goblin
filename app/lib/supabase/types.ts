@@ -11,6 +11,7 @@
 //   watched:       recommended (BOOLEAN | null)
 //   films_with_stats (view): coven_rating_pct, coven_rating_count
 //   tags:          type is a 6-value literal union, not generic string
+//   goblin_pick:   whisper_text (TEXT | null) — added by mig 0169
 //
 // Workflow when regen is needed on the other machine:
 //   1. Run `npm run gen:types` to get fresh output.
@@ -459,18 +460,21 @@ export type Database = {
           id: number
           set_at: string
           set_by: string | null
+          whisper_text: string | null
         }
         Insert: {
           film_id: string
           id?: number
           set_at?: string
           set_by?: string | null
+          whisper_text?: string | null
         }
         Update: {
           film_id?: string
           id?: number
           set_at?: string
           set_by?: string | null
+          whisper_text?: string | null
         }
         Relationships: [
           {

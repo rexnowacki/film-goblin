@@ -1,28 +1,13 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import BottomSheet from "@/components/BottomSheet";
 import type { GoblinPickFilm } from "@/lib/queries/goblin-pick";
 
-const DUMMY_EDITORIAL_REVIEWS = [
-  {
-    publication: "Bloody Disgusting",
-    pullquote: "A new benchmark for American horror. Terrifying, beautiful, and impossible to shake.",
-    rating: "5/5",
-    artworkUrl: "https://a5.mzstatic.com/us/r1000/0/Music/v4/a6/c2/b5/a6c2b5b0-5d2f-4b50-a7b7-e87de1e08e8b/cover.jpg",
-  },
-  {
-    publication: "The Film Stage",
-    pullquote: "Uncompromising and visceral. Genre filmmaking at its most essential.",
-    rating: "A−",
-    artworkUrl: null,
-  },
-  {
-    publication: "Letterboxd — Popular Reviews",
-    pullquote: "Watched this alone at midnight. Big mistake.",
-    rating: "★★★★½",
-    artworkUrl: null,
-  },
-];
-
 export default function GoblinRecommends({ film }: { film: GoblinPickFilm | null }) {
+  const [whisperOpen, setWhisperOpen] = useState(false);
+
   return (
     <div>
       <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 14, letterSpacing: "0.12em" }}>
@@ -31,7 +16,6 @@ export default function GoblinRecommends({ film }: { film: GoblinPickFilm | null
 
       {film ? (
         <>
-          {/* Large poster — fills roughly half the sidebar's vertical space */}
           <Link href={`/film/${film.id}`} style={{ display: "block", textDecoration: "none", marginBottom: 14 }}>
             {film.artwork_url ? (
               <img
@@ -61,38 +45,56 @@ export default function GoblinRecommends({ film }: { film: GoblinPickFilm | null
             Watch on Apple TV →
           </a>
 
-          <div style={{ borderTop: "1px solid #222", marginTop: 16, paddingTop: 14 }}>
-            <div className="eyebrow" style={{ color: "var(--muted)", fontSize: 9, marginBottom: 12 }}>
-              Editorial Reviews
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {DUMMY_EDITORIAL_REVIEWS.map(r => (
-                <div
-                  key={r.publication}
-                  style={{ display: "flex", gap: 10, alignItems: "flex-start" }}
+          {film.whisper_text && (
+            <>
+              <div style={{ borderTop: "1px solid #222", marginTop: 16, paddingTop: 14 }}>
+                <button
+                  type="button"
+                  onClick={() => setWhisperOpen(true)}
+                  style={{
+                    width: "100%", textAlign: "left", background: "none", border: "1px solid #333",
+                    padding: "12px 14px", cursor: "pointer",
+                  }}
                 >
-                  <div style={{ width: 32, height: 48, flexShrink: 0, background: "var(--void-2)", border: "1px solid #333", overflow: "hidden" }}>
-                    {r.artworkUrl && (
-                      <img src={r.artworkUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                    )}
+                  <div className="eyebrow" style={{ color: "var(--accent)", fontSize: 9, marginBottom: 6, letterSpacing: "0.12em" }}>
+                    The Goblin Whispers
                   </div>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 3 }}>
-                      <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--bone)", lineHeight: 1.3 }}>
-                        {r.publication}
-                      </span>
-                      <span style={{ fontFamily: "var(--font-ui)", fontSize: 10, color: "var(--accent)", flexShrink: 0 }}>
-                        {r.rating}
-                      </span>
-                    </div>
-                    <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 11, color: "var(--muted)", lineHeight: 1.45, margin: 0 }}>
-                      "{r.pullquote}"
-                    </p>
+                  <p style={{
+                    fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12,
+                    color: "var(--bone)", lineHeight: 1.5, margin: 0,
+                    display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+                  }}>
+                    "{film.whisper_text}"
+                  </p>
+                  <div style={{ fontFamily: "var(--font-ui)", fontSize: 10, color: "var(--muted)", marginTop: 8, letterSpacing: "0.06em" }}>
+                    Read more →
                   </div>
+                </button>
+              </div>
+
+              <BottomSheet
+                open={whisperOpen}
+                onClose={() => setWhisperOpen(false)}
+                title="The Goblin Whispers"
+              >
+                <div style={{ padding: "4px 4px 16px" }}>
+                  <p style={{
+                    fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15,
+                    color: "var(--bone)", lineHeight: 1.7, margin: "0 0 20px",
+                  }}>
+                    "{film.whisper_text}"
+                  </p>
+                  <Link
+                    href={`/film/${film.id}`}
+                    onClick={() => setWhisperOpen(false)}
+                    style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--accent)", textDecoration: "none", letterSpacing: "0.06em" }}
+                  >
+                    View {film.title} →
+                  </Link>
                 </div>
-              ))}
-            </div>
-          </div>
+              </BottomSheet>
+            </>
+          )}
         </>
       ) : (
         <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, color: "var(--muted)" }}>

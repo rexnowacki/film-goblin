@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { searchFeedTargets } from "@/lib/actions/feed-search";
-import { setGoblinPick } from "@/lib/actions/admin/goblin-pick";
+import { setGoblinPick, setGoblinWhisper } from "@/lib/actions/admin/goblin-pick";
 import type { GoblinPickFilm } from "@/lib/queries/goblin-pick";
 
 interface Props {
@@ -15,6 +15,9 @@ export default function GoblinPickSearch({ current }: Props) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
+  const [whisper, setWhisper] = useState(current?.whisper_text ?? "");
+  const [whisperSaving, setWhisperSaving] = useState(false);
+  const [whisperSaved, setWhisperSaved] = useState(false);
   const [, startTransition] = useTransition();
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -37,6 +40,16 @@ export default function GoblinPickSearch({ current }: Props) {
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
+
+  async function saveWhisper() {
+    setWhisperSaving(true);
+    const result = await setGoblinWhisper(whisper);
+    setWhisperSaving(false);
+    if (result.ok) {
+      setWhisperSaved(true);
+      setTimeout(() => setWhisperSaved(false), 2500);
+    }
+  }
 
   async function pick(filmId: string, title: string) {
     setSaving(true);
@@ -116,6 +129,46 @@ export default function GoblinPickSearch({ current }: Props) {
             )}
           </div>
         )}
+      </div>
+
+      <div style={{ marginTop: 32, borderTop: "1px solid #333", paddingTop: 24 }}>
+        <div style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+          The Goblin Whispers
+        </div>
+        <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12, color: "var(--muted)", marginBottom: 12, lineHeight: 1.5 }}>
+          A brief editorial note shown in a popup on the sidebar card. ~280 chars max.
+        </p>
+        <textarea
+          rows={5}
+          maxLength={280}
+          placeholder="Why does the goblin recommend this one…"
+          value={whisper}
+          onChange={e => setWhisper(e.target.value)}
+          style={{
+            width: "100%", boxSizing: "border-box", background: "var(--void-2)",
+            border: "1px solid #444", color: "var(--bone)", padding: "10px 12px",
+            fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, lineHeight: 1.6,
+            resize: "vertical", outline: "none",
+          }}
+        />
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}>
+          <button
+            type="button"
+            className="btn btn-sm"
+            disabled={whisperSaving}
+            onClick={saveWhisper}
+          >
+            {whisperSaving ? "Saving…" : "Save Whisper"}
+          </button>
+          {whisperSaved && (
+            <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12, color: "var(--accent)" }}>
+              ✓ Saved
+            </span>
+          )}
+          <span style={{ marginLeft: "auto", fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--muted)" }}>
+            {whisper.length}/280
+          </span>
+        </div>
       </div>
     </div>
   );
