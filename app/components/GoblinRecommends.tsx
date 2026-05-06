@@ -56,11 +56,11 @@ export default function GoblinRecommends({ film }: { film: GoblinPickFilm | null
                     padding: "12px 14px", cursor: "pointer",
                   }}
                 >
-                  <div className="eyebrow" style={{ color: "var(--accent)", fontSize: 9, marginBottom: 6, letterSpacing: "0.12em" }}>
+                  <div className="eyebrow" style={{ color: "var(--accent)", fontSize: 9, marginBottom: 8, letterSpacing: "0.12em" }}>
                     The Goblin Whispers
                   </div>
                   <p style={{
-                    fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12,
+                    fontFamily: "var(--font-display)", fontSize: 14,
                     color: "var(--bone)", lineHeight: 1.5, margin: 0,
                     display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
                   }}>
