@@ -17,7 +17,7 @@ export interface InviteCodeWithOwner extends InviteCodeRow {
 
 export async function getMyInviteCode(userId: string): Promise<InviteCodeRow | null> {
   const sr = serviceRoleClient();
-  const { data, error } = await (sr.from("invite_codes") as any)
+  const { data, error } = await (sr as any).from("invite_codes")
     .select("code, owner_user_id, label, max_uses, use_count, revoked, created_at")
     .eq("owner_user_id", userId)
     .maybeSingle();
@@ -27,7 +27,7 @@ export async function getMyInviteCode(userId: string): Promise<InviteCodeRow | n
 
 export async function getAllInviteCodes(): Promise<InviteCodeWithOwner[]> {
   const sr = serviceRoleClient();
-  const { data: codes, error } = await (sr.from("invite_codes") as any)
+  const { data: codes, error } = await (sr as any).from("invite_codes")
     .select("code, owner_user_id, label, max_uses, use_count, revoked, created_at")
     .order("created_at", { ascending: false });
   if (error) throw error;

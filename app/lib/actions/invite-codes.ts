@@ -13,7 +13,7 @@ import { clearInviteCodeCookie } from "@/lib/actions/invite-cookie";
 export async function peekInviteCode(code: string | null): Promise<boolean> {
   if (!code) return false;
   const sr = serviceRoleClient();
-  const { data } = await (sr.from("invite_codes") as any)
+  const { data } = await (sr as any).from("invite_codes")
     .select("use_count, max_uses, revoked")
     .eq("code", code)
     .maybeSingle();
@@ -41,7 +41,7 @@ export async function adminCreateInviteCode(
   const code = randomBytes(4).toString("hex");
 
   const sr = serviceRoleClient();
-  const { error } = await (sr.from("invite_codes") as any).insert({
+  const { error } = await (sr as any).from("invite_codes").insert({
     code,
     owner_user_id: null,
     label,
@@ -61,7 +61,7 @@ export async function adminRevokeInviteCode(
   await requireAdmin(supabase);
 
   const sr = serviceRoleClient();
-  const { error } = await (sr.from("invite_codes") as any)
+  const { error } = await (sr as any).from("invite_codes")
     .update({ revoked: true })
     .eq("code", code);
 
