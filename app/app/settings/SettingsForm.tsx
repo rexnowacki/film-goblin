@@ -127,6 +127,7 @@ export default function SettingsForm() {
         email_coven_invites: fd.get("email_coven_invites") === "on",
         notify_rate_reminders: fd.get("notify_rate_reminders") === "on",
         notify_comment_likes: fd.get("notify_comment_likes") === "on",
+        notify_film_requests: fd.get("notify_film_requests") === "on",
         discoverable: fd.get("discoverable") === "on",
       });
       toast("Saved");
@@ -226,6 +227,11 @@ export default function SettingsForm() {
         <input type="checkbox" name="notify_comment_likes" defaultChecked={profile.notify_comment_likes ?? true} />
         <span className="check-zine__box" aria-hidden="true" />
         <span className="caps" style={{ fontSize: 11 }}>Notify me when someone likes my comment</span>
+      </label>
+      <label className="check-zine">
+        <input type="checkbox" name="notify_film_requests" defaultChecked={profile.notify_film_requests ?? true} />
+        <span className="check-zine__box" aria-hidden="true" />
+        <span className="caps" style={{ fontSize: 11 }}>Notify me when a film I requested is added</span>
       </label>
       <label className="check-zine">
         <input type="checkbox" name="discoverable" defaultChecked={profile.discoverable ?? true} />
