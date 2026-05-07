@@ -135,3 +135,14 @@ export async function resetPassword(formData: FormData): Promise<{ error?: strin
   if (error) return { error: friendlyError(error) };
   return { ok: true };
 }
+
+export async function deleteAccount(): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+  const sr = serviceRoleClient();
+  const { error } = await sr.auth.admin.deleteUser(user.id);
+  if (error) return { error: error.message };
+  await supabase.auth.signOut().catch(() => {});
+  redirect("/");
+}

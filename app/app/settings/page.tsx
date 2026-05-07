@@ -6,6 +6,7 @@ import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import SettingsForm from "./SettingsForm";
 import LanePicker from "@/components/settings/LanePicker";
+import DeleteAccountSection from "./DeleteAccountSection";
 
 export default async function SettingsPage() {
   const user = await getServerUser();
@@ -13,11 +14,12 @@ export default async function SettingsPage() {
   const supabase = await createClient();
 
   const [profile, vocab] = await Promise.all([
-    supabase.from("profiles").select("lane_tag_ids").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("lane_tag_ids, username").eq("id", user.id).maybeSingle(),
     getAllTagsGroupedByType(supabase),
   ]);
 
   const initialLaneIds = (profile.data?.lane_tag_ids ?? []) as string[];
+  const username = profile.data?.username ?? "";
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
@@ -30,6 +32,7 @@ export default async function SettingsPage() {
           initialLaneIds={initialLaneIds}
           vocab={{ subgenre: vocab.subgenre, tone: vocab.tone, theme: vocab.theme }}
         />
+        <DeleteAccountSection username={username} />
       </div>
     </div>
   );
