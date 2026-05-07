@@ -10,6 +10,7 @@ export interface AdminUserRow {
   avatar_url: string | null;
   created_at: string;
   last_sign_in_at: string | null;
+  last_activity_at: string | null;
   staff_role: "admin" | "reviewer" | null;
   role: "goblin" | "witch" | "high_goblin";
 }
@@ -82,6 +83,7 @@ export async function listUsersForAdmin(
       avatar_url: p.avatar_url,
       created_at: au?.created_at ?? "",
       last_sign_in_at: au?.last_sign_in_at ?? null,
+      last_activity_at: null, // only populated on the detail page
       staff_role: staffMap.get(p.id) ?? null,
       role: (p.role as "goblin" | "witch" | "high_goblin") ?? "goblin",
     };
@@ -92,10 +94,13 @@ export async function listUsersForAdmin(
 
 export async function getUserForAdmin(id: string): Promise<AdminUserRow & { bio: string | null; identities: string[] } | null> {
   const sb = serviceRoleClient();
-  const { data: profile } = await sb.from("profiles").select("id, username, display_name, avatar_url, bio, role").eq("id", id).maybeSingle();
+  const [{ data: profile }, { data: authInfo }, { data: staffRow }, { data: latestActivity }] = await Promise.all([
+    sb.from("profiles").select("id, username, display_name, avatar_url, bio, role").eq("id", id).maybeSingle(),
+    sb.auth.admin.getUserById(id),
+    sb.from("staff").select("role").eq("user_id", id).maybeSingle(),
+    sb.from("activity").select("created_at").eq("actor_user_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+  ]);
   if (!profile) return null;
-  const { data: authInfo } = await sb.auth.admin.getUserById(id);
-  const { data: staffRow } = await sb.from("staff").select("role").eq("user_id", id).maybeSingle();
   return {
     id,
     email: authInfo?.user?.email ?? null,
@@ -105,6 +110,7 @@ export async function getUserForAdmin(id: string): Promise<AdminUserRow & { bio:
     bio: profile.bio ?? null,
     created_at: authInfo?.user?.created_at ?? "",
     last_sign_in_at: authInfo?.user?.last_sign_in_at ?? null,
+    last_activity_at: latestActivity?.created_at ?? null,
     identities: (authInfo?.user?.identities ?? []).map(i => i.provider),
     staff_role: (staffRow?.role as "admin" | "reviewer" | null) ?? null,
     role: (profile.role as "goblin" | "witch" | "high_goblin") ?? "goblin",

@@ -42,6 +42,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
           <Field label="Email" value={user.email ?? "—"} />
           <Field label="Created" value={fmtDate(user.created_at)} />
           <Field label="Last sign-in" value={fmtDate(user.last_sign_in_at)} />
+          <Field label="Last activity" value={fmtDate(user.last_activity_at)} />
           <Field label="Identity providers" value={user.identities.length ? user.identities.join(", ") : "—"} />
           <ResetPasswordButton userId={user.id} />
         </Section>
