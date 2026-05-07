@@ -120,3 +120,137 @@ describe("searchFilmForRequest — fallback chain", () => {
     expect(mockSearchFilms).not.toHaveBeenCalled();
   });
 });
+
+// ── submitFilmRequest ────────────────────────────────────────────────────────
+
+vi.mock("@/lib/supabase/service-role", () => ({
+  serviceRoleClient: vi.fn(),
+}));
+
+import { submitFilmRequest, fulfillRequest } from "@/lib/actions/film-requests";
+import { serviceRoleClient } from "@/lib/supabase/service-role";
+
+const mockServiceRoleClient = vi.mocked(serviceRoleClient);
+
+function makeChain(overrides: Record<string, unknown> = {}) {
+  const chain = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    or: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+    upsert: vi.fn().mockResolvedValue({ data: null, error: null }),
+    ...overrides,
+  };
+  // make each method return the chain so calls can be chained
+  Object.keys(chain).forEach(k => {
+    if (typeof chain[k as keyof typeof chain] === 'function' && !['maybeSingle','single','insert','upsert'].includes(k)) {
+      const orig = chain[k as keyof typeof chain] as ReturnType<typeof vi.fn>;
+      orig.mockReturnValue(chain);
+    }
+  });
+  return chain;
+}
+
+const BASE_INPUT = {
+  title: "The Fly",
+  year: 1986,
+  source: "itunes" as const,
+  needs_itunes_id: false,
+  itunes_id: 123,
+  tmdb_id: null,
+  artwork_url: "https://example.com/fly.jpg",
+  director: "David Cronenberg",
+  description: "A scientist…",
+  runtime_min: 96,
+  genre_primary: "Horror",
+  content_advisory: "R",
+  itunes_url: "https://itunes.apple.com/…",
+};
+
+describe("submitFilmRequest", () => {
+  it("returns already_in_catalog when film exists by itunes_id", async () => {
+    const filmChain = makeChain({ maybeSingle: vi.fn().mockResolvedValue({ data: { id: "film-abc" }, error: null }) });
+    const svc = { from: vi.fn().mockReturnValue(filmChain) } as any;
+    mockServiceRoleClient.mockReturnValue(svc);
+
+    const result = await submitFilmRequest(BASE_INPUT);
+
+    expect(result).toEqual({ status: "already_in_catalog", filmId: "film-abc" });
+  });
+
+  it("inserts new request when no existing film or request", async () => {
+    let callNum = 0;
+    const svc = {
+      from: vi.fn().mockImplementation(() => {
+        callNum++;
+        if (callNum === 1) {
+          // films check — not found
+          return { ...makeChain(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
+        }
+        if (callNum === 2) {
+          // film_requests check — not found
+          return { ...makeChain(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
+        }
+        if (callNum === 3) {
+          // insert film_requests
+          return { ...makeChain(), insert: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { id: "req-1" }, error: null }) }) }) };
+        }
+        // insert film_request_users
+        return { insert: vi.fn().mockResolvedValue({ data: null, error: null }) };
+      }),
+    } as any;
+    mockServiceRoleClient.mockReturnValue(svc);
+
+    const result = await submitFilmRequest(BASE_INPUT);
+
+    expect(result).toEqual({ status: "ok" });
+  });
+});
+
+describe("fulfillRequest", () => {
+  it("updates request status and inserts notifications for opted-in users only", async () => {
+    const insertMock = vi.fn().mockResolvedValue({ error: null });
+    const updateMock = vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) });
+
+    const svc = {
+      from: vi.fn().mockImplementation((table: string) => {
+        if (table === "film_requests") return { update: updateMock };
+        if (table === "film_request_users") {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockResolvedValue({ data: [{ user_id: "u1" }, { user_id: "u2" }], error: null }),
+          };
+        }
+        if (table === "profiles") {
+          return {
+            select: vi.fn().mockReturnThis(),
+            in: vi.fn().mockResolvedValue({
+              data: [
+                { id: "u1", notify_film_requests: true },
+                { id: "u2", notify_film_requests: false },
+              ],
+              error: null,
+            }),
+          };
+        }
+        if (table === "notifications") return { insert: insertMock };
+        return {};
+      }),
+    } as any;
+
+    await fulfillRequest(svc, "req-1", "film-abc", "The Fly");
+
+    // u1 opted in → 1 notification; u2 opted out → excluded
+    expect(insertMock).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ user_id: "u1", kind: "film_request_fulfilled" }),
+      ])
+    );
+    const notifications = insertMock.mock.calls[0][0] as Array<{ user_id: string }>;
+    expect(notifications.some(n => n.user_id === "u2")).toBe(false);
+  });
+});
