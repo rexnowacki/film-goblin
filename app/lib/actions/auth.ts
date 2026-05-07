@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { friendlyError } from "@/lib/auth/friendly-errors";
 import { safeRedirect } from "@/lib/auth/safe-redirect";
 import { setInviteCookie } from "./invite-cookie";
+import { peekInviteCode, burnInviteCode } from "@/lib/actions/invite-codes";
+import { readInviteCodeCookie } from "@/lib/actions/invite-cookie";
 
 const USERNAME_RE = /^[a-z0-9._]+$/;
 const SYNTHETIC_EMAIL_DOMAIN = "noreply.film-goblin.app";
@@ -59,6 +61,14 @@ export async function signUp(formData: FormData): Promise<{ error?: string; info
     return { error: "Password must be at least 6 characters." };
   }
 
+  // Gate check — validate cookie before touching auth.users
+  let inviteCode: string | null = null;
+  if (process.env.INVITE_GATE === "1") {
+    inviteCode = await readInviteCodeCookie();
+    const isValid = await peekInviteCode(inviteCode);
+    if (!isValid) return { error: "You need a valid invite link to join." };
+  }
+
   const admin = serviceRoleClient();
   const { data: existing } = await admin
     .from("profiles")
@@ -70,7 +80,7 @@ export async function signUp(formData: FormData): Promise<{ error?: string; info
   }
 
   const email = syntheticEmailFor(username);
-  const { error: createErr } = await admin.auth.admin.createUser({
+  const { data: createData, error: createErr } = await admin.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
@@ -86,6 +96,12 @@ export async function signUp(formData: FormData): Promise<{ error?: string; info
   if (signInErr) {
     return { error: friendlyError(signInErr) };
   }
+
+  // Burn invite after user is created — newUserId is now known
+  if (process.env.INVITE_GATE === "1" && inviteCode && createData?.user?.id) {
+    await burnInviteCode(inviteCode, createData.user.id);
+  }
+
   if (invite) {
     try {
       await setInviteCookie(invite);
