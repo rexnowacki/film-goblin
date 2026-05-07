@@ -231,7 +231,7 @@ export default function SettingsForm() {
       <label className="check-zine">
         <input type="checkbox" name="notify_film_requests" defaultChecked={profile.notify_film_requests ?? true} />
         <span className="check-zine__box" aria-hidden="true" />
-        <span className="caps" style={{ fontSize: 11 }}>Notify me when a film I requested is added</span>
+        <span className="caps" style={{ fontSize: 11 }}>Notify me when a summoned film arrives</span>
       </label>
       <label className="check-zine">
         <input type="checkbox" name="discoverable" defaultChecked={profile.discoverable ?? true} />

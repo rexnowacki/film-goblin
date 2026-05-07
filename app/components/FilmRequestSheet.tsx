@@ -90,7 +90,7 @@ export default function FilmRequestSheet({ query, onClose }: Props) {
     const result = await submitFilmRequest(input);
 
     if (result.status === "ok") {
-      toast("Request sent. We'll notify you when it's added.");
+      toast("Spell cast. We'll summon you when it arrives.");
       onClose();
       return;
     }
@@ -122,7 +122,7 @@ export default function FilmRequestSheet({ query, onClose }: Props) {
     candidate?.source === "itunes" ? candidate.hit.director : null;
 
   return (
-    <BottomSheet title="Request a Film" onClose={onClose} open>
+    <BottomSheet title="Summon a Film" onClose={onClose} open>
       <div style={{ padding: "0 20px 32px", display: "flex", flexDirection: "column", gap: 24 }}>
 
         {stage === "searching" && (
@@ -153,7 +153,7 @@ export default function FilmRequestSheet({ query, onClose }: Props) {
             </p>
             <div style={{ display: "flex", gap: 10 }}>
               <button className="btn" onClick={handleSubmit}>
-                Request it
+                Summon it
               </button>
               <button className="btn btn-outline" onClick={onClose}>
                 Not quite
@@ -165,7 +165,7 @@ export default function FilmRequestSheet({ query, onClose }: Props) {
         {stage === "confirm" && candidate?.source === "manual" && (
           <>
             <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, color: "var(--muted)" }}>
-              We couldn't find this film in any database. You can still request it by title:
+              We couldn't find this film in any database. You can still summon it by title:
             </p>
             <input
               className="input"
@@ -175,14 +175,14 @@ export default function FilmRequestSheet({ query, onClose }: Props) {
               style={{ fontSize: 15 }}
             />
             <button className="btn" onClick={handleSubmit} disabled={!manualTitle.trim()}>
-              Request it
+              Summon it
             </button>
           </>
         )}
 
         {stage === "submitting" && (
           <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--muted)", textAlign: "center" }}>
-            Sending request…
+            Casting the spell…
           </p>
         )}
 
@@ -200,14 +200,14 @@ export default function FilmRequestSheet({ query, onClose }: Props) {
             const count = Number(resultMsg.replace("already_requested:", ""));
             return (
               <p style={{ fontFamily: "var(--font-serif)", fontSize: 15 }}>
-                Already requested by {count} {count === 1 ? "person" : "people"} — you're now on the list.
+                {count} {count === 1 ? "person has" : "people have"} already cast this spell — you're on the list.
               </p>
             );
           }
           if (resultMsg === "already_on_list") {
             return (
               <p style={{ fontFamily: "var(--font-serif)", fontSize: 15 }}>
-                You've already requested this one.
+                You've already cast this spell.
               </p>
             );
           }

@@ -92,7 +92,7 @@ function copyFor(n: EnrichedNotification): React.ReactNode {
     }
     case "film_request_fulfilled": {
       const filmTitle = (n.payload as { film_title?: string }).film_title ?? "A film you requested";
-      return <><em>{filmTitle}</em> was just added to the catalog.</>;
+      return <>Your spell of summoning was answered. <em>{filmTitle}</em> is now available.</>;
     }
   }
 }

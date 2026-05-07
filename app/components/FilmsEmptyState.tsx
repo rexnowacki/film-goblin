@@ -21,7 +21,7 @@ export default function FilmsEmptyState({ query, isSignedIn }: Props) {
             style={{ fontFamily: "var(--font-ui)", fontStyle: "normal", fontSize: 13 }}
             onClick={() => setSheetOpen(true)}
           >
-            Request this film →
+            Summon it →
           </button>
         </div>
       )}
