@@ -23,18 +23,29 @@ export async function getOwnedFilmIds(client: Client, userId: string | null): Pr
  * recently-added by default. Powers the /library page.
  */
 export async function getLibrary(client: Client, userId: string) {
-  const { data, error } = await client
+  const { data, error } = await (client as any)
     .from("library")
     .select(`
       created_at,
-      film:films!inner(
-        id, itunes_id, title, director, year, artwork_url
+      film:films_with_stats!inner(
+        id, itunes_id, title, director, year, artwork_url, coven_rating_pct
       )
     `)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return data ?? [];
+  return ((data ?? []) as any[]).map(r => ({
+    created_at: r.created_at as string,
+    film: r.film as {
+      id: string;
+      itunes_id: number | null;
+      title: string;
+      director: string;
+      year: number;
+      artwork_url: string;
+      coven_rating_pct: number | null;
+    },
+  }));
 }
 
 /**

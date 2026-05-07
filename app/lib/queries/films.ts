@@ -46,6 +46,7 @@ export async function getFilms(
     id: string; itunes_id: number | null; title: string; director: string;
     year: number; runtime_min: number; genre_primary: string; artwork_url: string;
     latest_price: number | null; watchlist_count: number; watcher_count: number;
+    coven_rating_pct: number | null;
     on_watchlist: boolean; in_library: boolean;
   }>;
   total: number;
@@ -59,7 +60,7 @@ export async function getFilms(
   let query: any = (client as unknown as { from: (t: string) => any })
     .from("films_with_stats")
     .select(
-      "id, itunes_id, title, director, year, runtime_min, genre_primary, artwork_url, latest_price, watchlist_count, watcher_count",
+      "id, itunes_id, title, director, year, runtime_min, genre_primary, artwork_url, latest_price, watchlist_count, watcher_count, coven_rating_pct",
       { count: "exact" },
     )
     .eq("available", true);

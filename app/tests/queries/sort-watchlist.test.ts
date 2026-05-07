@@ -19,6 +19,7 @@ function row(overrides: Partial<WatchlistRowData> & { id: string; title?: string
       genre_primary: "Horror",
       runtime_min: 100,
       latest_price: overrides.latest_price ?? null,
+      coven_rating_pct: null,
     },
   };
 }

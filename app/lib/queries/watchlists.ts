@@ -19,6 +19,7 @@ export interface WatchlistRowData {
     genre_primary: string;
     runtime_min: number;
     latest_price: number | null;
+    coven_rating_pct: number | null;
   };
 }
 
@@ -71,7 +72,7 @@ export async function getMyWatchlistWithFilms(client: Client): Promise<Watchlist
         id, title, director, year,
         artwork_url, itunes_url,
         genre_primary, runtime_min,
-        latest_price
+        latest_price, coven_rating_pct
       )
     `)
     .order("created_at", { ascending: false });
@@ -92,6 +93,7 @@ export async function getMyWatchlistWithFilms(client: Client): Promise<Watchlist
       genre_primary: r.film.genre_primary,
       runtime_min: r.film.runtime_min,
       latest_price: toNumber(r.film.latest_price),
+      coven_rating_pct: r.film.coven_rating_pct ?? null,
     },
   }));
 }

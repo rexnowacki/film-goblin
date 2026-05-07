@@ -15,6 +15,7 @@ export interface Film {
   case?: "upper" | "lower";
   titleBg?: string;
   halftoneOpacity?: number;
+  coven_rating_pct?: number | null;
 }
 
 interface FilmPosterProps {
@@ -166,6 +167,26 @@ export default function FilmPoster({ film, size = "md", className = "", style = 
           </div>
         )}
       </div>}
+
+      {size !== "xs" && film.coven_rating_pct != null && (
+        <div style={{
+          position: "absolute",
+          bottom: 6,
+          right: 6,
+          background: "rgba(10,10,10,0.82)",
+          color: "var(--accent)",
+          fontFamily: "var(--font-ui)",
+          fontSize: size === "sm" ? 9 : 10,
+          fontWeight: 700,
+          letterSpacing: "0.06em",
+          padding: "3px 6px",
+          zIndex: 2,
+          pointerEvents: "none",
+          lineHeight: 1,
+        }}>
+          {Math.round(film.coven_rating_pct)}%
+        </div>
+      )}
     </div>
   );
 }
