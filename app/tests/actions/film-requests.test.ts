@@ -100,4 +100,23 @@ describe("searchFilmForRequest — fallback chain", () => {
 
     expect(result).toEqual({ ok: true, result: { source: "manual", title: "Some Film" } });
   });
+
+  it("returns auth error when not signed in", async () => {
+    const { createClient } = await import("@/lib/supabase/server");
+    vi.mocked(createClient).mockResolvedValueOnce({
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) },
+    } as any);
+
+    const result = await searchFilmForRequest("The Fly");
+
+    expect(result).toEqual({ ok: false, error: "Sign in to request films." });
+    expect(mockSearchFilms).not.toHaveBeenCalled();
+  });
+
+  it("returns validation error for empty query", async () => {
+    const result = await searchFilmForRequest("   ");
+
+    expect(result).toEqual({ ok: false, error: "Enter a film title to search." });
+    expect(mockSearchFilms).not.toHaveBeenCalled();
+  });
 });

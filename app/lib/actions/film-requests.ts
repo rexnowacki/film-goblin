@@ -32,8 +32,8 @@ export async function searchFilmForRequest(query: string): Promise<SearchForRequ
         return { ok: true, result: { source: "itunes", hit: toHit(parsed) } };
       }
     }
-  } catch {
-    // fall through to next step
+  } catch (e) {
+    console.debug("searchFilmForRequest: iTunes direct failed:", e);
   }
 
   // Step 2: Brave → Apple TV → iTunes lookup
@@ -42,8 +42,8 @@ export async function searchFilmForRequest(query: string): Promise<SearchForRequ
     if (braveRes.ok && braveRes.candidates.length > 0) {
       return { ok: true, result: { source: "itunes", hit: braveRes.candidates[0] } };
     }
-  } catch {
-    // fall through
+  } catch (e) {
+    console.debug("searchFilmForRequest: Brave/Apple TV failed:", e);
   }
 
   // Step 3: TMDB
@@ -52,8 +52,8 @@ export async function searchFilmForRequest(query: string): Promise<SearchForRequ
     if (tmdbRes.ok && tmdbRes.candidates.length > 0) {
       return { ok: true, result: { source: "tmdb", hit: tmdbRes.candidates[0] } };
     }
-  } catch {
-    // fall through
+  } catch (e) {
+    console.debug("searchFilmForRequest: TMDB failed:", e);
   }
 
   // Step 4: Manual fallback
