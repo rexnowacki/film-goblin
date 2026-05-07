@@ -11,10 +11,11 @@ export default async function InvitePage({
   const { code } = await params;
 
   const sr = serviceRoleClient();
-  const { data } = await (sr as any).from("invite_codes")
+  const { data, error } = await (sr as any).from("invite_codes")
     .select("use_count, max_uses, revoked")
     .eq("code", code)
     .maybeSingle();
+  if (error) throw error;
 
   const valid = data && !data.revoked && data.use_count < data.max_uses;
 
