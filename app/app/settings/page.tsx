@@ -7,6 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import SettingsForm from "./SettingsForm";
 import LanePicker from "@/components/settings/LanePicker";
 import DeleteAccountSection from "./DeleteAccountSection";
+import InviteLinkSection from "@/components/settings/InviteLinkSection";
 
 export default async function SettingsPage() {
   const user = await getServerUser();
@@ -32,6 +33,7 @@ export default async function SettingsPage() {
           initialLaneIds={initialLaneIds}
           vocab={{ subgenre: vocab.subgenre, tone: vocab.tone, theme: vocab.theme }}
         />
+        <InviteLinkSection userId={user.id} />
         <DeleteAccountSection username={username} />
       </div>
     </div>
