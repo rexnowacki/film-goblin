@@ -2,6 +2,7 @@
 
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
@@ -90,5 +91,29 @@ export async function adminSetUserRole(
 
   revalidatePath("/admin/users");
   revalidatePath(`/admin/users/${userId}`);
+  return { ok: true };
+}
+
+export async function adminSendPasswordReset(
+  userId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createClient();
+  await requireAdmin(supabase);
+
+  const sr = serviceRoleClient();
+  const { data: userData, error: userErr } = await sr.auth.admin.getUserById(userId);
+  if (userErr || !userData.user?.email) {
+    return { ok: false, error: userErr?.message ?? "User not found." };
+  }
+
+  const hdrs = await headers();
+  const origin =
+    hdrs.get("origin") ??
+    `https://${hdrs.get("host") ?? "film-goblin.vercel.app"}`;
+
+  const { error } = await sr.auth.resetPasswordForEmail(userData.user.email, {
+    redirectTo: `${origin}/auth/reset`,
+  });
+  if (error) return { ok: false, error: error.message };
   return { ok: true };
 }

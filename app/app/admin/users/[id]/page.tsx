@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getUserForAdmin } from "@/lib/queries/admin/users";
 import DeleteUserModal from "../DeleteUserModal";
 import RoleControl from "./RoleControl";
+import ResetPasswordButton from "./ResetPasswordButton";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "never";
@@ -42,6 +43,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
           <Field label="Created" value={fmtDate(user.created_at)} />
           <Field label="Last sign-in" value={fmtDate(user.last_sign_in_at)} />
           <Field label="Identity providers" value={user.identities.length ? user.identities.join(", ") : "—"} />
+          <ResetPasswordButton userId={user.id} />
         </Section>
       </div>
 
