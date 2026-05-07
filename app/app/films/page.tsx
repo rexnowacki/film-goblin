@@ -8,6 +8,7 @@ import FilmPoster from "@/components/FilmPoster";
 import FilmsSearch from "@/components/FilmsSearch";
 import PosterQuickAdd from "@/components/PosterQuickAdd";
 import FilmsSortChips from "./FilmsSortChips";
+import FilmsEmptyState from "@/components/FilmsEmptyState";
 import Link from "next/link";
 import { compactCount } from "@/lib/format";
 
@@ -65,9 +66,7 @@ export default async function FilmsPage({
           </div>
 
           {films.length === 0 ? (
-            <div style={{ textAlign: "center", padding: 60, fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--muted)" }}>
-              No films match. The void returned nothing.
-            </div>
+            <FilmsEmptyState query={q} isSignedIn={!!user} />
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "var(--grid-gap)" }}>
               {films.map(f => (
