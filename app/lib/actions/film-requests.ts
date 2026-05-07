@@ -103,23 +103,15 @@ export async function submitFilmRequest(input: FilmRequestInput): Promise<Submit
   const svc = serviceRoleClient();
 
   // 1. Already in catalog?
-  let filmQuery = svc.from("films").select("id");
-  if (input.itunes_id) {
-    filmQuery = (filmQuery as any).eq("itunes_id", input.itunes_id);
-  } else {
-    filmQuery = (filmQuery as any).eq("title", input.title).eq("year", input.year);
-  }
-  const { data: existingFilm } = await (filmQuery as any).maybeSingle();
+  const { data: existingFilm } = input.itunes_id
+    ? await svc.from("films").select("id").eq("itunes_id", input.itunes_id).maybeSingle()
+    : await svc.from("films").select("id").eq("title", input.title).eq("year", input.year as number).maybeSingle();
   if (existingFilm) return { status: "already_in_catalog", filmId: existingFilm.id };
 
   // 2. Already requested?
-  let reqQuery = svc.from("film_requests").select("id, request_count").eq("status", "pending");
-  if (input.itunes_id) {
-    reqQuery = (reqQuery as any).eq("itunes_id", input.itunes_id);
-  } else {
-    reqQuery = (reqQuery as any).eq("title", input.title).eq("year", input.year);
-  }
-  const { data: existingReq } = await (reqQuery as any).maybeSingle();
+  const { data: existingReq } = input.itunes_id
+    ? await svc.from("film_requests").select("id, request_count").eq("status", "pending").eq("itunes_id", input.itunes_id).maybeSingle()
+    : await svc.from("film_requests").select("id, request_count").eq("status", "pending").eq("title", input.title).eq("year", input.year as number).maybeSingle();
 
   if (existingReq) {
     const { data: alreadyUser } = await svc
@@ -131,8 +123,13 @@ export async function submitFilmRequest(input: FilmRequestInput): Promise<Submit
 
     if (alreadyUser) return { status: "already_on_list" };
 
-    await svc.from("film_request_users").insert({ request_id: existingReq.id, user_id: user.id } as never);
-    await (svc.from("film_requests") as any)
+    const { error: insertUserErr } = await svc
+      .from("film_request_users")
+      .insert({ request_id: existingReq.id, user_id: user.id } as never);
+    if (insertUserErr) return { status: "error", message: insertUserErr.message ?? "Failed to link request." };
+
+    await svc
+      .from("film_requests")
       .update({ request_count: existingReq.request_count + 1, updated_at: new Date().toISOString() })
       .eq("id", existingReq.id);
 
@@ -164,20 +161,24 @@ export async function submitFilmRequest(input: FilmRequestInput): Promise<Submit
     return { status: "error", message: insertErr?.message ?? "Failed to save request." };
   }
 
-  await svc.from("film_request_users").insert({ request_id: newReq.id, user_id: user.id } as never);
+  const { error: insertErr2 } = await svc
+    .from("film_request_users")
+    .insert({ request_id: newReq.id, user_id: user.id } as never);
+  if (insertErr2) return { status: "error", message: insertErr2.message ?? "Failed to link request." };
 
   return { status: "ok" };
 }
 
-// ── fulfillRequest ───────────────────────────────────────────────────────────
+// ── _fulfillRequest ───────────────────────────────────────────────────────────
 
-export async function fulfillRequest(
+export async function _fulfillRequest(
   svc: SvcClient,
   requestId: string,
   filmId: string,
   filmTitle: string,
 ): Promise<void> {
-  await (svc.from("film_requests") as any)
+  await svc
+    .from("film_requests")
     .update({ status: "fulfilled", fulfilled_film_id: filmId, updated_at: new Date().toISOString() })
     .eq("id", requestId);
 
@@ -244,7 +245,7 @@ export async function fulfillFilmRequest(requestId: string): Promise<
 
   if (!createResult.ok) return createResult;
 
-  await fulfillRequest(svc, requestId, createResult.filmId, req.title);
+  await _fulfillRequest(svc, requestId, createResult.filmId, req.title);
   revalidatePath("/admin/film-requests");
   revalidatePath("/films");
 

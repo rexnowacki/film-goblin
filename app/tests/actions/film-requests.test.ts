@@ -22,15 +22,21 @@ vi.mock("@/lib/search/itunes-hit", () => ({
   toHit: vi.fn(p => p),
 }));
 
-import { searchFilmForRequest } from "@/lib/actions/film-requests";
+vi.mock("@/lib/supabase/service-role", () => ({
+  serviceRoleClient: vi.fn(),
+}));
+
+import { searchFilmForRequest, submitFilmRequest, _fulfillRequest } from "@/lib/actions/film-requests";
 import { searchAppleTv } from "@/lib/search/apple-tv";
 import { searchTmdb } from "@/lib/search/tmdb";
 import { searchFilms, parseFilm } from "film-goblin-worker";
+import { serviceRoleClient } from "@/lib/supabase/service-role";
 
 const mockSearchFilms = vi.mocked(searchFilms);
 const mockParseFilm = vi.mocked(parseFilm);
 const mockSearchAppleTv = vi.mocked(searchAppleTv);
 const mockSearchTmdb = vi.mocked(searchTmdb);
+const mockServiceRoleClient = vi.mocked(serviceRoleClient);
 
 const ITUNES_HIT = {
   itunes_id: 123, title: "The Fly", director: "David Cronenberg",
@@ -123,15 +129,6 @@ describe("searchFilmForRequest — fallback chain", () => {
 
 // ── submitFilmRequest ────────────────────────────────────────────────────────
 
-vi.mock("@/lib/supabase/service-role", () => ({
-  serviceRoleClient: vi.fn(),
-}));
-
-import { submitFilmRequest, fulfillRequest } from "@/lib/actions/film-requests";
-import { serviceRoleClient } from "@/lib/supabase/service-role";
-
-const mockServiceRoleClient = vi.mocked(serviceRoleClient);
-
 function makeChain(overrides: Record<string, unknown> = {}) {
   const chain = {
     select: vi.fn().mockReturnThis(),
@@ -183,24 +180,31 @@ describe("submitFilmRequest", () => {
   });
 
   it("inserts new request when no existing film or request", async () => {
-    let callNum = 0;
+    let filmRequestsCallNum = 0;
     const svc = {
-      from: vi.fn().mockImplementation(() => {
-        callNum++;
-        if (callNum === 1) {
-          // films check — not found
+      from: vi.fn().mockImplementation((table: string) => {
+        if (table === "films") {
           return { ...makeChain(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
         }
-        if (callNum === 2) {
-          // film_requests check — not found
-          return { ...makeChain(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
+        if (table === "film_requests") {
+          filmRequestsCallNum++;
+          if (filmRequestsCallNum === 1) {
+            // dedup check — not found
+            return { ...makeChain(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
+          }
+          // insert call with .select().single() chain
+          return {
+            insert: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: { id: "req-1" }, error: null }),
+              }),
+            }),
+          };
         }
-        if (callNum === 3) {
-          // insert film_requests
-          return { ...makeChain(), insert: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { id: "req-1" }, error: null }) }) }) };
+        if (table === "film_request_users") {
+          return { insert: vi.fn().mockResolvedValue({ data: null, error: null }) };
         }
-        // insert film_request_users
-        return { insert: vi.fn().mockResolvedValue({ data: null, error: null }) };
+        return {};
       }),
     } as any;
     mockServiceRoleClient.mockReturnValue(svc);
@@ -211,7 +215,7 @@ describe("submitFilmRequest", () => {
   });
 });
 
-describe("fulfillRequest", () => {
+describe("_fulfillRequest", () => {
   it("updates request status and inserts notifications for opted-in users only", async () => {
     const insertMock = vi.fn().mockResolvedValue({ error: null });
     const updateMock = vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) });
@@ -222,7 +226,10 @@ describe("fulfillRequest", () => {
         if (table === "film_request_users") {
           return {
             select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockResolvedValue({ data: [{ user_id: "u1" }, { user_id: "u2" }], error: null }),
+            eq: vi.fn().mockResolvedValue({
+              data: [{ user_id: "u1" }, { user_id: "u2" }, { user_id: "u3" }],
+              error: null,
+            }),
           };
         }
         if (table === "profiles") {
@@ -232,6 +239,7 @@ describe("fulfillRequest", () => {
               data: [
                 { id: "u1", notify_film_requests: true },
                 { id: "u2", notify_film_requests: false },
+                { id: "u3", notify_film_requests: null },
               ],
               error: null,
             }),
@@ -242,15 +250,17 @@ describe("fulfillRequest", () => {
       }),
     } as any;
 
-    await fulfillRequest(svc, "req-1", "film-abc", "The Fly");
+    await _fulfillRequest(svc, "req-1", "film-abc", "The Fly");
 
-    // u1 opted in → 1 notification; u2 opted out → excluded
+    // u1 (true) and u3 (null) opted in → 2 notifications; u2 (false) opted out
     expect(insertMock).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({ user_id: "u1", kind: "film_request_fulfilled" }),
+        expect.objectContaining({ user_id: "u3", kind: "film_request_fulfilled" }),
       ])
     );
     const notifications = insertMock.mock.calls[0][0] as Array<{ user_id: string }>;
     expect(notifications.some(n => n.user_id === "u2")).toBe(false);
+    expect(notifications.length).toBe(2);
   });
 });
