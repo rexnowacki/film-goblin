@@ -37,8 +37,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const description = film.description?.trim() || `${film.director}, ${film.year}.`;
   const url = `https://film-goblin.vercel.app/film/${film.id}`;
 
-  const ogImages = film.artwork_url ? [{ url: film.artwork_url, alt: film.title }] : [];
-  const twitterImages = film.artwork_url ? [film.artwork_url] : [];
+  const ogImageUrl = `https://film-goblin.vercel.app/api/og/film/${film.id}`;
+  const ogImages = [{ url: ogImageUrl, width: 1200, height: 630, alt: film.title }];
+  const twitterImages = [ogImageUrl];
 
   return {
     title: `${title} — Film Goblin`,
