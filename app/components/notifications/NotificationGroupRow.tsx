@@ -78,7 +78,7 @@ function headerHref(group: NotificationGroup): string {
     }
     case "film_request_fulfilled": {
       const filmId = (first.payload as { film_id?: string }).film_id;
-      return filmId ? `/film/${filmId}` : "/films";
+      return filmId ? `/film/${filmId}` : "/home";
     }
   }
 }

@@ -43,7 +43,7 @@ function targetFor(n: EnrichedNotification): string {
     }
     case "film_request_fulfilled": {
       const filmId = (n.payload as { film_id?: string }).film_id;
-      return filmId ? `/film/${filmId}` : "/films";
+      return filmId ? `/film/${filmId}` : "/home";
     }
   }
 }
@@ -90,8 +90,10 @@ function copyFor(n: EnrichedNotification): React.ReactNode {
       const payload = n.payload as { title?: string; theater_name?: string; date_label?: string };
       return <><strong>Your Hoard has found a screen.</strong> <em>{payload.title ?? title}</em> is coming to {payload.theater_name ?? "a local theater"}{payload.date_label ? ` — ${payload.date_label}` : ""}.</>;
     }
-    case "film_request_fulfilled":
-      return <><em>{title}</em> is now in the vault — your request was answered.</>;
+    case "film_request_fulfilled": {
+      const filmTitle = (n.payload as { film_title?: string }).film_title ?? "A film you requested";
+      return <><em>{filmTitle}</em> was just added to the catalog.</>;
+    }
   }
 }
 
