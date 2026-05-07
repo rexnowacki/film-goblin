@@ -83,6 +83,10 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
     // modifications and subsequent INSERTs with new type values. Skip it — the smoke
     // only asserts table/column presence, not constraint behavior. RLS tests cover the real constraint.
     if (f === "0152_tagging_system_v2.sql") continue;
+    // Skip migrations that depend on enum values added by ALTER TYPE (which pg-mem strips).
+    // These are partial-index constraints that reference enum literals not present in pg-mem's
+    // version of the enum. The smoke only asserts table presence, not index behavior.
+    if (f === "0165_local_haunts_notification_guard.sql") continue;
     const raw = readFileSync(join(DB_MIGRATIONS, f), "utf8");
     // pg-mem can't parse `LANGUAGE plpgsql SECURITY DEFINER` functions. Skip
     // any migration file that defines one — the smoke only asserts table
@@ -105,6 +109,9 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
       .filter(stmt => !/CREATE\s+(OR\s+REPLACE\s+)?VIEW\b/i.test(stmt))
       .filter(stmt => !/DROP\s+VIEW\b/i.test(stmt))
       .filter(stmt => !/CREATE\s+TRIGGER\b/i.test(stmt))
+      .filter(stmt => !/ALTER\s+TYPE\b/i.test(stmt))
+      // Remove statements that are only comments (no actual SQL keyword)
+      .filter(stmt => /^\s*(?:CREATE|ALTER|DROP|INSERT|UPDATE|DELETE|SELECT|WITH|TRUNCATE)\b/im.test(stmt))
       .join(";\n");
     if (stripped.trim()) await client.query(stripped);
   }

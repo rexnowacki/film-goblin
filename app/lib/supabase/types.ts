@@ -6,12 +6,16 @@
 //                  trailer_updated_at, trailer_url, trailer_verified,
 //                  trailer_youtube_id
 //   film_tags:     position (SMALLINT), is_primary (BOOLEAN)
+//   film_requests: entire table — added by mig 0170
+//   film_request_users: entire table — added by mig 0170
 //   profiles:      email_added_at, is_starter, starter_order, lane_tag_ids,
-//                  role (Enum or string), notify_* opt-out columns
+//                  role (Enum or string), notify_* opt-out columns,
+//                  notify_film_requests (BOOLEAN) — added by mig 0170
 //   watched:       recommended (BOOLEAN | null)
 //   films_with_stats (view): coven_rating_pct, coven_rating_count
 //   tags:          type is a 6-value literal union, not generic string
 //   goblin_pick:   whisper_text (TEXT | null) — added by mig 0169
+//   notification_kind enum: film_request_fulfilled — added by mig 0170
 //
 // Workflow when regen is needed on the other machine:
 //   1. Run `npm run gen:types` to get fresh output.
@@ -315,6 +319,106 @@ export type Database = {
           to_user_id?: string
         }
         Relationships: []
+      }
+      film_request_users: {
+        Row: {
+          created_at: string
+          request_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          request_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          request_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "film_request_users_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "film_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      film_requests: {
+        Row: {
+          artwork_url: string | null
+          content_advisory: string | null
+          created_at: string
+          description: string | null
+          director: string | null
+          fulfilled_film_id: string | null
+          genre_primary: string | null
+          id: string
+          itunes_id: number | null
+          itunes_url: string | null
+          needs_itunes_id: boolean
+          request_count: number
+          runtime_min: number | null
+          source: "itunes" | "tmdb" | "manual"
+          status: "pending" | "fulfilled"
+          title: string
+          tmdb_id: number | null
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          artwork_url?: string | null
+          content_advisory?: string | null
+          created_at?: string
+          description?: string | null
+          director?: string | null
+          fulfilled_film_id?: string | null
+          genre_primary?: string | null
+          id?: string
+          itunes_id?: number | null
+          itunes_url?: string | null
+          needs_itunes_id?: boolean
+          request_count?: number
+          runtime_min?: number | null
+          source: "itunes" | "tmdb" | "manual"
+          status?: "pending" | "fulfilled"
+          title: string
+          tmdb_id?: number | null
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          artwork_url?: string | null
+          content_advisory?: string | null
+          created_at?: string
+          description?: string | null
+          director?: string | null
+          fulfilled_film_id?: string | null
+          genre_primary?: string | null
+          id?: string
+          itunes_id?: number | null
+          itunes_url?: string | null
+          needs_itunes_id?: boolean
+          request_count?: number
+          runtime_min?: number | null
+          source?: "itunes" | "tmdb" | "manual"
+          status?: "pending" | "fulfilled"
+          title?: string
+          tmdb_id?: number | null
+          updated_at?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "film_requests_fulfilled_film_id_fkey"
+            columns: ["fulfilled_film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       film_tags: {
         Row: {
@@ -974,6 +1078,7 @@ export type Database = {
           lane_tag_ids: string[]
           discoverable: boolean
           notify_comment_likes: boolean
+          notify_film_requests: boolean
           notify_rate_reminders: boolean
           username: string
           onboarded_at: string | null
@@ -1000,6 +1105,7 @@ export type Database = {
           lane_tag_ids?: string[]
           discoverable?: boolean
           notify_comment_likes?: boolean
+          notify_film_requests?: boolean
           notify_rate_reminders?: boolean
           username: string
           onboarded_at?: string | null
@@ -1026,6 +1132,7 @@ export type Database = {
           lane_tag_ids?: string[]
           discoverable?: boolean
           notify_comment_likes?: boolean
+          notify_film_requests?: boolean
           notify_rate_reminders?: boolean
           username?: string
           onboarded_at?: string | null
@@ -1372,6 +1479,7 @@ export type Database = {
         | "recommendation_received"
         | "price_drop"
         | "comment_on_activity"
+        | "film_request_fulfilled"
         | "like_on_comment"
         | "rate_reminder"
         | "reply_on_comment"

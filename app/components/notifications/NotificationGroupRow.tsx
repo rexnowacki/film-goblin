@@ -41,6 +41,8 @@ function headerCopy(group: NotificationGroup): React.ReactNode {
       return <>You have <strong>{group.count}</strong> pending rate reminders.</>;
     case "theater_showing_match":
       return <><strong>{group.count} local haunts</strong> matched your Hoard.</>;
+    case "film_request_fulfilled":
+      return <><strong>{group.count} film requests</strong> were fulfilled.</>;
   }
 }
 
@@ -73,6 +75,10 @@ function headerHref(group: NotificationGroup): string {
     case "theater_showing_match": {
       const showingId = (first.payload as { showing_id?: string }).showing_id;
       return showingId ? `/local-haunts/${encodeURIComponent(showingId)}` : "/home";
+    }
+    case "film_request_fulfilled": {
+      const filmId = (first.payload as { film_id?: string }).film_id;
+      return filmId ? `/film/${filmId}` : "/films";
     }
   }
 }

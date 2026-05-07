@@ -41,6 +41,10 @@ function targetFor(n: EnrichedNotification): string {
       const showingId = (n.payload as { showing_id?: string }).showing_id;
       return showingId ? `/local-haunts/${encodeURIComponent(showingId)}` : "/home";
     }
+    case "film_request_fulfilled": {
+      const filmId = (n.payload as { film_id?: string }).film_id;
+      return filmId ? `/film/${filmId}` : "/films";
+    }
   }
 }
 
@@ -86,6 +90,8 @@ function copyFor(n: EnrichedNotification): React.ReactNode {
       const payload = n.payload as { title?: string; theater_name?: string; date_label?: string };
       return <><strong>Your Hoard has found a screen.</strong> <em>{payload.title ?? title}</em> is coming to {payload.theater_name ?? "a local theater"}{payload.date_label ? ` — ${payload.date_label}` : ""}.</>;
     }
+    case "film_request_fulfilled":
+      return <><em>{title}</em> is now in the vault — your request was answered.</>;
   }
 }
 
