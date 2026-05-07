@@ -7,6 +7,7 @@ export interface LoadMoreFeedArgs {
   before: string;            // cursor — return rows strictly older than this ISO timestamp
   actorId?: string;
   filmId?: string;
+  kinds?: string[];          // when set, restrict to these activity kinds
   limit?: number;            // default 20
 }
 
@@ -37,6 +38,7 @@ export async function loadMoreFeed(args: LoadMoreFeedArgs): Promise<LoadMoreFeed
     before: args.before,
     actorId: args.actorId && UUID_RE.test(args.actorId) ? args.actorId : undefined,
     filmId: args.filmId && UUID_RE.test(args.filmId) ? args.filmId : undefined,
+    kinds: args.kinds?.length ? args.kinds : undefined,
   };
   const page = await getEnrichedActivity(supabase, user.id, opts);
   return {

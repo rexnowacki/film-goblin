@@ -75,6 +75,8 @@ export interface FeedFilters {
   // Cursor: return only activity strictly older than this ISO timestamp.
   // Used by infinite scroll on /home.
   before?: string;
+  // When set, restrict to these activity kinds (used by tab-scoped queries).
+  kinds?: string[];
 }
 
 export interface EnrichedActivityPage {
@@ -134,16 +136,22 @@ export async function getEnrichedActivity(
   if (opts.filmId) {
     primary = primary.filter("payload->>film_id", "eq", opts.filmId);
   }
+  if (opts.kinds && opts.kinds.length > 0) {
+    primary = primary.in("kind", opts.kinds as EnrichedActivity["kind"][]);
+  }
   if (opts.before) {
     primary = primary.lt("created_at", opts.before);
   }
   primary = primary.limit(limit);
 
+  // Skip recsToMe when kinds are specified and don't include recommendation_sent —
+  // no point fetching recs for a reviews or lists tab.
+  const includeRecsToMe = !isFiltered && (!opts.kinds?.length || opts.kinds.includes("recommendation_sent"));
+
   const [byActor, recsToMe] = await Promise.all([
     primary,
-    isFiltered
-      ? Promise.resolve({ data: [] as Array<{ id: string; kind: string; payload: unknown; created_at: string; actor_user_id: string }>, error: null })
-      : (() => {
+    includeRecsToMe
+      ? (() => {
           let q = client
             .from("activity")
             .select("id, kind, payload, created_at, actor_user_id")
@@ -152,7 +160,8 @@ export async function getEnrichedActivity(
             .order("created_at", { ascending: false });
           if (opts.before) q = q.lt("created_at", opts.before);
           return q.limit(limit);
-        })(),
+        })()
+      : Promise.resolve({ data: [] as Array<{ id: string; kind: string; payload: unknown; created_at: string; actor_user_id: string }>, error: null }),
   ]);
   if (byActor.error) throw byActor.error;
   if (recsToMe.error) throw recsToMe.error;

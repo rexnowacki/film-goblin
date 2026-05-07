@@ -15,14 +15,21 @@ import FeedSearch from "@/components/FeedSearch";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PAGE_SIZE = 20;
 
+const TAB_KINDS: Record<string, string[]> = {
+  reviews: ["review_published"],
+  recs: ["recommendation_sent"],
+  lists: ["list_created", "list_film_added"],
+};
+
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ actor?: string; film?: string }>;
+  searchParams: Promise<{ actor?: string; film?: string; tab?: string }>;
 }) {
   const sp = await searchParams;
   const actorId = sp.actor && UUID_RE.test(sp.actor) ? sp.actor : null;
   const filmId = sp.film && UUID_RE.test(sp.film) ? sp.film : null;
+  const tabParam = sp.tab ?? "all";
   const user = await getServerUser();
   const supabase = await createClient();
 
@@ -31,13 +38,15 @@ export default async function HomePage({
         limit: PAGE_SIZE,
         actorId: actorId ?? undefined,
         filmId: filmId ?? undefined,
+        kinds: TAB_KINDS[tabParam],
       })
     : { items: [], nextCursor: null, done: true };
   const initialItems = initialPage.items;
   const initialCursor = initialPage.nextCursor;
   const initialDone = initialPage.done;
 
-  const followedActivity = user ? await getFollowedActivity(supabase, user.id) : [];
+  // Only load "From the Goblins" on the ALL tab — it's not relevant to filtered tabs.
+  const followedActivity = (user && tabParam === "all") ? await getFollowedActivity(supabase, user.id) : [];
   const [priceDropFilms, goblinPick] = await Promise.all([
     user ? getWatchlistPriceDropFilms(supabase, user.id, 5) : Promise.resolve([]),
     getGoblinPick(supabase),
@@ -98,7 +107,7 @@ export default async function HomePage({
             initialDone={initialDone}
             filters={{ actorId: actorId ?? undefined, filmId: filmId ?? undefined }}
           />
-          {followedActivity.length > 0 && (
+          {tabParam === "all" && followedActivity.length > 0 && (
             <section style={{ marginTop: 48, paddingBottom: 48 }}>
               <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 14 }}>
                 From the Goblins

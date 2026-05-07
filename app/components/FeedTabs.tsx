@@ -17,6 +17,15 @@ const MATCHERS: Record<Tab, (k: EnrichedActivity["kind"]) => boolean> = {
   lists: (k) => k === "list_created" || k === "list_film_added",
 };
 
+// Mirrors TAB_KINDS in home/page.tsx — passed to loadMoreFeed so pagination
+// stays scoped to the active tab, matching the server-rendered initial page.
+const TAB_KINDS: Record<Tab, string[]> = {
+  all: [],
+  reviews: ["review_published"],
+  recs: ["recommendation_sent"],
+  lists: ["list_created", "list_film_added"],
+};
+
 function feedItemMatches(item: FeedItem, matcher: (k: EnrichedActivity["kind"]) => boolean): boolean {
   if (item.type === "single") return matcher(item.activity.kind);
   return matcher(item.group.kind);
@@ -47,9 +56,11 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
   const loadingRef = useRef(false);
   const cursorRef = useRef(cursor);
   const doneRef = useRef(done);
+  const tabRef = useRef(tab);
   useEffect(() => { loadingRef.current = loading; }, [loading]);
   useEffect(() => { cursorRef.current = cursor; }, [cursor]);
   useEffect(() => { doneRef.current = done; }, [done]);
+  useEffect(() => { tabRef.current = tab; }, [tab]);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -72,10 +83,12 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
     if (loadingRef.current || doneRef.current || !cursorRef.current) return;
     setLoading(true);
     try {
+      const kinds = TAB_KINDS[tabRef.current];
       const res = await loadMoreFeed({
         before: cursorRef.current,
         actorId: filters.actorId,
         filmId: filters.filmId,
+        kinds: kinds.length ? kinds : undefined,
       });
       setItems(prev => {
         const seen = new Set(prev.map(i => i.id));

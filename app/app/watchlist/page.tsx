@@ -9,6 +9,7 @@ import FilmPoster from "@/components/FilmPoster";
 import PosterDropBadge from "@/components/PosterDropBadge";
 import PosterMobileActions from "@/components/PosterMobileActions";
 import WatchlistSortChips from "./WatchlistSortChips";
+import WatchlistSearch from "@/components/WatchlistSearch";
 
 const VALID_SORTS: readonly WatchlistSort[] = ["drop", "recency", "price-low", "alphabetical"] as const;
 
@@ -28,23 +29,35 @@ function WatchlistEmpty() {
   );
 }
 
+function matchesQuery(film: { title: string; director: string; year: number }, q: string): boolean {
+  const needle = q.toLowerCase();
+  return (
+    film.title.toLowerCase().includes(needle) ||
+    (film.director ?? "").toLowerCase().includes(needle) ||
+    String(film.year).includes(needle)
+  );
+}
+
 export default async function WatchlistPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string }>;
+  searchParams: Promise<{ sort?: string; q?: string }>;
 }) {
   const supabase = await createClient();
-  const { sort: sortParam } = await searchParams;
+  const { sort: sortParam, q: rawQ } = await searchParams;
   const sort: WatchlistSort =
     sortParam && (VALID_SORTS as readonly string[]).includes(sortParam)
       ? (sortParam as WatchlistSort)
       : "drop";
+  const q = (rawQ ?? "").trim();
 
   const [rows, myProfile] = await Promise.all([
     getMyWatchlistWithFilms(supabase),
     getMyProfile(supabase),
   ]);
-  const sorted = sortWatchlist(rows, sort);
+  const sorted = q
+    ? sortWatchlist(rows, sort).filter(r => matchesQuery(r.film, q))
+    : sortWatchlist(rows, sort);
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
@@ -65,8 +78,14 @@ export default async function WatchlistPage({
             <WatchlistEmpty />
           ) : (
             <>
-              <div style={{ fontFamily: "var(--font-ui)", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 8 }}>Sort by</div>
+              <WatchlistSearch />
+              <div style={{ fontFamily: "var(--font-ui)", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 8, marginTop: 12 }}>Sort by</div>
               <WatchlistSortChips currentSort={sort} />
+              {sorted.length === 0 && q && (
+                <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--muted)", padding: "20px 0" }}>
+                  No films match.
+                </div>
+              )}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "var(--grid-gap)" }}>
                 {sorted.map(r => {
                   const dropPct = computeDropPct(r);
