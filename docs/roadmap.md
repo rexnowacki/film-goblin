@@ -6,13 +6,10 @@ into an actual build, it becomes a spec under `docs/superpowers/specs/`.
 
 See `docs/backlog.md` for unprioritized ideas. Full list of shipped
 sub-projects with spec paths lives in `docs/sub-project-history.md`
-(thirty-seven shipped as of 2026-05-02).
+(thirty-nine shipped as of 2026-05-07).
 
 ## High
 
-- **Your Ledger home widget.** Own watchlist summary (deals, on-watchlist
-  count, recent drops) in the left aside of `/home`. Explicit deferral
-  from sub-project 6. `/home` still renders the placeholder text.
 - **Real sender domain for email.** Buy / configure a domain, verify DNS
   with Resend, swap `NOTIFY_FROM_EMAIL`. Unblocks price-drop digests
   reaching actual users — currently restricted to the account holder's
@@ -58,18 +55,10 @@ sub-projects with spec paths lives in `docs/sub-project-history.md`
   inline as the user types.
 - **Persist `alert_threshold_pct` on profiles.** Let users change all
   alerts at once via `/settings` instead of per-watchlist-row tuning.
-- **Feed page parity + user-search.** Bring `/home` in line with
-  `/library` / `/watchlist` / `/films` visually — bone-stripe hero
-  with `.h-display` headline, accent `<em>`, the same body shell.
-  Functionally, add a search input that lets the viewer pull up another
-  user's activity stream inside the feed surface (today the only path
-  is `/p/[username]`, which is profile-shaped, not feed-shaped). Pairs
-  with the infinite-scroll item below.
-- **Feed infinite scroll.** Today `getEnrichedFeed` loads 50 items in
-  one shot. Switch to 20-at-a-time with intersection-observer-driven
-  pagination, fetching the next 20 each time the user scrolls the
-  bottom into view. Cursor-based on `created_at` to avoid drift if
-  new activity lands mid-scroll.
+- **User-search in feed.** Add a search input that lets the viewer pull
+  up another user's activity stream inside the feed surface. Today the
+  only path is `/p/[username]`, which is profile-shaped, not
+  feed-shaped.
 
 ## Medium
 
