@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import FilmForm from "../FilmForm";
 import AppleTvSearchBox from "../AppleTvSearchBox";
 import ITunesPasteBox from "../iTunesPasteBox";
 import TmdbSearchBox from "../TmdbSearchBox";
-import type { ITunesSearchHit } from "@/lib/actions/admin/films";
-import type { FilmFormFields } from "@/lib/actions/admin/films";
+import type { ITunesSearchHit, FilmFormFields } from "@/lib/actions/admin/films";
 
 const BLANK: FilmFormFields = {
   itunes_id: null,
@@ -24,8 +24,38 @@ const BLANK: FilmFormFields = {
 };
 
 export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } = {}) {
+  const searchParams = useSearchParams();
+  const requestId = searchParams.get("request_id");
+
   const [initial, setInitial] = useState<FilmFormFields | null>(null);
   const [formKey, setFormKey] = useState(0);
+  const [requestTitle, setRequestTitle] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!requestId) return;
+    fetch(`/api/admin/film-request?id=${requestId}`)
+      .then(r => r.json())
+      .then((req: any) => {
+        if (!req) return;
+        setRequestTitle(req.title);
+        setInitial({
+          itunes_id: req.itunes_id ?? null,
+          title: req.title ?? "",
+          director: req.director ?? "",
+          year: req.year ?? 0,
+          runtime_min: req.runtime_min ?? 0,
+          genre_primary: req.genre_primary ?? "",
+          description: req.description ?? "",
+          content_advisory: req.content_advisory ?? "",
+          artwork_url: req.artwork_url ?? "",
+          itunes_url: req.itunes_url ?? "",
+          tracking: false,
+          available: true,
+        });
+        setFormKey(k => k + 1);
+      })
+      .catch(() => {});
+  }, [requestId]);
 
   function prefillFromHit(hit: ITunesSearchHit) {
     setInitial({
@@ -52,6 +82,17 @@ export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } 
 
   return (
     <div style={{ display: "grid", gap: 28 }}>
+      {requestId && requestTitle && (
+        <div style={{
+          background: "#1a1500", border: "1px solid #3a2a00", borderRadius: 6,
+          padding: "12px 16px", fontFamily: "var(--font-ui)", fontSize: 13,
+        }}>
+          <span style={{ color: "#fa0" }}>⚠</span>{" "}
+          Fulfilling request for <strong>&ldquo;{requestTitle}&rdquo;</strong>.
+          {!initial?.itunes_id && " iTunes ID not set — film will be unavailable until added."}
+        </div>
+      )}
+
       {!initial && (
         <>
           <section>
@@ -78,12 +119,14 @@ export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } 
 
       {initial && (
         <section>
-          <div style={{ marginBottom: 14 }}>
-            <button type="button" className="btn btn-sm btn-outline" onClick={() => setInitial(null)}>
-              ← Start over
-            </button>
-          </div>
-          <FilmForm key={formKey} mode="create" initial={initial} onSuccess={onSuccess} />
+          {!requestId && (
+            <div style={{ marginBottom: 14 }}>
+              <button type="button" className="btn btn-sm btn-outline" onClick={() => setInitial(null)}>
+                ← Start over
+              </button>
+            </div>
+          )}
+          <FilmForm key={formKey} mode="create" initial={initial} requestId={requestId ?? undefined} onSuccess={onSuccess} />
         </section>
       )}
     </div>

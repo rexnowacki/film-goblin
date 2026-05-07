@@ -8,6 +8,7 @@ interface Props {
   mode: "create" | "edit";
   filmId?: string; // required when mode=edit
   initial: FilmFormFields;
+  requestId?: string; // if set, fulfills the pending film request on create
   onSuccess?: () => void; // if provided, called instead of navigating (e.g. modal context)
 }
 
@@ -24,7 +25,7 @@ const INPUT_STYLE: React.CSSProperties = {
 const LABEL_STYLE: React.CSSProperties = { display: "block", marginBottom: 14 };
 const CAPS_STYLE: React.CSSProperties = { fontSize: 11, marginBottom: 6 };
 
-export default function FilmForm({ mode, filmId, initial, onSuccess }: Props) {
+export default function FilmForm({ mode, filmId, initial, requestId, onSuccess }: Props) {
   const [fields, setFields] = useState<FilmFormFields>(initial);
   const [err, setErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -40,7 +41,7 @@ export default function FilmForm({ mode, filmId, initial, onSuccess }: Props) {
     setSaving(true);
     try {
       const result = mode === "create"
-        ? await adminCreateFilm(fields)
+        ? await adminCreateFilm(fields, requestId)
         : await adminUpdateFilm(filmId!, fields);
       if (!result.ok) {
         setErr(result.error);

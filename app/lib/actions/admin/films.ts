@@ -10,6 +10,8 @@ import {
   type ParsedFilm,
 } from "film-goblin-worker";
 import { toHit, type ITunesSearchHit } from "@/lib/search/itunes-hit";
+import { _fulfillRequest } from "@/lib/actions/film-requests";
+import { serviceRoleClient } from "@/lib/supabase/service-role";
 
 export type { ITunesSearchHit } from "@/lib/search/itunes-hit";
 
@@ -75,7 +77,10 @@ function validateForm(fields: FilmFormFields): string | null {
   return null;
 }
 
-export async function adminCreateFilm(fields: FilmFormFields): Promise<
+export async function adminCreateFilm(
+  fields: FilmFormFields,
+  requestId?: string,
+): Promise<
   | { ok: true; filmId: string }
   | { ok: false; error: string }
 > {
@@ -108,6 +113,13 @@ export async function adminCreateFilm(fields: FilmFormFields): Promise<
     .select("id")
     .single();
   if (error) return { ok: false, error: error.message };
+
+  // Fulfill pending request if one triggered this add
+  if (requestId) {
+    const svc = serviceRoleClient();
+    await _fulfillRequest(svc, requestId, data.id, fields.title.trim());
+    revalidatePath("/admin/film-requests");
+  }
 
   revalidatePath("/admin/films");
   return { ok: true, filmId: data.id };
