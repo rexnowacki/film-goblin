@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { searchAppleTv, type AppleTvSearchResult } from "@/lib/search/apple-tv";
-import type { ITunesSearchHit } from "./itunes-hit";
+import type { ITunesSearchHit } from "@/lib/search/itunes-hit";
 
 export type SearchCandidate = ITunesSearchHit;
 export type SearchResult = AppleTvSearchResult;

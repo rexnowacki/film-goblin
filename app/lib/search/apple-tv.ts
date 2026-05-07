@@ -1,6 +1,6 @@
 import { parseFilm, fetchPrices } from "film-goblin-worker";
 import { extractAdamIdFromHtml } from "@/lib/apple-tv/resolve-adam-id";
-import { toHit, type ITunesSearchHit } from "@/lib/actions/admin/itunes-hit";
+import { toHit, type ITunesSearchHit } from "@/lib/search/itunes-hit";
 
 const APPLE_TV_SEARCH_REGION = "us";
 const BRAVE_ENDPOINT = "https://api.search.brave.com/res/v1/web/search";

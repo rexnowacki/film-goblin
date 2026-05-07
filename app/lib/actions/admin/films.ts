@@ -9,9 +9,9 @@ import {
   fetchPrices,
   type ParsedFilm,
 } from "film-goblin-worker";
-import { toHit, type ITunesSearchHit } from "./itunes-hit";
+import { toHit, type ITunesSearchHit } from "@/lib/search/itunes-hit";
 
-export type { ITunesSearchHit } from "./itunes-hit";
+export type { ITunesSearchHit } from "@/lib/search/itunes-hit";
 
 export interface FilmFormFields {
   itunes_id: number | null;
