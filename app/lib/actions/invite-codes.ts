@@ -61,11 +61,13 @@ export async function adminRevokeInviteCode(
   await requireAdmin(supabase);
 
   const sr = serviceRoleClient();
-  const { error } = await (sr as any).from("invite_codes")
+  const { data, error } = await (sr as any).from("invite_codes")
     .update({ revoked: true })
-    .eq("code", code);
+    .eq("code", code)
+    .select("code");
 
   if (error) return { error: error.message };
+  if (!data?.length) return { error: "Code not found." };
   revalidatePath("/admin/invite-codes");
   return {};
 }
