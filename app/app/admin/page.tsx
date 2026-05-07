@@ -11,6 +11,7 @@ export default function AdminHome() {
         <Tile href="/admin/announcements" title="Announcements" blurb="Publish and archive site-wide or targeted announcements." />
         <Tile href="/admin/goblin-pick" title="Goblin Pick" blurb="Set the weekly film recommendation shown on the home feed." />
         <Tile href="/admin/film-requests" title="Film Requests" blurb="Review and fulfill user requests for films not yet in the catalog." />
+        <Tile href="/admin/invite-codes" title="Invite Codes" blurb="Create and revoke invite links. See who's used each code." />
       </div>
     </div>
   );
