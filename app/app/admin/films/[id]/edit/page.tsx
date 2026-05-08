@@ -12,7 +12,7 @@ export default async function EditFilmPage({ params }: { params: Promise<{ id: s
   const supabase = await createClient();
   const { data: film } = await supabase
     .from("films")
-    .select("id, itunes_id, title, director, year, runtime_min, genre_primary, description, content_advisory, artwork_url, itunes_url, tracking, available")
+    .select("id, itunes_id, title, director, year, runtime_min, genre_primary, description, content_advisory, artwork_url, itunes_url, tracking, available, tmdb_id, theatrical_release_date")
     .eq("id", id)
     .maybeSingle();
   if (!film) notFound();
@@ -52,6 +52,8 @@ export default async function EditFilmPage({ params }: { params: Promise<{ id: s
     itunes_url: film.itunes_url,
     tracking: film.tracking,
     available: film.available,
+    tmdb_id: film.tmdb_id ?? null,
+    theatrical_release_date: film.theatrical_release_date ?? null,
   };
 
   return (

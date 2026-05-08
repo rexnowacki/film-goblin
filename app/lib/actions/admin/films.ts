@@ -28,6 +28,8 @@ export interface FilmFormFields {
   itunes_url: string;
   tracking: boolean;
   available: boolean;
+  tmdb_id: number | null;
+  theatrical_release_date: string | null;
 }
 
 function parseIdFromUrlOrId(raw: string): number | null {
@@ -102,6 +104,8 @@ export async function adminCreateFilm(
     itunes_url: fields.itunes_url.trim(),
     tracking: fields.tracking,
     available: fields.available,
+    tmdb_id: fields.tmdb_id,
+    theatrical_release_date: fields.theatrical_release_date,
   };
 
   // Cast needed because lib/supabase/types.ts pre-dates migration 0118 which
@@ -147,6 +151,8 @@ export async function adminUpdateFilm(id: string, fields: FilmFormFields): Promi
     itunes_url: fields.itunes_url.trim(),
     tracking: fields.tracking,
     available: fields.available,
+    tmdb_id: fields.tmdb_id,
+    theatrical_release_date: fields.theatrical_release_date,
   };
 
   const { error } = await supabase

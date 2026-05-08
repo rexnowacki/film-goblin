@@ -28,6 +28,8 @@ export interface TmdbFilmFields {
   itunes_url: string;
   tracking: boolean;
   available: boolean;
+  tmdb_id: number;
+  theatrical_release_date: string | null;
 }
 
 export async function searchTmdb(query: string): Promise<
@@ -95,6 +97,8 @@ export async function lookupTmdb(tmdbId: number): Promise<
       itunes_url: "",
       tracking: false,
       available: true,
+      tmdb_id: tmdbId,
+      theatrical_release_date: movie.release_date || null,
     };
 
     return { ok: true, fields };

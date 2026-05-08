@@ -21,6 +21,8 @@ const BLANK: FilmFormFields = {
   itunes_url: "",
   tracking: false,
   available: true,
+  tmdb_id: null,
+  theatrical_release_date: null,
 };
 
 export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } = {}) {
@@ -51,6 +53,8 @@ export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } 
           itunes_url: req.itunes_url ?? "",
           tracking: false,
           available: true,
+          tmdb_id: null,
+          theatrical_release_date: null,
         });
         setFormKey(k => k + 1);
       })
@@ -71,6 +75,8 @@ export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } 
       itunes_url: hit.itunes_url,
       tracking: true,
       available: true,
+      tmdb_id: null,
+      theatrical_release_date: null,
     });
     setFormKey(k => k + 1);
   }
