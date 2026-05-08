@@ -4,6 +4,7 @@ import { getUserForAdmin } from "@/lib/queries/admin/users";
 import DeleteUserModal from "../DeleteUserModal";
 import RoleControl from "./RoleControl";
 import ResetPasswordButton from "./ResetPasswordButton";
+import SetTempPasswordForm from "./SetTempPasswordForm";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "never";
@@ -45,6 +46,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
           <Field label="Last activity" value={fmtDate(user.last_activity_at)} />
           <Field label="Identity providers" value={user.identities.length ? user.identities.join(", ") : "—"} />
           <ResetPasswordButton userId={user.id} />
+          <SetTempPasswordForm userId={user.id} username={user.username} />
         </Section>
       </div>
 

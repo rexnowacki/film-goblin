@@ -152,6 +152,34 @@ export async function resetPassword(formData: FormData): Promise<{ error?: strin
   return { ok: true };
 }
 
+// Called from /auth/change-password after admin used adminForcePasswordChange.
+// Updates the password (the user is already signed in with the temp one) and
+// clears profiles.must_change_password so middleware lets them out.
+export async function completeForcedPasswordChange(
+  formData: FormData,
+): Promise<{ error?: string; ok?: boolean }> {
+  const newPassword = String(formData.get("new_password") || "");
+  const confirm = String(formData.get("confirm") || "");
+  if (newPassword.length < 6) return { error: "Password must be at least 6 characters." };
+  if (newPassword !== confirm) return { error: "Passwords don't match." };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const { error: passErr } = await supabase.auth.updateUser({ password: newPassword });
+  if (passErr) return { error: friendlyError(passErr) };
+
+  const sr = serviceRoleClient();
+  const { error: flagErr } = await sr
+    .from("profiles")
+    .update({ must_change_password: false })
+    .eq("id", user.id);
+  if (flagErr) return { error: flagErr.message };
+
+  return { ok: true };
+}
+
 export async function deleteAccount(): Promise<{ error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

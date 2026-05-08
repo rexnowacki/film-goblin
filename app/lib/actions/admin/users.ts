@@ -94,6 +94,36 @@ export async function adminSetUserRole(
   return { ok: true };
 }
 
+// Force-change flow for synthetic-email users (or anyone the admin wants to
+// reset out-of-band). Sets the user's password to a temp value chosen by the
+// admin and flips profiles.must_change_password = true. Middleware then
+// gates every request to /auth/change-password until the user picks a new
+// password through completeForcedPasswordChange().
+export async function adminForcePasswordChange(
+  userId: string,
+  tempPassword: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createClient();
+  await requireAdmin(supabase);
+
+  if (!userId) return { ok: false, error: "Missing user id." };
+  if (tempPassword.length < 6) return { ok: false, error: "Temp password must be at least 6 characters." };
+
+  const sr = serviceRoleClient();
+
+  const { error: passErr } = await sr.auth.admin.updateUserById(userId, { password: tempPassword });
+  if (passErr) return { ok: false, error: passErr.message };
+
+  const { error: flagErr } = await sr
+    .from("profiles")
+    .update({ must_change_password: true })
+    .eq("id", userId);
+  if (flagErr) return { ok: false, error: flagErr.message };
+
+  revalidatePath(`/admin/users/${userId}`);
+  return { ok: true };
+}
+
 export async function adminSendPasswordReset(
   userId: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {

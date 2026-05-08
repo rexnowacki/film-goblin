@@ -11,6 +11,7 @@
 //   profiles:      email_added_at, is_starter, starter_order, lane_tag_ids,
 //                  role (Enum or string), notify_* opt-out columns,
 //                  notify_film_requests (BOOLEAN) — added by mig 0170
+//                  must_change_password (BOOLEAN) — added by mig 0174
 //   watched:       recommended (BOOLEAN | null)
 //   films_with_stats (view): coven_rating_pct, coven_rating_count
 //   tags:          type is a 6-value literal union, not generic string
@@ -1082,6 +1083,7 @@ export type Database = {
           notify_rate_reminders: boolean
           username: string
           onboarded_at: string | null
+          must_change_password: boolean
           role: "goblin" | "witch" | "high_goblin"
           unsubscribe_token: string
           updated_at: string
@@ -1109,6 +1111,7 @@ export type Database = {
           notify_rate_reminders?: boolean
           username: string
           onboarded_at?: string | null
+          must_change_password?: boolean
           role?: "goblin" | "witch" | "high_goblin"
           unsubscribe_token?: string
           updated_at?: string
@@ -1136,6 +1139,7 @@ export type Database = {
           notify_rate_reminders?: boolean
           username?: string
           onboarded_at?: string | null
+          must_change_password?: boolean
           role?: "goblin" | "witch" | "high_goblin"
           unsubscribe_token?: string
           updated_at?: string

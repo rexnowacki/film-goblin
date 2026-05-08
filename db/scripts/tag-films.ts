@@ -26,7 +26,7 @@ interface TagPlan {
   skip?: string; // reason
 }
 
-const PLAN: Record<string, TagPlan> = {
+export const PLAN: Record<string, TagPlan> = {
   // ── Horror, well-known ──────────────────────────────────────────────────
   "6832e5f5-88f1-412f-a5b6-9e47fe30c633": {
     title: "A Dark Song",
@@ -1193,6 +1193,72 @@ const PLAN: Record<string, TagPlan> = {
   "42ff4fce-63c4-4363-b5e1-d4710e1eafa1": { title: "Undertone", skip: "Future release (2026); needs editorial review on confirmation." },
   "2f8ef361-f41b-4282-81c9-34e679553dc1": { title: "Watch If You Dare", skip: "Anthology — needs per-segment review." },
   "469b7c1f-7d5d-4d19-a687-f9bfe405ec68": { title: "Wormtown", skip: "Insufficient editorial info — needs manual review." },
+
+  // ── Added 2026-05-08: catalog films missing from initial pass ──────────
+  "497d69e3-c202-43e6-b1db-4ad99201fb61": {
+    title: "Alien",
+    primary: "cosmic horror",
+    secondaries: ["creature feature", "body horror"],
+    subjects: ["aliens"],
+    tones: ["claustrophobic", "atmospheric", "slow-burn"],
+    themes: ["paranoia", "isolation"],
+    content: ["gore", "violent"],
+    order: ["cosmic horror", "paranoia", "claustrophobic", "isolation", "atmospheric", "slow-burn", "aliens", "gore", "violent", "creature feature", "body horror"],
+  },
+  "65700a04-f26f-4d8c-b385-d1df4da46c00": {
+    title: "Aliens",
+    primary: "creature feature",
+    secondaries: ["survival horror"],
+    subjects: ["aliens"],
+    tones: ["claustrophobic", "atmospheric", "mean-spirited"],
+    themes: ["motherhood", "masculinity", "family trauma"],
+    content: ["gore", "violent"],
+    order: ["creature feature", "motherhood", "claustrophobic", "atmospheric", "mean-spirited", "masculinity", "family trauma", "aliens", "gore", "violent", "survival horror"],
+    note: "Sci-fi action sequel pivots Scott's slow-burn into a military siege; horror DNA still load-bearing.",
+  },
+  "f8ea8b96-ffa5-40fe-b21c-93bc650bfa46": {
+    title: "House",
+    primary: "haunted house",
+    secondaries: ["horror comedy"],
+    subjects: ["ghosts", "witches", "cursed place"],
+    tones: ["surreal", "psychedelic", "dreamlike"],
+    themes: ["coming-of-age", "motherhood"],
+    settings: ["rural horror"],
+    content: ["gore"],
+    order: ["haunted house", "surreal", "psychedelic", "dreamlike", "ghosts", "coming-of-age", "motherhood", "witches", "cursed place", "rural horror", "gore", "horror comedy"],
+  },
+  "973edc9d-1cd5-4a1c-914a-17275d70e7e8": {
+    title: "Scream 2",
+    primary: "slasher",
+    secondaries: ["horror comedy"],
+    subjects: ["serial killer"],
+    tones: ["funny", "mean-spirited"],
+    themes: ["paranoia"],
+    settings: ["urban horror"],
+    content: ["gore"],
+    order: ["slasher", "serial killer", "funny", "paranoia", "mean-spirited", "urban horror", "gore", "horror comedy"],
+  },
+  "573bdb05-7f9b-4efb-967e-f2f1342380ba": {
+    title: "Tales from the Crypt Presents: Bordello of Blood",
+    primary: "horror comedy",
+    subjects: ["vampires"],
+    tones: ["campy", "funny", "midnight movie"],
+    themes: ["sexuality"],
+    content: ["gore", "sexual content", "violent"],
+    order: ["horror comedy", "vampires", "campy", "funny", "midnight movie", "sexuality", "gore", "sexual content", "violent"],
+  },
+  "a88b152f-e523-4ec5-be89-2b46ceefcb47": {
+    title: "Tales from the Crypt Presents: Demon Knight",
+    primary: "horror comedy",
+    secondaries: ["supernatural horror"],
+    subjects: ["demons", "possession"],
+    tones: ["campy", "funny"],
+    themes: ["religion"],
+    settings: ["small town"],
+    content: ["gore", "violent"],
+    order: ["horror comedy", "demons", "campy", "funny", "religion", "possession", "small town", "gore", "violent", "supernatural horror"],
+  },
+  "ec53a0b4-a222-4d4e-862f-0f65ecc37e24": { title: "The Surrender", skip: "Recent indie horror — needs manual review for specific facets." },
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1229,6 +1295,7 @@ async function main() {
 
   let appliedCount = 0;
   let skipCount = 0;
+  let alreadyTaggedCount = 0;
   const errors: string[] = [];
 
   for (const filmId of Object.keys(PLAN)) {
@@ -1306,6 +1373,14 @@ async function main() {
       continue;
     }
 
+    // Idempotent guard — skip films already tagged.
+    // Preserves manual edits from the admin UI when re-running this script.
+    const existing = await c.query("SELECT 1 FROM film_tags WHERE film_id = $1 LIMIT 1", [filmId]);
+    if (existing.rows.length > 0) {
+      alreadyTaggedCount++;
+      continue;
+    }
+
     // Apply: delete-then-insert + horror_adjacent update.
     await c.query("BEGIN");
     try {
@@ -1358,14 +1433,18 @@ async function main() {
   }
 
   writeFileSync("/Users/christophernowacki/film-goblin/goblin_tagged.md", mdLines.join("\n") + "\n");
-  console.log(`\nTagged ${appliedCount} films, skipped ${skipCount}, ${errors.length} errors`);
+  console.log(`\nTagged ${appliedCount} films, skipped ${skipCount}, already-tagged ${alreadyTaggedCount}, ${errors.length} errors`);
   if (errors.length > 0) {
     console.log("\nErrors:");
     for (const e of errors) console.log("  -", e);
   }
 }
 
-main().catch(e => {
-  console.error(e);
-  process.exit(1);
-});
+// Only run main() when invoked directly — allows importing PLAN from sister scripts.
+const isMain = import.meta.url === `file://${process.argv[1]}`;
+if (isMain) {
+  main().catch(e => {
+    console.error(e);
+    process.exit(1);
+  });
+}

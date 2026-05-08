@@ -58,20 +58,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirect);
   }
 
-  // Onboarding gate: authenticated users with profiles.onboarded_at = null get
-  // routed to /onboarding from any non-auth, non-api page. Catches password
-  // sign-ins (the callback only handles OAuth + email-confirmation).
+  // Combined profile gate: authenticated users with either onboarded_at = null
+  // or must_change_password = true get routed to /onboarding or
+  // /auth/change-password from any non-auth, non-api page. One profile read
+  // serves both gates.
   if (
     user &&
     path !== "/onboarding" &&
-    !path.startsWith("/auth/") &&
-    !path.startsWith("/api/")
+    !path.startsWith("/api/") &&
+    !path.startsWith("/auth/")
   ) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("onboarded_at")
+      .select("onboarded_at, must_change_password")
       .eq("id", user.id)
       .single();
+    // must_change_password takes priority — admin reset trumps onboarding flow.
+    if (profile?.must_change_password) {
+      const redirect = request.nextUrl.clone();
+      redirect.pathname = "/auth/change-password";
+      redirect.search = "";
+      return NextResponse.redirect(redirect);
+    }
     if (!profile?.onboarded_at) {
       const redirect = request.nextUrl.clone();
       redirect.pathname = "/onboarding";
