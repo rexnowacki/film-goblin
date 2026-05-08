@@ -4,10 +4,13 @@
 //
 //   films:         horror_adjacent, trailer_label, trailer_source,
 //                  trailer_updated_at, trailer_url, trailer_verified,
-//                  trailer_youtube_id
+//                  trailer_youtube_id, tmdb_id (INT),
+//                  theatrical_release_date (DATE),
+//                  last_itunes_check_at (TIMESTAMPTZ) — added by mig 0175
 //   film_tags:     position (SMALLINT), is_primary (BOOLEAN)
 //   film_requests: entire table — added by mig 0170
 //   film_request_users: entire table — added by mig 0170
+//   itunes_candidates: entire table — added by mig 0175
 //   profiles:      email_added_at, is_starter, starter_order, lane_tag_ids,
 //                  role (Enum or string), notify_* opt-out columns,
 //                  notify_film_requests (BOOLEAN) — added by mig 0170
@@ -475,9 +478,12 @@ export type Database = {
           itunes_id: number | null
           itunes_url: string
           last_checked_at: string | null
+          last_itunes_check_at: string | null
           last_priced_at: string | null
           runtime_min: number
+          theatrical_release_date: string | null
           title: string
+          tmdb_id: number | null
           tracking: boolean
           trailer_label: string | null
           trailer_source: string | null
@@ -501,9 +507,12 @@ export type Database = {
           itunes_id?: number | null
           itunes_url?: string
           last_checked_at?: string | null
+          last_itunes_check_at?: string | null
           last_priced_at?: string | null
           runtime_min?: number
+          theatrical_release_date?: string | null
           title: string
+          tmdb_id?: number | null
           tracking?: boolean
           trailer_label?: string | null
           trailer_source?: string | null
@@ -527,9 +536,12 @@ export type Database = {
           itunes_id?: number | null
           itunes_url?: string
           last_checked_at?: string | null
+          last_itunes_check_at?: string | null
           last_priced_at?: string | null
           runtime_min?: number
+          theatrical_release_date?: string | null
           title?: string
+          tmdb_id?: number | null
           tracking?: boolean
           trailer_label?: string | null
           trailer_source?: string | null
@@ -540,6 +552,62 @@ export type Database = {
           year?: number
         }
         Relationships: []
+      }
+      itunes_candidates: {
+        Row: {
+          confidence: number
+          created_at: string
+          film_id: string
+          id: string
+          itunes_id: number
+          itunes_url: string
+          match_artwork_url: string | null
+          match_title: string
+          match_type: string
+          match_year: number | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: "pending" | "confirmed" | "rejected"
+        }
+        Insert: {
+          confidence: number
+          created_at?: string
+          film_id: string
+          id?: string
+          itunes_id: number
+          itunes_url: string
+          match_artwork_url?: string | null
+          match_title: string
+          match_type: string
+          match_year?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: "pending" | "confirmed" | "rejected"
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          film_id?: string
+          id?: string
+          itunes_id?: number
+          itunes_url?: string
+          match_artwork_url?: string | null
+          match_title?: string
+          match_type?: string
+          match_year?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: "pending" | "confirmed" | "rejected"
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itunes_candidates_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       follows: {
         Row: {
