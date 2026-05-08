@@ -1,29 +1,6 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { serviceRoleClient } from "@/lib/supabase/service-role";
-import { setInviteCodeCookie } from "@/lib/actions/invite-cookie";
 
-export default async function InvitePage({
-  params,
-}: {
-  params: Promise<{ code: string }>;
-}) {
-  const { code } = await params;
-
-  const sr = serviceRoleClient();
-  const { data, error } = await (sr as any).from("invite_codes")
-    .select("use_count, max_uses, revoked")
-    .eq("code", code)
-    .maybeSingle();
-  if (error) throw error;
-
-  const valid = data && !data.revoked && data.use_count < data.max_uses;
-
-  if (valid) {
-    await setInviteCodeCookie(code);
-    redirect("/auth/signup");
-  }
-
+export default function InviteExpiredPage() {
   return (
     <main
       style={{
