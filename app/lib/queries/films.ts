@@ -17,9 +17,11 @@ export async function getLandingMarquee(client: Client) {
 }
 
 export async function getFilm(client: Client, id: string) {
-  const { data, error } = await client
+  // Trailer columns added to films_with_stats in mig 0178; types.ts not
+  // regenerated yet so we cast through `as never` on the select string.
+  const { data, error } = await (client as unknown as { from: (t: string) => { select: (s: string) => { eq: (k: string, v: string) => { single: () => Promise<{ data: unknown; error: unknown }> } } } })
     .from("films_with_stats")
-    .select("id, itunes_id, title, director, year, runtime_min, genre_primary, description, content_advisory, artwork_url, itunes_url, tracking, available, first_seen_at, last_checked_at, last_priced_at, watchlist_count, owned_count, watcher_count, latest_price, coven_rating_pct, coven_rating_count")
+    .select("id, itunes_id, title, director, year, runtime_min, genre_primary, description, content_advisory, artwork_url, itunes_url, tracking, available, first_seen_at, last_checked_at, last_priced_at, watchlist_count, owned_count, watcher_count, latest_price, coven_rating_pct, coven_rating_count, trailer_url, trailer_youtube_id, trailer_label, trailer_verified")
     .eq("id", id)
     .single();
   if (error) throw error;
@@ -28,9 +30,17 @@ export async function getFilm(client: Client, id: string) {
   // have non-null id/title/director/year fields (the underlying `films` table
   // declares them NOT NULL). This narrowing lets the page consumer pass film.id
   // and film.title directly without `!` assertions.
-  return data as typeof data & {
-    id: string; title: string; director: string; year: number;
-    watchlist_count: number; watcher_count: number;
+  return data as {
+    id: string; itunes_id: number | null; title: string; director: string;
+    year: number; runtime_min: number; genre_primary: string;
+    description: string; content_advisory: string; artwork_url: string;
+    itunes_url: string; tracking: boolean; available: boolean;
+    first_seen_at: string; last_checked_at: string | null; last_priced_at: string | null;
+    watchlist_count: number; owned_count: number; watcher_count: number;
+    latest_price: number | null;
+    coven_rating_pct: number | null; coven_rating_count: number | null;
+    trailer_url: string | null; trailer_youtube_id: string | null;
+    trailer_label: string | null; trailer_verified: boolean;
   };
 }
 

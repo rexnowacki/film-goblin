@@ -21,6 +21,7 @@ import PriceStatBlock from "@/components/PriceStatBlock";
 import CovenScore from "@/components/CovenScore";
 import FilmTagsRow from "@/components/FilmTagsRow";
 import ShareFilmButton from "@/components/ShareFilmButton";
+import TrailerButton from "@/components/TrailerButton";
 import SharerWatchPin from "@/components/SharerWatchPin";
 import FilmCTABanner from "@/components/FilmCTABanner";
 import { compactCount } from "@/lib/format";
@@ -173,6 +174,13 @@ export default async function FilmDetailPage({
                 covenMembers={covenMembers.map(m => ({ id: m.id, username: m.username, display_name: m.display_name, avatar_url: m.avatar_url }))}
                 topCovenMemberIds={topCovenMemberIds}
               />}
+              {film.trailer_youtube_id && (
+                <TrailerButton
+                  youtubeId={film.trailer_youtube_id}
+                  filmTitle={film.title}
+                  label={film.trailer_label}
+                />
+              )}
               <ShareFilmButton
                 filmId={film.id}
                 title={film.title}
