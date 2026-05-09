@@ -1,9 +1,12 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { signUp } from "@/lib/actions/auth";
+import { signUp, checkUsernameAvailability } from "@/lib/actions/auth";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
+
+const USERNAME_RE = /^[a-z0-9._]+$/;
+type CheckState = "idle" | "checking" | "ok" | "taken" | "invalid";
 
 function SignUpInner() {
   const params = useSearchParams();
@@ -11,9 +14,37 @@ function SignUpInner() {
   const [info, setInfo] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState(false);
   const [pending, setPending] = useState(false);
+  const [username, setUsername] = useState("");
+  const [check, setCheck] = useState<CheckState>("idle");
+  const reqIdRef = useRef(0);
   const redirectTo = params.get("redirect") || "/home";
   const inviteRaw = params.get("invite");
   const invite = inviteRaw && /^[a-z0-9._]+$/.test(inviteRaw) ? inviteRaw : null;
+
+  useEffect(() => {
+    const trimmed = username.trim().toLowerCase();
+    if (!trimmed) {
+      setCheck("idle");
+      return;
+    }
+    if (trimmed.length > 24 || !USERNAME_RE.test(trimmed)) {
+      setCheck("invalid");
+      return;
+    }
+    setCheck("checking");
+    const myReq = ++reqIdRef.current;
+    const handle = setTimeout(async () => {
+      try {
+        const { status } = await checkUsernameAvailability(trimmed);
+        if (myReq !== reqIdRef.current) return; // stale response
+        setCheck(status);
+      } catch {
+        if (myReq !== reqIdRef.current) return;
+        setCheck("idle"); // network blip — let submit-time check be the source of truth
+      }
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [username]);
 
   async function submit(formData: FormData) {
     setPending(true);
@@ -60,8 +91,11 @@ function SignUpInner() {
             maxLength={24}
             autoComplete="username"
             placeholder="toothtony"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 6, fontFamily: "var(--font-ui)" }}
           />
+          <UsernameStatus state={check} />
           <div style={{ fontFamily: "var(--font-serif)", fontSize: 11, fontStyle: "italic", opacity: 0.6, marginBottom: 20 }}>
             Lowercase letters, numbers, dots, underscores. This is your @. Add a display name later in settings.
           </div>
@@ -89,13 +123,33 @@ function SignUpInner() {
               {info}
             </div>
           )}
-          <button type="submit" disabled={pending} className="btn btn-dark btn-lg" style={{ width: "100%", justifyContent: "center" }}>
+          <button
+            type="submit"
+            disabled={pending || check === "checking" || check === "taken" || check === "invalid"}
+            className="btn btn-dark btn-lg"
+            style={{ width: "100%", justifyContent: "center" }}
+          >
             {pending ? "Binding…" : "✦ Agree And Seal"}
           </button>
         </form>
       </div>
     </main>
   );
+}
+
+function UsernameStatus({ state }: { state: CheckState }) {
+  if (state === "idle") return null;
+  const base = {
+    fontFamily: "var(--font-serif)",
+    fontStyle: "italic" as const,
+    fontSize: 12,
+    marginBottom: 8,
+    minHeight: 16,
+  };
+  if (state === "checking") return <div style={{ ...base, color: "var(--muted)" }}>Checking…</div>;
+  if (state === "ok") return <div style={{ ...base, color: "var(--accent-deep)" }}>✓ Available</div>;
+  if (state === "taken") return <div style={{ ...base, color: "var(--blood)" }}>✕ Already taken</div>;
+  return <div style={{ ...base, color: "var(--blood)" }}>Lowercase letters, numbers, dots, underscores only.</div>;
 }
 
 export default function SignUpPage() {

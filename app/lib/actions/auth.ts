@@ -110,6 +110,24 @@ export async function signUp(formData: FormData): Promise<{ error?: string; info
   redirect(target);
 }
 
+export type UsernameCheckStatus = "ok" | "taken" | "invalid";
+
+export async function checkUsernameAvailability(
+  usernameRaw: string,
+): Promise<{ status: UsernameCheckStatus }> {
+  const username = String(usernameRaw || "").trim().toLowerCase();
+  if (!username || username.length > 24 || !USERNAME_RE.test(username)) {
+    return { status: "invalid" };
+  }
+  const admin = serviceRoleClient();
+  const { data: existing } = await admin
+    .from("profiles")
+    .select("id")
+    .ilike("username", username)
+    .limit(1);
+  return { status: existing && existing.length > 0 ? "taken" : "ok" };
+}
+
 export async function signOut(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
