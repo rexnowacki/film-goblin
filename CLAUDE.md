@@ -21,7 +21,6 @@ For full history of all 39 sub-projects → `docs/sub-project-history.md`.
 
 **Open threads:**
 - **iTunes cron first run.** First scheduled trigger Mon 2026-05-11 14:00 UTC. Watch `/admin/itunes-candidates` after — backfill of existing TMDB-only films may queue 5–15 entries. Use the `Confirm match` / `Reject` buttons. Rejection cooldown is 14 days before the cron retries that film. Manual smoke-test requires CRON_SECRET (encrypted in Vercel env, view-only via dashboard).
-- **`tests/queries/film-watchers.test.ts` has bad fixtures.** Tests use `f1lm0000-0000-0000-0000-000000000001` as a film_id but Postgres rejects it as not-a-UUID. Currently 11 tests fail in this file. Pre-existing bug (was masked previously by the create-user trigger failure that aborted earlier). Fix: replace the fake-UUID strings with real `crypto.randomUUID()` values in `beforeAll`.
 - **3 films still untagged** — Materialists, Smashing Machine (both not-horror catalog stragglers — could be deleted from `films` entirely), and The Surrender (2025 indie I haven't seen — needs manual review).
 - **Sub-project #33 RLS tests not run locally.** Colima Docker socket issue. Run on the other machine / in CI.
 - **Recommender v3 unverified at user scale.** Watch /for-you; tune `LENGTH_PENALTY_GAMMA`, `AVERSION_LAMBDA`, or IDF clamp bounds (all single-line constants) if rankings feel off. `calibration.ts` deleted in PR #139 — if %-display is revived, rebuild from scratch with LOO validation.
