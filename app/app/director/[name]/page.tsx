@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FilmPoster from "@/components/FilmPoster";
+import { groupAndSortBySeries } from "@/lib/series-order";
 
 export default async function DirectorPage({ params }: { params: Promise<{ name: string }> }) {
   const { name: encoded } = await params;
@@ -26,16 +27,10 @@ export default async function DirectorPage({ params }: { params: Promise<{ name:
     .in("id", filmRows.map(f => f.id));
 
   const ratingById = new Map((stats ?? []).map(s => [s.id, s]));
-  const films = filmRows
-    .map(f => ({ ...f, rating: ratingById.get(f.id) }))
-    .sort((a, b) => {
-      const ar = a.rating?.coven_rating_pct ?? -1;
-      const br = b.rating?.coven_rating_pct ?? -1;
-      if (ar !== br) return br - ar;
-      return (b.year ?? 0) - (a.year ?? 0);
-    });
-
-  const ranked = films.some(f => f.rating?.coven_rating_pct != null);
+  const enriched = filmRows.map(f => ({ ...f, rating: ratingById.get(f.id) }));
+  // Chronological director filmography with series clumped: anchor each
+  // series-or-standalone group by its first entry's year ascending.
+  const films = groupAndSortBySeries(enriched, (a, b) => (a.year ?? 0) - (b.year ?? 0));
   const canonicalName = filmRows[0].director ?? directorName;
 
   return (
@@ -50,7 +45,7 @@ export default async function DirectorPage({ params }: { params: Promise<{ name:
             {canonicalName}.
           </h1>
           <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, color: "var(--void)", opacity: 0.7, margin: "8px 0 0" }}>
-            {films.length} {films.length === 1 ? "film" : "films"} in the catalog{ranked ? ", ranked by your coven's verdict" : ""}.
+            {films.length} {films.length === 1 ? "film" : "films"} in the catalog, in chronological order.
           </p>
         </div>
       </section>

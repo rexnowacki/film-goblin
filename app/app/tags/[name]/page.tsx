@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FilmPoster from "@/components/FilmPoster";
+import { groupAndSortBySeries } from "@/lib/series-order";
 
 export default async function TagPage({ params }: { params: Promise<{ name: string }> }) {
   const { name: encoded } = await params;
@@ -24,16 +25,19 @@ export default async function TagPage({ params }: { params: Promise<{ name: stri
     .select("id, coven_rating_pct, coven_rating_count");
 
   const ratingById = new Map((stats ?? []).map(s => [s.id, s]));
-  const films = (filmTags ?? [])
+  const enriched = (filmTags ?? [])
     .map(r => (r as unknown as { film: { id: string; title: string; year: number; director: string; artwork_url: string; available: boolean } }).film)
     .filter(f => f.available)
-    .map(f => ({ ...f, rating: ratingById.get(f.id) }))
-    .sort((a, b) => {
-      const ar = a.rating?.coven_rating_pct ?? -1;
-      const br = b.rating?.coven_rating_pct ?? -1;
-      if (ar !== br) return br - ar;
-      return b.year - a.year;
-    });
+    .map(f => ({ ...f, rating: ratingById.get(f.id) }));
+  // Group series together; anchor each group by its first entry's rating
+  // (then year desc as a tiebreak), so the best-rated series surfaces near
+  // the top while individual entries stay in series order.
+  const films = groupAndSortBySeries(enriched, (a, b) => {
+    const ar = a.rating?.coven_rating_pct ?? -1;
+    const br = b.rating?.coven_rating_pct ?? -1;
+    if (ar !== br) return br - ar;
+    return (b.year ?? 0) - (a.year ?? 0);
+  });
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
