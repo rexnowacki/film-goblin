@@ -6,7 +6,7 @@ into an actual build, it becomes a spec under `docs/superpowers/specs/`.
 
 See `docs/backlog.md` for unprioritized ideas. Full list of shipped
 sub-projects with spec paths lives in `docs/sub-project-history.md`
-(thirty-nine shipped as of 2026-05-07).
+(forty-one shipped as of 2026-05-08).
 
 ## High
 
@@ -37,11 +37,11 @@ sub-projects with spec paths lives in `docs/sub-project-history.md`
 - **Zine-styled transactional email templates.** Custom reset-password
   + confirm-signup emails via Supabase dashboard, matching the price-
   drop digest aesthetic.
-- **Threaded comment replies + comment editing.** Today
-  `activity_comments` is flat 140-char one-shots (sub-project 17,
-  polished in #25, with like notifications in #27). Add `parent_id` +
-  "Reply" / "View N replies" UI, an edit flow, comment pagination,
-  email notifications for comments, and @-mentions / markdown.
+- **Comment system follow-ups.** Threaded replies shipped (mig
+  `0157`/`0158`/`0159` + `CommentSheet`/`CommentList`). Still missing:
+  comment editing (`edited_at` column + edit action/UI), pagination on
+  long threads, email notifications for comment kinds (notifier only
+  renders price-drop digests today), and @-mentions / markdown.
 - **Comment composer enhancements.** Emoji quick-react strip above
   composer; send-icon header variant (proto 2 from the #25 brainstorm);
   `LikersBottomSheet` for comment likes (tap the count → see who
@@ -68,8 +68,6 @@ sub-projects with spec paths lives in `docs/sub-project-history.md`
   for canonical metadata and cross-reference back to `itunes_id`.
 - **Dead-link crawler.** Periodic background job checks every film's
   `itunes_url`; on 404 flags `available = false` and surfaces in admin.
-- **Delete account flow.** Cascade cleanup + "are you sure" confirm;
-  honors data-export expectations.
 - **Apple + GitHub OAuth.** Same pattern as Google (Supabase provider
   config + auth-page button).
 - **Realtime activity feed.** Upgrade `/home`'s feed from polling /
@@ -111,8 +109,6 @@ sub-projects with spec paths lives in `docs/sub-project-history.md`
   doesn't expose this natively.
 - **CAPTCHA on auth forms.** hCaptcha integration; likely needs paid
   tier or external setup.
-- **Invite codes.** Gate signup to a curated first cohort; useful for
-  growth-metric isolation.
 - **Weekly digest email.** "This week on Film Goblin: 12 deals in your
   genres, 3 recommendations from your coven."
 - **Region rotation.** Seed against UK / DE / JP iTunes storefronts to
