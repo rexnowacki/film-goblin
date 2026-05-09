@@ -16,7 +16,8 @@ interface Props {
  * getFilmTags's positions 1-4; the hidden tail (positions 5+) is not
  * rendered here — it feeds the FYP recommender.
  *
- * Non-director pills link to /tags/[name] listing pages.
+ * Tag pills link to /tags/[name]; the director pill links to
+ * /director/[name].
  */
 export default function FilmTagsRow({ visible, director }: Props) {
   if (visible.length === 0 && !director) return null;
@@ -34,9 +35,11 @@ export default function FilmTagsRow({ visible, director }: Props) {
         </Link>
       )}
       {director && (
-        <span className="film-tag film-tag-director" title="Director">
-          {director}
-        </span>
+        <Link prefetch={false} href={`/director/${encodeURIComponent(director)}`} style={{ textDecoration: "none", color: "inherit" }}>
+          <span className="film-tag film-tag-director" title="Director">
+            {director}
+          </span>
+        </Link>
       )}
       {distinguishing.map(t => (
         <Link key={t.id} prefetch={false} href={`/tags/${encodeURIComponent(t.name)}`} style={{ textDecoration: "none", color: "inherit" }}>

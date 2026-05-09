@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
 import { getFilm, getLatestPriceHistory } from "@/lib/queries/films";
@@ -128,7 +129,14 @@ export default async function FilmDetailPage({
               {film.title}
             </h1>
             <div style={{ display: "flex", gap: 18, marginTop: 16, flexWrap: "wrap" }} className="caps caps-row">
-              <span>Dir. {film.director}</span>
+              <span>
+                Dir.{" "}
+                {film.director ? (
+                  <Link prefetch={false} href={`/director/${encodeURIComponent(film.director)}`} style={{ color: "inherit", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: 3 }}>
+                    {film.director}
+                  </Link>
+                ) : "—"}
+              </span>
               <span>·</span>
               <span>{film.year}</span>
               <span>·</span>
