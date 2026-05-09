@@ -9,6 +9,8 @@ import Avatar from "@/components/Avatar";
 import AvatarEditor from "@/components/AvatarEditor";
 import { useToast } from "@/components/ToastProvider";
 
+const USERNAME_RE = /^[a-z0-9._]+$/;
+
 export default function SettingsForm() {
   const { toast } = useToast();
   const [profile, setProfile] = useState<any>(null);
@@ -26,7 +28,11 @@ export default function SettingsForm() {
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [removingAvatar, setRemovingAvatar] = useState(false);
+  const [username, setUsername] = useState("");
   const router = useRouter();
+
+  const trimmedUsername = username.trim().toLowerCase();
+  const usernameInvalid = trimmedUsername.length > 0 && (!USERNAME_RE.test(trimmedUsername) || trimmedUsername.length > 24);
 
   function pickFile(e: React.ChangeEvent<HTMLInputElement>) {
     setAvatarError(null);
@@ -107,6 +113,7 @@ export default function SettingsForm() {
       setAuthEmail(user.email ?? null);
       const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       setProfile(data);
+      setUsername(data?.username ?? "");
       setLoading(false);
     })();
   }, []);
@@ -193,7 +200,19 @@ export default function SettingsForm() {
     <form action={save} style={{ display: "grid", gap: 16, maxWidth: 540 }}>
       <label>
         <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Username</div>
-        <input name="username" defaultValue={profile.username} required style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)" }} />
+        <input
+          name="username"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          required
+          maxLength={24}
+          style={{ width: "100%", padding: 10, background: "var(--void-2)", border: `2px solid ${usernameInvalid ? "var(--blood)" : "var(--muted)"}`, color: "var(--bone)" }}
+        />
+        {usernameInvalid && (
+          <div style={{ marginTop: 6, color: "var(--blood)", fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12 }}>
+            Lowercase letters, numbers, dots, underscores only (max 24).
+          </div>
+        )}
       </label>
       <label>
         <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Display Name</div>
@@ -269,7 +288,7 @@ export default function SettingsForm() {
           Only price drops actually email today. The rest are placeholders for the next time we wire up email for that kind.
         </div>
       </div>
-      <button type="submit" disabled={saving} className="btn">
+      <button type="submit" disabled={saving || usernameInvalid} className="btn">
         {saving ? "Saving…" : "Save"}
       </button>
       <div style={{ borderTop: "1px solid #333", marginTop: 24, paddingTop: 24 }}>
