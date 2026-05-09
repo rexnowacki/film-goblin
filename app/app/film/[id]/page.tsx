@@ -102,71 +102,73 @@ export default async function FilmDetailPage({
       <TopNav current="films" showBack />
       <BottomNav current="films" />
 
-      <section style={{
-        background: "var(--void-2)", color: "var(--bone)",
-        borderBottom: "3px solid var(--void)",
-        position: "relative", overflow: "hidden",
-      }}>
-        <div className="container-wide stackable" style={{ paddingTop: 48, paddingBottom: 48, "--stack-template": "340px 1fr", "--stack-gap": "48px", alignItems: "start" } as React.CSSProperties}>
-          <div style={{
-            transform: "rotate(-2deg)",
-            width: "100%",
-            maxWidth: "var(--film-hero-poster-size)",
-            margin: "0 auto",
-          }}>
+      {/* Bone header band — site-language alignment with /home, /director, /tags. */}
+      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
+        <div className="container-wide">
+          <div className="eyebrow" style={{ fontSize: 11, marginBottom: 6, color: "var(--accent-deep)" }}>{film.genre_primary || "Film"}</div>
+          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)", margin: 0, lineHeight: 0.92 }}>
+            {film.title}.
+          </h1>
+          <div style={{ marginTop: 10, fontFamily: "var(--font-ui)", fontSize: 13, color: "var(--void)", opacity: 0.75, display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <span>{film.year}</span>
+            <span aria-hidden="true">·</span>
+            <span>
+              Dir.{" "}
+              {film.director ? (
+                <Link prefetch={false} href={`/director/${encodeURIComponent(film.director)}`} style={{ color: "inherit", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: 3 }}>
+                  {film.director}
+                </Link>
+              ) : "—"}
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>{film.runtime_min} min</span>
+            {film.content_advisory && (<>
+              <span aria-hidden="true">·</span>
+              <span>{film.content_advisory}</span>
+            </>)}
+          </div>
+        </div>
+      </section>
+
+      {/* Cinematic hero — oversized poster, description + tags + primary CTA, then a secondary action cluster. */}
+      <section style={{ background: "var(--void)", color: "var(--bone)", borderBottom: "3px solid var(--void)" }}>
+        <div className="container-wide stackable" style={{ paddingTop: 56, paddingBottom: 56, "--stack-template": "minmax(280px, 420px) 1fr", "--stack-gap": "56px", alignItems: "start" } as React.CSSProperties}>
+          <div style={{ width: "100%", maxWidth: 420, margin: "0 auto" }}>
             <FilmPoster
-              film={film as any}
+              film={film as never}
               size="xl"
-              style={{ width: "100%", height: "auto", aspectRatio: "2 / 3" }}
+              style={{ width: "100%", height: "auto", aspectRatio: "2 / 3", boxShadow: "10px 10px 0 var(--accent)" }}
               priority
             />
           </div>
           <div className="film-hero-text">
-            {sharerWatch && <SharerWatchPin watch={sharerWatch} />}
-            <div className="eyebrow" style={{ marginBottom: 10, opacity: 0.8 }}>
-              {film.genre_primary}
-            </div>
-            <h1 className="head" style={{ fontSize: "clamp(40px, 10vw, 96px)", margin: 0, lineHeight: 0.92 }}>
-              {film.title}
-            </h1>
-            <div style={{ display: "flex", gap: 18, marginTop: 16, flexWrap: "wrap" }} className="caps caps-row">
-              <span>
-                Dir.{" "}
-                {film.director ? (
-                  <Link prefetch={false} href={`/director/${encodeURIComponent(film.director)}`} style={{ color: "inherit", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: 3 }}>
-                    {film.director}
-                  </Link>
-                ) : "—"}
-              </span>
-              <span>·</span>
-              <span>{film.year}</span>
-              <span>·</span>
-              <span>{film.runtime_min} min</span>
-            </div>
-            <p style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontStyle: "italic", lineHeight: 1.35, margin: "28px 0", maxWidth: 620 }}>
-              "{film.description}"
-            </p>
-            <FilmTagsRow
-              visible={filmTags.visible}
-              director={film.director}
-            />
-            {(film.watchlist_count > 0 || film.watcher_count > 0) && (
-              <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, color: "var(--muted)", margin: "0 0 18px" }}>
-                {film.watchlist_count > 0 && (
-                  <span><strong style={{ color: "var(--accent)" }}>{compactCount(film.watchlist_count)}</strong> goblin{film.watchlist_count === 1 ? " is" : "s are"} eyeing this</span>
-                )}
-                {film.watchlist_count > 0 && film.watcher_count > 0 && " · "}
-                {film.watcher_count > 0 && (
-                  <span><strong style={{ color: "var(--accent)" }}>{compactCount(film.watcher_count)}</strong> ha{film.watcher_count === 1 ? "s" : "ve"} watched it</span>
-                )}
-              </p>
-            )}
-            {(film.coven_rating_count ?? 0) > 0 && (
-              <div style={{ margin: "0 0 22px" }}>
-                <CovenScore pct={film.coven_rating_pct ?? null} count={film.coven_rating_count ?? 0} />
+            {sharerWatch && (
+              <div style={{ marginBottom: 24 }}>
+                <SharerWatchPin watch={sharerWatch} />
               </div>
             )}
-            <div className="hero-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
+            {film.description && (
+              <p style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontStyle: "italic", lineHeight: 1.4, margin: "0 0 28px", maxWidth: 640 }}>
+                &ldquo;{film.description}&rdquo;
+              </p>
+            )}
+            <div style={{ marginBottom: 28 }}>
+              <FilmTagsRow visible={filmTags.visible} director={film.director} />
+            </div>
+
+            {/* Primary CTA — trailer wins the spot when available; otherwise watchlist owns the moment via FilmActions. */}
+            {film.trailer_youtube_id && (
+              <div style={{ marginBottom: 18 }}>
+                <TrailerButton
+                  youtubeId={film.trailer_youtube_id}
+                  filmTitle={film.title}
+                  label={film.trailer_label}
+                />
+              </div>
+            )}
+
+            {/* Secondary cluster — save/own/log + recommend + share + buy. */}
+            <div className="hero-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {user && <FilmActions filmId={film.id} filmTitle={film.title} initialOnWatchlist={onList} initialOwned={owned} initialWatchCount={watchCount} />}
               {user && <RecommendModal
                 filmId={film.id}
@@ -174,13 +176,6 @@ export default async function FilmDetailPage({
                 covenMembers={covenMembers.map(m => ({ id: m.id, username: m.username, display_name: m.display_name, avatar_url: m.avatar_url }))}
                 topCovenMemberIds={topCovenMemberIds}
               />}
-              {film.trailer_youtube_id && (
-                <TrailerButton
-                  youtubeId={film.trailer_youtube_id}
-                  filmTitle={film.title}
-                  label={film.trailer_label}
-                />
-              )}
               <ShareFilmButton
                 filmId={film.id}
                 title={film.title}
@@ -193,16 +188,45 @@ export default async function FilmDetailPage({
                 </a>
               )}
             </div>
-            {user && (
-              <FilmWatchersStrip
-                covenWatchers={covenWatchers}
-                otherWatchers={otherWatchersResult.users}
-                otherCount={otherWatchersResult.totalCount}
-              />
+
+            {(film.watchlist_count > 0 || film.watcher_count > 0) && (
+              <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, color: "var(--muted)", margin: "26px 0 0" }}>
+                {film.watchlist_count > 0 && (
+                  <span><strong style={{ color: "var(--accent)" }}>{compactCount(film.watchlist_count)}</strong> goblin{film.watchlist_count === 1 ? " is" : "s are"} eyeing this</span>
+                )}
+                {film.watchlist_count > 0 && film.watcher_count > 0 && " · "}
+                {film.watcher_count > 0 && (
+                  <span><strong style={{ color: "var(--accent)" }}>{compactCount(film.watcher_count)}</strong> ha{film.watcher_count === 1 ? "s" : "ve"} watched it</span>
+                )}
+              </p>
             )}
           </div>
         </div>
       </section>
+
+      {/* Verdict band — CovenScore + watchers, side-by-side, separate section. */}
+      {(((film.coven_rating_count ?? 0) > 0) || (user && (covenWatchers.length > 0 || otherWatchersResult.totalCount > 0))) && (
+        <section style={{ background: "var(--void-2)", color: "var(--bone)", borderBottom: "3px solid var(--void)", padding: "40px 0" }}>
+          <div className="container-wide stackable" style={{ "--stack-template": "1fr 1fr", "--stack-gap": "40px", alignItems: "start" } as React.CSSProperties}>
+            {(film.coven_rating_count ?? 0) > 0 ? (
+              <div>
+                <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 12 }}>The Verdict</div>
+                <CovenScore pct={film.coven_rating_pct ?? null} count={film.coven_rating_count ?? 0} />
+              </div>
+            ) : <div />}
+            {user && (covenWatchers.length > 0 || otherWatchersResult.totalCount > 0) ? (
+              <div>
+                <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 12 }}>Who&rsquo;s Watched</div>
+                <FilmWatchersStrip
+                  covenWatchers={covenWatchers}
+                  otherWatchers={otherWatchersResult.users}
+                  otherCount={otherWatchersResult.totalCount}
+                />
+              </div>
+            ) : <div />}
+          </div>
+        </section>
+      )}
 
       <section style={{ background: "var(--bone)", color: "var(--void)", padding: "48px 0", borderBottom: "3px solid var(--void)" }} className="grain-light">
         <div className="container-wide">
