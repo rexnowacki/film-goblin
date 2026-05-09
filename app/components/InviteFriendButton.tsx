@@ -6,12 +6,12 @@ const TEMPLATE = (url: string) =>
   `the goblin wants you. i'm hunting weirder horror on film goblin — come bind with my coven. ${url}`;
 
 interface Props {
-  inviterUsername: string;
+  inviteCode: string;
 }
 
-export default function InviteFriendButton({ inviterUsername }: Props) {
+export default function InviteFriendButton({ inviteCode }: Props) {
   const { toast } = useToast();
-  const message = TEMPLATE(`https://film-goblin.vercel.app/p/${encodeURIComponent(inviterUsername)}`);
+  const message = TEMPLATE(`https://film-goblin.vercel.app/invite/${encodeURIComponent(inviteCode)}`);
 
   async function invite() {
     try {

@@ -6,8 +6,9 @@ import {
   getMyCovenMembers,
   getRelationshipMap,
 } from "@/lib/queries/coven";
-import { getMyProfile, getProfilesBySearch } from "@/lib/queries/profiles";
+import { getProfilesBySearch } from "@/lib/queries/profiles";
 import { getRankedCovenfolk } from "@/lib/queries/coven-interactions";
+import { getMyInviteCode } from "@/lib/queries/invite-codes";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import Avatar from "@/components/Avatar";
@@ -28,12 +29,16 @@ export default async function CovenPage({
   if (!user) redirect("/auth/signin?redirect=/coven");
   const supabase = await createClient();
 
-  const [invites, members, ranked, myProfile] = await Promise.all([
+  const [invites, members, ranked, myInviteCode] = await Promise.all([
     getPendingInvites(supabase, user.id),
     getMyCovenMembers(supabase, user.id),
     getRankedCovenfolk(supabase, user.id),
-    getMyProfile(supabase),
+    getMyInviteCode(user.id),
   ]);
+  const canInvite =
+    !!myInviteCode &&
+    !myInviteCode.revoked &&
+    myInviteCode.use_count < myInviteCode.max_uses;
 
   const memberIds = members.map((m) => m.id);
   const profiles = await getProfilesBySearch(supabase, {
@@ -117,7 +122,7 @@ export default async function CovenPage({
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "0 0 16px", gap: 12, flexWrap: "wrap" }}>
                 <h2 className="eyebrow" style={{ fontSize: 14, color: "var(--accent)", margin: 0 }}>Find People</h2>
-                {myProfile?.username && <InviteFriendButton inviterUsername={myProfile.username} />}
+                {canInvite && <InviteFriendButton inviteCode={myInviteCode!.code} />}
               </div>
               <PeopleSearch />
               {profiles.length === 0 ? (
