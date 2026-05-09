@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { toggleCommentReaction } from "@/lib/actions/comment-reactions";
+import { useCallback, useState, useTransition } from "react";
+import { toggleCommentReaction, fetchLikersForComment } from "@/lib/actions/comment-reactions";
 import { compactCount } from "@/lib/format";
 import HeartIcon from "./HeartIcon";
+import LikersBottomSheet from "./LikersBottomSheet";
 
 interface Props {
   commentId: string;
@@ -21,6 +22,8 @@ export default function CommentHeartButton({
   const [count, setCount] = useState(initialCount);
   const [liked, setLiked] = useState(initialLikedByMe);
   const [pending, startTransition] = useTransition();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const fetcher = useCallback(() => fetchLikersForComment(commentId), [commentId]);
 
   function onTap() {
     if (disabled || pending) return;
@@ -51,7 +54,24 @@ export default function CommentHeartButton({
       >
         <HeartIcon filled={liked} />
       </button>
-      <span className="comment-heart-count">{compactCount(count)}</span>
+      {count > 0 ? (
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          className="comment-heart-count comment-heart-count-button"
+          aria-label={`See who liked this comment (${count})`}
+        >
+          {compactCount(count)}
+        </button>
+      ) : (
+        <span className="comment-heart-count">{compactCount(count)}</span>
+      )}
+      <LikersBottomSheet
+        cacheKey={`comment:${commentId}`}
+        fetcher={fetcher}
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+      />
     </div>
   );
 }

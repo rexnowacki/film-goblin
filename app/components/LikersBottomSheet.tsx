@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import BottomSheet from "./BottomSheet";
 import Avatar from "./Avatar";
-import { fetchLikersForActivity, type LikersResponse } from "@/lib/actions/reactions";
+import type { LikersResponse } from "@/lib/actions/reactions";
 
 interface Props {
-  activityId: string;
+  /** Stable identifier; switching it forces a re-fetch. */
+  cacheKey: string;
+  fetcher: () => Promise<LikersResponse>;
   open: boolean;
   onClose: () => void;
+  title?: string;
 }
 
 interface LikerRowProps {
@@ -31,28 +34,30 @@ function LikerRow({ p }: LikerRowProps) {
   );
 }
 
-export default function LikersBottomSheet({ activityId, open, onClose }: Props) {
+export default function LikersBottomSheet({ cacheKey, fetcher, open, onClose, title = "Liked by" }: Props) {
   const [data, setData] = useState<LikersResponse | null>(null);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // Lazy-load on first open only. Sheet can be opened / closed / reopened
-  // without re-fetching during the same session.
+  // Lazy-load on first open per cacheKey. Re-fetches if the key changes
+  // (e.g. opening the sheet on a different comment).
   useEffect(() => {
-    if (!open || data != null || loading) return;
+    if (!open) return;
+    if (loadedKey === cacheKey || loading) return;
     setLoading(true);
     setErr(null);
-    fetchLikersForActivity(activityId)
-      .then(setData)
+    fetcher()
+      .then(d => { setData(d); setLoadedKey(cacheKey); })
       .catch(e => setErr(e instanceof Error ? e.message : "Couldn't load likers."))
       .finally(() => setLoading(false));
-  }, [open, activityId, data, loading]);
+  }, [open, cacheKey, loadedKey, loading, fetcher]);
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="Liked by">
+    <BottomSheet open={open} onClose={onClose} title={title}>
       {loading && <div className="likers-loading">Loading…</div>}
       {err && <div className="likers-error">{err}</div>}
-      {data && (
+      {data && loadedKey === cacheKey && (
         <>
           {data.coven.length > 0 && (
             <section className="likers-section">

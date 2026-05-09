@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { toggleReaction } from "@/lib/actions/reactions";
+import { useCallback, useState, useTransition } from "react";
+import { toggleReaction, fetchLikersForActivity } from "@/lib/actions/reactions";
 import { compactCount } from "@/lib/format";
 import LikersBottomSheet from "./LikersBottomSheet";
 import HeartIcon from "./HeartIcon";
@@ -21,6 +21,7 @@ export default function HeartButton({
   const [liked, setLiked] = useState(initialLikedByMe);
   const [pending, startTransition] = useTransition();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const fetcher = useCallback(() => fetchLikersForActivity(activityId), [activityId]);
 
   function onHeartTap() {
     // Optimistic update: flip local state immediately; rollback on server error.
@@ -62,7 +63,8 @@ export default function HeartButton({
         </button>
       )}
       <LikersBottomSheet
-        activityId={activityId}
+        cacheKey={`activity:${activityId}`}
+        fetcher={fetcher}
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
       />
