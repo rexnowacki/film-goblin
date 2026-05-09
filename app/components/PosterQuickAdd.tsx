@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { addToWatchlist } from "@/lib/actions/watchlists";
 import { addToLibrary } from "@/lib/actions/library";
 import { logWatch } from "@/lib/actions/watched";
@@ -55,6 +56,7 @@ export default function PosterQuickAdd({
   const [inLibrary, setInLibrary] = useState(initialInLibrary);
   const [pending, setPending] = useState<"wl" | "lib" | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -204,6 +206,17 @@ export default function PosterQuickAdd({
             onClick={clickLibrary}
           >
             {inLibrary ? "✓ In grimoire" : "+ Add to grimoire"}
+          </button>
+          <button
+            type="button"
+            className="poster-action-row"
+            onClick={(e) => {
+              stopAndPrevent(e);
+              setSheetOpen(false);
+              router.push(`/film/${filmId}?recommend=1`);
+            }}
+          >
+            ✦ Recommend to a coven member
           </button>
           {canShare && (
             <button

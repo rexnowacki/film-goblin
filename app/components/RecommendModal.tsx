@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { recommendFilm } from "@/lib/actions/recommendations";
 import { useToast } from "./ToastProvider";
 import BottomSheet from "./BottomSheet";
@@ -23,6 +24,9 @@ interface Props {
 
 export default function RecommendModal({ filmId, filmTitle, covenMembers, topCovenMemberIds }: Props) {
   const { toast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
   const [open, setOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -30,6 +34,19 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers, topCov
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [pending, start] = useTransition();
+
+  // Auto-open from URL param: PosterQuickAdd's mobile sheet links here with
+  // ?recommend=1 so the user lands directly inside the recommend flow.
+  // Strips the param after open so a back-nav doesn't re-trigger.
+  useEffect(() => {
+    if (params?.get("recommend") === "1") {
+      setOpen(true);
+      const next = new URLSearchParams(params.toString());
+      next.delete("recommend");
+      const qs = next.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    }
+  }, [params, pathname, router]);
 
   // Sort the full coven list with topCovenMemberIds first (in their existing
   // order — already ranked by recommendation count desc), then everyone else
