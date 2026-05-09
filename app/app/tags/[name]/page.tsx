@@ -14,9 +14,10 @@ export default async function TagPage({ params }: { params: Promise<{ name: stri
   const { data: tag } = await supabase.from("tags").select("id, name, type").eq("name", tagName).maybeSingle();
   if (!tag) notFound();
 
+  // series_id / series_order added in mig 0177; types.ts not regenerated yet.
   const { data: filmTags } = await supabase
     .from("film_tags")
-    .select("film:films!inner(id, title, year, director, artwork_url, available)")
+    .select("film:films!inner(id, title, year, director, artwork_url, available, series_id, series_order)" as never)
     .eq("tag_id", tag.id)
     .lte("position", 4);
 
@@ -26,7 +27,7 @@ export default async function TagPage({ params }: { params: Promise<{ name: stri
 
   const ratingById = new Map((stats ?? []).map(s => [s.id, s]));
   const enriched = (filmTags ?? [])
-    .map(r => (r as unknown as { film: { id: string; title: string; year: number; director: string; artwork_url: string; available: boolean } }).film)
+    .map(r => (r as unknown as { film: { id: string; title: string; year: number; director: string; artwork_url: string; available: boolean; series_id: string | null; series_order: number | null } }).film)
     .filter(f => f.available)
     .map(f => ({ ...f, rating: ratingById.get(f.id) }));
   // Group series together; anchor each group by its first entry's rating

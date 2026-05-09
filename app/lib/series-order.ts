@@ -43,6 +43,18 @@ interface FilmShape {
   title: string;
   year: number | null;
   director: string | null;
+  series_id?: string | null;
+  series_order?: number | null;
+}
+
+function effectiveKey(f: FilmShape): string {
+  if (f.series_id) return `manual:${f.series_id}`;
+  return getSeriesKey(f.title, f.director).key;
+}
+
+function effectiveOrder(f: FilmShape): number {
+  if (f.series_id && f.series_order != null) return f.series_order;
+  return getSeriesKey(f.title, f.director).order;
 }
 
 /**
@@ -50,6 +62,10 @@ interface FilmShape {
  * anchored by the result of `anchorCompare(firstFilm, firstFilm)` applied
  * to each group's first entry. Standalones (group of 1) participate in
  * the same anchor sort.
+ *
+ * Series detection prefers the manual override (films.series_id +
+ * series_order, set via the admin film-edit UI) and falls back to the
+ * title-heuristic when no override is present.
  */
 export function groupAndSortBySeries<T extends FilmShape>(
   films: T[],
@@ -57,7 +73,7 @@ export function groupAndSortBySeries<T extends FilmShape>(
 ): T[] {
   const groups = new Map<string, T[]>();
   for (const f of films) {
-    const { key } = getSeriesKey(f.title, f.director);
+    const key = effectiveKey(f);
     const arr = groups.get(key);
     if (arr) arr.push(f);
     else groups.set(key, [f]);
@@ -65,8 +81,8 @@ export function groupAndSortBySeries<T extends FilmShape>(
 
   for (const arr of groups.values()) {
     arr.sort((a, b) => {
-      const oa = getSeriesKey(a.title, a.director).order;
-      const ob = getSeriesKey(b.title, b.director).order;
+      const oa = effectiveOrder(a);
+      const ob = effectiveOrder(b);
       if (oa !== ob) return oa - ob;
       return (a.year ?? 0) - (b.year ?? 0);
     });

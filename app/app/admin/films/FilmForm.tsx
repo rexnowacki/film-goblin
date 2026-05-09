@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { adminCreateFilm, adminUpdateFilm, type FilmFormFields } from "@/lib/actions/admin/films";
+import {
+  adminCreateFilm,
+  adminUpdateFilm,
+  type FilmFormFields,
+  type FilmSeriesSummary,
+} from "@/lib/actions/admin/films";
 
 interface Props {
   mode: "create" | "edit";
@@ -10,6 +15,7 @@ interface Props {
   initial: FilmFormFields;
   requestId?: string; // if set, fulfills the pending film request on create
   onSuccess?: () => void; // if provided, called instead of navigating (e.g. modal context)
+  existingSeries: FilmSeriesSummary[];
 }
 
 const INPUT_STYLE: React.CSSProperties = {
@@ -25,14 +31,20 @@ const INPUT_STYLE: React.CSSProperties = {
 const LABEL_STYLE: React.CSSProperties = { display: "block", marginBottom: 14 };
 const CAPS_STYLE: React.CSSProperties = { fontSize: 11, marginBottom: 6 };
 
-export default function FilmForm({ mode, filmId, initial, requestId, onSuccess }: Props) {
+export default function FilmForm({ mode, filmId, initial, requestId, onSuccess, existingSeries }: Props) {
   const [fields, setFields] = useState<FilmFormFields>(initial);
+  const [seriesPanelOpen, setSeriesPanelOpen] = useState(initial.series_id !== null);
   const [err, setErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
 
   function set<K extends keyof FilmFormFields>(k: K, v: FilmFormFields[K]) {
     setFields(f => ({ ...f, [k]: v }));
+  }
+
+  function clearSeries() {
+    setFields(f => ({ ...f, series_id: null, series_new_name: "", series_order: null }));
+    setSeriesPanelOpen(false);
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -113,6 +125,71 @@ export default function FilmForm({ mode, filmId, initial, requestId, onSuccess }
         <span className="check-zine__box" aria-hidden="true" />
         <span className="caps" style={{ fontSize: 11 }}>Available (visible on public surfaces)</span>
       </label>
+
+      {/* Series override — manual hook for cases the title heuristic can't catch. */}
+      <div style={{ marginBottom: 22, paddingTop: 6, borderTop: "1px dashed var(--muted)" }}>
+        {!seriesPanelOpen ? (
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ marginTop: 14, fontSize: 12 }}
+            onClick={() => setSeriesPanelOpen(true)}
+          >
+            ✦ Part of a series?
+          </button>
+        ) : (
+          <div style={{ marginTop: 14 }}>
+            <div className="caps" style={{ ...CAPS_STYLE, color: "var(--accent)" }}>Series</div>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14 }}>
+              <label>
+                <div className="caps" style={CAPS_STYLE}>Series</div>
+                <select
+                  style={INPUT_STYLE}
+                  value={fields.series_id ?? ""}
+                  onChange={e => set("series_id", e.target.value === "" ? null : e.target.value)}
+                >
+                  <option value="">— pick a series —</option>
+                  {existingSeries.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                  <option value="__new__">+ Create new series…</option>
+                </select>
+              </label>
+              <label>
+                <div className="caps" style={CAPS_STYLE}>Order in series</div>
+                <input
+                  style={INPUT_STYLE}
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={fields.series_order ?? ""}
+                  onChange={e => set("series_order", e.target.value ? Number(e.target.value) : null)}
+                  placeholder="e.g. 1, 2, 3"
+                />
+              </label>
+            </div>
+            {fields.series_id === "__new__" && (
+              <label style={{ display: "block", marginTop: 14 }}>
+                <div className="caps" style={CAPS_STYLE}>New series name</div>
+                <input
+                  style={INPUT_STYLE}
+                  value={fields.series_new_name}
+                  onChange={e => set("series_new_name", e.target.value)}
+                  placeholder='e.g. "Friday the 13th"'
+                  required
+                />
+              </label>
+            )}
+            <button
+              type="button"
+              onClick={clearSeries}
+              style={{ marginTop: 12, background: "none", border: 0, color: "var(--muted)", fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12, cursor: "pointer", padding: 0 }}
+            >
+              Remove from series
+            </button>
+          </div>
+        )}
+      </div>
 
       {err && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13, marginBottom: 14 }}>{err}</div>}
 

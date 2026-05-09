@@ -243,6 +243,9 @@ export async function fulfillFilmRequest(requestId: string): Promise<
     available: true,
     tmdb_id: null,
     theatrical_release_date: null,
+    series_id: null,
+    series_new_name: "",
+    series_order: null,
   });
 
   if (!createResult.ok) return createResult;

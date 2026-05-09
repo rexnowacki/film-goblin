@@ -30,6 +30,50 @@ export interface FilmFormFields {
   available: boolean;
   tmdb_id: number | null;
   theatrical_release_date: string | null;
+  // Series override — manual override of the title-heuristic in
+  // app/lib/series-order.ts. series_id is "__new__" when the admin is
+  // creating a new series in this save (paired with series_new_name);
+  // a UUID when picking an existing series; null when standalone.
+  series_id: string | null;
+  series_new_name: string;
+  series_order: number | null;
+}
+
+export interface FilmSeriesSummary {
+  id: string;
+  name: string;
+}
+
+export async function listFilmSeries(): Promise<FilmSeriesSummary[]> {
+  const supabase = await createClient();
+  await requireAdmin(supabase);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const c = supabase as unknown as { from: (t: string) => any };
+  const { data, error } = await c
+    .from("film_series")
+    .select("id, name")
+    .order("name", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as FilmSeriesSummary[];
+}
+
+async function resolveSeriesId(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  c: { from: (t: string) => any },
+  fields: FilmFormFields,
+): Promise<{ ok: true; id: string | null } | { ok: false; error: string }> {
+  if (fields.series_id === "__new__") {
+    const name = fields.series_new_name.trim();
+    if (!name) return { ok: false, error: "New series name is required." };
+    const { data, error } = await c
+      .from("film_series")
+      .insert({ name })
+      .select("id")
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, id: data.id };
+  }
+  return { ok: true, id: fields.series_id };
 }
 
 function parseIdFromUrlOrId(raw: string): number | null {
@@ -91,6 +135,11 @@ export async function adminCreateFilm(
   const err = validateForm(fields);
   if (err) return { ok: false, error: err };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const c = supabase as unknown as { from: (t: string) => any };
+  const seriesRes = await resolveSeriesId(c, fields);
+  if (!seriesRes.ok) return seriesRes;
+
   const payload = {
     itunes_id: fields.itunes_id,
     title: fields.title.trim(),
@@ -106,11 +155,13 @@ export async function adminCreateFilm(
     available: fields.available,
     tmdb_id: fields.tmdb_id,
     theatrical_release_date: fields.theatrical_release_date,
+    series_id: seriesRes.id,
+    series_order: seriesRes.id ? fields.series_order : null,
   };
 
   // Cast needed because lib/supabase/types.ts pre-dates migration 0118 which
-  // made films.itunes_id nullable. Regenerate types with `npm run gen:types`
-  // after running migrations to drop this cast.
+  // made films.itunes_id nullable, plus mig 0177 added series_id /
+  // series_order. Regenerate types with `npm run gen:types` after migrations.
   const { data, error } = await supabase
     .from("films")
     .insert(payload as never)
@@ -138,6 +189,11 @@ export async function adminUpdateFilm(id: string, fields: FilmFormFields): Promi
   const err = validateForm(fields);
   if (err) return { ok: false, error: err };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const c = supabase as unknown as { from: (t: string) => any };
+  const seriesRes = await resolveSeriesId(c, fields);
+  if (!seriesRes.ok) return seriesRes;
+
   const updatePayload = {
     itunes_id: fields.itunes_id,
     title: fields.title.trim(),
@@ -153,6 +209,8 @@ export async function adminUpdateFilm(id: string, fields: FilmFormFields): Promi
     available: fields.available,
     tmdb_id: fields.tmdb_id,
     theatrical_release_date: fields.theatrical_release_date,
+    series_id: seriesRes.id,
+    series_order: seriesRes.id ? fields.series_order : null,
   };
 
   const { error } = await supabase

@@ -5,25 +5,36 @@ import FilmForm from "../../FilmForm";
 import RetireModal from "../../RetireModal";
 import FilmTagEditor from "@/components/admin/FilmTagEditor";
 import { getAllTagsGroupedByType, getFilmTags } from "@/lib/queries/film-tags";
-import type { FilmFormFields } from "@/lib/actions/admin/films";
+import { listFilmSeries, type FilmFormFields } from "@/lib/actions/admin/films";
 
 export default async function EditFilmPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: film } = await supabase
+  // series_id / series_order added in mig 0177; types.ts not regenerated yet
+  // so cast through the response.
+  const { data: filmRaw } = await supabase
     .from("films")
-    .select("id, itunes_id, title, director, year, runtime_min, genre_primary, description, content_advisory, artwork_url, itunes_url, tracking, available, tmdb_id, theatrical_release_date")
+    .select("id, itunes_id, title, director, year, runtime_min, genre_primary, description, content_advisory, artwork_url, itunes_url, tracking, available, tmdb_id, theatrical_release_date, series_id, series_order" as never)
     .eq("id", id)
     .maybeSingle();
-  if (!film) notFound();
+  if (!filmRaw) notFound();
+  const film = filmRaw as unknown as {
+    id: string; itunes_id: number | null; title: string; director: string;
+    year: number; runtime_min: number; genre_primary: string; description: string;
+    content_advisory: string; artwork_url: string; itunes_url: string;
+    tracking: boolean; available: boolean; tmdb_id: number | null;
+    theatrical_release_date: string | null;
+    series_id: string | null; series_order: number | null;
+  };
 
-  const [watchlistCount, listsCount, reviewsCount, activityCount, vocab, currentTags] = await Promise.all([
+  const [watchlistCount, listsCount, reviewsCount, activityCount, vocab, currentTags, existingSeries] = await Promise.all([
     supabase.from("watchlists").select("film_id", { count: "exact", head: true }).eq("film_id", id).then(r => r.count ?? 0),
     supabase.from("list_films").select("film_id", { count: "exact", head: true }).eq("film_id", id).then(r => r.count ?? 0),
     supabase.from("reviews").select("film_id", { count: "exact", head: true }).eq("film_id", id).then(r => r.count ?? 0),
     supabase.from("activity").select("id", { count: "exact", head: true }).contains("payload", { film_id: id } as never).then(r => r.count ?? 0),
     getAllTagsGroupedByType(supabase),
     getFilmTags(supabase, film.id),
+    listFilmSeries(),
   ]);
 
   const orderedAll = [...currentTags.visible, ...currentTags.hidden];
@@ -54,6 +65,9 @@ export default async function EditFilmPage({ params }: { params: Promise<{ id: s
     available: film.available,
     tmdb_id: film.tmdb_id ?? null,
     theatrical_release_date: film.theatrical_release_date ?? null,
+    series_id: film.series_id,
+    series_new_name: "",
+    series_order: film.series_order,
   };
 
   return (
@@ -65,7 +79,7 @@ export default async function EditFilmPage({ params }: { params: Promise<{ id: s
           <RetireModal filmId={film.id} title={film.title} year={film.year} counts={{ watchlist: watchlistCount, lists: listsCount, reviews: reviewsCount, activity: activityCount }} />
         </div>
       </div>
-      <FilmForm mode="edit" filmId={film.id} initial={initial} />
+      <FilmForm mode="edit" filmId={film.id} initial={initial} existingSeries={existingSeries} />
       <FilmTagEditor
         filmId={film.id}
         director={film.director}

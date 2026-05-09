@@ -30,6 +30,9 @@ export interface TmdbFilmFields {
   available: boolean;
   tmdb_id: number;
   theatrical_release_date: string | null;
+  series_id: string | null;
+  series_new_name: string;
+  series_order: number | null;
 }
 
 export async function searchTmdb(query: string): Promise<
@@ -99,6 +102,9 @@ export async function lookupTmdb(tmdbId: number): Promise<
       available: true,
       tmdb_id: tmdbId,
       theatrical_release_date: movie.release_date || null,
+      series_id: null,
+      series_new_name: "",
+      series_order: null,
     };
 
     return { ok: true, fields };

@@ -6,7 +6,7 @@ import FilmForm from "../FilmForm";
 import AppleTvSearchBox from "../AppleTvSearchBox";
 import ITunesPasteBox from "../iTunesPasteBox";
 import TmdbSearchBox from "../TmdbSearchBox";
-import type { ITunesSearchHit, FilmFormFields } from "@/lib/actions/admin/films";
+import { listFilmSeries, type ITunesSearchHit, type FilmFormFields, type FilmSeriesSummary } from "@/lib/actions/admin/films";
 
 const BLANK: FilmFormFields = {
   itunes_id: null,
@@ -23,6 +23,9 @@ const BLANK: FilmFormFields = {
   available: true,
   tmdb_id: null,
   theatrical_release_date: null,
+  series_id: null,
+  series_new_name: "",
+  series_order: null,
 };
 
 export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } = {}) {
@@ -32,6 +35,11 @@ export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } 
   const [initial, setInitial] = useState<FilmFormFields | null>(null);
   const [formKey, setFormKey] = useState(0);
   const [requestTitle, setRequestTitle] = useState<string | null>(null);
+  const [existingSeries, setExistingSeries] = useState<FilmSeriesSummary[]>([]);
+
+  useEffect(() => {
+    listFilmSeries().then(setExistingSeries).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!requestId) return;
@@ -55,6 +63,9 @@ export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } 
           available: true,
           tmdb_id: null,
           theatrical_release_date: null,
+          series_id: null,
+          series_new_name: "",
+          series_order: null,
         });
         setFormKey(k => k + 1);
       })
@@ -77,6 +88,9 @@ export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } 
       available: true,
       tmdb_id: null,
       theatrical_release_date: null,
+      series_id: null,
+      series_new_name: "",
+      series_order: null,
     });
     setFormKey(k => k + 1);
   }
@@ -132,7 +146,7 @@ export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } 
               </button>
             </div>
           )}
-          <FilmForm key={formKey} mode="create" initial={initial} requestId={requestId ?? undefined} onSuccess={onSuccess} />
+          <FilmForm key={formKey} mode="create" initial={initial} requestId={requestId ?? undefined} onSuccess={onSuccess} existingSeries={existingSeries} />
         </section>
       )}
     </div>

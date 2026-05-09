@@ -13,11 +13,17 @@ export default async function DirectorPage({ params }: { params: Promise<{ name:
 
   const supabase = await createClient();
 
-  const { data: filmRows } = await supabase
+  // series_id / series_order added in mig 0177; types.ts not regenerated yet.
+  const { data: filmRowsRaw } = await supabase
     .from("films")
-    .select("id, title, year, director, artwork_url, available")
+    .select("id, title, year, director, artwork_url, available, series_id, series_order" as never)
     .ilike("director", directorName)
     .eq("available", true);
+  const filmRows = filmRowsRaw as unknown as Array<{
+    id: string; title: string; year: number; director: string;
+    artwork_url: string; available: boolean;
+    series_id: string | null; series_order: number | null;
+  }> | null;
 
   if (!filmRows || filmRows.length === 0) notFound();
 
