@@ -9,6 +9,8 @@ export interface DiaryFilm {
   year: number;
   director: string;
   artwork_url: string;
+  coven_rating_pct: number | null;
+  coven_rating_count: number | null;
 }
 
 export interface DiaryRow {
@@ -39,7 +41,7 @@ export async function getWatchedDiary(client: Client, userId: string): Promise<D
     .from("watched")
     .select(`
       id, watched_at, note, recommended,
-      film:films!inner(id, title, year, director, artwork_url)
+      film:films_with_stats!inner(id, title, year, director, artwork_url, coven_rating_pct, coven_rating_count)
     `)
     .eq("user_id", userId)
     .order("watched_at", { ascending: false })
@@ -84,8 +86,8 @@ export async function getWatchedStats(client: Client, userId: string): Promise<W
   if (topIds.length > 0) {
     const filmIds = topIds.map(([id]) => id);
     const { data: films } = await client
-      .from("films")
-      .select("id, title, year, director, artwork_url")
+      .from("films_with_stats")
+      .select("id, title, year, director, artwork_url, coven_rating_pct, coven_rating_count")
       .in("id", filmIds);
     const filmMap = new Map((films ?? []).map(f => [f.id, f]));
     topFilms = topIds
