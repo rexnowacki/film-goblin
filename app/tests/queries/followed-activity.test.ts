@@ -38,6 +38,12 @@ describe.skipIf(!hasEnv)("getFollowedActivity", () => {
     ]);
     await client.from("follows").insert({ follower_user_id: viewer, followed_user_id: followedA });
 
+    // getFollowedActivity scopes to is_starter profiles since da86c81 (the
+    // "From the Goblins" strip is staff/curators only; coven activity covers
+    // regular followed users). Mark the fixture as a starter so the query
+    // returns its activity.
+    await client.from("profiles").update({ is_starter: true }).eq("id", followedA);
+
     const film = await client.from("films")
       .insert({ itunes_id: 888888 + Math.floor(Math.random() * 10000), title: "FA Film", director: "D", year: 2024 })
       .select("id").single();
