@@ -62,7 +62,7 @@ export default function AppleTvSearchBox({ onPick }: Props) {
           {loading ? "Searching…" : "Search"}
         </button>
       </form>
-      {err && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13, marginBottom: 14 }}>{err}</div>}
+      {err && <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: 13, marginBottom: 14 }}>{err}</div>}
       {candidates.length > 0 && (
         <div style={{ display: "grid", gap: 6, marginBottom: 20 }}>
           {candidates.map(c => (

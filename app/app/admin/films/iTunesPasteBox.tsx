@@ -38,7 +38,7 @@ export default function ITunesPasteBox({ onPick }: Props) {
           {loading ? "Looking up…" : "Fetch"}
         </button>
       </form>
-      {err && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{err}</div>}
+      {err && <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: 13 }}>{err}</div>}
     </div>
   );
 }

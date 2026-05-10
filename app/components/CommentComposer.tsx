@@ -88,7 +88,7 @@ export default function CommentComposer({
       )}
       {error && (
         <div style={{
-          fontSize: 11, color: "var(--blood)", marginBottom: 8,
+          fontSize: 11, color: "var(--danger)", marginBottom: 8,
           fontFamily: "var(--font-serif)", fontStyle: "italic",
         }}>
           {error}

@@ -213,7 +213,7 @@ export default function FilmRequestSheet({ query, onClose }: Props) {
           }
           const errMsg = resultMsg.startsWith("error:") ? resultMsg.replace("error:", "") : resultMsg;
           return (
-            <p style={{ fontFamily: "var(--font-serif)", fontSize: 15, color: "var(--blood)" }}>
+            <p style={{ fontFamily: "var(--font-serif)", fontSize: 15, color: "var(--danger)" }}>
               {errMsg}
             </p>
           );

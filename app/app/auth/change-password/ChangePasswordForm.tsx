@@ -45,7 +45,7 @@ export default function ChangePasswordForm() {
         style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 16, fontFamily: "var(--font-ui)" }}
       />
       {error && (
-        <div style={{ color: "var(--blood)", fontFamily: "var(--font-serif)", fontStyle: "italic", marginBottom: 12 }}>
+        <div style={{ color: "var(--danger)", fontFamily: "var(--font-serif)", fontStyle: "italic", marginBottom: 12 }}>
           {error}
         </div>
       )}

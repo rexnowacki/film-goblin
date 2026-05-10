@@ -66,7 +66,7 @@ export default async function AdminFilmsPage({
                   <span className="caps" style={{ fontSize: 9, padding: "2px 6px", border: "1px solid", borderColor: f.tracking ? "var(--accent)" : "var(--muted)", color: f.tracking ? "var(--accent)" : "var(--muted)" }}>
                     {f.tracking ? "tracking" : "not tracking"}
                   </span>
-                  <span className="caps" style={{ fontSize: 9, padding: "2px 6px", border: "1px solid", borderColor: f.available ? "var(--accent)" : "var(--blood)", color: f.available ? "var(--accent)" : "var(--blood)" }}>
+                  <span className="caps" style={{ fontSize: 9, padding: "2px 6px", border: "1px solid", borderColor: f.available ? "var(--accent)" : "var(--danger)", color: f.available ? "var(--accent)" : "var(--danger)" }}>
                     {f.available ? "available" : "retired"}
                   </span>
                 </div>

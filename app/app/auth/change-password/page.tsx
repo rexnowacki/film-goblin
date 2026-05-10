@@ -25,7 +25,7 @@ export default async function ChangePasswordPage() {
           color: "var(--void)",
           border: "3px solid var(--void)",
           padding: "clamp(24px, 6vw, 40px) clamp(20px, 5vw, 32px)",
-          boxShadow: "var(--card-shadow-offset) var(--card-shadow-offset) 0 var(--blood)",
+          boxShadow: "var(--card-shadow-offset) var(--card-shadow-offset) 0 var(--danger)",
           maxWidth: 420,
           width: "100%",
         }}

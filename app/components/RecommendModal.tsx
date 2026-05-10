@@ -197,7 +197,7 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers, topCov
             />
 
             {error && (
-              <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{error}</div>
+              <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: 13 }}>{error}</div>
             )}
 
             <button

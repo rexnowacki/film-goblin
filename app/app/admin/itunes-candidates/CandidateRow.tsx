@@ -75,7 +75,7 @@ export default function CandidateRow({ row }: Props) {
         <a href={row.itunes_url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline">
           Open on Apple TV ↗
         </a>
-        {err && <span style={{ color: "var(--blood)", fontSize: 12 }}>{err}</span>}
+        {err && <span style={{ color: "var(--danger)", fontSize: 12 }}>{err}</span>}
       </div>
     </div>
   );

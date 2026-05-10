@@ -191,7 +191,7 @@ export default function FilmForm({ mode, filmId, initial, requestId, onSuccess, 
         )}
       </div>
 
-      {err && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13, marginBottom: 14 }}>{err}</div>}
+      {err && <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: 13, marginBottom: 14 }}>{err}</div>}
 
       <button type="submit" className="btn" disabled={saving}>
         {saving ? "Saving…" : mode === "create" ? "Create film" : "Save changes"}

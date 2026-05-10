@@ -67,7 +67,7 @@ export default function TmdbSearchBox({ onPick }: Props) {
       </form>
 
       {err && (
-        <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13, marginBottom: 14 }}>
+        <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: 13, marginBottom: 14 }}>
           {err}
         </div>
       )}

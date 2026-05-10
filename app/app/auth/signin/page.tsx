@@ -55,7 +55,7 @@ function SignInInner() {
             </a>
           </div>
           {error && (
-            <div style={{ color: "var(--blood)", fontFamily: "var(--font-serif)", fontStyle: "italic", marginBottom: 16 }}>
+            <div style={{ color: "var(--danger)", fontFamily: "var(--font-serif)", fontStyle: "italic", marginBottom: 16 }}>
               {error}
             </div>
           )}

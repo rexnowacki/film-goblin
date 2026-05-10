@@ -83,7 +83,7 @@ export default function SetTempPasswordForm({ userId, username }: Props) {
         </button>
       </div>
       {state === "error" && errMsg && (
-        <p style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--blood)", margin: 0 }}>
+        <p style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--danger)", margin: 0 }}>
           {errMsg}
         </p>
       )}

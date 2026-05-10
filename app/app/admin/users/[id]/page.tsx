@@ -50,8 +50,8 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
         </Section>
       </div>
 
-      <div style={{ borderTop: "1px solid var(--blood)", paddingTop: 20 }}>
-        <div className="caps" style={{ color: "var(--blood)", fontSize: 12, marginBottom: 10 }}>Danger zone</div>
+      <div style={{ borderTop: "1px solid var(--danger)", paddingTop: 20 }}>
+        <div className="caps" style={{ color: "var(--danger)", fontSize: 12, marginBottom: 10 }}>Danger zone</div>
         <DeleteUserModal
           userId={user.id}
           username={user.username}

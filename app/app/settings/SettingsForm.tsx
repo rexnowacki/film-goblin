@@ -182,12 +182,12 @@ export default function SettingsForm() {
             <input type="file" accept="image/*" onChange={pickFile} disabled={avatarUploading} style={{ display: "none" }} />
           </label>
           {profile.avatar_url && (
-            <button onClick={removeAvatar} disabled={removingAvatar || avatarUploading} style={{ padding: "8px 14px", background: "transparent", color: "var(--blood)", border: "2px solid var(--blood)", fontFamily: "var(--font-ui)", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", cursor: removingAvatar ? "default" : "pointer" }}>
+            <button onClick={removeAvatar} disabled={removingAvatar || avatarUploading} style={{ padding: "8px 14px", background: "transparent", color: "var(--danger)", border: "2px solid var(--danger)", fontFamily: "var(--font-ui)", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", cursor: removingAvatar ? "default" : "pointer" }}>
               {removingAvatar ? "Removing…" : "Remove"}
             </button>
           )}
         </div>
-        {avatarError && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 12, marginTop: 6 }}>{avatarError}</div>}
+        {avatarError && <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: 12, marginTop: 6 }}>{avatarError}</div>}
       </div>
     </div>
     {pendingFile && (
@@ -206,10 +206,10 @@ export default function SettingsForm() {
           onChange={e => setUsername(e.target.value)}
           required
           maxLength={24}
-          style={{ width: "100%", padding: 10, background: "var(--void-2)", border: `2px solid ${usernameInvalid ? "var(--blood)" : "var(--muted)"}`, color: "var(--bone)" }}
+          style={{ width: "100%", padding: 10, background: "var(--void-2)", border: `2px solid ${usernameInvalid ? "var(--danger)" : "var(--muted)"}`, color: "var(--bone)" }}
         />
         {usernameInvalid && (
-          <div style={{ marginTop: 6, color: "var(--blood)", fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12 }}>
+          <div style={{ marginTop: 6, color: "var(--danger)", fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12 }}>
             Lowercase letters, numbers, dots, underscores only (max 24).
           </div>
         )}
@@ -315,7 +315,7 @@ export default function SettingsForm() {
           <input name="email" type="email" required autoComplete="email"
             style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)" }} />
         </label>
-        {emailError && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{emailError}</div>}
+        {emailError && <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: 13 }}>{emailError}</div>}
         {emailInfo && <div style={{ color: "var(--accent)", fontStyle: "italic", fontSize: 13 }}>{emailInfo}</div>}
         <button type="submit" disabled={emailPending} className="btn" style={{ justifySelf: "start" }}>
           {emailPending ? "Sending…" : (profile?.email_added_at ? "Update Email" : "Add Email")}
@@ -348,7 +348,7 @@ export default function SettingsForm() {
           <input name="confirm" type="password" required minLength={6} autoComplete="new-password"
             style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)" }} />
         </label>
-        {pwError && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{pwError}</div>}
+        {pwError && <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: 13 }}>{pwError}</div>}
         {pwSuccess && <div style={{ color: "var(--accent)", fontStyle: "italic", fontSize: 13 }}>Password updated.</div>}
         <button type="submit" disabled={pwPending} className="btn" style={{ justifySelf: "start" }}>
           {pwPending ? "Updating…" : "Update Password"}
@@ -360,8 +360,8 @@ export default function SettingsForm() {
         type="submit"
         style={{
           background: "transparent",
-          color: "var(--blood)",
-          border: "2px solid var(--blood)",
+          color: "var(--danger)",
+          border: "2px solid var(--danger)",
           padding: "10px 18px",
           fontFamily: "var(--font-ui)",
           fontWeight: 700,

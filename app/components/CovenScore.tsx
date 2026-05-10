@@ -15,7 +15,7 @@ function tier(pct: number): Tier {
   if (pct >= 90) return { label: "Anointed", color: "var(--accent)" };
   if (pct >= 60) return { label: "Coven approved", color: "var(--accent)" };
   if (pct >= 40) return { label: "Coven divided", color: "var(--bone)" };
-  return { label: "Cursed", color: "var(--blood)" };
+  return { label: "Cursed", color: "var(--danger)" };
 }
 
 export default function CovenScore({ pct, count, threshold = 5 }: Props) {

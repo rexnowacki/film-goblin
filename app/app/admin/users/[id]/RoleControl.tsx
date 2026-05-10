@@ -65,7 +65,7 @@ export default function RoleControl({ userId, currentRole }: Props) {
       <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--font-serif)", fontStyle: "italic" }}>
         {ROLES.find(r => r.value === active)?.hint}
       </div>
-      {err && <div style={{ color: "var(--blood)", fontSize: 12 }}>{err}</div>}
+      {err && <div style={{ color: "var(--danger)", fontSize: 12 }}>{err}</div>}
     </div>
   );
 }

@@ -43,14 +43,14 @@ export default function DeleteUserModal({ userId, username, email, createdAt, la
       <button
         type="button"
         className="btn btn-sm"
-        style={{ background: "transparent", color: "var(--blood)", borderColor: "var(--blood)" }}
+        style={{ background: "transparent", color: "var(--danger)", borderColor: "var(--danger)" }}
         onClick={() => { setOpen(true); setTyped(""); setErr(null); }}
       >
         {testShape ? "Delete test user" : "Delete user"}
       </button>
       {open && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100, display: "grid", placeItems: "center", padding: 20 }}>
-          <div style={{ background: "var(--bone)", color: "var(--void)", border: "3px solid var(--void)", boxShadow: "6px 6px 0 var(--blood)", padding: 22, maxWidth: 480, width: "100%" }}>
+          <div style={{ background: "var(--bone)", color: "var(--void)", border: "3px solid var(--void)", boxShadow: "6px 6px 0 var(--danger)", padding: 22, maxWidth: 480, width: "100%" }}>
             {testShape ? (
               <>
                 <div className="head" style={{ fontSize: 22, marginBottom: 10 }}>Delete @{username}?</div>
@@ -79,7 +79,7 @@ export default function DeleteUserModal({ userId, username, email, createdAt, la
                 </label>
               </>
             )}
-            {err && <div style={{ color: "var(--blood)", fontSize: 12, marginBottom: 10 }}>{err}</div>}
+            {err && <div style={{ color: "var(--danger)", fontSize: 12, marginBottom: 10 }}>{err}</div>}
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button type="button" className="btn btn-sm btn-outline" style={{ color: "var(--void)", borderColor: "var(--void)" }} onClick={() => setOpen(false)} disabled={submitting}>
                 Cancel
@@ -87,7 +87,7 @@ export default function DeleteUserModal({ userId, username, email, createdAt, la
               <button
                 type="button"
                 className="btn btn-sm"
-                style={{ background: "var(--blood)", color: "var(--bone)", borderColor: "var(--blood)", opacity: (!testShape && typed !== username) ? 0.4 : 1 }}
+                style={{ background: "var(--danger)", color: "var(--bone)", borderColor: "var(--danger)", opacity: (!testShape && typed !== username) ? 0.4 : 1 }}
                 onClick={onConfirm}
                 disabled={submitting || (!testShape && typed !== username)}
               >

@@ -36,7 +36,7 @@ export default async function LandingPage() {
         <div className="container-wide" style={{ padding: "48px 32px 32px", position: "relative" }}>
           <div className="stackable" style={{ "--stack-template": "1.4fr 1fr", "--stack-gap": "40px", alignItems: "stretch" } as React.CSSProperties}>
             <div>
-              <div className="stamp" style={{ background: "var(--void)", color: "var(--yellow)", borderColor: "var(--void)", marginBottom: 20 }}>
+              <div className="stamp" style={{ background: "var(--void)", color: "var(--highlight)", borderColor: "var(--void)", marginBottom: 20 }}>
                 ✦ Watch Weirder ✦
               </div>
               <h1 className="display" style={{ fontSize: "clamp(80px, 11vw, 180px)", margin: 0, color: "var(--void)", lineHeight: 0.82, letterSpacing: "-0.02em" }}>

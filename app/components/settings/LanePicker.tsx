@@ -67,7 +67,7 @@ export default function LanePicker({ initialLaneIds, vocab }: Props) {
         <button type="button" className="btn" disabled={pending} onClick={save}>
           {pending ? "Saving…" : "Save lanes"}
         </button>
-        {msg && <span style={{ fontSize: 12, color: msg === "Saved." ? "var(--accent)" : "var(--blood)" }}>{msg}</span>}
+        {msg && <span style={{ fontSize: 12, color: msg === "Saved." ? "var(--accent)" : "var(--danger)" }}>{msg}</span>}
       </div>
     </div>
   );

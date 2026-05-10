@@ -22,7 +22,7 @@ export default function ActivityWatchLogged({ item }: { item: Item }) {
                 marginLeft: 8,
                 padding: "1px 6px",
                 fontSize: 9,
-                background: item.recommended ? "#F5D300" : "var(--blood)",
+                background: item.recommended ? "var(--highlight)" : "var(--danger)",
                 color: item.recommended ? "var(--void)" : "var(--bone)",
               }}
             >

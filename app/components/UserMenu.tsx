@@ -101,7 +101,7 @@ export default function UserMenu({ username, displayName, avatarUrl, isAdmin, on
           <form action={signOut}>
             <button
               type="submit"
-              style={{ width: "100%", textAlign: "left", padding: "10px 14px", background: "transparent", border: 0, cursor: "pointer", fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--blood)" }}
+              style={{ width: "100%", textAlign: "left", padding: "10px 14px", background: "transparent", border: 0, cursor: "pointer", fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--danger)" }}
             >
               Sign out
             </button>

@@ -74,7 +74,7 @@ export default function WatchModal({ open, mode, initial, filmTitle, onSave, onD
           <div className="caps" style={{ fontSize: 11, marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
             <span>Note (optional)</span>
             {note.length >= 400 && (
-              <span style={{ color: note.length >= 500 ? "var(--blood)" : "var(--muted)" }}>
+              <span style={{ color: note.length >= 500 ? "var(--danger)" : "var(--muted)" }}>
                 {note.length} / {MAX_NOTE}
               </span>
             )}
@@ -104,9 +104,9 @@ export default function WatchModal({ open, mode, initial, filmTitle, onSave, onD
                   style={{
                     flex: 1, minWidth: 120,
                     padding: "10px 14px",
-                    background: active ? (opt.value ? "#F5D300" : "var(--blood)") : "transparent",
+                    background: active ? (opt.value ? "var(--highlight)" : "var(--danger)") : "transparent",
                     color: active ? (opt.value ? "var(--void)" : "var(--bone)") : "var(--bone)",
-                    border: `2px solid ${active ? (opt.value ? "#F5D300" : "var(--blood)") : "var(--muted)"}`,
+                    border: `2px solid ${active ? (opt.value ? "var(--highlight)" : "var(--danger)") : "var(--muted)"}`,
                     fontFamily: "var(--font-ui)",
                     fontWeight: 700,
                     fontSize: 11,
@@ -124,7 +124,7 @@ export default function WatchModal({ open, mode, initial, filmTitle, onSave, onD
             Tap again to clear. Feeds the coven score.
           </div>
         </div>
-        {error && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{error}</div>}
+        {error && <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: 13 }}>{error}</div>}
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 6 }}>
           <button
             type="button"
@@ -142,8 +142,8 @@ export default function WatchModal({ open, mode, initial, filmTitle, onSave, onD
               disabled={pending}
               style={{
                 background: "transparent",
-                color: "var(--blood)",
-                border: "2px solid var(--blood)",
+                color: "var(--danger)",
+                border: "2px solid var(--danger)",
                 padding: "10px 18px",
                 fontFamily: "var(--font-ui)",
                 fontWeight: 700,

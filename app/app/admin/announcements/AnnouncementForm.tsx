@@ -193,7 +193,7 @@ export default function AnnouncementForm({ profiles }: Props) {
               style={{
                 background: "transparent",
                 border: "none",
-                color: "var(--blood)",
+                color: "var(--danger)",
                 fontFamily: "var(--font-ui)",
                 fontSize: 12,
                 cursor: "pointer",
@@ -305,7 +305,7 @@ export default function AnnouncementForm({ profiles }: Props) {
       </div>
 
       {err && (
-        <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13, marginBottom: 14 }}>
+        <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: 13, marginBottom: 14 }}>
           {err}
         </div>
       )}

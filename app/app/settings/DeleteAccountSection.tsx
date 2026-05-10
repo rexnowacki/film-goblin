@@ -20,8 +20,8 @@ export default function DeleteAccountSection({ username }: { username: string })
   }
 
   return (
-    <div style={{ marginTop: 48, borderTop: "1px solid var(--blood)", paddingTop: 24 }}>
-      <div className="caps" style={{ fontSize: 11, marginBottom: 12, color: "var(--blood)" }}>Danger zone</div>
+    <div style={{ marginTop: 48, borderTop: "1px solid var(--danger)", paddingTop: 24 }}>
+      <div className="caps" style={{ fontSize: 11, marginBottom: 12, color: "var(--danger)" }}>Danger zone</div>
 
       {!open ? (
         <button
@@ -29,8 +29,8 @@ export default function DeleteAccountSection({ username }: { username: string })
           onClick={() => { setOpen(true); setTyped(""); setError(null); }}
           style={{
             background: "transparent",
-            color: "var(--blood)",
-            border: "2px solid var(--blood)",
+            color: "var(--danger)",
+            border: "2px solid var(--danger)",
             padding: "10px 18px",
             fontFamily: "var(--font-ui)",
             fontWeight: 700,
@@ -62,7 +62,7 @@ export default function DeleteAccountSection({ username }: { username: string })
                 width: "100%",
                 padding: 10,
                 background: "var(--void-2)",
-                border: "2px solid var(--blood)",
+                border: "2px solid var(--danger)",
                 color: "var(--bone)",
                 fontFamily: "var(--font-ui)",
                 fontSize: 14,
@@ -71,7 +71,7 @@ export default function DeleteAccountSection({ username }: { username: string })
             />
           </label>
           {error && (
-            <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{error}</div>
+            <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: 13 }}>{error}</div>
           )}
           <div style={{ display: "flex", gap: 8 }}>
             <button
@@ -98,9 +98,9 @@ export default function DeleteAccountSection({ username }: { username: string })
               onClick={onConfirm}
               disabled={pending || typed !== username}
               style={{
-                background: "var(--blood)",
+                background: "var(--danger)",
                 color: "var(--bone)",
-                border: "2px solid var(--blood)",
+                border: "2px solid var(--danger)",
                 padding: "9px 16px",
                 fontFamily: "var(--font-ui)",
                 fontWeight: 700,

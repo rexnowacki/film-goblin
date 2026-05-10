@@ -29,7 +29,7 @@ export default function RetireModal({ filmId, title, year, counts }: Props) {
 
   return (
     <>
-      <button type="button" className="btn btn-sm" style={{ background: "transparent", color: "var(--blood)", borderColor: "var(--blood)" }} onClick={() => setOpen(true)}>
+      <button type="button" className="btn btn-sm" style={{ background: "transparent", color: "var(--danger)", borderColor: "var(--danger)" }} onClick={() => setOpen(true)}>
         Retire film
       </button>
       {open && (
@@ -45,12 +45,12 @@ export default function RetireModal({ filmId, title, year, counts }: Props) {
             <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, marginBottom: 16 }}>
               Sets <code>tracking = false</code> and <code>available = false</code>. Reversible — edit the film and flip the flags back on.
             </p>
-            {err && <div style={{ color: "var(--blood)", fontSize: 12, marginBottom: 10 }}>{err}</div>}
+            {err && <div style={{ color: "var(--danger)", fontSize: 12, marginBottom: 10 }}>{err}</div>}
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button type="button" className="btn btn-sm btn-outline" style={{ color: "var(--void)", borderColor: "var(--void)" }} onClick={() => setOpen(false)} disabled={submitting}>
                 Cancel
               </button>
-              <button type="button" className="btn btn-sm" style={{ background: "var(--blood)", color: "var(--bone)", borderColor: "var(--blood)" }} onClick={onConfirm} disabled={submitting}>
+              <button type="button" className="btn btn-sm" style={{ background: "var(--danger)", color: "var(--bone)", borderColor: "var(--danger)" }} onClick={onConfirm} disabled={submitting}>
                 {submitting ? "Retiring…" : "Retire film"}
               </button>
             </div>

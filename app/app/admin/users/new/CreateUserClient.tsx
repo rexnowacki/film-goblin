@@ -51,7 +51,7 @@ export default function CreateUserClient({ initialPassword }: { initialPassword:
         <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Display name (optional)</div>
         <input style={INPUT_STYLE} value={displayName} onChange={e => setDisplayName(e.target.value)} />
       </label>
-      {err && <div style={{ color: "var(--blood)", fontStyle: "italic", fontSize: 13 }}>{err}</div>}
+      {err && <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: 13 }}>{err}</div>}
       <button type="submit" className="btn" disabled={saving}>{saving ? "Creating…" : "Create test user"}</button>
     </form>
   );

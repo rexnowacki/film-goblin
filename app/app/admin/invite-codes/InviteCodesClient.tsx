@@ -64,7 +64,7 @@ export function CreateInviteForm() {
             }}
           />
         </label>
-        {error && <div style={{ color: "var(--blood)", fontSize: 12, fontStyle: "italic" }}>{error}</div>}
+        {error && <div style={{ color: "var(--danger)", fontSize: 12, fontStyle: "italic" }}>{error}</div>}
         <button
           type="submit"
           disabled={pending}
@@ -107,7 +107,7 @@ export function RevokeButton({ code }: { code: string }) {
       onClick={revoke}
       disabled={pending}
       className="btn btn-sm"
-      style={{ background: "transparent", color: "var(--blood)", borderColor: "var(--blood)", fontSize: 10 }}
+      style={{ background: "transparent", color: "var(--danger)", borderColor: "var(--danger)", fontSize: 10 }}
     >
       {state === "error" ? "Error" : pending ? "…" : "Revoke"}
     </button>

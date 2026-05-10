@@ -384,7 +384,7 @@ export default function FilmTagEditor({ filmId, director, vocab, initial }: Prop
         </button>
         {saveBlocker && <span style={{ fontSize: 12, color: "var(--muted)" }}>{saveBlocker}</span>}
         {msg && (
-          <span style={{ fontSize: 12, color: msg === "Saved." ? "var(--accent)" : "var(--blood)" }}>
+          <span style={{ fontSize: 12, color: msg === "Saved." ? "var(--accent)" : "var(--danger)" }}>
             {msg}
           </span>
         )}

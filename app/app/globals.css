@@ -26,6 +26,13 @@
   --accent-deep: var(--pink-deep);
   --accent-ink: var(--void); /* text color that reads on accent */
 
+  /* Role tokens that map to the named brand palette by default and
+     are overridable per theme. --highlight is non-destructive emphasis
+     (active stamps, "NEW" chips). --danger signals destructive action. */
+  --highlight: var(--yellow);
+  --highlight-deep: var(--yellow-deep);
+  --danger: var(--blood);
+
   --font-display: "Rubik Wet Paint", "Rubik Glitch", "Bungee", serif;
   --font-head: "DM Serif Display", "Playfair Display", serif;
   --font-ui: "IBM Plex Sans", system-ui, sans-serif;
@@ -48,20 +55,27 @@
 [data-accent="blood"]  { --accent: #d93a2e; --accent-deep: #8e1e15; --accent-ink: #f3ecd8; }
 
 /* Theme variants, applied to <html> via cookie. The default (Pink Goblin) is
-   the :root values above; only Midsommar overrides — Swedish linen + pine wood
-   + buttercup yellow, the palette of Hårga at high noon. */
+   the :root values above; only Midsommar overrides.
+
+   The 95% trio: Sun-Bleached Wheat (bg), Pine Wood (dark surface), May Queen
+   Yellow (accent). Petal Pink and Ritual Pinewood are supporting roles for
+   stamps and danger. Bright ritual daylight, pastoral beauty with something
+   wrong underneath. */
 [data-theme="midsommar"] {
-  --bone: #f5efde;
-  --bone-2: #ebe2c7;
-  --void: #2a1f12;
-  --void-2: #3a2c1b;
-  --void-3: #4a3a26;
-  --ink: #2a1f12;
-  --accent: #e8c547;
-  --accent-deep: #b8902f;
-  --accent-ink: #2a1f12;
-  --muted: #8c7a5e;
-  --muted-dark: #6b5b41;
+  --bone: #e6d9b8;        /* Sun-Bleached Wheat */
+  --bone-2: #f3ebdd;      /* Bleached Linen */
+  --void: #4a3622;        /* Pine Wood — page bg, AA-safe on wheat */
+  --void-2: #5c4530;
+  --void-3: #6e553d;
+  --ink: #2f2110;
+  --accent: #e7c84f;      /* May Queen Yellow */
+  --accent-deep: #c5a834;
+  --accent-ink: #2f2110;
+  --muted: #9a8f6f;
+  --muted-dark: #756b50;
+  --highlight: #d7a7b5;   /* Petal Pink — supporting */
+  --highlight-deep: #b58291;
+  --danger: #9a744e;      /* Ritual Pinewood */
 }
 
 @media (max-width: 720px) {
@@ -199,7 +213,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- buttons ----------
    Secondary-button rule:
-   - Destructive actions (Remove, Sign out, Leave, Desanctify): 2px solid var(--blood) outline, color var(--blood).
+   - Destructive actions (Remove, Sign out, Leave, Desanctify): 2px solid var(--danger) outline, color var(--danger).
    - Non-destructive actions (Replace, Cancel): 2px solid var(--bone) outline, color var(--bone).
    - Primary CTAs: .btn family (accent-filled). */
 .btn {
@@ -308,7 +322,7 @@ a { color: inherit; text-decoration: none; }
   display: inline-flex; align-items: baseline; gap: 6px;
   font-family: var(--font-display);
   font-size: 22px;
-  background: var(--yellow);
+  background: var(--highlight);
   color: var(--void);
   padding: 4px 10px 6px;
   border: 2px solid var(--void);
@@ -816,7 +830,7 @@ a { color: inherit; text-decoration: none; }
   text-align: center;
 }
 .likers-error {
-  color: var(--blood);
+  color: var(--danger);
 }
 .likers-section {
   margin-bottom: 16px;
@@ -1189,7 +1203,7 @@ a { color: inherit; text-decoration: none; }
   cursor: pointer;
 }
 .comment-row-delete:hover {
-  color: var(--blood);
+  color: var(--danger);
 }
 
 /* ── threaded reply rail ── */
@@ -1516,11 +1530,11 @@ a { color: inherit; text-decoration: none; }
   font-weight: 700;
 }
 .sharer-watch-pin-verdict.loved {
-  background: #F5D300;
+  background: var(--highlight);
   color: var(--void);
 }
 .sharer-watch-pin-verdict.didnt {
-  background: var(--blood);
+  background: var(--danger);
   color: var(--bone);
 }
 .sharer-watch-pin-note {

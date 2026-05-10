@@ -18,14 +18,14 @@ const SWATCHES: Record<Theme, Swatch> = {
     void: "#0a0a0a",
     accent: "#ff2d88",
     label: "Pink Goblin",
-    subline: "Cream zine, void black, hot pink. The default.",
+    subline: "Cream, void, hot pink. The default.",
   },
   midsommar: {
-    bone: "#f5efde",
-    void: "#2a1f12",
-    accent: "#e8c547",
+    bone: "#e6d9b8",
+    void: "#4a3622",
+    accent: "#e7c84f",
     label: "Midsommar",
-    subline: "Linen, pine, buttercup. Hårga at noon.",
+    subline: "Wheat, pine, May Queen yellow. Bright ritual daylight.",
   },
 };
 

@@ -61,7 +61,7 @@ export default function ArchiveButton({ announcementId, title }: Props) {
         className="btn btn-sm"
         onClick={archive}
         disabled={isPending}
-        style={{ background: "var(--blood)", color: "var(--bone)" }}
+        style={{ background: "var(--danger)", color: "var(--bone)" }}
       >
         {isPending ? "Archiving…" : "Confirm"}
       </button>
@@ -73,7 +73,7 @@ export default function ArchiveButton({ announcementId, title }: Props) {
       >
         Cancel
       </button>
-      {err && <span style={{ color: "var(--blood)", fontSize: 12 }}>{err}</span>}
+      {err && <span style={{ color: "var(--danger)", fontSize: 12 }}>{err}</span>}
     </div>
   );
 }

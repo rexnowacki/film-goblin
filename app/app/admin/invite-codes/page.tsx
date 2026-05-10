@@ -45,14 +45,14 @@ export default async function AdminInviteCodesPage() {
                   </td>
                   <td style={{ padding: "8px 12px 8px 0", color: "var(--muted)", fontStyle: "italic" }}>{c.label ?? "—"}</td>
                   <td style={{ padding: "8px 12px 8px 0" }}>
-                    <span style={{ color: c.use_count >= c.max_uses ? "var(--blood)" : "inherit" }}>
+                    <span style={{ color: c.use_count >= c.max_uses ? "var(--danger)" : "inherit" }}>
                       {c.use_count}/{c.max_uses}
                     </span>
                   </td>
                   <td style={{ padding: "8px 12px 8px 0", color: "var(--muted)" }}>{fmtDate(c.created_at)}</td>
                   <td style={{ padding: "8px 12px 8px 0" }}>
                     {c.revoked ? (
-                      <span style={{ color: "var(--blood)", fontSize: 10 }}>Revoked</span>
+                      <span style={{ color: "var(--danger)", fontSize: 10 }}>Revoked</span>
                     ) : c.use_count >= c.max_uses ? (
                       <span style={{ color: "var(--muted)", fontSize: 10 }}>Exhausted</span>
                     ) : (

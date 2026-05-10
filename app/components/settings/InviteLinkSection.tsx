@@ -33,7 +33,7 @@ export default async function InviteLinkSection({ userId }: { userId: string }) 
           marginTop: 10,
           fontFamily: "var(--font-ui)",
           fontSize: 12,
-          color: exhausted ? "var(--blood)" : "var(--muted)",
+          color: exhausted ? "var(--danger)" : "var(--muted)",
         }}
       >
         {exhausted

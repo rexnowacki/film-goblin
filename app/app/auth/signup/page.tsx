@@ -106,7 +106,7 @@ function SignUpInner() {
             Email is optional — add one later from settings if you want price-drop alerts by email.
           </div>
           {error && (
-            <div style={{ color: "var(--blood)", fontFamily: "var(--font-serif)", fontStyle: "italic", marginBottom: 8 }}>
+            <div style={{ color: "var(--danger)", fontFamily: "var(--font-serif)", fontStyle: "italic", marginBottom: 8 }}>
               {error}
             </div>
           )}
@@ -148,8 +148,8 @@ function UsernameStatus({ state }: { state: CheckState }) {
   };
   if (state === "checking") return <div style={{ ...base, color: "var(--muted)" }}>Checking…</div>;
   if (state === "ok") return <div style={{ ...base, color: "var(--accent-deep)" }}>✓ Available</div>;
-  if (state === "taken") return <div style={{ ...base, color: "var(--blood)" }}>✕ Already taken</div>;
-  return <div style={{ ...base, color: "var(--blood)" }}>Lowercase letters, numbers, dots, underscores only.</div>;
+  if (state === "taken") return <div style={{ ...base, color: "var(--danger)" }}>✕ Already taken</div>;
+  return <div style={{ ...base, color: "var(--danger)" }}>Lowercase letters, numbers, dots, underscores only.</div>;
 }
 
 export default function SignUpPage() {
