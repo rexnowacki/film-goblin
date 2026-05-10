@@ -13,7 +13,7 @@ export default function ActivityListCreated({ item }: { item: Item }) {
         <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, lineHeight: 1.4 }}>
           <Link prefetch={false} href={`/p/${encodeURIComponent(item.actor.username)}`} style={{ color: "var(--bone)", fontWeight: 700 }}>{item.actor.username}</Link>
           {" curated a new grimoire: "}
-          <Link prefetch={false} href="/lists" style={{ color: "var(--accent)", fontStyle: "italic" }}>{item.list.title}</Link>.
+          <Link prefetch={false} href={`/lists/${item.list.id}`} style={{ color: "var(--accent)", fontStyle: "italic" }}>{item.list.title}</Link>.
         </div>
         <ActivityFooter item={item} />
       </div>

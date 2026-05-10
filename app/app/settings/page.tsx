@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
 import { getAllTagsGroupedByType } from "@/lib/queries/film-tags";
@@ -6,8 +7,10 @@ import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import SettingsForm from "./SettingsForm";
 import LanePicker from "@/components/settings/LanePicker";
+import ThemePicker from "@/components/settings/ThemePicker";
 import DeleteAccountSection from "./DeleteAccountSection";
 import InviteLinkSection from "@/components/settings/InviteLinkSection";
+import { THEME_COOKIE, readTheme } from "@/lib/theme";
 
 export default async function SettingsPage() {
   const user = await getServerUser();
@@ -21,6 +24,7 @@ export default async function SettingsPage() {
 
   const initialLaneIds = (profile.data?.lane_tag_ids ?? []) as string[];
   const username = profile.data?.username ?? "";
+  const currentTheme = readTheme((await cookies()).get(THEME_COOKIE)?.value);
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
@@ -29,6 +33,7 @@ export default async function SettingsPage() {
       <div className="container-wide" style={{ padding: 40 }}>
         <h1 className="h-display" style={{ marginBottom: 24 }}>Settings</h1>
         <SettingsForm />
+        <ThemePicker current={currentTheme} />
         <LanePicker
           initialLaneIds={initialLaneIds}
           vocab={{ subgenre: vocab.subgenre, tone: vocab.tone, theme: vocab.theme }}

@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import "./globals.css";
 import { ToastProvider } from "@/components/ToastProvider";
 import { getServerUser } from "@/lib/supabase/cached";
 import { createClient } from "@/lib/supabase/server";
 import { getPendingAnnouncement, type PendingAnnouncement } from "@/lib/queries/announcements";
 import AnnouncementOverlay from "@/components/AnnouncementOverlay";
+import { THEME_COOKIE, readTheme } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: "Film Goblin — Watch Weirder",
@@ -50,9 +52,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     const supabase = await createClient();
     pending = await getPendingAnnouncement(supabase, user.id);
   }
+  const theme = readTheme((await cookies()).get(THEME_COOKIE)?.value);
 
   return (
-    <html lang="en">
+    <html lang="en" data-theme={theme}>
       <head>
         {/* Legacy iOS standalone capability declaration. Next.js's metadata API
             emits only the modern `mobile-web-app-capable` tag; older iOS still

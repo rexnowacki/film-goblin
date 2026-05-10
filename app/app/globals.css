@@ -47,6 +47,23 @@
 [data-accent="orange"] { --accent: #ff6a1f; --accent-deep: #c74d0f; --accent-ink: #0a0a0a; }
 [data-accent="blood"]  { --accent: #d93a2e; --accent-deep: #8e1e15; --accent-ink: #f3ecd8; }
 
+/* Theme variants, applied to <html> via cookie. The default (Pink Goblin) is
+   the :root values above; only Midsommar overrides — Swedish linen + pine wood
+   + buttercup yellow, the palette of Hårga at high noon. */
+[data-theme="midsommar"] {
+  --bone: #f5efde;
+  --bone-2: #ebe2c7;
+  --void: #2a1f12;
+  --void-2: #3a2c1b;
+  --void-3: #4a3a26;
+  --ink: #2a1f12;
+  --accent: #e8c547;
+  --accent-deep: #b8902f;
+  --accent-ink: #2a1f12;
+  --muted: #8c7a5e;
+  --muted-dark: #6b5b41;
+}
+
 @media (max-width: 720px) {
   :root {
     --container-pad: 20px;

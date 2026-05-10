@@ -16,7 +16,7 @@ export default function ActivityListFilmAdded({ item }: { item: Item }) {
           {" added "}
           <Link prefetch={false} href={`/film/${item.film.id}`} style={{ color: "var(--accent)", fontStyle: "italic" }}>{item.film.title}</Link>
           {" to "}
-          <Link prefetch={false} href="/lists" style={{ color: "var(--accent)", fontStyle: "italic" }}>{item.list.title}</Link>.
+          <Link prefetch={false} href={`/lists/${item.list.id}`} style={{ color: "var(--accent)", fontStyle: "italic" }}>{item.list.title}</Link>.
         </div>
         <ActivityFooter item={item} />
       </div>

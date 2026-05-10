@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
 import { getPublicLists, getMySubscribedLists } from "@/lib/queries/lists";
@@ -37,10 +38,21 @@ export default async function ListsPage() {
                     ✦ Official
                   </span>
                 )}
-                <div className="head" style={{ fontSize: 22, lineHeight: 1.1, marginBottom: 12 }}>{l.title}</div>
-                <div style={{ fontFamily: "var(--font-serif)", fontSize: 13, marginBottom: 16, opacity: 0.8 }}>
+                <Link
+                  prefetch={false}
+                  href={`/lists/${l.id}`}
+                  className="head"
+                  style={{ display: "block", fontSize: 22, lineHeight: 1.1, marginBottom: 12, color: "inherit", textDecoration: "none" }}
+                >
+                  {l.title}
+                </Link>
+                <Link
+                  prefetch={false}
+                  href={`/lists/${l.id}`}
+                  style={{ display: "block", fontFamily: "var(--font-serif)", fontSize: 13, marginBottom: 16, opacity: 0.8, color: "inherit", textDecoration: "none" }}
+                >
                   {l.description || "\u00A0"}
-                </div>
+                </Link>
                 {user ? (
                   <SubscribeButton listId={l.id} initialSubscribed={mySubs.has(l.id)} />
                 ) : (
