@@ -1,0 +1,35 @@
+/* ===== ADMIN TAG ORDER LIST ===== */
+
+.tag-order-list { display: flex; flex-direction: column; gap: 4px; }
+.tag-order-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--void-2);
+  border: 1px solid var(--muted);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  user-select: none;
+}
+.tag-order-row.is-virtual { opacity: 0.7; border-style: dashed; }
+.tag-order-row.is-locked  { background: rgba(255, 45, 136, 0.08); }
+.tag-order-handle { cursor: grab; color: var(--muted); font-size: 14px; }
+.tag-order-row.is-virtual .tag-order-handle,
+.tag-order-row.is-locked  .tag-order-handle { cursor: not-allowed; }
+.tag-order-label { color: var(--bone); }
+.tag-order-meta  { color: var(--muted); font-size: 11px; }
+.tag-order-divider {
+  display: flex; align-items: center; justify-content: center;
+  margin: 8px 0; padding: 6px 0;
+  border-top: 1px dashed var(--accent);
+  border-bottom: 1px dashed var(--accent);
+}
+.tag-order-divider span {
+  color: var(--accent);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}

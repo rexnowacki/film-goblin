@@ -12,6 +12,7 @@ import {
 import { toHit, type ITunesSearchHit } from "@/lib/search/itunes-hit";
 import { _fulfillRequest } from "@/lib/actions/film-requests";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
+import { backfillTmdbTrailers, lookupTrailerForFilm, trailerPayload } from "@/lib/trailers/tmdb-enrichment";
 
 export type { ITunesSearchHit } from "@/lib/search/itunes-hit";
 
@@ -139,6 +140,11 @@ export async function adminCreateFilm(
   const c = supabase as unknown as { from: (t: string) => any };
   const seriesRes = await resolveSeriesId(c, fields);
   if (!seriesRes.ok) return seriesRes;
+  const trailer = await lookupTrailerForFilm({
+    tmdb_id: fields.tmdb_id,
+    title: fields.title,
+    year: fields.year,
+  });
 
   const payload = {
     itunes_id: fields.itunes_id,
@@ -157,6 +163,8 @@ export async function adminCreateFilm(
     theatrical_release_date: fields.theatrical_release_date,
     series_id: seriesRes.id,
     series_order: seriesRes.id ? fields.series_order : null,
+    ...(trailer && !fields.tmdb_id ? { tmdb_id: trailer.tmdb_id } : {}),
+    ...(trailer ? trailerPayload(trailer) : {}),
   };
 
   // Cast needed because lib/supabase/types.ts pre-dates migration 0118 which
@@ -234,4 +242,20 @@ export async function adminRetireFilm(id: string): Promise<{ ok: true } | { ok: 
   if (error) return { ok: false, error: error.message };
   revalidatePath("/admin/films");
   return { ok: true };
+}
+
+export async function adminBackfillTmdbTrailers(batchSize = 25): Promise<
+  | { ok: true; scanned: number; updated: number; missing: number; failed: number }
+  | { ok: false; error: string }
+> {
+  const supabase = await createClient();
+  await requireAdmin(supabase);
+
+  const limit = Math.max(1, Math.min(batchSize, 50));
+  const service = serviceRoleClient();
+  const result = await backfillTmdbTrailers(service, limit);
+  if (!result.ok) return result;
+
+  revalidatePath("/admin/films");
+  return { ok: true, ...result.stats };
 }

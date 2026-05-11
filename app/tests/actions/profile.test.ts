@@ -10,6 +10,36 @@ let user: TestUser;
 beforeAll(async () => { if (!hasEnv) return; user = await createTestUser(); });
 afterAll(async () => { if (!hasEnv) return; await deleteTestUser(user.id); });
 
+describe("actions/profile username validation", () => {
+  function mockClient(capture: { patch?: Record<string, unknown> }) {
+    return {
+      auth: {
+        getUser: async () => ({ data: { user: { id: "user-1" } } }),
+      },
+      from: () => ({
+        update: (patch: Record<string, unknown>) => {
+          capture.patch = patch;
+          return { eq: async () => ({ error: null }) };
+        },
+      }),
+    } as any;
+  }
+
+  it("normalizes settings username updates to the canonical handle format", async () => {
+    const capture: { patch?: Record<string, unknown> } = {};
+    await _updateProfile(mockClient(capture), { username: "  New.Handle_1  " });
+    expect(capture.patch?.username).toBe("new.handle_1");
+  });
+
+  it("rejects settings username updates that onboarding would reject", async () => {
+    const capture: { patch?: Record<string, unknown> } = {};
+    await expect(_updateProfile(mockClient(capture), { username: "way-too-long-handle-for-film-goblin" }))
+      .rejects.toThrow("max 24");
+    await expect(_updateProfile(mockClient(capture), { username: "bad handle" }))
+      .rejects.toThrow("lowercase letters");
+  });
+});
+
 describe.skipIf(!hasEnv)("actions/profile", () => {
   it("updateProfile changes username and bio", async () => {
     const c = await signedInClient(user.email, user.password);

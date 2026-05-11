@@ -35,6 +35,31 @@ export interface TmdbFilmFields {
   series_order: number | null;
 }
 
+export interface TmdbVideo {
+  id?: string;
+  iso_3166_1?: string;
+  iso_639_1?: string;
+  key?: string;
+  name?: string;
+  official?: boolean;
+  published_at?: string;
+  site?: string;
+  size?: number;
+  type?: string;
+}
+
+export interface TmdbTrailer {
+  youtube_id: string;
+  url: string;
+  label: string;
+  official: boolean;
+  published_at: string | null;
+}
+
+export interface TmdbResolvedTrailer extends TmdbTrailer {
+  tmdb_id: number;
+}
+
 export async function searchTmdb(query: string): Promise<
   | { ok: true; candidates: TmdbCandidate[] }
   | { ok: false; error: string }
@@ -59,6 +84,117 @@ export async function searchTmdb(query: string): Promise<
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "TMDB search failed." };
   }
+}
+
+function publishedTime(video: TmdbVideo): number {
+  const value = video.published_at ? Date.parse(video.published_at) : 0;
+  return Number.isFinite(value) ? value : 0;
+}
+
+function trailerRank(video: TmdbVideo): number {
+  const type = (video.type ?? "").toLowerCase();
+  const official = video.official === true;
+  if (official && type === "trailer") return 0;
+  if (official && type === "teaser") return 1;
+  if (type === "trailer") return 2;
+  if (type === "teaser") return 3;
+  return 4;
+}
+
+export function chooseBestTmdbTrailer(videos: TmdbVideo[]): TmdbTrailer | null {
+  const candidates = videos
+    .filter((video) => (video.site ?? "").toLowerCase() === "youtube")
+    .filter((video) => typeof video.key === "string" && video.key.trim().length > 0)
+    .filter((video) => {
+      const type = (video.type ?? "").toLowerCase();
+      return type === "trailer" || type === "teaser";
+    })
+    .sort((a, b) => {
+      const rankDiff = trailerRank(a) - trailerRank(b);
+      if (rankDiff !== 0) return rankDiff;
+      return publishedTime(b) - publishedTime(a);
+    });
+
+  const best = candidates[0];
+  if (!best?.key) return null;
+
+  return {
+    youtube_id: best.key.trim(),
+    url: `https://www.youtube.com/watch?v=${encodeURIComponent(best.key.trim())}`,
+    label: best.name?.trim() || "Official Trailer",
+    official: best.official === true,
+    published_at: best.published_at ?? null,
+  };
+}
+
+export async function lookupTmdbTrailer(tmdbId: number): Promise<
+  | { ok: true; trailer: TmdbTrailer | null }
+  | { ok: false; error: string }
+> {
+  try {
+    const res = await fetch(`${TMDB_BASE}/movie/${tmdbId}/videos?api_key=${apiKey()}&language=en-US`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`TMDB videos fetch returned ${res.status}`);
+    const data = await res.json();
+    return { ok: true, trailer: chooseBestTmdbTrailer(data.results ?? []) };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "TMDB trailer lookup failed." };
+  }
+}
+
+function normalizeTitleForMatch(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/^the\s+/, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+export async function resolveTmdbIdByTitleYear(title: string, year: number): Promise<
+  | { ok: true; tmdb_id: number | null }
+  | { ok: false; error: string }
+> {
+  const cleanTitle = title.trim();
+  if (!cleanTitle || !Number.isFinite(year) || year <= 0) return { ok: true, tmdb_id: null };
+
+  try {
+    const url = `${TMDB_BASE}/search/movie?api_key=${apiKey()}&query=${encodeURIComponent(cleanTitle)}&language=en-US&include_adult=false&year=${year}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`TMDB search returned ${res.status}`);
+    const data = await res.json();
+    const expectedTitle = normalizeTitleForMatch(cleanTitle);
+    const match = (data.results ?? []).find((result: any) => {
+      const resultYear = result.release_date ? Number(String(result.release_date).slice(0, 4)) : null;
+      const titleMatches = [result.title, result.original_title]
+        .filter((value): value is string => typeof value === "string")
+        .some((value) => normalizeTitleForMatch(value) === expectedTitle);
+      return resultYear === year && titleMatches;
+    });
+    return { ok: true, tmdb_id: match?.id ?? null };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "TMDB title lookup failed." };
+  }
+}
+
+export async function lookupTmdbTrailerForFilm(input: { tmdb_id?: number | null; title: string; year: number }): Promise<
+  | { ok: true; trailer: TmdbResolvedTrailer | null }
+  | { ok: false; error: string }
+> {
+  let tmdbId = input.tmdb_id ?? null;
+  if (!tmdbId) {
+    const resolveResult = await resolveTmdbIdByTitleYear(input.title, input.year);
+    if (!resolveResult.ok) return resolveResult;
+    tmdbId = resolveResult.tmdb_id;
+  }
+  if (!tmdbId) return { ok: true, trailer: null };
+
+  const trailerResult = await lookupTmdbTrailer(tmdbId);
+  if (!trailerResult.ok) return trailerResult;
+  return {
+    ok: true,
+    trailer: trailerResult.trailer ? { ...trailerResult.trailer, tmdb_id: tmdbId } : null,
+  };
 }
 
 export async function lookupTmdb(tmdbId: number): Promise<

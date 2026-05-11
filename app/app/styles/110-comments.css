@@ -1,0 +1,227 @@
+/* ===== COMMENT SHEET ===== */
+
+.comment-heart-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 40px;
+}
+.comment-heart-count {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.comment-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 0;
+}
+.comment-row + .comment-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+.comment-row-body {
+  flex: 1;
+  min-width: 0;
+}
+.comment-row-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.comment-row-username {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  color: var(--bone);
+  text-decoration: none;
+}
+.comment-row-time {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--muted);
+}
+.comment-row-text {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--bone);
+  line-height: 1.35;
+  margin-top: 2px;
+  word-break: break-word;
+}
+.comment-row-delete {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-top: 4px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.comment-row-delete:hover {
+  color: var(--danger);
+}
+
+/* ── threaded reply rail ── */
+.comment-thread-rail {
+  border-left: 1px solid var(--muted);
+  margin-left: 16px;
+  padding-left: 12px;
+}
+.comment-thread-rail .comment-thread-rail {
+  margin-left: 12px;
+}
+.comment-thread-rail .comment-thread-rail .comment-thread-rail {
+  margin-left: 8px;
+  /* indentation stops tapering beyond depth 3 */
+}
+
+/* ── view / hide replies toggle ── */
+.comment-view-replies {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+.comment-view-replies::before {
+  content: "↳";
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* ── reply mode banner inside CommentComposer ── */
+.composer-replying-to {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.composer-replying-to strong {
+  color: var(--accent);
+}
+.composer-replying-to button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.dot-accent {
+  color: var(--accent);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.composer-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border-top: 1px solid var(--muted);
+  padding: 12px 0;
+  background: transparent;
+}
+.composer-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--muted);
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: transparent;
+}
+.composer-pill input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  outline: none;
+  color: var(--bone);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  padding: 0;
+  min-width: 0;
+}
+.composer-counter {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.composer-counter.over {
+  color: var(--accent);
+}
+.composer-emoji-strip {
+  display: flex;
+  gap: 4px;
+  padding: 6px 0 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.composer-emoji-strip::-webkit-scrollbar { display: none; }
+
+.composer-emoji-btn {
+  flex: 0 0 auto;
+  background: none;
+  border: 0;
+  font-size: 22px;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.08s ease;
+}
+.composer-emoji-btn:hover { background: rgba(255, 255, 255, 0.06); }
+.composer-emoji-btn:active { transform: scale(0.92); }
+
+.composer-send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid var(--muted);
+  color: var(--muted);
+  cursor: not-allowed;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.composer-send-btn.enabled {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+.composer-send-btn.enabled:hover {
+  background: var(--accent-deep);
+  border-color: var(--accent-deep);
+}
+
+.comment-heart-count-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.comment-heart-count-button:hover { color: var(--bone); }

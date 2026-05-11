@@ -1,0 +1,51 @@
+/* ===== LIKERS SHEET CONTENT ===== */
+
+.likers-loading,
+.likers-error,
+.likers-empty {
+  font-family: var(--font-serif);
+  font-style: italic;
+  opacity: 0.7;
+  padding: 24px 0;
+  text-align: center;
+}
+.likers-error {
+  color: var(--danger);
+}
+.likers-section {
+  margin-bottom: 16px;
+}
+.likers-section-label {
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.likers-divider {
+  height: 1px;
+  background: var(--accent);
+  margin: 10px 0 14px;
+}
+.liker-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  color: var(--bone);
+  text-decoration: none;
+}
+.liker-row:hover {
+  color: var(--accent);
+}
+.liker-row-text {
+  min-width: 0;
+}
+.liker-row-name {
+  font-family: var(--font-head);
+  font-size: 16px;
+  line-height: 1.1;
+}
+.liker-row-handle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  opacity: 0.6;
+  margin-top: 2px;
+}

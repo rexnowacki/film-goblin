@@ -156,18 +156,7 @@ export default async function FilmDetailPage({
               <FilmTagsRow visible={filmTags.visible} director={film.director} />
             </div>
 
-            {/* Primary CTA — trailer wins the spot when available; otherwise watchlist owns the moment via FilmActions. */}
-            {film.trailer_youtube_id && (
-              <div style={{ marginBottom: 18 }}>
-                <TrailerButton
-                  youtubeId={film.trailer_youtube_id}
-                  filmTitle={film.title}
-                  label={film.trailer_label}
-                />
-              </div>
-            )}
-
-            {/* Secondary cluster — save/own/log + recommend + share + buy. */}
+            {/* Primary action cluster — save/own/log + recommend + share + buy. */}
             <div className="hero-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {user && <FilmActions filmId={film.id} filmTitle={film.title} initialOnWatchlist={onList} initialOwned={owned} initialWatchCount={watchCount} />}
               {user && <RecommendModal
@@ -188,6 +177,17 @@ export default async function FilmDetailPage({
                 </a>
               )}
             </div>
+
+            {/* Inline trailer — shown after the main film actions when metadata exists. */}
+            {film.trailer_youtube_id && (
+              <div style={{ marginTop: 28 }}>
+                <TrailerButton
+                  youtubeId={film.trailer_youtube_id}
+                  filmTitle={film.title}
+                  label={film.trailer_label}
+                />
+              </div>
+            )}
 
             {(film.watchlist_count > 0 || film.watcher_count > 0) && (
               <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, color: "var(--muted)", margin: "26px 0 0" }}>

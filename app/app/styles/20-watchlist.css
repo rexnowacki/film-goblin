@@ -1,0 +1,41 @@
+/* ===== WATCHLIST PAGE =====
+   /watchlist — poster grid identical in shape to /library. Drop badge
+   (top-right) signals on-sale films via PosterDropBadge; buy pill
+   (bottom-right) opens iTunes URL via BuyOnAppleTvPill. Mutation
+   (remove from watchlist) lives only on /film/[id]. */
+.watchlist-empty {
+  padding: 48px 0;
+  text-align: left;
+}
+
+.poster-drop-badge {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  background: var(--accent);
+  color: var(--void);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 4px 7px;
+  border: 1px solid var(--void);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.poster-check-pill {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  background: var(--accent);
+  color: var(--void);
+  border: 1px solid var(--void);
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  z-index: 2;
+  pointer-events: none;
+}

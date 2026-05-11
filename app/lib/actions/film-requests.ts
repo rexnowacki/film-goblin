@@ -241,7 +241,7 @@ export async function fulfillFilmRequest(requestId: string): Promise<
     itunes_url: req.itunes_url ?? "",
     tracking: true,
     available: true,
-    tmdb_id: null,
+    tmdb_id: req.tmdb_id,
     theatrical_release_date: null,
     series_id: null,
     series_new_name: "",

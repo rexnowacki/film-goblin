@@ -18,12 +18,13 @@ export default async function SettingsPage() {
   const supabase = await createClient();
 
   const [profile, vocab] = await Promise.all([
-    supabase.from("profiles").select("lane_tag_ids, username").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     getAllTagsGroupedByType(supabase),
   ]);
 
   const initialLaneIds = (profile.data?.lane_tag_ids ?? []) as string[];
   const username = profile.data?.username ?? "";
+  const hasPasswordIdentity = (user.identities ?? []).some((identity) => identity.provider === "email");
   const currentTheme = readTheme((await cookies()).get(THEME_COOKIE)?.value);
 
   return (
@@ -32,7 +33,11 @@ export default async function SettingsPage() {
       <BottomNav current="settings" />
       <div className="container-wide" style={{ padding: 40 }}>
         <h1 className="h-display" style={{ marginBottom: 24 }}>Settings</h1>
-        <SettingsForm />
+        <SettingsForm
+          initialProfile={profile.data}
+          initialAuthEmail={user.email ?? null}
+          initialHasPasswordIdentity={hasPasswordIdentity}
+        />
         <ThemePicker current={currentTheme} />
         <LanePicker
           initialLaneIds={initialLaneIds}

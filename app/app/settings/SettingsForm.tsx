@@ -11,13 +11,23 @@ import { useToast } from "@/components/ToastProvider";
 
 const USERNAME_RE = /^[a-z0-9._]+$/;
 
-export default function SettingsForm() {
+interface SettingsFormProps {
+  initialProfile: any | null;
+  initialAuthEmail: string | null;
+  initialHasPasswordIdentity: boolean;
+}
+
+export default function SettingsForm({
+  initialProfile,
+  initialAuthEmail,
+  initialHasPasswordIdentity,
+}: SettingsFormProps) {
   const { toast } = useToast();
-  const [profile, setProfile] = useState<any>(null);
-  const [authEmail, setAuthEmail] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(initialProfile);
+  const [authEmail, setAuthEmail] = useState<string | null>(initialAuthEmail);
+  const [loading, setLoading] = useState(!initialProfile);
   const [saving, setSaving] = useState(false);
-  const [hasPasswordIdentity, setHasPasswordIdentity] = useState(true);
+  const [hasPasswordIdentity, setHasPasswordIdentity] = useState(initialHasPasswordIdentity);
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSuccess, setPwSuccess] = useState(false);
   const [pwPending, setPwPending] = useState(false);
@@ -28,7 +38,7 @@ export default function SettingsForm() {
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [removingAvatar, setRemovingAvatar] = useState(false);
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(initialProfile?.username ?? "");
   const router = useRouter();
 
   const trimmedUsername = username.trim().toLowerCase();
@@ -104,6 +114,7 @@ export default function SettingsForm() {
   }
 
   useEffect(() => {
+    if (initialProfile) return;
     (async () => {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
@@ -116,7 +127,7 @@ export default function SettingsForm() {
       setUsername(data?.username ?? "");
       setLoading(false);
     })();
-  }, []);
+  }, [initialProfile]);
 
   async function save(fd: FormData) {
     setSaving(true);

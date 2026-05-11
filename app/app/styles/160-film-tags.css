@@ -1,0 +1,42 @@
+/* ===== FILM TAGS ROW (demo) =====
+   Visual mockup for the tagging system proposed in
+   docs/proposals/2026-05-01-tagging-and-fyp-review.md. Three pill variants
+   for sub-genre / director / vibe at descending visual weight. */
+
+.film-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 4px;
+}
+.film-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.film-tag-subgenre {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+}
+.film-tag-director {
+  background: transparent;
+  border: 1px solid var(--plum);
+  color: var(--plum);
+}
+.film-tag-vibe {
+  background: transparent;
+  border: 1px solid var(--seafoam);
+  color: var(--seafoam);
+  font-style: italic;
+}

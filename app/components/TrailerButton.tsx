@@ -1,107 +1,77 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
 interface Props {
   youtubeId: string;
   filmTitle: string;
   label?: string | null;
 }
 
-export default function TrailerButton({ youtubeId, filmTitle, label }: Props) {
-  const [open, setOpen] = useState(false);
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
-  // Lock body scroll while the lightbox is open. Unmount of the iframe (the
-  // {open && ...} below) is what stops audio on close — replacing src with ""
-  // is unreliable across browsers.
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+export default function TrailerButton({ youtubeId, filmTitle, label }: Props) {
+  const title = label?.trim() || "Trailer";
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeId)}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+  const posterUrl = `https://i.ytimg.com/vi/${encodeURIComponent(youtubeId)}/hqdefault.jpg`;
+  const escapedEmbedUrl = escapeHtml(embedUrl);
+  const escapedFilmTitle = escapeHtml(filmTitle);
+  const escapedTitle = escapeHtml(title);
+  const srcDoc = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      *{box-sizing:border-box}body{margin:0;background:#000;font-family:system-ui,sans-serif}
+      a{position:absolute;inset:0;display:grid;place-items:center;color:#0a0a0a;text-decoration:none;background:#000}
+      img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.88}
+      span{position:relative;width:74px;height:74px;border-radius:999px;background:#f3ecd8;border:3px solid #0a0a0a;box-shadow:0 0 0 4px #ff2d88;display:grid;place-items:center;font-size:30px;line-height:1;padding-left:6px}
+      span::before{content:"▶"}
+      small{position:absolute;left:12px;bottom:10px;padding:4px 10px;background:#0a0a0a;color:#f3ecd8;border:1px solid #f3ecd8;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+    </style>
+  </head>
+  <body>
+    <a href="${escapedEmbedUrl}" aria-label="Play ${escapedFilmTitle} ${escapedTitle}">
+      <img src="${posterUrl}" alt="">
+      <span aria-hidden="true"></span>
+      <small>${escapedTitle}</small>
+    </a>
+  </body>
+</html>`;
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="btn btn-lg"
-        style={{ background: "var(--bone)", color: "var(--void)", border: "2px solid var(--void)" }}
-        aria-label={`Play ${label ?? "trailer"} for ${filmTitle}`}
+    <section aria-label={`${title} for ${filmTitle}`} style={{ width: "100%", maxWidth: 680 }}>
+      <div
+        className="caps"
+        style={{ color: "var(--accent)", fontSize: 11, marginBottom: 10 }}
       >
-        ▶ {label ?? "Trailer"}
-      </button>
-
-      {open && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={`${filmTitle} trailer`}
-          onClick={() => setOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.92)",
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "clamp(12px, 4vw, 40px)",
-          }}
-        >
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); setOpen(false); }}
-            aria-label="Close trailer"
-            style={{
-              position: "absolute",
-              top: 16,
-              right: 16,
-              width: 40,
-              height: 40,
-              border: 0,
-              borderRadius: 999,
-              background: "rgba(0,0,0,0.6)",
-              color: "var(--bone)",
-              fontSize: 22,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            ✕
-          </button>
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              position: "relative",
-              width: "100%",
-              maxWidth: 1200,
-              aspectRatio: "16 / 9",
-              background: "#000",
-              boxShadow: "0 0 0 2px var(--bone), 12px 12px 0 var(--accent)",
-            }}
-          >
-            <iframe
-              src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeId)}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
-              title={`${filmTitle} trailer`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              referrerPolicy="strict-origin-when-cross-origin"
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
-            />
-          </div>
-        </div>
-      )}
-    </>
+        {title}
+      </div>
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          aspectRatio: "16 / 9",
+          background: "#000",
+          border: "2px solid var(--bone)",
+          boxShadow: "8px 8px 0 var(--accent)",
+          overflow: "hidden",
+        }}
+      >
+        <iframe
+          src="about:blank"
+          srcDoc={srcDoc}
+          title={`${filmTitle} ${title}`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="strict-origin-when-cross-origin"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
+        />
+      </div>
+    </section>
   );
 }

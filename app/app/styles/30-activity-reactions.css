@@ -1,0 +1,45 @@
+/* ===== COVEN FEED HEARTS =====
+   Universal heart reaction on every activity row. Heart icon tucked next
+   to the timestamp in the footer; count renders only when >= 1 and opens
+   a bottom-sheet listing coven likers first, then others. */
+
+.activity-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  opacity: 0.9;
+}
+.activity-footer-time {
+  opacity: 0.6;
+  font-size: 11px;
+}
+.heart-btn {
+  background: none;
+  border: 0;
+  padding: 4px 2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+}
+.heart-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.heart-btn:hover svg path {
+  stroke: var(--accent);
+}
+.heart-count {
+  background: none;
+  border: 0;
+  padding: 4px 2px;
+  color: var(--bone);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.heart-count:hover {
+  color: var(--accent);
+}

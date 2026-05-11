@@ -1,0 +1,56 @@
+/* ===== RECOMMEND MODAL PICKER ===== */
+
+.recommend-picker-search {
+  width: 100%;
+  border: 1px solid var(--muted);
+  background: transparent;
+  color: var(--bone);
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  outline: none;
+}
+.recommend-picker-search::placeholder {
+  color: var(--muted);
+}
+
+.recommend-picker-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.recommend-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 8px 0;
+  cursor: pointer;
+  text-align: left;
+}
+.recommend-picker-row.is-selected {
+  background: rgba(255, 45, 136, 0.08);
+}
+.recommend-picker-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.recommend-picker-row-username {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--bone);
+}
+.recommend-picker-row.is-selected .recommend-picker-row-username {
+  color: var(--accent);
+}
+.recommend-picker-row-display {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--muted);
+}

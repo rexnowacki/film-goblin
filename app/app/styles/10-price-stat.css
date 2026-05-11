@@ -1,0 +1,101 @@
+/* ===== PRICE STAT BLOCK =====
+   A24-poster-split price history card. Replaces the old inline SVG chart
+   on the film detail page. Asymmetric two-column layout: giant NOW price
+   on the left (accent), PEAK + STEAL stack on the right (bone) separated
+   by 1px accent dividers. Collapses to single-column when peak == steal
+   (new or unchanging films) and stacks NOW-above-pair on narrow viewports. */
+.price-stat-block {
+  background: var(--void);
+  color: var(--bone);
+  border: 1px solid #222;
+  border-radius: 16px;
+  padding: 36px 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.42fr);
+  gap: 36px;
+  align-items: stretch;
+}
+.price-stat-block.price-stat-solo {
+  grid-template-columns: 1fr;
+}
+.price-stat-now {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.price-stat-label {
+  font-family: var(--font-head);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.price-stat-label-now {
+  font-size: clamp(22px, 3vw, 30px);
+  color: var(--accent);
+}
+.price-stat-label-history {
+  font-size: clamp(15px, 1.8vw, 20px);
+  color: var(--bone);
+}
+.price-stat-now-price {
+  font-family: var(--font-head);
+  font-size: clamp(84px, 14vw, 168px);
+  color: var(--accent);
+  letter-spacing: -0.045em;
+  line-height: 0.85;
+}
+.price-stat-history {
+  border-left: 1px solid var(--accent);
+  padding-left: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+}
+.price-stat-peak {
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--accent);
+}
+.price-stat-steal {
+  padding-top: 22px;
+}
+.price-stat-history-price {
+  font-family: var(--font-head);
+  font-size: clamp(38px, 5.5vw, 62px);
+  color: var(--bone);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.price-stat-date {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+@media (max-width: 720px) {
+  .price-stat-block {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 28px;
+  }
+  .price-stat-history {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--accent);
+    padding-top: 24px;
+    margin-top: 24px;
+    flex-direction: row;
+  }
+  .price-stat-peak {
+    border-bottom: 0;
+    border-right: 1px solid var(--accent);
+    padding-right: 20px;
+    padding-bottom: 0;
+    flex: 1;
+  }
+  .price-stat-steal {
+    padding-top: 0;
+    padding-left: 20px;
+    flex: 1;
+  }
+}

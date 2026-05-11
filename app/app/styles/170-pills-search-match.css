@@ -1,0 +1,238 @@
+/* ===== ADMIN TAG EDITOR PILLS ===== */
+
+.tag-edit-pill {
+  background: transparent;
+  color: var(--bone);
+  border: 1px solid var(--muted);
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 100ms, border-color 100ms, color 100ms;
+}
+.tag-edit-pill:hover:not(:disabled) {
+  border-color: var(--bone);
+}
+.tag-edit-pill.is-selected {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+.tag-edit-pill:disabled {
+  cursor: not-allowed;
+}
+
+.coven-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px 4px 4px;
+  background: var(--void-2);
+  border: 1px solid var(--muted);
+  color: var(--bone);
+  text-decoration: none;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  transition: border-color 120ms ease;
+}
+.coven-chip:hover { border-color: var(--accent); }
+
+.pill-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 14px 4px 4px;
+  border: 1px solid var(--muted);
+  border-radius: 999px;
+  background: var(--void-2);
+  transition: border-color 120ms ease;
+}
+.pill-row:hover { border-color: var(--accent); }
+.pill-row.is-large {
+  gap: 14px;
+  padding: 6px 18px 6px 6px;
+}
+.pill-row .btn { border-radius: 999px; }
+
+.search-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 2px solid var(--void);
+  border-radius: 999px;
+  padding: 10px 18px;
+  background: var(--bone);
+  box-shadow: 6px 6px 0 var(--accent);
+  margin-bottom: 22px;
+}
+.search-pill svg { color: var(--void); flex-shrink: 0; }
+.search-pill input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  outline: none;
+  color: var(--void);
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+.search-pill input::placeholder {
+  color: var(--void);
+  opacity: 0.55;
+}
+
+.feed-search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--bone);
+  border: 2px solid var(--void);
+  box-shadow: 6px 6px 0 var(--accent);
+  max-height: 360px;
+  overflow-y: auto;
+  border-radius: 16px;
+  padding: 6px 0;
+}
+.feed-search-section {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-deep);
+  padding: 8px 16px 4px;
+}
+.feed-search-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 16px;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--void);
+  font-family: var(--font-ui);
+}
+.feed-search-item:hover { background: rgba(255, 45, 136, 0.08); }
+
+.feed-active-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 6px;
+  border: 2px solid var(--void);
+  border-radius: 999px;
+  background: var(--bone);
+  box-shadow: 6px 6px 0 var(--accent);
+}
+.feed-active-filter > span { padding: 0 4px; }
+.feed-active-filter-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--void);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--void);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  margin-right: 4px;
+}
+.feed-active-filter-close:hover { background: var(--accent); color: var(--bone); border-color: var(--accent); }
+
+.match-pill {
+  position: absolute;
+  right: 6px;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  z-index: 2;
+  border: 1px solid var(--void);
+  pointer-events: none;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+/* v3 score bands: rank-percentile labels. Top tiers use seafoam (the
+   thumbs-up verdict color). Middle two stay neutral (bone / void). Bottom
+   "Cursed Artifact" uses plum — off-axis "weird pull" rather than implying
+   active dislike. Pink reserved for the orthogonal "Coven Favorite" badge. */
+.match-pill.match-band-hexed {
+  top: 6px;
+  background: var(--seafoam, #7a9d92);
+  color: var(--void);
+}
+.match-pill.match-band-strong {
+  top: 6px;
+  background: var(--seafoam, #7a9d92);
+  color: var(--void);
+  opacity: 0.75;
+}
+.match-pill.match-band-good {
+  top: 6px;
+  background: var(--bone);
+  color: var(--void);
+}
+.match-pill.match-band-strange {
+  top: 6px;
+  background: var(--void-2);
+  color: var(--bone);
+  border-color: var(--muted);
+}
+.match-pill.match-band-cursed {
+  top: 6px;
+  background: var(--plum, #9d6fc4);
+  color: var(--bone);
+  border-color: var(--void);
+}
+/* "Coven Favorite" sits below the rank band when both are present.
+   It's an orthogonal social signal — uses pink to stay distinct from the
+   plum "Cursed Artifact" rank band. */
+.match-pill.match-coven-favorite {
+  top: 36px;
+  background: var(--accent);
+  color: var(--void);
+  border-color: var(--void);
+  text-transform: none;
+}
+
+.invite-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid var(--void);
+  border-radius: 999px;
+  padding: 6px 16px;
+  background: var(--bone);
+  color: var(--void);
+  box-shadow: 4px 4px 0 var(--accent);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 60ms ease;
+}
+.invite-pill:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--accent); }
+.invite-pill:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--accent); }
+.tag-edit-pill.primary {
+  background: var(--accent);
+  color: var(--void);
+  border-color: var(--accent);
+}
+.tag-edit-pill.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

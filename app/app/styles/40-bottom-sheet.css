@@ -1,0 +1,77 @@
+/* ===== BOTTOM SHEET PRIMITIVE =====
+   Generic half-sheet used by LikersBottomSheet and any future mobile modal.
+   Overlay dims the page, panel slides up from the bottom. */
+
+.bottom-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(10, 10, 10, 0.92);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: bottom-sheet-fade-in 150ms ease-out;
+}
+.bottom-sheet-panel {
+  background-color: #141414;
+  color: var(--bone);
+  width: 100%;
+  max-width: 560px;
+  border-top: 2px solid var(--accent);
+  border-radius: 16px 16px 0 0;
+  padding: 12px 20px 0;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  position: relative;
+  z-index: 1;
+  animation: bottom-sheet-slide-up 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bottom-sheet-panel:focus {
+  outline: none;
+}
+.bottom-sheet-handle {
+  width: 40px;
+  height: 3px;
+  background: var(--muted-dark);
+  border-radius: 2px;
+  margin: 0 auto 14px;
+}
+.bottom-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.bottom-sheet-close {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: 26px;
+  line-height: 1;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.bottom-sheet-close:hover {
+  color: var(--accent);
+}
+.bottom-sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 4px 0 24px;
+}
+
+@keyframes bottom-sheet-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes bottom-sheet-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}

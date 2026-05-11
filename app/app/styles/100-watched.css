@@ -1,0 +1,17 @@
+/* ===== WATCHED DIARY =====
+   Tap-to-edit diary row on the /watched page. Opens WatchModal in edit mode. */
+.diary-row {
+  display: flex;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid #2a2a2a;
+  cursor: pointer;
+  align-items: flex-start;
+}
+.diary-row:hover {
+  background: rgba(243, 236, 216, 0.02);
+}
+.diary-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}

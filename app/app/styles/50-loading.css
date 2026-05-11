@@ -1,0 +1,35 @@
+/* ===== LOADING SPLASH FILM FRAMES ===== */
+
+.loading-frames {
+  display: inline-flex;
+  gap: 8px;
+}
+.loading-frame {
+  display: inline-block;
+  width: 22px;
+  height: 16px;
+  background: var(--bone);
+  border: 1px solid var(--bone);
+  position: relative;
+}
+/* Sprocket holes — left + right tabs to read as film stock. */
+.loading-frame::before,
+.loading-frame::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  width: 2px;
+  background: var(--void);
+}
+.loading-frame::before { left: 2px; }
+.loading-frame::after  { right: 2px; }
+.loading-frame:nth-child(1) { animation: loading-frame-cycle 1.2s infinite; animation-delay: 0s; }
+.loading-frame:nth-child(2) { animation: loading-frame-cycle 1.2s infinite; animation-delay: 0.4s; }
+.loading-frame:nth-child(3) { animation: loading-frame-cycle 1.2s infinite; animation-delay: 0.8s; }
+
+@keyframes loading-frame-cycle {
+  0%, 33%, 100% { background: var(--bone); }
+  /* Cyan accent matching the original asset's third frame. */
+  16% { background: #21D4D4; }
+}

@@ -61,7 +61,7 @@ export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } 
           itunes_url: req.itunes_url ?? "",
           tracking: false,
           available: true,
-          tmdb_id: null,
+          tmdb_id: req.tmdb_id ?? null,
           theatrical_release_date: null,
           series_id: null,
           series_new_name: "",

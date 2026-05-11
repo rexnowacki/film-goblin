@@ -24,15 +24,16 @@ interface FilmPosterProps {
   className?: string;
   style?: React.CSSProperties;
   priority?: boolean;
+  imageSizes?: string;
 }
 
-export default function FilmPoster({ film, size = "md", className = "", style = {}, priority = false }: FilmPosterProps) {
+export default function FilmPoster({ film, size = "md", className = "", style = {}, priority = false, imageSizes }: FilmPosterProps) {
   const sizes = {
-    xs: { w: 54, h: 80, title: 10, year: 7 },
-    sm: { w: 88, h: 130, title: 14, year: 8 },
-    md: { w: 160, h: 240, title: 22, year: 11 },
-    lg: { w: 240, h: 360, title: 32, year: 14 },
-    xl: { w: 340, h: 510, title: 54, year: 20 },
+    xs: { w: 54, h: 80, title: 10, year: 7, image: "54px" },
+    sm: { w: 88, h: 130, title: 14, year: 8, image: "88px" },
+    md: { w: 160, h: 240, title: 22, year: 11, image: "(max-width: 720px) calc((100vw - 54px) / 2), 180px" },
+    lg: { w: 240, h: 360, title: 32, year: 14, image: "(max-width: 720px) calc(100vw - 40px), 240px" },
+    xl: { w: 340, h: 510, title: 54, year: 20, image: "(max-width: 720px) min(calc(100vw - 40px), 420px), 420px" },
   };
   const s = sizes[size] || sizes.md;
   const bg = film.bg || "#1a1a1a";
@@ -61,7 +62,7 @@ export default function FilmPoster({ film, size = "md", className = "", style = 
           src={film.artwork_url!}
           alt={film.title}
           fill
-          sizes={`${s.w}px`}
+          sizes={imageSizes ?? s.image}
           style={{ objectFit: "cover" }}
           priority={priority}
         />

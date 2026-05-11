@@ -1,5 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
+import {
+  Bungee,
+  DM_Serif_Display,
+  IBM_Plex_Mono,
+  IBM_Plex_Sans,
+  IBM_Plex_Serif,
+  Rubik_Glitch,
+  Rubik_Wet_Paint,
+} from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ToastProvider";
 import { getServerUser } from "@/lib/supabase/cached";
@@ -7,6 +16,61 @@ import { createClient } from "@/lib/supabase/server";
 import { getPendingAnnouncement, type PendingAnnouncement } from "@/lib/queries/announcements";
 import AnnouncementOverlay from "@/components/AnnouncementOverlay";
 import { THEME_COOKIE, readTheme } from "@/lib/theme";
+
+const rubikWetPaint = Rubik_Wet_Paint({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-display-rubik-wet-paint",
+});
+
+const rubikGlitch = Rubik_Glitch({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+  variable: "--font-display-rubik-glitch",
+});
+
+const bungee = Bungee({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+  variable: "--font-display-bungee",
+});
+
+const dmSerifDisplay = DM_Serif_Display({
+  weight: "400",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-head-face",
+});
+
+const ibmPlexSans = IBM_Plex_Sans({
+  weight: ["400", "500", "700"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-ui-face",
+});
+
+const ibmPlexSerif = IBM_Plex_Serif({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  display: "swap",
+  preload: false,
+  variable: "--font-serif-face",
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+  variable: "--font-mono-face",
+});
 
 export const metadata: Metadata = {
   title: "Film Goblin — Watch Weirder",
@@ -55,18 +119,24 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const theme = readTheme((await cookies()).get(THEME_COOKIE)?.value);
 
   return (
-    <html lang="en" data-theme={theme}>
+    <html
+      lang="en"
+      data-theme={theme}
+      className={[
+        rubikWetPaint.variable,
+        rubikGlitch.variable,
+        bungee.variable,
+        dmSerifDisplay.variable,
+        ibmPlexSans.variable,
+        ibmPlexSerif.variable,
+        ibmPlexMono.variable,
+      ].join(" ")}
+    >
       <head>
         {/* Legacy iOS standalone capability declaration. Next.js's metadata API
             emits only the modern `mobile-web-app-capable` tag; older iOS still
             preferentially reads the apple-prefixed form. Belt-and-suspenders. */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Rubik+Wet+Paint&family=Rubik+Glitch&family=Bungee&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Sans:wght@400;500;700;900&family=IBM+Plex+Serif:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;700&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body>
         <ToastProvider>

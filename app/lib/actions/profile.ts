@@ -29,15 +29,16 @@ export interface ProfileFields {
 type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
 const USERNAME_RE = /^[a-z0-9._]+$/;
+const USERNAME_MAX_LENGTH = 24;
 
 export async function _updateProfile(client: Client, fields: ProfileFields): Promise<void> {
   const { data: { user } } = await client.auth.getUser();
   if (!user) throw new Error("unauthenticated");
 
   if (fields.username !== undefined) {
-    const u = fields.username.trim();
-    if (!USERNAME_RE.test(u)) {
-      throw new Error("Invalid username: lowercase letters, numbers, dots, underscores only.");
+    const u = fields.username.trim().toLowerCase();
+    if (!u || u.length > USERNAME_MAX_LENGTH || !USERNAME_RE.test(u)) {
+      throw new Error("Invalid username: lowercase letters, numbers, dots, underscores only (max 24).");
     }
     fields = { ...fields, username: u };
   }
