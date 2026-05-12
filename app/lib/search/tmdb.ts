@@ -60,6 +60,24 @@ export interface TmdbResolvedTrailer extends TmdbTrailer {
   tmdb_id: number;
 }
 
+export interface TmdbCreditCastMember {
+  id?: number;
+  name?: string;
+  character?: string;
+  order?: number;
+  profile_path?: string | null;
+  known_for_department?: string | null;
+}
+
+export interface TmdbCastMember {
+  tmdb_id: number;
+  name: string;
+  character: string | null;
+  billing_order: number;
+  profile_path: string | null;
+  known_for_department: string | null;
+}
+
 export async function searchTmdb(query: string): Promise<
   | { ok: true; candidates: TmdbCandidate[] }
   | { ok: false; error: string }
@@ -127,6 +145,22 @@ export function chooseBestTmdbTrailer(videos: TmdbVideo[]): TmdbTrailer | null {
   };
 }
 
+export function chooseTmdbCast(cast: TmdbCreditCastMember[], limit = 12): TmdbCastMember[] {
+  return cast
+    .filter((member) => Number.isFinite(member.id))
+    .filter((member) => typeof member.name === "string" && member.name.trim().length > 0)
+    .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER))
+    .slice(0, Math.max(1, limit))
+    .map((member, index) => ({
+      tmdb_id: Number(member.id),
+      name: member.name!.trim(),
+      character: member.character?.trim() || null,
+      billing_order: Number.isFinite(member.order) ? Number(member.order) : index,
+      profile_path: member.profile_path ?? null,
+      known_for_department: member.known_for_department ?? null,
+    }));
+}
+
 export async function lookupTmdbTrailer(tmdbId: number): Promise<
   | { ok: true; trailer: TmdbTrailer | null }
   | { ok: false; error: string }
@@ -138,6 +172,20 @@ export async function lookupTmdbTrailer(tmdbId: number): Promise<
     return { ok: true, trailer: chooseBestTmdbTrailer(data.results ?? []) };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "TMDB trailer lookup failed." };
+  }
+}
+
+export async function lookupTmdbCast(tmdbId: number, limit = 12): Promise<
+  | { ok: true; cast: TmdbCastMember[] }
+  | { ok: false; error: string }
+> {
+  try {
+    const res = await fetch(`${TMDB_BASE}/movie/${tmdbId}/credits?api_key=${apiKey()}&language=en-US`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`TMDB credits fetch returned ${res.status}`);
+    const data = await res.json();
+    return { ok: true, cast: chooseTmdbCast(data.cast ?? [], limit) };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "TMDB cast lookup failed." };
   }
 }
 
@@ -195,6 +243,23 @@ export async function lookupTmdbTrailerForFilm(input: { tmdb_id?: number | null;
     ok: true,
     trailer: trailerResult.trailer ? { ...trailerResult.trailer, tmdb_id: tmdbId } : null,
   };
+}
+
+export async function lookupTmdbCastForFilm(input: { tmdb_id?: number | null; title: string; year: number; limit?: number }): Promise<
+  | { ok: true; tmdb_id: number | null; cast: TmdbCastMember[] }
+  | { ok: false; error: string }
+> {
+  let tmdbId = input.tmdb_id ?? null;
+  if (!tmdbId) {
+    const resolveResult = await resolveTmdbIdByTitleYear(input.title, input.year);
+    if (!resolveResult.ok) return resolveResult;
+    tmdbId = resolveResult.tmdb_id;
+  }
+  if (!tmdbId) return { ok: true, tmdb_id: null, cast: [] };
+
+  const castResult = await lookupTmdbCast(tmdbId, input.limit ?? 12);
+  if (!castResult.ok) return castResult;
+  return { ok: true, tmdb_id: tmdbId, cast: castResult.cast };
 }
 
 export async function lookupTmdb(tmdbId: number): Promise<

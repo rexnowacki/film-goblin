@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { listFilmsForAdmin } from "@/lib/queries/admin/films";
 import TmdbTrailerBackfillButton from "./TmdbTrailerBackfillButton";
+import TmdbCastBackfillButton from "./TmdbCastBackfillButton";
 
 export default async function AdminFilmsPage({
   searchParams,
@@ -46,6 +47,7 @@ export default async function AdminFilmsPage({
           Untagged only
         </Link>
         <TmdbTrailerBackfillButton />
+        <TmdbCastBackfillButton />
       </div>
 
       {rows.length === 0 ? (

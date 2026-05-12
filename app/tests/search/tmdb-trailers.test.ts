@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   chooseBestTmdbTrailer,
+  chooseTmdbCast,
   lookupTmdbTrailer,
   lookupTmdbTrailerForFilm,
   resolveTmdbIdByTitleYear,
@@ -78,6 +79,37 @@ describe("chooseBestTmdbTrailer", () => {
       { key: "clip-id", site: "YouTube", type: "Clip", official: true },
       { key: "vimeo-id", site: "Vimeo", type: "Trailer", official: true },
     ])).toBeNull();
+  });
+});
+
+describe("chooseTmdbCast", () => {
+  it("keeps top-billed cast in billing order", () => {
+    const cast = chooseTmdbCast([
+      { id: 2, name: "Second Actor", character: "B", order: 1, profile_path: "/b.jpg", known_for_department: "Acting" },
+      { id: 1, name: "Lead Actor", character: "A", order: 0, profile_path: "/a.jpg", known_for_department: "Acting" },
+      { id: 3, name: "Third Actor", character: "C", order: 2 },
+    ]);
+
+    expect(cast.map((member) => member.name)).toEqual(["Lead Actor", "Second Actor", "Third Actor"]);
+    expect(cast[0]).toMatchObject({
+      tmdb_id: 1,
+      character: "A",
+      billing_order: 0,
+      profile_path: "/a.jpg",
+      known_for_department: "Acting",
+    });
+  });
+
+  it("drops malformed cast entries and applies the limit", () => {
+    const cast = chooseTmdbCast([
+      { id: 1, name: "Lead", order: 0 },
+      { id: undefined, name: "No ID", order: 1 },
+      { id: 2, name: "   ", order: 2 },
+      { id: 3, name: "Third", order: 3 },
+    ], 1);
+
+    expect(cast).toHaveLength(1);
+    expect(cast[0].name).toBe("Lead");
   });
 });
 
