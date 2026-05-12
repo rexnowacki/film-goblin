@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { setTheme } from "@/lib/actions/theme";
 import type { Theme } from "@/lib/theme";
+import SettingsSection from "@/components/settings/SettingsSection";
 
 interface Swatch {
   bone: string;
@@ -42,8 +43,7 @@ export default function ThemePicker({ current }: { current: Theme }) {
   const entries = Object.entries(SWATCHES) as [Theme, Swatch][];
 
   return (
-    <section style={{ marginTop: 28, marginBottom: 28 }}>
-      <h2 className="head" style={{ fontSize: 24, marginBottom: 14 }}>Theme</h2>
+    <SettingsSection id="appearance" eyebrow="Taste and appearance" title="Theme">
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
         {entries.map(([key, sw]) => {
           const active = key === current;
@@ -82,6 +82,6 @@ export default function ThemePicker({ current }: { current: Theme }) {
           );
         })}
       </div>
-    </section>
+    </SettingsSection>
   );
 }

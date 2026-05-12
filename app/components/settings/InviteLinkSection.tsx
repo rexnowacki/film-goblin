@@ -1,5 +1,6 @@
 import { getMyInviteCode } from "@/lib/queries/invite-codes";
 import CopyInviteButton from "@/components/settings/CopyInviteButton";
+import SettingsSection from "@/components/settings/SettingsSection";
 
 const BASE_URL = "https://film-goblin.vercel.app";
 
@@ -11,10 +12,7 @@ export default async function InviteLinkSection({ userId }: { userId: string }) 
   const exhausted = code.use_count >= code.max_uses;
 
   return (
-    <div style={{ marginTop: 40, borderTop: "1px solid #333", paddingTop: 24 }}>
-      <div className="caps" style={{ fontSize: 11, marginBottom: 10, color: "var(--accent)" }}>
-        Your Invite Link
-      </div>
+    <SettingsSection id="invites" eyebrow="Invites" title="Your invite link">
       <p
         style={{
           fontFamily: "var(--font-serif)",
@@ -40,6 +38,6 @@ export default async function InviteLinkSection({ userId }: { userId: string }) 
           ? "All invites used — contact an admin for more slots."
           : `${code.use_count} of ${code.max_uses} used`}
       </div>
-    </div>
+    </SettingsSection>
   );
 }

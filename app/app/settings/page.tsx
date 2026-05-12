@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import type { CSSProperties } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
 import { getAllTagsGroupedByType } from "@/lib/queries/film-tags";
@@ -11,6 +12,18 @@ import ThemePicker from "@/components/settings/ThemePicker";
 import DeleteAccountSection from "./DeleteAccountSection";
 import InviteLinkSection from "@/components/settings/InviteLinkSection";
 import { THEME_COOKIE, readTheme } from "@/lib/theme";
+import SignOutSection from "./components/SignOutSection";
+
+const SETTINGS_NAV = [
+  { href: "#profile-picture", label: "Picture" },
+  { href: "#profile", label: "Profile" },
+  { href: "#preferences", label: "Preferences" },
+  { href: "#account", label: "Account" },
+  { href: "#appearance", label: "Theme" },
+  { href: "#lanes", label: "Lanes" },
+  { href: "#invites", label: "Invites" },
+  { href: "#danger", label: "Danger" },
+];
 
 export default async function SettingsPage() {
   const user = await getServerUser();
@@ -31,20 +44,68 @@ export default async function SettingsPage() {
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
       <TopNav current="settings" />
       <BottomNav current="settings" />
-      <div className="container-wide" style={{ padding: 40 }}>
-        <h1 className="h-display" style={{ marginBottom: 24 }}>Settings</h1>
-        <SettingsForm
-          initialProfile={profile.data}
-          initialAuthEmail={user.email ?? null}
-          initialHasPasswordIdentity={hasPasswordIdentity}
-        />
-        <ThemePicker current={currentTheme} />
-        <LanePicker
-          initialLaneIds={initialLaneIds}
-          vocab={{ subgenre: vocab.subgenre, tone: vocab.tone, theme: vocab.theme }}
-        />
-        <InviteLinkSection userId={user.id} />
-        <DeleteAccountSection username={username} />
+      <section className="grain-light" style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "28px 0 24px" }}>
+        <div className="container-wide">
+          <div className="eyebrow" style={{ fontSize: 11, marginBottom: 6, color: "var(--accent-deep)" }}>Account controls</div>
+          <h1 className="h-display" style={{ fontSize: "clamp(36px, 7vw, 84px)", margin: 0 }}>Settings.</h1>
+          <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, color: "var(--void)", opacity: 0.72, margin: "8px 0 0", maxWidth: 620 }}>
+            Profile, account security, notifications, privacy, invites, and taste controls in one place.
+          </p>
+        </div>
+      </section>
+
+      <div className="container-wide" style={{ paddingTop: 30, paddingBottom: 76 }}>
+        <div
+          className="stackable"
+          style={{
+            "--stack-template": "220px minmax(0, 760px)",
+            "--stack-gap": "36px",
+            alignItems: "start",
+          } as CSSProperties}
+        >
+          <aside
+            style={{
+              position: "sticky",
+              top: 84,
+              display: "grid",
+              gap: 6,
+              borderLeft: "2px solid #333",
+              paddingLeft: 14,
+            }}
+            aria-label="Settings sections"
+          >
+            {SETTINGS_NAV.map(item => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="caps"
+                style={{
+                  color: item.href === "#danger" ? "var(--danger)" : "var(--muted)",
+                  fontSize: 11,
+                  textDecoration: "none",
+                  padding: "6px 0",
+                }}
+              >
+                {item.label}
+              </a>
+            ))}
+          </aside>
+          <main style={{ display: "grid", gap: 34, minWidth: 0 }}>
+            <SettingsForm
+              initialProfile={profile.data}
+              initialAuthEmail={user.email ?? null}
+              initialHasPasswordIdentity={hasPasswordIdentity}
+            />
+            <ThemePicker current={currentTheme} />
+            <LanePicker
+              initialLaneIds={initialLaneIds}
+              vocab={{ subgenre: vocab.subgenre, tone: vocab.tone, theme: vocab.theme }}
+            />
+            <InviteLinkSection userId={user.id} />
+            <DeleteAccountSection username={username} />
+            <SignOutSection />
+          </main>
+        </div>
       </div>
     </div>
   );

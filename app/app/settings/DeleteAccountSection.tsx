@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { deleteAccount } from "@/lib/actions/auth";
+import SettingsSection from "@/components/settings/SettingsSection";
 
 export default function DeleteAccountSection({ username }: { username: string }) {
   const [open, setOpen] = useState(false);
@@ -20,9 +21,7 @@ export default function DeleteAccountSection({ username }: { username: string })
   }
 
   return (
-    <div style={{ marginTop: 48, borderTop: "1px solid var(--danger)", paddingTop: 24 }}>
-      <div className="caps" style={{ fontSize: 11, marginBottom: 12, color: "var(--danger)" }}>Danger zone</div>
-
+    <SettingsSection id="danger" eyebrow="Danger zone" title="Delete account" danger>
       {!open ? (
         <button
           type="button"
@@ -116,6 +115,6 @@ export default function DeleteAccountSection({ username }: { username: string })
           </div>
         </div>
       )}
-    </div>
+    </SettingsSection>
   );
 }

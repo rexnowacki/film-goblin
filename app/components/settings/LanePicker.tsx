@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { setLanes } from "@/lib/actions/fyp/lanes";
 import type { TagOption } from "@/lib/queries/film-tags";
+import SettingsSection from "@/components/settings/SettingsSection";
 
 interface Props {
   initialLaneIds: string[];
@@ -48,8 +49,7 @@ export default function LanePicker({ initialLaneIds, vocab }: Props) {
   }
 
   return (
-    <div style={{ marginTop: 32 }}>
-      <h3 className="head" style={{ fontSize: 22, marginBottom: 8 }}>Lanes</h3>
+    <SettingsSection id="lanes" eyebrow="Taste and appearance" title="Lanes">
       <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, fontStyle: "italic", color: "var(--muted)", margin: "0 0 16px" }}>
         Tap tags you're into. We'll surface more of these on your For You feed.
       </p>
@@ -69,6 +69,6 @@ export default function LanePicker({ initialLaneIds, vocab }: Props) {
         </button>
         {msg && <span style={{ fontSize: 12, color: msg === "Saved." ? "var(--accent)" : "var(--danger)" }}>{msg}</span>}
       </div>
-    </div>
+    </SettingsSection>
   );
 }
