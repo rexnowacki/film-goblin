@@ -108,15 +108,18 @@ export async function backfillTmdbCast(client: Client, batchSize = 25): Promise<
     .from("films")
     .select("id, title, year, tmdb_id")
     .order("first_seen_at", { ascending: false })
-    .limit(limit);
+    .limit(Math.max(limit * 6, 100));
   if (error) return { ok: false, error: error.message };
 
+  let scanned = 0;
   let updated = 0;
   let skipped = 0;
   let missing = 0;
   let failed = 0;
 
   for (const film of data ?? []) {
+    if (updated >= limit) break;
+    scanned += 1;
     const existing = await c
       .from("film_cast")
       .select("film_id")
@@ -141,5 +144,5 @@ export async function backfillTmdbCast(client: Client, batchSize = 25): Promise<
     }
   }
 
-  return { ok: true, stats: { scanned: (data ?? []).length, updated, skipped, missing, failed } };
+  return { ok: true, stats: { scanned, updated, skipped, missing, failed } };
 }
