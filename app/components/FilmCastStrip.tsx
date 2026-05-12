@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { FilmCastMember } from "@/lib/queries/film-cast";
 import { tmdbProfileUrl } from "@/lib/queries/film-cast";
 
@@ -20,14 +21,17 @@ export default function FilmCastStrip({ cast }: { cast: FilmCastMember[] }) {
         {cast.map((member) => {
           const profileUrl = tmdbProfileUrl(member.profile_path);
           return (
-            <div
+            <Link
               key={member.id}
+              href={`/person/${member.id}`}
               style={{
                 display: "grid",
                 gridTemplateColumns: "46px 1fr",
                 gap: 10,
                 alignItems: "center",
                 minWidth: 0,
+                color: "inherit",
+                textDecoration: "none",
               }}
             >
               <div
@@ -94,7 +98,7 @@ export default function FilmCastStrip({ cast }: { cast: FilmCastMember[] }) {
                   </div>
                 )}
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
