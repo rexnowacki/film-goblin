@@ -192,6 +192,7 @@ export async function lookupTmdbCast(tmdbId: number, limit = 12): Promise<
 function normalizeTitleForMatch(title: string): string {
   return title
     .toLowerCase()
+    .replace(/\(\s*(19|20)\d{2}\s*\)\s*$/, "")
     .replace(/&/g, "and")
     .replace(/^the\s+/, "")
     .replace(/[^a-z0-9]+/g, " ")
@@ -203,7 +204,7 @@ export async function resolveTmdbIdByTitleYear(title: string, year: number): Pro
   | { ok: true; tmdb_id: number | null }
   | { ok: false; error: string }
 > {
-  const cleanTitle = title.trim();
+  const cleanTitle = title.trim().replace(new RegExp(`\\s*\\(\\s*${year}\\s*\\)\\s*$`), "").trim();
   if (!cleanTitle || !Number.isFinite(year) || year <= 0) return { ok: true, tmdb_id: null };
 
   try {

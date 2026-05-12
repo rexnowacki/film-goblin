@@ -162,6 +162,26 @@ describe("resolveTmdbIdByTitleYear", () => {
       tmdb_id: 2,
     });
   });
+
+  it("strips a duplicated parenthetical release year from stored titles", async () => {
+    vi.stubEnv("TMDB_API_KEY", "tmdb-key");
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        results: [{ id: 1091267, title: "The Well", release_date: "2024-08-01" }],
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(resolveTmdbIdByTitleYear("The Well (2024)", 2024)).resolves.toEqual({
+      ok: true,
+      tmdb_id: 1091267,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.themoviedb.org/3/search/movie?api_key=tmdb-key&query=The%20Well&language=en-US&include_adult=false&year=2024",
+      { cache: "no-store" },
+    );
+  });
 });
 
 describe("lookupTmdbTrailerForFilm", () => {
