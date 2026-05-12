@@ -13,6 +13,7 @@ import { toHit, type ITunesSearchHit } from "@/lib/search/itunes-hit";
 import { _fulfillRequest } from "@/lib/actions/film-requests";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
 import { backfillTmdbTrailers, lookupTrailerForFilm, trailerPayload } from "@/lib/trailers/tmdb-enrichment";
+import { backfillTmdbCast, lookupCastForFilm, replaceFilmCast } from "@/lib/cast/tmdb-enrichment";
 
 export type { ITunesSearchHit } from "@/lib/search/itunes-hit";
 
@@ -145,6 +146,11 @@ export async function adminCreateFilm(
     title: fields.title,
     year: fields.year,
   });
+  const cast = await lookupCastForFilm({
+    tmdb_id: fields.tmdb_id ?? trailer?.tmdb_id ?? null,
+    title: fields.title,
+    year: fields.year,
+  });
 
   const payload = {
     itunes_id: fields.itunes_id,
@@ -159,11 +165,10 @@ export async function adminCreateFilm(
     itunes_url: fields.itunes_url.trim(),
     tracking: fields.tracking,
     available: fields.available,
-    tmdb_id: fields.tmdb_id,
+    tmdb_id: fields.tmdb_id ?? trailer?.tmdb_id ?? cast?.tmdb_id ?? null,
     theatrical_release_date: fields.theatrical_release_date,
     series_id: seriesRes.id,
     series_order: seriesRes.id ? fields.series_order : null,
-    ...(trailer && !fields.tmdb_id ? { tmdb_id: trailer.tmdb_id } : {}),
     ...(trailer ? trailerPayload(trailer) : {}),
   };
 
@@ -176,6 +181,10 @@ export async function adminCreateFilm(
     .select("id")
     .single();
   if (error) return { ok: false, error: error.message };
+
+  if (cast && cast.cast.length > 0) {
+    await replaceFilmCast(serviceRoleClient(), data.id, cast.cast);
+  }
 
   // Fulfill pending request if one triggered this add
   if (requestId) {
@@ -254,6 +263,22 @@ export async function adminBackfillTmdbTrailers(batchSize = 25): Promise<
   const limit = Math.max(1, Math.min(batchSize, 50));
   const service = serviceRoleClient();
   const result = await backfillTmdbTrailers(service, limit);
+  if (!result.ok) return result;
+
+  revalidatePath("/admin/films");
+  return { ok: true, ...result.stats };
+}
+
+export async function adminBackfillTmdbCast(batchSize = 25): Promise<
+  | { ok: true; scanned: number; updated: number; skipped: number; missing: number; failed: number }
+  | { ok: false; error: string }
+> {
+  const supabase = await createClient();
+  await requireAdmin(supabase);
+
+  const limit = Math.max(1, Math.min(batchSize, 50));
+  const service = serviceRoleClient();
+  const result = await backfillTmdbCast(service, limit);
   if (!result.ok) return result;
 
   revalidatePath("/admin/films");

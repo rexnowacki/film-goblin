@@ -24,8 +24,10 @@ import ShareFilmButton from "@/components/ShareFilmButton";
 import TrailerButton from "@/components/TrailerButton";
 import SharerWatchPin from "@/components/SharerWatchPin";
 import FilmCTABanner from "@/components/FilmCTABanner";
+import FilmCastStrip from "@/components/FilmCastStrip";
 import { compactCount } from "@/lib/format";
 import { getFilmTags } from "@/lib/queries/film-tags";
+import { getFilmCast } from "@/lib/queries/film-cast";
 import { getCovenWatchersForFilm, getOtherWatchersForFilm } from "@/lib/queries/film-watchers";
 import FilmWatchersStrip from "@/components/FilmWatchersStrip";
 
@@ -74,10 +76,11 @@ export default async function FilmDetailPage({
   const fromUsername = fromRaw && /^[a-z0-9._]+$/.test(fromRaw) ? fromRaw.toLowerCase() : null;
 
   const supabase = await createClient();
-  const [film, history, reviews, user] = await Promise.all([
+  const [film, history, reviews, filmCast, user] = await Promise.all([
     getFilm(supabase, id),
     getLatestPriceHistory(supabase, id, 180),
     getPublishedReviewsForFilm(supabase, id),
+    getFilmCast(supabase, id),
     getServerUser(),
   ]);
   const [covenMembers, onList, owned, watchCount, topCovenMemberIds, myProfile, covenWatchers, otherWatchersResult] = user
@@ -186,6 +189,12 @@ export default async function FilmDetailPage({
                   filmTitle={film.title}
                   label={film.trailer_label}
                 />
+              </div>
+            )}
+
+            {filmCast.length > 0 && (
+              <div style={{ marginTop: 34 }}>
+                <FilmCastStrip cast={filmCast} />
               </div>
             )}
 
