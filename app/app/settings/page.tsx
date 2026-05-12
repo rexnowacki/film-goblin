@@ -17,7 +17,9 @@ import SignOutSection from "./components/SignOutSection";
 const SETTINGS_NAV = [
   { href: "#profile-picture", label: "Picture" },
   { href: "#profile", label: "Profile" },
-  { href: "#preferences", label: "Preferences" },
+  { href: "#privacy", label: "Privacy" },
+  { href: "#notifications", label: "Alerts" },
+  { href: "#email-notifications", label: "Email" },
   { href: "#account", label: "Account" },
   { href: "#appearance", label: "Theme" },
   { href: "#lanes", label: "Lanes" },
@@ -55,6 +57,18 @@ export default async function SettingsPage() {
       </section>
 
       <div className="container-wide" style={{ paddingTop: 30, paddingBottom: 76 }}>
+        <nav className="settings-mobile-nav" aria-label="Settings sections">
+          {SETTINGS_NAV.map(item => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="caps"
+              data-danger={item.href === "#danger" ? "true" : undefined}
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
         <div
           className="stackable"
           style={{
@@ -64,10 +78,10 @@ export default async function SettingsPage() {
           } as CSSProperties}
         >
           <aside
+            className="settings-section-rail"
             style={{
               position: "sticky",
               top: 84,
-              display: "grid",
               gap: 6,
               borderLeft: "2px solid #333",
               paddingLeft: 14,

@@ -1,0 +1,42 @@
+.settings-section-rail {
+  display: grid;
+}
+
+.settings-mobile-nav {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .settings-section-rail {
+    display: none !important;
+  }
+
+  .settings-mobile-nav {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    margin: 0 0 26px;
+    padding: 0 0 8px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .settings-mobile-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .settings-mobile-nav a {
+    flex: 0 0 auto;
+    color: var(--bone);
+    text-decoration: none;
+    font-size: 10px;
+    border: 1px solid #333;
+    padding: 8px 10px;
+    background: var(--void-2);
+  }
+
+  .settings-mobile-nav a[data-danger="true"] {
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+}
