@@ -42,4 +42,12 @@ GRANT SELECT, INSERT, DELETE ON goblin_pick_messages TO authenticated;
 
 -- Realtime: publish INSERTs so the chat client can subscribe and append live.
 -- DEFAULT replica identity (PK only) is sufficient for INSERT events.
-ALTER PUBLICATION supabase_realtime ADD TABLE goblin_pick_messages;
+-- Wrapped in a DO block so the migration is portable: real Supabase has the
+-- `supabase_realtime` publication, but vanilla Postgres (used by the RLS
+-- testcontainers suite) does not.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE goblin_pick_messages;
+  END IF;
+END $$;
