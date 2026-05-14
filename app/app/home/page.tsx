@@ -101,8 +101,8 @@ export default async function HomePage({
           )}
         </aside>
         <main>
-          {user && <FeedSearch active={active} />}
           <GoblinRecommendsMobile film={goblinPick} />
+          {user && <FeedSearch active={active} />}
           <FeedTabs
             initialItems={initialItems}
             initialCursor={initialCursor}
