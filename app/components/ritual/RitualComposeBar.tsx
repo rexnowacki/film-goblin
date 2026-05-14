@@ -1,19 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BottomSheet from "@/components/BottomSheet";
 import RitualComposer, { type MentionCandidate } from "./RitualComposer";
 
 interface Props {
   onSend: (body: string) => Promise<void>;
   lookupMentions: (prefix: string) => Promise<MentionCandidate[]>;
+  // Fires whenever the sheet open-state flips. The page wrapper collapses
+  // the film-card header while the sheet is open and restores it on close.
+  onComposingChange?: (open: boolean) => void;
 }
 
 // Tappable bar that lives at the bottom of the chat scroll. Tapping opens
 // a BottomSheet that hosts the actual composer — matches the modal-comment
 // pattern used elsewhere on the site (CommentSheet, GoblinWhisperButton).
-export default function RitualComposeBar({ onSend, lookupMentions }: Props) {
+export default function RitualComposeBar({ onSend, lookupMentions, onComposingChange }: Props) {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    onComposingChange?.(open);
+  }, [open, onComposingChange]);
 
   return (
     <>

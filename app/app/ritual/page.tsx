@@ -5,8 +5,8 @@ import { getServerUser } from "@/lib/supabase/cached";
 import { getActiveRitualPick, getRitualMessages } from "@/lib/queries/ritual";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
-import RitualChat from "@/components/ritual/RitualChat";
 import RitualHeader from "@/components/ritual/RitualHeader";
+import RitualPageBody from "@/components/ritual/RitualPageBody";
 
 export const dynamic = "force-dynamic";
 
@@ -31,25 +31,13 @@ export default async function RitualPage() {
       <TopNav current="ritual" />
 
       {pick ? (
-        <div
-          className="container-wide"
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 0,
-            padding: "12px var(--container-pad) 12px",
-            gap: 12,
-          }}
-        >
-          <RitualHeader pick={pick} archived={false} />
-          <RitualChat
-            pickId={pick.pick_id}
-            archived={false}
-            initialMessages={messages}
-            currentUserId={user.id}
-          />
-        </div>
+        <RitualPageBody
+          pickId={pick.pick_id}
+          archived={false}
+          initialMessages={messages}
+          currentUserId={user.id}
+          header={<RitualHeader pick={pick} archived={false} />}
+        />
       ) : (
         <div className="container-wide" style={{ padding: "16px var(--container-pad)" }}>
           <NoPickState />
