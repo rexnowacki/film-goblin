@@ -1,0 +1,18 @@
+/* Ritual chat page shell.
+   The shared BottomNav is `position: fixed` (see 80-discovery-actions.css), so it
+   floats over the bottom 64px + safe-area on mobile. A naïve `height: 100dvh`
+   wrapper extends behind it and hides the chat composer. We subtract that
+   height on mobile so the composer is always visible without scrolling. */
+.ritual-shell {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--void);
+  color: var(--bone);
+}
+
+@media (max-width: 720px) {
+  .ritual-shell {
+    height: calc(100dvh - 64px - env(safe-area-inset-bottom));
+  }
+}
