@@ -11,29 +11,33 @@ export interface MentionCandidate {
 interface Props {
   onSend: (body: string) => Promise<void>;
   lookupMentions: (prefix: string) => Promise<MentionCandidate[]>;
-  // Called after a successful send — the parent (sheet wrapper) typically closes itself.
-  onSent?: () => void;
-  autoFocus?: boolean;
+  // Fired on focus/blur so the page wrapper can collapse the film-card
+  // header while the user is composing.
+  onComposingChange?: (composing: boolean) => void;
 }
 
 const MAX = 1000;
+const ROW_HEIGHT = 22;
+const MIN_ROWS = 1;
+const MAX_ROWS = 4;
 
-// Used inside the BottomSheet on /ritual. Earlier this was an inline strip
-// at the bottom of the chat — now it's modal-content, which matches the
-// rest of the app's commenting flows.
-export default function RitualComposer({ onSend, lookupMentions, onSent, autoFocus = false }: Props) {
+// Inline composer — single tap on the textarea = ready to type. No modal,
+// no separate "open composer" button. Sized to fit at the bottom of a
+// 100dvh flex layout next to the send button.
+export default function RitualComposer({ onSend, lookupMentions, onComposingChange }: Props) {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Auto-resize: nudge the textarea to fit content, capped at MAX_ROWS lines.
   useEffect(() => {
-    if (autoFocus) {
-      // Defer one frame so the sheet's own focus call doesn't fight ours.
-      const id = requestAnimationFrame(() => textareaRef.current?.focus());
-      return () => cancelAnimationFrame(id);
-    }
-  }, [autoFocus]);
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const max = ROW_HEIGHT * MAX_ROWS + 20;
+    el.style.height = `${Math.min(el.scrollHeight, max)}px`;
+  }, [body]);
 
   const [mentionState, setMentionState] = useState<{
     active: boolean;
@@ -100,7 +104,9 @@ export default function RitualComposer({ onSend, lookupMentions, onSent, autoFoc
     try {
       await onSend(trimmed);
       setBody("");
-      onSent?.();
+      // Blur so the keyboard dismisses and the header restores via onBlur.
+      // The user can tap back in to compose another message.
+      textareaRef.current?.blur();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to send.");
     } finally {
@@ -141,11 +147,11 @@ export default function RitualComposer({ onSend, lookupMentions, onSent, autoFoc
   const tooLong = remaining < 0;
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ borderTop: "1px solid #2a2a2a", background: "var(--void)", position: "relative" }}>
       {mentionState.active && mentionState.candidates.length > 0 && (
         <div
           style={{
-            position: "absolute", bottom: "100%", left: 0, right: 0, marginBottom: 4,
+            position: "absolute", bottom: "100%", left: 8, right: 8, marginBottom: 4,
             background: "var(--void-2, #141414)", border: "1px solid #2a2a2a",
             maxHeight: 220, overflowY: "auto",
             boxShadow: "0 -4px 16px rgba(0,0,0,0.45)",
@@ -178,7 +184,7 @@ export default function RitualComposer({ onSend, lookupMentions, onSent, autoFoc
 
       {error && (
         <div style={{
-          marginBottom: 6, padding: "6px 8px",
+          padding: "6px 12px",
           fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12,
           color: "var(--blood, #d93a2e)",
         }}>
@@ -186,40 +192,60 @@ export default function RitualComposer({ onSend, lookupMentions, onSent, autoFoc
         </div>
       )}
 
-      <textarea
-        ref={textareaRef}
-        rows={6}
-        value={body}
-        placeholder="Speak into the circle… use @ to summon another."
-        onChange={onChange}
-        onKeyDown={onKeyDown}
-        style={{
-          width: "100%", boxSizing: "border-box", resize: "none",
-          background: "var(--void-2, #141414)",
-          border: "1px solid #333", color: "var(--bone)",
-          padding: "12px 14px", outline: "none",
-          fontFamily: "var(--font-serif)", fontSize: 15, lineHeight: 1.55,
-          minHeight: 140, maxHeight: 320, overflowY: "auto",
-        }}
-      />
-
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12 }}>
-        <span style={{
-          fontFamily: "var(--font-ui)", fontSize: 11, letterSpacing: "0.06em",
-          color: tooLong ? "var(--blood, #d93a2e)" : "var(--muted)",
-        }}>
-          {body.length > 800 ? `${remaining} left` : "Enter to send · Shift+Enter for newline"}
-        </span>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 8, padding: "8px 10px" }}>
+        <textarea
+          ref={textareaRef}
+          rows={MIN_ROWS}
+          value={body}
+          placeholder="Speak into the circle…"
+          onChange={onChange}
+          onKeyDown={onKeyDown}
+          onFocus={() => onComposingChange?.(true)}
+          onBlur={() => onComposingChange?.(false)}
+          style={{
+            flex: 1, resize: "none",
+            background: "var(--void-2, #141414)",
+            border: "1px solid #333", color: "var(--bone)",
+            padding: "10px 12px", outline: "none",
+            fontFamily: "var(--font-serif)", fontSize: 15, lineHeight: `${ROW_HEIGHT}px`,
+            minHeight: 42, overflowY: "auto",
+          }}
+        />
         <button
           type="button"
-          onClick={send}
+          onMouseDown={(e) => { e.preventDefault(); void send(); }}
           disabled={sending || body.trim().length === 0 || tooLong}
-          className="btn"
-          style={{ marginLeft: "auto" }}
+          aria-label="Send message"
+          style={{
+            flexShrink: 0,
+            width: 42, height: 42,
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            background: body.trim().length === 0 || tooLong ? "var(--void-2, #141414)" : "var(--accent)",
+            color: body.trim().length === 0 || tooLong ? "var(--muted)" : "var(--void)",
+            border: "1px solid #333", cursor: "pointer",
+          }}
         >
-          {sending ? "Speaking…" : "Send"}
+          {sending ? <span style={{ fontFamily: "var(--font-ui)", fontSize: 11 }}>…</span> : <SendIcon />}
         </button>
       </div>
+      {body.length > 800 && (
+        <div style={{
+          padding: "0 12px 6px", textAlign: "right",
+          fontFamily: "var(--font-ui)", fontSize: 10, letterSpacing: "0.06em",
+          color: tooLong ? "var(--blood, #d93a2e)" : "var(--muted)",
+        }}>
+          {remaining}
+        </div>
+      )}
     </div>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="22" y1="2" x2="11" y2="13" />
+      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+    </svg>
   );
 }

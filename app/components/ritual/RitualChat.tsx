@@ -6,8 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { postRitualMessage, searchUsersForMention } from "@/lib/actions/ritual";
 import type { RitualMessage } from "@/lib/queries/ritual";
 import RitualMessageRow from "./RitualMessageRow";
-import RitualComposeBar from "./RitualComposeBar";
-import type { MentionCandidate } from "./RitualComposer";
+import RitualComposer, { type MentionCandidate } from "./RitualComposer";
 
 interface Props {
   pickId: number;
@@ -267,7 +266,7 @@ export default function RitualChat({ pickId, archived, initialMessages, currentU
       {archived ? (
         <ArchivedFooter />
       ) : currentUserId ? (
-        <RitualComposeBar
+        <RitualComposer
           onSend={handleSend}
           lookupMentions={lookupMentions}
           onComposingChange={onComposingChange}
