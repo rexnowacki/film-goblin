@@ -4,8 +4,8 @@ import { getServerUser } from "@/lib/supabase/cached";
 import { getActiveRitualPick, getRitualPickById, getRitualMessages } from "@/lib/queries/ritual";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
-import RitualChat from "@/components/ritual/RitualChat";
 import RitualHeader from "@/components/ritual/RitualHeader";
+import RitualPageBody from "@/components/ritual/RitualPageBody";
 
 export const dynamic = "force-dynamic";
 
@@ -46,25 +46,13 @@ export default async function RitualByIdPage({
     >
       <TopNav current="ritual" />
 
-      <div
-        className="container-wide"
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          minHeight: 0,
-          padding: "12px var(--container-pad) 12px",
-          gap: 12,
-        }}
-      >
-        <RitualHeader pick={pick} archived={archived} />
-        <RitualChat
-          pickId={pickId}
-          archived={archived}
-          initialMessages={messages}
-          currentUserId={user.id}
-        />
-      </div>
+      <RitualPageBody
+        pickId={pickId}
+        archived={archived}
+        initialMessages={messages}
+        currentUserId={user.id}
+        header={<RitualHeader pick={pick} archived={archived} />}
+      />
 
       <BottomNav current="ritual" />
     </div>
