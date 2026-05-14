@@ -107,10 +107,6 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: "#0A0A0A",
-  // iOS PWA: shrink the layout viewport when the soft keyboard opens so
-  // `position: fixed; bottom: 0` modals (ritual composer, RecommendModal)
-  // and `100dvh` shells stay above the keyboard instead of behind it.
-  interactiveWidget: "resizes-content",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

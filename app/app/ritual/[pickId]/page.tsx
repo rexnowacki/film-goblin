@@ -43,6 +43,8 @@ export default async function RitualByIdPage({
         archived={archived}
         initialMessages={messages}
         currentUserId={user.id}
+        viewerAvatarUrl={null}
+        viewerDisplayName={null}
         header={<RitualHeader pick={pick} archived={archived} />}
       />
 
