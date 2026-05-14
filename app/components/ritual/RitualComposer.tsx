@@ -6,38 +6,39 @@ export interface MentionCandidate {
   id: string;
   username: string;
   display_name: string | null;
+  avatar_url?: string | null;
 }
 
 interface Props {
   onSend: (body: string) => Promise<void>;
   lookupMentions: (prefix: string) => Promise<MentionCandidate[]>;
-  // Fired on focus/blur so the page wrapper can collapse the film-card
-  // header while the user is composing.
+  // Fired when the textarea is focused/blurred so the page wrapper can
+  // collapse the film-card header during composing.
   onComposingChange?: (composing: boolean) => void;
 }
 
 const MAX = 1000;
 const ROW_HEIGHT = 22;
-const MIN_ROWS = 1;
-const MAX_ROWS = 4;
 
-// Inline composer — single tap on the textarea = ready to type. No modal,
-// no separate "open composer" button. Sized to fit at the bottom of a
-// 100dvh flex layout next to the send button.
+// Modal-style composer that single-taps. The textarea is rendered once and
+// only its parent's classes change between rest and expanded states; iOS
+// keeps focus and the keyboard stays up after the first tap because the
+// element identity never changes.
 export default function RitualComposer({ onSend, lookupMentions, onComposingChange }: Props) {
   const [body, setBody] = useState("");
+  const [expanded, setExpanded] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize: nudge the textarea to fit content, capped at MAX_ROWS lines.
+  // Auto-grow within the per-state max.
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
-    const max = ROW_HEIGHT * MAX_ROWS + 20;
+    const max = expanded ? ROW_HEIGHT * 9 + 40 : ROW_HEIGHT * 2 + 20;
     el.style.height = `${Math.min(el.scrollHeight, max)}px`;
-  }, [body]);
+  }, [body, expanded]);
 
   const [mentionState, setMentionState] = useState<{
     active: boolean;
@@ -52,7 +53,7 @@ export default function RitualComposer({ onSend, lookupMentions, onComposingChan
     while (i >= 0 && /[a-z0-9._]/i.test(value[i])) i--;
     if (i < 0 || value[i] !== "@") return null;
     if (i > 0 && /[a-z0-9._]/i.test(value[i - 1])) return null;
-    const prefix = value.slice(i + 1, caret).toLowerCase();
+    const prefix = value.slice(i + 1, caret);
     return { startPos: i, prefix };
   }
 
@@ -68,14 +69,20 @@ export default function RitualComposer({ onSend, lookupMentions, onComposingChan
     }
   }
 
+  // Lookup whenever the active prefix changes. Empty prefix = clear list
+  // (we don't pre-load a "top users" list — same behaviour as feed-search).
   useEffect(() => {
     if (!mentionState.active) return;
+    if (mentionState.prefix.length < 1) {
+      setMentionState(s => s.active ? { ...s, candidates: [], selectedIdx: 0 } : s);
+      return;
+    }
     let cancelled = false;
     const t = setTimeout(async () => {
       const results = await lookupMentions(mentionState.prefix);
       if (cancelled) return;
       setMentionState(s => s.active ? { ...s, candidates: results, selectedIdx: 0 } : s);
-    }, 100);
+    }, 120);
     return () => { cancelled = true; clearTimeout(t); };
   }, [mentionState.active, mentionState.prefix, lookupMentions]);
 
@@ -104,8 +111,7 @@ export default function RitualComposer({ onSend, lookupMentions, onComposingChan
     try {
       await onSend(trimmed);
       setBody("");
-      // Blur so the keyboard dismisses and the header restores via onBlur.
-      // The user can tap back in to compose another message.
+      // Blur dismisses the keyboard, which fires onBlur → collapse + restore header.
       textareaRef.current?.blur();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to send.");
@@ -137,107 +143,109 @@ export default function RitualComposer({ onSend, lookupMentions, onComposingChan
         return;
       }
     }
+    if (e.key === "Escape" && expanded) {
+      e.preventDefault();
+      textareaRef.current?.blur();
+      return;
+    }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       void send();
     }
   }
 
+  function onFocus() {
+    setExpanded(true);
+    onComposingChange?.(true);
+  }
+
+  function onBlur() {
+    // Defer so a click on a mention candidate (which fires before blur) can run first.
+    setTimeout(() => {
+      setExpanded(false);
+      setMentionState({ active: false, prefix: "", candidates: [], selectedIdx: 0, startPos: -1 });
+      onComposingChange?.(false);
+    }, 80);
+  }
+
+  function onBackdropClick() {
+    textareaRef.current?.blur();
+  }
+
   const remaining = MAX - body.length;
   const tooLong = remaining < 0;
+  const ready = body.trim().length > 0 && !tooLong;
 
   return (
-    <div style={{ borderTop: "1px solid #2a2a2a", background: "var(--void)", position: "relative" }}>
-      {mentionState.active && mentionState.candidates.length > 0 && (
+    <>
+      {expanded && (
         <div
-          style={{
-            position: "absolute", bottom: "100%", left: 8, right: 8, marginBottom: 4,
-            background: "var(--void-2, #141414)", border: "1px solid #2a2a2a",
-            maxHeight: 220, overflowY: "auto",
-            boxShadow: "0 -4px 16px rgba(0,0,0,0.45)",
-            zIndex: 2,
-          }}
-        >
-          {mentionState.candidates.map((c, i) => (
-            <button
-              key={c.id}
-              type="button"
-              onMouseDown={(e) => { e.preventDefault(); applyMention(c); }}
-              style={{
-                display: "flex", alignItems: "center", gap: 10,
-                width: "100%", padding: "8px 12px", border: "none",
-                background: i === mentionState.selectedIdx ? "rgba(255,45,136,0.12)" : "transparent",
-                color: "var(--bone)", textAlign: "left", cursor: "pointer",
-                fontFamily: "var(--font-ui)", fontSize: 13,
-              }}
-            >
-              <span style={{ color: "var(--accent)", fontWeight: 700 }}>@{c.username}</span>
-              {c.display_name && (
-                <span style={{ color: "var(--muted)", fontSize: 12, fontStyle: "italic" }}>
-                  {c.display_name}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {error && (
-        <div style={{
-          padding: "6px 12px",
-          fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12,
-          color: "var(--blood, #d93a2e)",
-        }}>
-          {error}
-        </div>
-      )}
-
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 8, padding: "8px 10px" }}>
-        <textarea
-          ref={textareaRef}
-          rows={MIN_ROWS}
-          value={body}
-          placeholder="Speak into the circle…"
-          onChange={onChange}
-          onKeyDown={onKeyDown}
-          onFocus={() => onComposingChange?.(true)}
-          onBlur={() => onComposingChange?.(false)}
-          style={{
-            flex: 1, resize: "none",
-            background: "var(--void-2, #141414)",
-            border: "1px solid #333", color: "var(--bone)",
-            padding: "10px 12px", outline: "none",
-            fontFamily: "var(--font-serif)", fontSize: 15, lineHeight: `${ROW_HEIGHT}px`,
-            minHeight: 42, overflowY: "auto",
-          }}
+          className="ritual-composer-backdrop"
+          onMouseDown={onBackdropClick}
+          aria-hidden="true"
         />
-        <button
-          type="button"
-          onMouseDown={(e) => { e.preventDefault(); void send(); }}
-          disabled={sending || body.trim().length === 0 || tooLong}
-          aria-label="Send message"
-          style={{
-            flexShrink: 0,
-            width: 42, height: 42,
-            display: "inline-flex", alignItems: "center", justifyContent: "center",
-            background: body.trim().length === 0 || tooLong ? "var(--void-2, #141414)" : "var(--accent)",
-            color: body.trim().length === 0 || tooLong ? "var(--muted)" : "var(--void)",
-            border: "1px solid #333", cursor: "pointer",
-          }}
-        >
-          {sending ? <span style={{ fontFamily: "var(--font-ui)", fontSize: 11 }}>…</span> : <SendIcon />}
-        </button>
-      </div>
-      {body.length > 800 && (
-        <div style={{
-          padding: "0 12px 6px", textAlign: "right",
-          fontFamily: "var(--font-ui)", fontSize: 10, letterSpacing: "0.06em",
-          color: tooLong ? "var(--blood, #d93a2e)" : "var(--muted)",
-        }}>
-          {remaining}
-        </div>
       )}
-    </div>
+
+      <div className={`ritual-composer${expanded ? " is-expanded" : ""}`}>
+        {error && <div className="ritual-composer__error">{error}</div>}
+
+        <div className="ritual-composer__panel">
+          <div style={{ flex: 1, position: "relative" }}>
+            {mentionState.active && mentionState.candidates.length > 0 && (
+              <div className="ritual-mention-dropdown" role="listbox">
+                {mentionState.candidates.map((c, i) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    role="option"
+                    aria-selected={i === mentionState.selectedIdx}
+                    className={`ritual-mention-item${i === mentionState.selectedIdx ? " is-selected" : ""}`}
+                    onMouseDown={(e) => { e.preventDefault(); applyMention(c); }}
+                  >
+                    {c.avatar_url ? (
+                      <img className="ritual-mention-item__avatar" src={c.avatar_url} alt="" />
+                    ) : (
+                      <div className="ritual-mention-item__avatar" aria-hidden="true" />
+                    )}
+                    <span className="ritual-mention-item__handle">@{c.username}</span>
+                    {c.display_name && <span className="ritual-mention-item__name">{c.display_name}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <textarea
+              ref={textareaRef}
+              className="ritual-composer__textarea"
+              rows={1}
+              value={body}
+              placeholder={expanded ? "Speak into the circle… use @ to summon another." : "Speak into the circle…"}
+              onChange={onChange}
+              onKeyDown={onKeyDown}
+              onFocus={onFocus}
+              onBlur={onBlur}
+            />
+
+            <div className="ritual-composer__panel-meta">
+              <span>Enter to send · Shift + Enter for newline · Esc to dismiss</span>
+              <span style={{ marginLeft: "auto" }} className={tooLong ? "is-overflow" : ""}>
+                {body.length}/{MAX}
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); void send(); }}
+            disabled={sending || !ready}
+            aria-label="Send message"
+            className={`ritual-composer__send${ready ? " is-ready" : ""}`}
+          >
+            {sending ? <span style={{ fontFamily: "var(--font-ui)", fontSize: 11 }}>…</span> : <SendIcon />}
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
 

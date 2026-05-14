@@ -82,14 +82,18 @@ export async function postRitualMessage(body: string): Promise<Result> {
 }
 
 // Lightweight typeahead used by the chat composer's @-autocomplete.
+// Substring match on username AND display_name — same shape as
+// `searchFeedTargets` so the UX matches the other search boxes on the site.
 export async function searchUsersForMention(prefix: string): Promise<{ id: string; username: string; display_name: string | null; avatar_url: string | null }[]> {
-  const q = prefix.trim().toLowerCase();
+  const q = prefix.trim();
   if (q.length < 1) return [];
+  const safe = q.replace(/[%_]/g, ""); // strip ilike wildcards from user input
+  if (!safe) return [];
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
     .select("id, username, display_name, avatar_url")
-    .ilike("username", `${q}%`)
+    .or(`username.ilike.%${safe}%,display_name.ilike.%${safe}%`)
     .order("username", { ascending: true })
     .limit(8);
   return data ?? [];
