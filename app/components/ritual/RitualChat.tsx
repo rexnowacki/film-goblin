@@ -13,16 +13,22 @@ interface Props {
   archived: boolean;
   initialMessages: RitualMessage[];
   currentUserId: string | null;
-  // Fired when the composer sheet opens/closes. The page wrapper uses this
-  // to collapse the film-card header while typing.
-  onComposingChange?: (composing: boolean) => void;
+  viewerAvatarUrl: string | null;
+  viewerDisplayName: string | null;
 }
 
 // Distance from the bottom (px) where we still consider the user "stuck to bottom"
 // and auto-scroll on new messages instead of showing the new-messages pill.
 const STICK_THRESHOLD_PX = 80;
 
-export default function RitualChat({ pickId, archived, initialMessages, currentUserId, onComposingChange }: Props) {
+export default function RitualChat({
+  pickId,
+  archived,
+  initialMessages,
+  currentUserId,
+  viewerAvatarUrl,
+  viewerDisplayName,
+}: Props) {
   const [messages, setMessages] = useState<RitualMessage[]>(initialMessages);
   const [unreadBelow, setUnreadBelow] = useState(0);
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -269,7 +275,8 @@ export default function RitualChat({ pickId, archived, initialMessages, currentU
         <RitualComposer
           onSend={handleSend}
           lookupMentions={lookupMentions}
-          onComposingChange={onComposingChange}
+          viewerAvatarUrl={viewerAvatarUrl}
+          viewerDisplayName={viewerDisplayName}
         />
       ) : (
         <SignInFooter />

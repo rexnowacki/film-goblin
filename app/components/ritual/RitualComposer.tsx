@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Avatar from "../Avatar";
 
 export interface MentionCandidate {
   id: string;
@@ -12,33 +13,29 @@ export interface MentionCandidate {
 interface Props {
   onSend: (body: string) => Promise<void>;
   lookupMentions: (prefix: string) => Promise<MentionCandidate[]>;
-  // Fired when the textarea is focused/blurred so the page wrapper can
-  // collapse the film-card header during composing.
-  onComposingChange?: (composing: boolean) => void;
+  viewerAvatarUrl: string | null;
+  viewerDisplayName: string | null;
 }
 
 const MAX = 1000;
-const ROW_HEIGHT = 22;
 
-// Modal-style composer that single-taps. The textarea is rendered once and
-// only its parent's classes change between rest and expanded states; iOS
-// keeps focus and the keyboard stays up after the first tap because the
-// element identity never changes.
-export default function RitualComposer({ onSend, lookupMentions, onComposingChange }: Props) {
+const QUICK_EMOJI = ["💀", "⚰️", "🖤", "🦇", "🌙", "🔪", "👁️", "🩸"] as const;
+
+// Mirrors CommentComposer's structure: emoji strip + composer-row (avatar
+// + pill input + send button). The outer wrapper applies
+// `padding-bottom: env(keyboard-inset-height)` so iOS Safari 17+ reserves
+// vertical space for the soft keyboard and the pill always lands directly
+// above it. Mention typeahead is preserved from the prior modal composer.
+export default function RitualComposer({
+  onSend,
+  lookupMentions,
+  viewerAvatarUrl,
+  viewerDisplayName,
+}: Props) {
   const [body, setBody] = useState("");
-  const [expanded, setExpanded] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Auto-grow within the per-state max.
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    const max = expanded ? ROW_HEIGHT * 9 + 40 : ROW_HEIGHT * 2 + 20;
-    el.style.height = `${Math.min(el.scrollHeight, max)}px`;
-  }, [body, expanded]);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [mentionState, setMentionState] = useState<{
     active: boolean;
@@ -57,7 +54,7 @@ export default function RitualComposer({ onSend, lookupMentions, onComposingChan
     return { startPos: i, prefix };
   }
 
-  function onChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+  function onChange(e: React.ChangeEvent<HTMLInputElement>) {
     const v = e.target.value;
     setBody(v);
     const caret = e.target.selectionStart ?? v.length;
@@ -69,8 +66,6 @@ export default function RitualComposer({ onSend, lookupMentions, onComposingChan
     }
   }
 
-  // Lookup whenever the active prefix changes. Empty prefix = clear list
-  // (we don't pre-load a "top users" list — same behaviour as feed-search).
   useEffect(() => {
     if (!mentionState.active) return;
     if (mentionState.prefix.length < 1) {
@@ -88,18 +83,35 @@ export default function RitualComposer({ onSend, lookupMentions, onComposingChan
 
   function applyMention(c: MentionCandidate) {
     const before = body.slice(0, mentionState.startPos);
-    const caret = textareaRef.current?.selectionStart ?? body.length;
+    const caret = inputRef.current?.selectionStart ?? body.length;
     const after = body.slice(caret);
     const insertion = `@${c.username} `;
     const next = before + insertion + after;
     setBody(next);
     setMentionState({ active: false, prefix: "", candidates: [], selectedIdx: 0, startPos: -1 });
     requestAnimationFrame(() => {
-      const el = textareaRef.current;
+      const el = inputRef.current;
       if (!el) return;
       const pos = before.length + insertion.length;
       el.focus();
-      el.setSelectionRange(pos, pos);
+      try { el.setSelectionRange(pos, pos); } catch { /* ignore */ }
+    });
+  }
+
+  function insertEmoji(emoji: string) {
+    const el = inputRef.current;
+    if (!el) {
+      setBody(d => d + emoji);
+      return;
+    }
+    const start = el.selectionStart ?? body.length;
+    const end = el.selectionEnd ?? body.length;
+    const next = body.slice(0, start) + emoji + body.slice(end);
+    setBody(next);
+    requestAnimationFrame(() => {
+      const pos = start + emoji.length;
+      el.focus();
+      try { el.setSelectionRange(pos, pos); } catch { /* ignore */ }
     });
   }
 
@@ -111,8 +123,6 @@ export default function RitualComposer({ onSend, lookupMentions, onComposingChan
     try {
       await onSend(trimmed);
       setBody("");
-      // Blur dismisses the keyboard, which fires onBlur → collapse + restore header.
-      textareaRef.current?.blur();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to send.");
     } finally {
@@ -120,7 +130,7 @@ export default function RitualComposer({ onSend, lookupMentions, onComposingChan
     }
   }
 
-  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (mentionState.active && mentionState.candidates.length > 0) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
@@ -143,117 +153,105 @@ export default function RitualComposer({ onSend, lookupMentions, onComposingChan
         return;
       }
     }
-    if (e.key === "Escape" && expanded) {
-      e.preventDefault();
-      textareaRef.current?.blur();
-      return;
-    }
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && canSend) {
       e.preventDefault();
       void send();
     }
   }
 
-  function onFocus() {
-    setExpanded(true);
-    onComposingChange?.(true);
-  }
-
-  function onBlur() {
-    // Defer so a click on a mention candidate (which fires before blur) can run first.
-    setTimeout(() => {
-      setExpanded(false);
-      setMentionState({ active: false, prefix: "", candidates: [], selectedIdx: 0, startPos: -1 });
-      onComposingChange?.(false);
-    }, 80);
-  }
-
-  function onBackdropClick() {
-    textareaRef.current?.blur();
-  }
-
-  const remaining = MAX - body.length;
-  const tooLong = remaining < 0;
-  const ready = body.trim().length > 0 && !tooLong;
+  const trimmed = body.trim();
+  const overLimit = trimmed.length > MAX;
+  const canSend = trimmed.length > 0 && !overLimit && !sending;
 
   return (
-    <>
-      {expanded && (
-        <div
-          className="ritual-composer-backdrop"
-          onMouseDown={onBackdropClick}
-          aria-hidden="true"
-        />
+    <div style={{ paddingBottom: "env(keyboard-inset-height, 0px)" }}>
+      {error && (
+        <div style={{
+          padding: "6px 12px", fontFamily: "var(--font-serif)", fontStyle: "italic",
+          fontSize: 12, color: "var(--danger, #d93a2e)",
+        }}>
+          {error}
+        </div>
       )}
 
-      <div className={`ritual-composer${expanded ? " is-expanded" : ""}`}>
-        {error && <div className="ritual-composer__error">{error}</div>}
-
-        <div className="ritual-composer__panel">
-          <div style={{ flex: 1, position: "relative" }}>
-            {mentionState.active && mentionState.candidates.length > 0 && (
-              <div className="ritual-mention-dropdown" role="listbox">
-                {mentionState.candidates.map((c, i) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    role="option"
-                    aria-selected={i === mentionState.selectedIdx}
-                    className={`ritual-mention-item${i === mentionState.selectedIdx ? " is-selected" : ""}`}
-                    onMouseDown={(e) => { e.preventDefault(); applyMention(c); }}
-                  >
-                    {c.avatar_url ? (
-                      <img className="ritual-mention-item__avatar" src={c.avatar_url} alt="" />
-                    ) : (
-                      <div className="ritual-mention-item__avatar" aria-hidden="true" />
-                    )}
-                    <span className="ritual-mention-item__handle">@{c.username}</span>
-                    {c.display_name && <span className="ritual-mention-item__name">{c.display_name}</span>}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <textarea
-              ref={textareaRef}
-              className="ritual-composer__textarea"
-              rows={1}
-              value={body}
-              placeholder={expanded ? "Speak into the circle… use @ to summon another." : "Speak into the circle…"}
-              onChange={onChange}
-              onKeyDown={onKeyDown}
-              onFocus={onFocus}
-              onBlur={onBlur}
-            />
-
-            <div className="ritual-composer__panel-meta">
-              <span>Enter to send · Shift + Enter for newline · Esc to dismiss</span>
-              <span style={{ marginLeft: "auto" }} className={tooLong ? "is-overflow" : ""}>
-                {body.length}/{MAX}
-              </span>
-            </div>
-          </div>
-
+      <div className="composer-emoji-strip" role="toolbar" aria-label="Quick reactions">
+        {QUICK_EMOJI.map(e => (
           <button
+            key={e}
             type="button"
-            onMouseDown={(e) => { e.preventDefault(); void send(); }}
-            disabled={sending || !ready}
-            aria-label="Send message"
-            className={`ritual-composer__send${ready ? " is-ready" : ""}`}
+            className="composer-emoji-btn"
+            onMouseDown={ev => ev.preventDefault()}
+            onClick={() => insertEmoji(e)}
+            aria-label={`Insert ${e}`}
           >
-            {sending ? <span style={{ fontFamily: "var(--font-ui)", fontSize: 11 }}>…</span> : <SendIcon />}
+            {e}
           </button>
-        </div>
+        ))}
       </div>
-    </>
+
+      <div className="composer-row" style={{ position: "relative" }}>
+        {mentionState.active && mentionState.candidates.length > 0 && (
+          <div className="ritual-mention-dropdown" role="listbox">
+            {mentionState.candidates.map((c, i) => (
+              <button
+                key={c.id}
+                type="button"
+                role="option"
+                aria-selected={i === mentionState.selectedIdx}
+                className={`ritual-mention-item${i === mentionState.selectedIdx ? " is-selected" : ""}`}
+                onMouseDown={(e) => { e.preventDefault(); applyMention(c); }}
+              >
+                {c.avatar_url ? (
+                  <img className="ritual-mention-item__avatar" src={c.avatar_url} alt="" />
+                ) : (
+                  <div className="ritual-mention-item__avatar" aria-hidden="true" />
+                )}
+                <span className="ritual-mention-item__handle">@{c.username}</span>
+                {c.display_name && <span className="ritual-mention-item__name">{c.display_name}</span>}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <Avatar
+          name={viewerDisplayName ?? "you"}
+          color="var(--accent)"
+          size={32}
+          url={viewerAvatarUrl}
+        />
+        <div className="composer-pill">
+          <input
+            ref={inputRef}
+            type="text"
+            value={body}
+            onChange={onChange}
+            onKeyDown={onKeyDown}
+            placeholder="Speak into the circle…"
+            maxLength={MAX + 1}
+          />
+          <span className={`composer-counter ${overLimit ? "over" : ""}`}>
+            {trimmed.length}/{MAX}
+          </span>
+        </div>
+        <button
+          type="button"
+          className={canSend ? "composer-send-btn enabled" : "composer-send-btn"}
+          onMouseDown={(e) => { e.preventDefault(); void send(); }}
+          disabled={!canSend}
+          aria-label={sending ? "Sending" : "Send message"}
+        >
+          <SendIcon />
+        </button>
+      </div>
+    </div>
   );
 }
 
 function SendIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <line x1="22" y1="2" x2="11" y2="13" />
-      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M8 13V3" />
+      <path d="M3 8l5-5 5 5" />
     </svg>
   );
 }
