@@ -109,7 +109,15 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
       .filter(stmt => !/CREATE\s+(OR\s+REPLACE\s+)?VIEW\b/i.test(stmt))
       .filter(stmt => !/DROP\s+VIEW\b/i.test(stmt))
       .filter(stmt => !/CREATE\s+TRIGGER\b/i.test(stmt))
+      // pg-mem chokes on `DROP TRIGGER … ON tablename`; the smoke doesn't run
+      // triggers anyway, so dropping is a no-op.
+      .filter(stmt => !/DROP\s+TRIGGER\b/i.test(stmt))
+      // Same story — functions defined via LANGUAGE plpgsql are skipped at
+      // file scope, so stale DROP FUNCTION calls have nothing to act on.
+      .filter(stmt => !/DROP\s+FUNCTION\b/i.test(stmt))
       .filter(stmt => !/ALTER\s+TYPE\b/i.test(stmt))
+      // Realtime publications belong to Supabase infra, not the smoke schema.
+      .filter(stmt => !/ALTER\s+PUBLICATION\b/i.test(stmt))
       // Remove statements that are only comments (no actual SQL keyword)
       .filter(stmt => /^\s*(?:CREATE|ALTER|DROP|INSERT|UPDATE|DELETE|SELECT|WITH|TRUNCATE)\b/im.test(stmt))
       .join(";\n");
