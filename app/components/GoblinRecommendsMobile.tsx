@@ -65,36 +65,45 @@ export default function GoblinRecommendsMobile({ film }: { film: GoblinPickFilm 
           >
             {film.director} · {film.year}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <a
-              href={film.itunes_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontSize: 11,
-                color: "var(--accent)",
-                textDecoration: "none",
-                letterSpacing: "0.06em",
-              }}
-            >
-              Watch on Apple TV →
-            </a>
-            <Link
-              href="/ritual"
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontSize: 11,
-                color: "var(--bone)",
-                textDecoration: "none",
-                letterSpacing: "0.06em",
-              }}
-            >
-              Join the Ritual →
-            </Link>
-          </div>
+          <a
+            href={film.itunes_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontFamily: "var(--font-ui)",
+              fontSize: 11,
+              color: "var(--accent)",
+              textDecoration: "none",
+              letterSpacing: "0.06em",
+              display: "inline-block",
+            }}
+          >
+            Watch on Apple TV →
+          </a>
         </div>
       </div>
+
+      <Link
+        href="/ritual"
+        style={{
+          display: "block",
+          marginTop: 14,
+          padding: "12px 16px",
+          textAlign: "center",
+          fontFamily: "var(--font-ui)",
+          fontSize: 13,
+          fontWeight: 700,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: "var(--void)",
+          background: "var(--accent)",
+          textDecoration: "none",
+          border: "2px solid var(--void)",
+          boxShadow: "3px 3px 0 var(--void)",
+        }}
+      >
+        Join the Ritual →
+      </Link>
 
       {film.whisper_text && (
         <GoblinWhisperButton
