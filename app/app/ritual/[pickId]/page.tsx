@@ -35,15 +35,7 @@ export default async function RitualByIdPage({
   const archived = true;
 
   return (
-    <div
-      style={{
-        background: "var(--void)",
-        color: "var(--bone)",
-        height: "100dvh",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div className="ritual-shell">
       <TopNav current="ritual" />
 
       <RitualPageBody

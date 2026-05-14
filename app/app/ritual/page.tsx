@@ -19,15 +19,7 @@ export default async function RitualPage() {
   const messages = pick ? await getRitualMessages(supabase, pick.pick_id) : [];
 
   return (
-    <div
-      style={{
-        background: "var(--void)",
-        color: "var(--bone)",
-        height: "100dvh",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div className="ritual-shell">
       <TopNav current="ritual" />
 
       {pick ? (
