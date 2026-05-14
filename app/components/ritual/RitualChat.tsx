@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { postRitualMessage, searchUsersForMention } from "@/lib/actions/ritual";
 import type { RitualMessage } from "@/lib/queries/ritual";
 import RitualMessageRow from "./RitualMessageRow";
-import RitualComposer from "./RitualComposer";
+import RitualComposeBar from "./RitualComposeBar";
 import type { MentionCandidate } from "./RitualComposer";
 
 interface Props {
@@ -193,8 +193,8 @@ export default function RitualChat({ pickId, archived, initialMessages, currentU
     <div
       style={{
         display: "flex", flexDirection: "column",
-        height: "calc(100dvh - 46px - env(safe-area-inset-top) - 60px)",
-        minHeight: 360,
+        flex: 1,
+        minHeight: 0,
         border: "1px solid #2a2a2a",
         background: "var(--void-2, #141414)",
         position: "relative",
@@ -248,12 +248,13 @@ export default function RitualChat({ pickId, archived, initialMessages, currentU
           type="button"
           onClick={scrollToBottom}
           style={{
-            position: "absolute", bottom: archived ? 16 : 76, left: "50%", transform: "translateX(-50%)",
+            position: "absolute", bottom: 64, left: "50%", transform: "translateX(-50%)",
             background: "var(--accent)", color: "var(--void)",
             border: "none", padding: "6px 14px",
             fontFamily: "var(--font-ui)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
             cursor: "pointer", textTransform: "uppercase",
             boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+            zIndex: 1,
           }}
         >
           ↓ {unreadBelow} new
@@ -263,7 +264,7 @@ export default function RitualChat({ pickId, archived, initialMessages, currentU
       {archived ? (
         <ArchivedFooter />
       ) : currentUserId ? (
-        <RitualComposer onSend={handleSend} lookupMentions={lookupMentions} />
+        <RitualComposeBar onSend={handleSend} lookupMentions={lookupMentions} />
       ) : (
         <SignInFooter />
       )}
