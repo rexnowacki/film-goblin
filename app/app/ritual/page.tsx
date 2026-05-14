@@ -19,25 +19,44 @@ export default async function RitualPage() {
   const messages = pick ? await getRitualMessages(supabase, pick.pick_id) : [];
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
+    <div
+      style={{
+        background: "var(--void)",
+        color: "var(--bone)",
+        height: "100dvh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <TopNav current="ritual" />
-      <BottomNav current="ritual" />
 
-      <div className="container-wide" style={{ padding: "16px var(--container-pad) 24px" }}>
-        {pick ? (
-          <>
-            <RitualHeader pick={pick} archived={false} />
-            <RitualChat
-              pickId={pick.pick_id}
-              archived={false}
-              initialMessages={messages}
-              currentUserId={user.id}
-            />
-          </>
-        ) : (
+      {pick ? (
+        <div
+          className="container-wide"
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+            padding: "12px var(--container-pad) 12px",
+            gap: 12,
+          }}
+        >
+          <RitualHeader pick={pick} archived={false} />
+          <RitualChat
+            pickId={pick.pick_id}
+            archived={false}
+            initialMessages={messages}
+            currentUserId={user.id}
+          />
+        </div>
+      ) : (
+        <div className="container-wide" style={{ padding: "16px var(--container-pad)" }}>
           <NoPickState />
-        )}
-      </div>
+        </div>
+      )}
+
+      <BottomNav current="ritual" />
     </div>
   );
 }

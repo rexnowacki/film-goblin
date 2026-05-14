@@ -11,34 +11,44 @@ export interface MentionCandidate {
 interface Props {
   onSend: (body: string) => Promise<void>;
   lookupMentions: (prefix: string) => Promise<MentionCandidate[]>;
+  // Called after a successful send — the parent (sheet wrapper) typically closes itself.
+  onSent?: () => void;
+  autoFocus?: boolean;
 }
 
 const MAX = 1000;
 
-export default function RitualComposer({ onSend, lookupMentions }: Props) {
+// Used inside the BottomSheet on /ritual. Earlier this was an inline strip
+// at the bottom of the chat — now it's modal-content, which matches the
+// rest of the app's commenting flows.
+export default function RitualComposer({ onSend, lookupMentions, onSent, autoFocus = false }: Props) {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // @-mention typeahead state
+  useEffect(() => {
+    if (autoFocus) {
+      // Defer one frame so the sheet's own focus call doesn't fight ours.
+      const id = requestAnimationFrame(() => textareaRef.current?.focus());
+      return () => cancelAnimationFrame(id);
+    }
+  }, [autoFocus]);
+
   const [mentionState, setMentionState] = useState<{
     active: boolean;
     prefix: string;
     candidates: MentionCandidate[];
     selectedIdx: number;
-    startPos: number; // index of '@' in body
+    startPos: number;
   }>({ active: false, prefix: "", candidates: [], selectedIdx: 0, startPos: -1 });
 
-  // Compute current @-prefix from caret position.
   function detectMention(value: string, caret: number) {
-    // Walk back from caret to find '@' bounded by start-of-string or whitespace.
     let i = caret - 1;
     while (i >= 0 && /[a-z0-9._]/i.test(value[i])) i--;
     if (i < 0 || value[i] !== "@") return null;
-    if (i > 0 && /[a-z0-9._]/i.test(value[i - 1])) return null; // mid-word @ (e.g. email)
+    if (i > 0 && /[a-z0-9._]/i.test(value[i - 1])) return null;
     const prefix = value.slice(i + 1, caret).toLowerCase();
-    if (prefix.length === 0) return { startPos: i, prefix: "" };
     return { startPos: i, prefix };
   }
 
@@ -54,7 +64,6 @@ export default function RitualComposer({ onSend, lookupMentions }: Props) {
     }
   }
 
-  // Debounced lookup whenever active prefix changes
   useEffect(() => {
     if (!mentionState.active) return;
     let cancelled = false;
@@ -91,6 +100,7 @@ export default function RitualComposer({ onSend, lookupMentions }: Props) {
     try {
       await onSend(trimmed);
       setBody("");
+      onSent?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to send.");
     } finally {
@@ -131,14 +141,15 @@ export default function RitualComposer({ onSend, lookupMentions }: Props) {
   const tooLong = remaining < 0;
 
   return (
-    <div style={{ borderTop: "1px solid #2a2a2a", padding: "10px 12px", position: "relative", background: "var(--void)" }}>
+    <div style={{ position: "relative" }}>
       {mentionState.active && mentionState.candidates.length > 0 && (
         <div
           style={{
-            position: "absolute", bottom: "100%", left: 12, right: 12, marginBottom: 4,
+            position: "absolute", bottom: "100%", left: 0, right: 0, marginBottom: 4,
             background: "var(--void-2, #141414)", border: "1px solid #2a2a2a",
             maxHeight: 220, overflowY: "auto",
             boxShadow: "0 -4px 16px rgba(0,0,0,0.45)",
+            zIndex: 2,
           }}
         >
           {mentionState.candidates.map((c, i) => (
@@ -167,7 +178,7 @@ export default function RitualComposer({ onSend, lookupMentions }: Props) {
 
       {error && (
         <div style={{
-          marginBottom: 6, padding: "4px 8px",
+          marginBottom: 6, padding: "6px 8px",
           fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12,
           color: "var(--blood, #d93a2e)",
         }}>
@@ -175,42 +186,40 @@ export default function RitualComposer({ onSend, lookupMentions }: Props) {
         </div>
       )}
 
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
-        <textarea
-          ref={textareaRef}
-          rows={2}
-          value={body}
-          placeholder="Speak into the circle… use @ to summon another."
-          onChange={onChange}
-          onKeyDown={onKeyDown}
-          style={{
-            flex: 1, resize: "none",
-            background: "var(--void-2, #141414)",
-            border: "1px solid #333", color: "var(--bone)",
-            padding: "10px 12px", outline: "none",
-            fontFamily: "var(--font-serif)", fontSize: 14, lineHeight: 1.5,
-            minHeight: 56, maxHeight: 160, overflowY: "auto",
-          }}
-        />
+      <textarea
+        ref={textareaRef}
+        rows={6}
+        value={body}
+        placeholder="Speak into the circle… use @ to summon another."
+        onChange={onChange}
+        onKeyDown={onKeyDown}
+        style={{
+          width: "100%", boxSizing: "border-box", resize: "none",
+          background: "var(--void-2, #141414)",
+          border: "1px solid #333", color: "var(--bone)",
+          padding: "12px 14px", outline: "none",
+          fontFamily: "var(--font-serif)", fontSize: 15, lineHeight: 1.55,
+          minHeight: 140, maxHeight: 320, overflowY: "auto",
+        }}
+      />
+
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12 }}>
+        <span style={{
+          fontFamily: "var(--font-ui)", fontSize: 11, letterSpacing: "0.06em",
+          color: tooLong ? "var(--blood, #d93a2e)" : "var(--muted)",
+        }}>
+          {body.length > 800 ? `${remaining} left` : "Enter to send · Shift+Enter for newline"}
+        </span>
         <button
           type="button"
           onClick={send}
           disabled={sending || body.trim().length === 0 || tooLong}
-          className="btn btn-sm"
-          style={{ flexShrink: 0 }}
+          className="btn"
+          style={{ marginLeft: "auto" }}
         >
-          {sending ? "…" : "Send"}
+          {sending ? "Speaking…" : "Send"}
         </button>
       </div>
-      {body.length > 800 && (
-        <div style={{
-          marginTop: 4, textAlign: "right",
-          fontFamily: "var(--font-ui)", fontSize: 10, letterSpacing: "0.06em",
-          color: tooLong ? "var(--blood, #d93a2e)" : "var(--muted)",
-        }}>
-          {remaining}
-        </div>
-      )}
     </div>
   );
 }
