@@ -7,6 +7,7 @@ import { getGoblinPick } from "@/lib/queries/goblin-pick";
 import FollowedActivityFeed from "@/components/FollowedActivityFeed";
 import LedgerPanel from "@/components/LedgerPanel";
 import GoblinRecommends from "@/components/GoblinRecommends";
+import GoblinRecommendsMobile from "@/components/GoblinRecommendsMobile";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FeedTabs from "@/components/FeedTabs";
@@ -101,6 +102,7 @@ export default async function HomePage({
         </aside>
         <main>
           {user && <FeedSearch active={active} />}
+          <GoblinRecommendsMobile film={goblinPick} />
           <FeedTabs
             initialItems={initialItems}
             initialCursor={initialCursor}

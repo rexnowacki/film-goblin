@@ -19,6 +19,9 @@
 //   films_with_stats (view): coven_rating_pct, coven_rating_count
 //   tags:          type is a 6-value literal union, not generic string
 //   goblin_pick:   whisper_text (TEXT | null) — added by mig 0169
+//                  effective_at (TIMESTAMPTZ) — added by mig 0181 (no longer single-row)
+//   goblin_pick_messages: entire table — added by mig 0183
+//                  notification_kind 'goblin_summon' — added by mig 0182
 //   notification_kind enum: film_request_fulfilled — added by mig 0170
 //
 // Workflow when regen is needed on the other machine:
@@ -629,6 +632,7 @@ export type Database = {
       }
       goblin_pick: {
         Row: {
+          effective_at: string
           film_id: string
           id: number
           set_at: string
@@ -636,6 +640,7 @@ export type Database = {
           whisper_text: string | null
         }
         Insert: {
+          effective_at?: string
           film_id: string
           id?: number
           set_at?: string
@@ -643,6 +648,7 @@ export type Database = {
           whisper_text?: string | null
         }
         Update: {
+          effective_at?: string
           film_id?: string
           id?: number
           set_at?: string
@@ -655,6 +661,48 @@ export type Database = {
             columns: ["film_id"]
             isOneToOne: false
             referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goblin_pick_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          mentions: string[]
+          pick_id: number
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+          pick_id: number
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+          pick_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goblin_pick_messages_pick_id_fkey"
+            columns: ["pick_id"]
+            isOneToOne: false
+            referencedRelation: "goblin_pick"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goblin_pick_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1556,6 +1604,7 @@ export type Database = {
         | "rate_reminder"
         | "reply_on_comment"
         | "theater_showing_match"
+        | "goblin_summon"
       review_status: "draft" | "published"
       staff_role: "reviewer" | "admin"
     }

@@ -43,6 +43,8 @@ function headerCopy(group: NotificationGroup): React.ReactNode {
       return <><strong>{group.count} local haunts</strong> matched your Hoard.</>;
     case "film_request_fulfilled":
       return <><strong>{group.count} film requests</strong> were fulfilled.</>;
+    case "goblin_summon":
+      return <><strong>{actorName}</strong> summoned you {group.count} times in the weekly ritual watch thread.</>;
   }
 }
 
@@ -79,6 +81,10 @@ function headerHref(group: NotificationGroup): string {
     case "film_request_fulfilled": {
       const filmId = (first.payload as { film_id?: string }).film_id;
       return filmId ? `/film/${filmId}` : "/home";
+    }
+    case "goblin_summon": {
+      const pickId = (first.payload as { pick_id?: number }).pick_id;
+      return pickId ? `/ritual/${pickId}` : "/ritual";
     }
   }
 }

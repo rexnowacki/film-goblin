@@ -1,0 +1,119 @@
+"use client";
+
+import Link from "next/link";
+import Avatar from "@/components/Avatar";
+import type { RitualMessage } from "@/lib/queries/ritual";
+
+interface Props {
+  message: RitualMessage;
+  compact: boolean;
+  isMe: boolean;
+}
+
+const MENTION_RE = /(?<![a-z0-9._])@([a-z0-9._]+)/gi;
+
+export default function RitualMessageRow({ message, compact, isMe }: Props) {
+  const ts = formatTime(message.created_at);
+  return (
+    <div
+      data-message-id={message.id}
+      style={{
+        display: "flex",
+        gap: 10,
+        padding: compact ? "1px 18px" : "8px 18px 1px",
+        marginTop: compact ? 0 : 4,
+        background: isMe ? "rgba(255,45,136,0.04)" : "transparent",
+      }}
+    >
+      <div style={{ width: 32, flexShrink: 0, paddingTop: compact ? 2 : 4 }}>
+        {compact ? null : (
+          <Link href={`/p/${encodeURIComponent(message.author.username)}`} style={{ display: "block", textDecoration: "none" }}>
+            <Avatar
+              name={message.author.username}
+              color="var(--accent)"
+              size={32}
+              url={message.author.avatar_url}
+            />
+          </Link>
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {!compact && (
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 2 }}>
+            <Link
+              href={`/p/${encodeURIComponent(message.author.username)}`}
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: 13,
+                fontWeight: 700,
+                color: isMe ? "var(--accent)" : "var(--bone)",
+                textDecoration: "none",
+                letterSpacing: "0.01em",
+              }}
+            >
+              {message.author.display_name || message.author.username}
+            </Link>
+            <span
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: 10,
+                color: "var(--muted)",
+                letterSpacing: "0.06em",
+              }}
+              title={new Date(message.created_at).toLocaleString()}
+            >
+              {ts}
+            </span>
+          </div>
+        )}
+        <div
+          style={{
+            fontFamily: "var(--font-serif)",
+            fontSize: 14,
+            lineHeight: 1.55,
+            color: "var(--bone)",
+            wordBreak: "break-word",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {renderBody(message.body)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function renderBody(body: string): React.ReactNode {
+  const out: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let key = 0;
+  const re = new RegExp(MENTION_RE);
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(body)) !== null) {
+    if (m.index > lastIndex) out.push(<span key={key++}>{body.slice(lastIndex, m.index)}</span>);
+    const username = m[1];
+    out.push(
+      <Link
+        key={key++}
+        href={`/p/${encodeURIComponent(username.toLowerCase())}`}
+        style={{
+          color: "var(--accent)",
+          fontWeight: 600,
+          textDecoration: "none",
+          background: "rgba(255,45,136,0.08)",
+          padding: "0 3px",
+          borderRadius: 2,
+        }}
+      >
+        @{username}
+      </Link>,
+    );
+    lastIndex = m.index + m[0].length;
+  }
+  if (lastIndex < body.length) out.push(<span key={key++}>{body.slice(lastIndex)}</span>);
+  return out;
+}
+
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+}
