@@ -45,6 +45,10 @@ function targetFor(n: EnrichedNotification): string {
       const filmId = (n.payload as { film_id?: string }).film_id;
       return filmId ? `/film/${filmId}` : "/home";
     }
+    case "goblin_summon": {
+      const pickId = (n.payload as { pick_id?: number }).pick_id;
+      return pickId ? `/ritual/${pickId}` : "/ritual";
+    }
   }
 }
 
@@ -93,6 +97,11 @@ function copyFor(n: EnrichedNotification): React.ReactNode {
     case "film_request_fulfilled": {
       const filmTitle = (n.payload as { film_title?: string }).film_title ?? "A film you requested";
       return <>Your spell of summoning was answered. <em>{filmTitle}</em> is now available.</>;
+    }
+    case "goblin_summon": {
+      const raw = (n.payload as { body?: string }).body ?? "";
+      const snippet = raw.length > 80 ? raw.slice(0, 77) + "…" : raw;
+      return <><strong>{actorName}</strong> summoned you by name in the weekly ritual watch thread{snippet ? <>: &ldquo;{snippet}&rdquo;</> : "."}</>;
     }
   }
 }

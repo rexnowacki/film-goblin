@@ -29,14 +29,22 @@ export default function GoblinRecommends({ film }: { film: GoblinPickFilm | null
           <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
             {film.director} · {film.year}
           </div>
-          <a
-            href={film.itunes_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--accent)", textDecoration: "none", letterSpacing: "0.06em" }}
-          >
-            Watch on Apple TV →
-          </a>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <a
+              href={film.itunes_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--accent)", textDecoration: "none", letterSpacing: "0.06em" }}
+            >
+              Watch on Apple TV →
+            </a>
+            <Link
+              href="/ritual"
+              style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--bone)", textDecoration: "none", letterSpacing: "0.06em" }}
+            >
+              Join the Ritual →
+            </Link>
+          </div>
 
           {film.whisper_text && (
             <GoblinWhisperButton

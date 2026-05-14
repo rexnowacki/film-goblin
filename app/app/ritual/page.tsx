@@ -1,0 +1,62 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getServerUser } from "@/lib/supabase/cached";
+import { getActiveRitualPick, getRitualMessages } from "@/lib/queries/ritual";
+import TopNav from "@/components/TopNav";
+import BottomNav from "@/components/BottomNav";
+import RitualChat from "@/components/ritual/RitualChat";
+import RitualHeader from "@/components/ritual/RitualHeader";
+
+export const dynamic = "force-dynamic";
+
+export default async function RitualPage() {
+  const user = await getServerUser();
+  if (!user) redirect("/auth/signin?redirect=/ritual");
+
+  const supabase = await createClient();
+  const pick = await getActiveRitualPick(supabase);
+  const messages = pick ? await getRitualMessages(supabase, pick.pick_id) : [];
+
+  return (
+    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
+      <TopNav current="ritual" />
+      <BottomNav current="ritual" />
+
+      <div className="container-wide" style={{ padding: "16px var(--container-pad) 24px" }}>
+        {pick ? (
+          <>
+            <RitualHeader pick={pick} archived={false} />
+            <RitualChat
+              pickId={pick.pick_id}
+              archived={false}
+              initialMessages={messages}
+              currentUserId={user.id}
+            />
+          </>
+        ) : (
+          <NoPickState />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NoPickState() {
+  return (
+    <div style={{
+      maxWidth: 540, margin: "60px auto", textAlign: "center",
+      padding: 32, border: "1px solid #2a2a2a", background: "var(--void-2, #141414)",
+    }}>
+      <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 12, letterSpacing: "0.14em" }}>
+        The circle is empty
+      </div>
+      <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--muted)", lineHeight: 1.55 }}>
+        No goblin pick is active. Return when the next ritual begins.
+      </p>
+      <Link href="/ritual/archive" className="btn btn-sm" style={{ marginTop: 18, display: "inline-block" }}>
+        Browse past rituals
+      </Link>
+    </div>
+  );
+}
