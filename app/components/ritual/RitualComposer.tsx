@@ -178,7 +178,7 @@ export default function RitualComposer({ onSend, lookupMentions }: Props) {
       <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
         <textarea
           ref={textareaRef}
-          rows={1}
+          rows={2}
           value={body}
           placeholder="Speak into the circle… use @ to summon another."
           onChange={onChange}
@@ -189,7 +189,7 @@ export default function RitualComposer({ onSend, lookupMentions }: Props) {
             border: "1px solid #333", color: "var(--bone)",
             padding: "10px 12px", outline: "none",
             fontFamily: "var(--font-serif)", fontSize: 14, lineHeight: 1.5,
-            maxHeight: 160, overflowY: "auto",
+            minHeight: 56, maxHeight: 160, overflowY: "auto",
           }}
         />
         <button
