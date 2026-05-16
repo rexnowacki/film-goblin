@@ -13,9 +13,11 @@ vi.mock("@/lib/search/apple-tv", () => ({
 }));
 vi.mock("@/lib/search/tmdb", () => ({
   searchTmdb: vi.fn(),
+  lookupTmdb: vi.fn(),
 }));
 vi.mock("film-goblin-worker", () => ({
   searchFilms: vi.fn(),
+  fetchPrices: vi.fn(),
   parseFilm: vi.fn(),
 }));
 vi.mock("@/lib/search/itunes-hit", () => ({
@@ -25,18 +27,26 @@ vi.mock("@/lib/search/itunes-hit", () => ({
 vi.mock("@/lib/supabase/service-role", () => ({
   serviceRoleClient: vi.fn(),
 }));
+vi.mock("@/lib/rate-limit", () => ({
+  consumeRateLimit: vi.fn().mockResolvedValue({ allowed: true, count: 1, remaining: 2 }),
+  utcDayString: vi.fn(() => "2026-05-16"),
+}));
 
 import { searchFilmForRequest, submitFilmRequest, _fulfillRequest } from "@/lib/actions/film-requests";
 import { searchAppleTv } from "@/lib/search/apple-tv";
-import { searchTmdb } from "@/lib/search/tmdb";
-import { searchFilms, parseFilm } from "film-goblin-worker";
+import { lookupTmdb, searchTmdb } from "@/lib/search/tmdb";
+import { fetchPrices, searchFilms, parseFilm } from "film-goblin-worker";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
+import { consumeRateLimit } from "@/lib/rate-limit";
 
 const mockSearchFilms = vi.mocked(searchFilms);
 const mockParseFilm = vi.mocked(parseFilm);
 const mockSearchAppleTv = vi.mocked(searchAppleTv);
 const mockSearchTmdb = vi.mocked(searchTmdb);
+const mockLookupTmdb = vi.mocked(lookupTmdb);
+const mockFetchPrices = vi.mocked(fetchPrices);
 const mockServiceRoleClient = vi.mocked(serviceRoleClient);
+const mockConsumeRateLimit = vi.mocked(consumeRateLimit);
 
 const ITUNES_HIT = {
   itunes_id: 123, title: "The Fly", director: "David Cronenberg",
@@ -53,6 +63,8 @@ const TMDB_CANDIDATE = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockServiceRoleClient.mockReturnValue({ from: vi.fn(), rpc: vi.fn() } as any);
+  mockConsumeRateLimit.mockResolvedValue({ allowed: true, count: 1, remaining: 2 });
 });
 
 describe("searchFilmForRequest — fallback chain", () => {
@@ -74,6 +86,22 @@ describe("searchFilmForRequest — fallback chain", () => {
     const result = await searchFilmForRequest("The Fly");
 
     expect(result).toEqual({ ok: true, result: { source: "itunes", hit: ITUNES_HIT } });
+    expect(mockConsumeRateLimit).toHaveBeenCalledWith(expect.anything(), {
+      userId: "user-1",
+      key: "film_request_search_miss",
+      limit: 3,
+    });
+    expect(mockSearchTmdb).not.toHaveBeenCalled();
+  });
+
+  it("blocks expensive fallback searches after daily request limit", async () => {
+    mockSearchFilms.mockResolvedValue({ resultCount: 0, results: [] });
+    mockConsumeRateLimit.mockResolvedValue({ allowed: false, count: 3, remaining: 0 });
+
+    const result = await searchFilmForRequest("The Fly");
+
+    expect(result).toEqual({ ok: false, error: "You've reached today's film request limit. Try again tomorrow." });
+    expect(mockSearchAppleTv).not.toHaveBeenCalled();
     expect(mockSearchTmdb).not.toHaveBeenCalled();
   });
 
@@ -173,6 +201,8 @@ describe("submitFilmRequest", () => {
     const filmChain = makeChain({ maybeSingle: vi.fn().mockResolvedValue({ data: { id: "film-abc" }, error: null }) });
     const svc = { from: vi.fn().mockReturnValue(filmChain) } as any;
     mockServiceRoleClient.mockReturnValue(svc);
+    mockFetchPrices.mockResolvedValue({ resultCount: 1, results: [{ kind: "feature-movie" } as any] });
+    mockParseFilm.mockReturnValue(ITUNES_HIT as any);
 
     const result = await submitFilmRequest(BASE_INPUT);
 
@@ -181,6 +211,9 @@ describe("submitFilmRequest", () => {
 
   it("inserts new request when no existing film or request", async () => {
     let filmRequestsCallNum = 0;
+    let filmRequestUsersCallNum = 0;
+    mockFetchPrices.mockResolvedValue({ resultCount: 1, results: [{ kind: "feature-movie" } as any] });
+    mockParseFilm.mockReturnValue(ITUNES_HIT as any);
     const svc = {
       from: vi.fn().mockImplementation((table: string) => {
         if (table === "films") {
@@ -202,6 +235,14 @@ describe("submitFilmRequest", () => {
           };
         }
         if (table === "film_request_users") {
+          filmRequestUsersCallNum++;
+          if (filmRequestUsersCallNum === 1) {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              gte: vi.fn().mockResolvedValue({ count: 0, error: null }),
+            };
+          }
           return { insert: vi.fn().mockResolvedValue({ data: null, error: null }) };
         }
         return {};
@@ -212,6 +253,87 @@ describe("submitFilmRequest", () => {
     const result = await submitFilmRequest(BASE_INPUT);
 
     expect(result).toEqual({ status: "ok" });
+  });
+
+  it("rejects client-supplied iTunes metadata when provider verification fails", async () => {
+    mockFetchPrices.mockResolvedValue({ resultCount: 0, results: [] });
+    mockParseFilm.mockReturnValue(null);
+
+    const result = await submitFilmRequest({ ...BASE_INPUT, title: "Forged Title" });
+
+    expect(result).toEqual({ status: "error", message: "Could not verify that film on iTunes." });
+  });
+
+  it("uses trusted TMDB metadata instead of client-supplied metadata", async () => {
+    let filmRequestUsersCallNum = 0;
+    mockLookupTmdb.mockResolvedValue({
+      ok: true,
+      fields: {
+        itunes_id: null,
+        title: "Trusted TMDB Title",
+        director: "Trusted Director",
+        year: 1977,
+        runtime_min: 100,
+        genre_primary: "Drama",
+        description: "Trusted overview",
+        content_advisory: "PG",
+        artwork_url: "https://image.tmdb.org/trusted.jpg",
+        itunes_url: "",
+        tracking: false,
+        available: true,
+        tmdb_id: 999,
+        theatrical_release_date: "1977-01-01",
+        series_id: null,
+        series_new_name: "",
+        series_order: null,
+      },
+    });
+    const insertMock = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({ data: { id: "req-1" }, error: null }),
+      }),
+    });
+    const svc = {
+      from: vi.fn().mockImplementation((table: string) => {
+        if (table === "films") return { ...makeChain(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
+        if (table === "film_requests") {
+          if (insertMock.mock.calls.length === 0) {
+            return { ...makeChain(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }), insert: insertMock };
+          }
+          return { insert: insertMock };
+        }
+        if (table === "film_request_users") {
+          filmRequestUsersCallNum++;
+          if (filmRequestUsersCallNum === 1) {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              gte: vi.fn().mockResolvedValue({ count: 0, error: null }),
+            };
+          }
+          return { insert: vi.fn().mockResolvedValue({ data: null, error: null }) };
+        }
+        return {};
+      }),
+    } as any;
+    mockServiceRoleClient.mockReturnValue(svc);
+
+    const result = await submitFilmRequest({
+      ...BASE_INPUT,
+      source: "tmdb",
+      needs_itunes_id: true,
+      itunes_id: null,
+      tmdb_id: 999,
+      title: "Forged Client Title",
+      artwork_url: "https://evil.example/poster.jpg",
+    });
+
+    expect(result).toEqual({ status: "ok" });
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({
+      title: "Trusted TMDB Title",
+      artwork_url: "https://image.tmdb.org/trusted.jpg",
+      director: "Trusted Director",
+    }));
   });
 });
 

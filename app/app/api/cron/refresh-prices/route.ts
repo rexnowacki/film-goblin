@@ -20,8 +20,9 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
+    console.error("cron refresh-prices missing required env: DATABASE_URL");
     return NextResponse.json(
-      { error: "DATABASE_URL not configured" },
+      { error: "server misconfigured" },
       { status: 500 },
     );
   }
@@ -42,7 +43,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const message = err instanceof Error ? err.message : String(err);
     console.error("cron refresh-prices failed:", message);
     Sentry.captureException(err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "job failed" }, { status: 500 });
   } finally {
     await client.end().catch(() => {});
   }

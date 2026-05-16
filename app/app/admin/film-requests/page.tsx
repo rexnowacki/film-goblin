@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth/require-admin";
+import { checkAdminAccess } from "@/lib/auth/require-admin";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
-import TopNav from "@/components/TopNav";
+import { redirect } from "next/navigation";
 import FilmRequestActions from "./FilmRequestActions";
 
 export default async function FilmRequestsPage({
@@ -13,7 +13,10 @@ export default async function FilmRequestsPage({
   const showFulfilled = sp.show_fulfilled === "1";
 
   const supabase = await createClient();
-  await requireAdmin(supabase);
+  const access = await checkAdminAccess(supabase);
+  if (access === "not-authed") redirect("/auth/signin");
+  if (access === "not-admin") redirect("/home");
+
   const svc = serviceRoleClient();
 
   const { data: requests } = showFulfilled
@@ -27,10 +30,9 @@ export default async function FilmRequestsPage({
     .eq("status", "fulfilled");
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
-      <TopNav current="admin" />
-      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
-        <div className="container-wide">
+    <div>
+      <section style={{ background: "var(--bone)", color: "var(--void)", border: "3px solid var(--void)", padding: "22px 18px 18px", marginBottom: 20 }} className="grain-light">
+        <div>
           <h1 className="h-display" style={{ fontSize: "clamp(24px, 4vw, 48px)" }}>Film Requests.</h1>
           <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, color: "var(--void)", opacity: 0.7, marginTop: 6 }}>
             {rows.length} {showFulfilled ? "total" : "pending"} request{rows.length !== 1 ? "s" : ""}.
@@ -38,8 +40,8 @@ export default async function FilmRequestsPage({
         </div>
       </section>
 
-      <section style={{ padding: "20px 0 60px" }}>
-        <div className="container-wide" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <section>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 
           <div style={{ marginBottom: 8 }}>
             <a

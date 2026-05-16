@@ -89,6 +89,8 @@ export async function searchUsersForMention(prefix: string): Promise<{ id: strin
   if (q.length < 1) return [];
   const safe = q.replace(/[%_]/g, ""); // strip ilike wildcards from user input
   if (!safe) return [];
+  const user = await getServerUser();
+  if (!user) return [];
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")

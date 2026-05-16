@@ -31,20 +31,26 @@ export interface FeedSearchResults {
 export async function searchFeedTargets(query: string, limit = 5): Promise<FeedSearchResults> {
   const q = query.trim();
   if (q.length < 2) return { users: [], films: [] };
+  const safe = q.replace(/[%_]/g, "");
+  if (safe.length < 2) return { users: [], films: [] };
+  const boundedLimit = Math.max(1, Math.min(limit, 10));
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { users: [], films: [] };
+
   const [users, films] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, username, display_name, avatar_url")
-      .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`)
+      .or(`username.ilike.%${safe}%,display_name.ilike.%${safe}%`)
       .order("username", { ascending: true })
-      .limit(limit),
+      .limit(boundedLimit),
     supabase
       .from("films")
       .select("id, title, year, director, artwork_url")
-      .or(`title.ilike.%${q}%,director.ilike.%${q}%`)
+      .or(`title.ilike.%${safe}%,director.ilike.%${safe}%`)
       .order("title", { ascending: true })
-      .limit(limit),
+      .limit(boundedLimit),
   ]);
   return {
     users: (users.data ?? []) as FeedSearchUser[],

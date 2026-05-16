@@ -36,6 +36,6 @@ export async function GET(request: Request): Promise<NextResponse> {
     const message = err instanceof Error ? err.message : String(err);
     console.error("cron theater-alerts failed:", message);
     Sentry.captureException(err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "job failed" }, { status: 500 });
   }
 }

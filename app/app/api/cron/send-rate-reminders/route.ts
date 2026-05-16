@@ -11,7 +11,8 @@ function unauthorized() {
 }
 
 function missing(envVar: string) {
-  return NextResponse.json({ error: `${envVar} not configured` }, { status: 500 });
+  console.error(`cron send-rate-reminders missing required env: ${envVar}`);
+  return NextResponse.json({ error: "server misconfigured" }, { status: 500 });
 }
 
 // Find users with at least one watched film that has no verdict on ANY of
@@ -127,7 +128,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const message = err instanceof Error ? err.message : String(err);
     console.error("cron send-rate-reminders failed:", message);
     Sentry.captureException(err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "job failed" }, { status: 500 });
   } finally {
     await client.end().catch(() => {});
   }
