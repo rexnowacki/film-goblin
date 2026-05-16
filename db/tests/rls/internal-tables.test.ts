@@ -87,7 +87,12 @@ describe("RLS: internal invite and cron tables", () => {
       await expect(
         db.client.query(`SELECT public.burn_invite_code('missing-code', $1)`, [fx.userA.id]),
       ).rejects.toThrow(/permission denied/i);
+    } finally {
+      await rollback(db.client);
+    }
 
+    await beginAs(db.client, fx.userA.id, "authenticated");
+    try {
       await expect(
         db.client.query(`SELECT public.consume_app_rate_limit($1, 'client-limit', 3, current_date)`, [fx.userA.id]),
       ).rejects.toThrow(/permission denied/i);

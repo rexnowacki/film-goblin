@@ -65,7 +65,7 @@ describe("GET /api/cron/send-notifications", () => {
     const res = await GET(makeRequest("Bearer test-secret"));
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toMatch(/DATABASE_URL/);
+    expect(body.error).toBe("server misconfigured");
   });
 
   it("returns 500 when RESEND_API_KEY is missing", async () => {
@@ -73,7 +73,7 @@ describe("GET /api/cron/send-notifications", () => {
     const res = await GET(makeRequest("Bearer test-secret"));
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toMatch(/RESEND_API_KEY/);
+    expect(body.error).toBe("server misconfigured");
   });
 
   it("returns 200 with digest counters on happy path and runs the 30-day cleanup", async () => {
@@ -101,7 +101,7 @@ describe("GET /api/cron/send-notifications", () => {
     const res = await GET(makeRequest("Bearer test-secret"));
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toMatch(/notifier boom/);
+    expect(body.error).toBe("job failed");
     expect(endMock).toHaveBeenCalledTimes(1);
   });
 });

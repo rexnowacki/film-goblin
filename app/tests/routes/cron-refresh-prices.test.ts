@@ -59,7 +59,7 @@ describe("GET /api/cron/refresh-prices", () => {
     const res = await GET(makeRequest("Bearer test-secret"));
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toMatch(/DATABASE_URL/);
+    expect(body.error).toBe("server misconfigured");
   });
 
   it("connects, runs the pipeline, and returns the digest snapshot on success", async () => {
@@ -113,7 +113,7 @@ describe("GET /api/cron/refresh-prices", () => {
     const res = await GET(makeRequest("Bearer test-secret"));
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toMatch(/pipeline boom/);
+    expect(body.error).toBe("job failed");
     expect(endMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -101,20 +101,19 @@ describe("trigger: coven_requests accept → coven_members + activity", () => {
 });
 
 describe("trigger: activity fan-out", () => {
-  it("lists insert emits list_created activity", async () => {
+  it("lists insert does not emit list_created activity", async () => {
     const fx = await seedFixtures(db.client);
     await beginAs(db.client, null, "service_role");
     try {
-      const r = await db.client.query<{ id: string }>(
+      await db.client.query<{ id: string }>(
         `INSERT INTO lists (owner_user_id, title) VALUES ($1, 'Grimoire') RETURNING id`,
         [fx.userA.id]
       );
       const a = await db.client.query(
-        `SELECT kind, payload FROM activity WHERE actor_user_id = $1`, [fx.userA.id]
+        `SELECT kind, payload FROM activity WHERE actor_user_id = $1 AND kind = 'list_created'`,
+        [fx.userA.id]
       );
-      expect(a.rowCount).toBe(1);
-      expect(a.rows[0].kind).toBe("list_created");
-      expect(a.rows[0].payload.list_id).toBe(r.rows[0].id);
+      expect(a.rowCount).toBe(0);
     } finally { await rollback(db.client); }
   });
 
