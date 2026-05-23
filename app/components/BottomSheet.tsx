@@ -8,9 +8,11 @@ interface Props {
   onClose: () => void;
   title: React.ReactNode;
   children: React.ReactNode;
+  belowTopNav?: boolean;
+  panelClassName?: string;
 }
 
-export default function BottomSheet({ open, onClose, title, children }: Props) {
+export default function BottomSheet({ open, onClose, title, children, belowTopNav = false, panelClassName }: Props) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
@@ -65,15 +67,15 @@ export default function BottomSheet({ open, onClose, title, children }: Props) {
 
   return createPortal(
     <div
-      className="bottom-sheet-overlay"
+      className={belowTopNav ? "bottom-sheet-overlay bottom-sheet-overlay--below-top-nav" : "bottom-sheet-overlay"}
       onClick={(e) => { e.stopPropagation(); onClose(); }}
       role="dialog"
-      aria-modal="true"
+      aria-modal={belowTopNav ? undefined : true}
       aria-labelledby={titleId}
     >
       <div
         ref={sheetRef}
-        className="bottom-sheet-panel"
+        className={panelClassName ? `bottom-sheet-panel ${panelClassName}` : "bottom-sheet-panel"}
         tabIndex={-1}
         onClick={e => e.stopPropagation()}
       >

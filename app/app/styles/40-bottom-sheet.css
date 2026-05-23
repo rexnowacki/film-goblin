@@ -14,6 +14,12 @@
   justify-content: center;
   animation: bottom-sheet-fade-in 150ms ease-out;
 }
+.bottom-sheet-overlay--below-top-nav {
+  --fg-top-nav-height: 67px;
+  --fg-bottom-nav-height: 64px;
+  top: calc(var(--fg-top-nav-height) + env(safe-area-inset-top, 0px));
+  z-index: 19;
+}
 .bottom-sheet-panel {
   background-color: #141414;
   color: var(--bone);
@@ -30,6 +36,9 @@
   position: relative;
   z-index: 1;
   animation: bottom-sheet-slide-up 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bottom-sheet-panel--thread {
+  max-width: min(920px, calc(100vw - 64px));
 }
 .bottom-sheet-panel:focus {
   outline: none;
@@ -61,10 +70,37 @@
 }
 .bottom-sheet-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding: 4px 0 24px;
+}
+.bottom-sheet-overlay--below-top-nav .bottom-sheet-panel {
+  max-height: 100%;
+}
+.bottom-sheet-overlay--below-top-nav .bottom-sheet-body {
+  display: flex;
+  flex-direction: column;
+}
+.bottom-sheet-overlay--below-top-nav .thread-sheet {
+  height: 100%;
+}
+
+.thread-sheet {
+  display: flex;
+  flex-direction: column;
+  height: 70dvh;
+  min-height: 0;
+}
+
+@media (max-width: 720px) {
+  .bottom-sheet-panel--thread {
+    max-width: 100%;
+  }
+  .bottom-sheet-overlay--below-top-nav {
+    bottom: calc(var(--fg-bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 @keyframes bottom-sheet-fade-in {

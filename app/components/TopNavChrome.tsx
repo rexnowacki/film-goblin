@@ -17,12 +17,13 @@ interface Props {
   user: boolean;
   profile: ProfileShape | null;
   isAdmin: boolean;
+  userId: string | null;
   unreadNotifCount: number;
   notifItems: NotificationFeedItem[];
   showBack?: boolean;
 }
 
-export default function TopNavChrome({ items, current, user, profile, isAdmin, unreadNotifCount, notifItems, showBack }: Props) {
+export default function TopNavChrome({ items, current, user, profile, isAdmin, userId, unreadNotifCount, notifItems, showBack }: Props) {
   const [addFilmOpen, setAddFilmOpen] = useState(false);
   return (
     <>
@@ -57,7 +58,7 @@ export default function TopNavChrome({ items, current, user, profile, isAdmin, u
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {user ? (
             <>
-              <NotificationBell unreadCount={unreadNotifCount} items={notifItems} />
+              <NotificationBell userId={userId} unreadCount={unreadNotifCount} items={notifItems} />
               <UserMenu
                 username={profile?.username ?? "you"}
                 displayName={profile?.username ?? "You"}

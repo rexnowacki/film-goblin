@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import { searchFeedTargets, type FeedSearchUser, type FeedSearchFilm } from "@/lib/actions/feed-search";
+import { useCachedTypeahead } from "@/lib/hooks/useCachedTypeahead";
 
 interface ActiveFilter {
   kind: "actor" | "film";
@@ -25,27 +26,17 @@ export default function FeedSearch({ active }: Props) {
   const [open, setOpen] = useState(false);
   const [, startTransition] = useTransition();
   const wrapRef = useRef<HTMLDivElement>(null);
+  const emptyResults = useMemo(() => ({ users: [] as FeedSearchUser[], films: [] as FeedSearchFilm[] }), []);
+  const results = useCachedTypeahead(query, {
+    search: searchFeedTargets,
+    filter: filterFeedSearchResults,
+    empty: emptyResults,
+  });
 
   useEffect(() => {
-    const q = query.trim();
-    if (q.length < 2) {
-      setUsers([]);
-      setFilms([]);
-      return;
-    }
-    let cancelled = false;
-    const t = setTimeout(async () => {
-      const res = await searchFeedTargets(q);
-      if (!cancelled) {
-        setUsers(res.users);
-        setFilms(res.films);
-      }
-    }, 180);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [query]);
+    setUsers(results.users);
+    setFilms(results.films);
+  }, [results]);
 
   useEffect(() => {
     if (!open) return;
@@ -149,4 +140,26 @@ export default function FeedSearch({ active }: Props) {
       )}
     </div>
   );
+}
+
+function filterUsers(users: FeedSearchUser[], query: string) {
+  return users.filter(u =>
+    u.username.toLowerCase().includes(query) ||
+    (u.display_name?.toLowerCase().includes(query) ?? false)
+  );
+}
+
+function filterFilms(films: FeedSearchFilm[], query: string) {
+  return films.filter(f =>
+    f.title.toLowerCase().includes(query) ||
+    f.director.toLowerCase().includes(query) ||
+    String(f.year).includes(query)
+  );
+}
+
+function filterFeedSearchResults(results: { users: FeedSearchUser[]; films: FeedSearchFilm[] }, query: string) {
+  return {
+    users: filterUsers(results.users, query),
+    films: filterFilms(results.films, query),
+  };
 }

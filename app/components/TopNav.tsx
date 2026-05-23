@@ -64,6 +64,7 @@ export default async function TopNav({ current, showBack }: TopNavProps) {
       user={Boolean(user)}
       profile={profile}
       isAdmin={isAdmin}
+      userId={user?.id ?? null}
       unreadNotifCount={unreadNotifCount}
       notifItems={notifItems}
       showBack={showBack}

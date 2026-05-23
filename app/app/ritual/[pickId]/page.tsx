@@ -11,10 +11,13 @@ export const dynamic = "force-dynamic";
 
 export default async function RitualByIdPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ pickId: string }>;
+  searchParams: Promise<{ message?: string }>;
 }) {
   const { pickId: pickIdRaw } = await params;
+  const { message } = await searchParams;
   const pickId = Number(pickIdRaw);
   if (!Number.isInteger(pickId) || pickId <= 0) notFound();
 
@@ -28,10 +31,26 @@ export default async function RitualByIdPage({
   ]);
   if (!pick) notFound();
 
-  // If this IS the active pick, redirect to /ritual (canonical URL).
-  if (active && active.pick_id === pickId) redirect("/ritual");
+  // If this IS the active pick, redirect to /ritual (canonical URL), preserving
+  // a targeted message highlight from notification links.
+  if (active && active.pick_id === pickId) {
+    redirect(message ? `/ritual?message=${encodeURIComponent(message)}` : "/ritual");
+  }
+  if (new Date(pick.effective_at).getTime() > Date.now()) notFound();
 
   const messages = await getRitualMessages(supabase, pickId);
+  const [{ data: viewer }, { data: staffRow }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, username, avatar_url, display_name")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("staff")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
   const archived = true;
 
   return (
@@ -43,8 +62,10 @@ export default async function RitualByIdPage({
         archived={archived}
         initialMessages={messages}
         currentUserId={user.id}
-        viewerAvatarUrl={null}
-        viewerDisplayName={null}
+        viewerUsername={viewer?.username ?? null}
+        viewerAvatarUrl={viewer?.avatar_url ?? null}
+        viewerDisplayName={viewer?.display_name ?? null}
+        viewerIsAdmin={staffRow?.role === "admin"}
         header={<RitualHeader pick={pick} archived={archived} />}
       />
 

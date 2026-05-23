@@ -17,11 +17,18 @@ export default async function RitualPage() {
   const supabase = await createClient();
   const pick = await getActiveRitualPick(supabase);
   const messages = pick ? await getRitualMessages(supabase, pick.pick_id) : [];
-  const { data: viewer } = await supabase
-    .from("profiles")
-    .select("id, avatar_url, display_name")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: viewer }, { data: staffRow }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, username, avatar_url, display_name")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("staff")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
 
   return (
     <div className="ritual-shell">
@@ -33,8 +40,10 @@ export default async function RitualPage() {
           archived={false}
           initialMessages={messages}
           currentUserId={user.id}
+          viewerUsername={viewer?.username ?? null}
           viewerAvatarUrl={viewer?.avatar_url ?? null}
           viewerDisplayName={viewer?.display_name ?? null}
+          viewerIsAdmin={staffRow?.role === "admin"}
           header={<RitualHeader pick={pick} archived={false} />}
         />
       ) : (

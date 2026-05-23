@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Avatar from "../Avatar";
+import { useCachedTypeahead } from "@/lib/hooks/useCachedTypeahead";
 
 export interface MentionCandidate {
   id: string;
@@ -35,7 +36,7 @@ export default function RitualComposer({
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const [mentionState, setMentionState] = useState<{
     active: boolean;
@@ -54,7 +55,7 @@ export default function RitualComposer({
     return { startPos: i, prefix };
   }
 
-  function onChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function onChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const v = e.target.value;
     setBody(v);
     const caret = e.target.selectionStart ?? v.length;
@@ -66,26 +67,33 @@ export default function RitualComposer({
     }
   }
 
+  const mentionQuery = mentionState.active ? mentionState.prefix : "";
+  const emptyMentionResults = useMemo<MentionCandidate[]>(() => [], []);
+  const cachedMentionCandidates = useCachedTypeahead(mentionQuery, {
+    minLength: 1,
+    slowDelayMs: 120,
+    fastDelayMs: 80,
+    search: lookupMentions,
+    filter: filterMentionCandidates,
+    empty: emptyMentionResults,
+  });
+
   useEffect(() => {
-    if (!mentionState.active) return;
-    if (mentionState.prefix.length < 1) {
-      setMentionState(s => s.active ? { ...s, candidates: [], selectedIdx: 0 } : s);
-      return;
-    }
-    let cancelled = false;
-    const t = setTimeout(async () => {
-      const results = await lookupMentions(mentionState.prefix);
-      if (cancelled) return;
-      setMentionState(s => s.active ? { ...s, candidates: results, selectedIdx: 0 } : s);
-    }, 120);
-    return () => { cancelled = true; clearTimeout(t); };
-  }, [mentionState.active, mentionState.prefix, lookupMentions]);
+    setMentionState(s => s.active ? { ...s, candidates: cachedMentionCandidates, selectedIdx: 0 } : s);
+  }, [cachedMentionCandidates]);
+
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "0px";
+    el.style.height = `${Math.min(el.scrollHeight, 112)}px`;
+  }, [body]);
 
   function applyMention(c: MentionCandidate) {
     const before = body.slice(0, mentionState.startPos);
     const caret = inputRef.current?.selectionStart ?? body.length;
     const after = body.slice(caret);
-    const insertion = `@${c.username} `;
+    const insertion = `@${c.username}${after.length > 0 && /^[\s.,!?;:)]/.test(after) ? "" : " "}`;
     const next = before + insertion + after;
     setBody(next);
     setMentionState({ active: false, prefix: "", candidates: [], selectedIdx: 0, startPos: -1 });
@@ -130,7 +138,7 @@ export default function RitualComposer({
     }
   }
 
-  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (mentionState.active && mentionState.candidates.length > 0) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
@@ -153,7 +161,7 @@ export default function RitualComposer({
         return;
       }
     }
-    if (e.key === "Enter" && canSend) {
+    if (e.key === "Enter" && !e.shiftKey && canSend) {
       e.preventDefault();
       void send();
     }
@@ -206,8 +214,8 @@ export default function RitualComposer({
                 ) : (
                   <div className="ritual-mention-item__avatar" aria-hidden="true" />
                 )}
-                <span className="ritual-mention-item__handle">@{c.username}</span>
-                {c.display_name && <span className="ritual-mention-item__name">{c.display_name}</span>}
+                <span className="ritual-mention-item__handle">@{highlightMatch(c.username, mentionState.prefix)}</span>
+                {c.display_name && <span className="ritual-mention-item__name">{highlightMatch(c.display_name, mentionState.prefix)}</span>}
               </button>
             ))}
           </div>
@@ -219,15 +227,15 @@ export default function RitualComposer({
           size={32}
           url={viewerAvatarUrl}
         />
-        <div className="composer-pill">
-          <input
+        <div className="composer-pill ritual-composer-pill">
+          <textarea
             ref={inputRef}
-            type="text"
             value={body}
             onChange={onChange}
             onKeyDown={onKeyDown}
             placeholder="Speak into the circle…"
             maxLength={MAX + 1}
+            rows={2}
           />
           <span className={`composer-counter ${overLimit ? "over" : ""}`}>
             {trimmed.length}/{MAX}
@@ -253,5 +261,26 @@ function SendIcon() {
       <path d="M8 13V3" />
       <path d="M3 8l5-5 5 5" />
     </svg>
+  );
+}
+
+function filterMentionCandidates(candidates: MentionCandidate[], prefix: string): MentionCandidate[] {
+  return candidates.filter(c =>
+    c.username.toLowerCase().includes(prefix) ||
+    (c.display_name?.toLowerCase().includes(prefix) ?? false)
+  );
+}
+
+function highlightMatch(text: string, rawQuery: string): React.ReactNode {
+  const query = rawQuery.trim();
+  if (!query) return text;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="ritual-mention-item__match">{text.slice(idx, idx + query.length)}</mark>
+      {text.slice(idx + query.length)}
+    </>
   );
 }

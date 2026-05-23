@@ -1,30 +1,17 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useTransition } from "react";
-import { signInWithGoogle } from "@/lib/actions/auth";
 
 export default function GoogleSignInButton() {
   const params = useSearchParams();
-  const [pending, start] = useTransition();
-
-  function onClick() {
-    start(async () => {
-      try {
-        const redirect = params.get("redirect") || undefined;
-        const { url } = await signInWithGoogle(redirect);
-        window.location.href = url;
-      } catch (e) {
-        console.error("Google sign-in failed:", e);
-      }
-    });
-  }
+  const redirect = params.get("redirect");
+  const href = redirect
+    ? `/api/auth/google?next=${encodeURIComponent(redirect)}`
+    : "/api/auth/google";
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={pending}
+    <a
+      href={href}
       style={{
         width: "100%",
         display: "flex",
@@ -41,6 +28,7 @@ export default function GoogleSignInButton() {
         letterSpacing: "0.1em",
         textTransform: "uppercase",
         cursor: "pointer",
+        textDecoration: "none",
       }}
     >
       <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
@@ -49,7 +37,7 @@ export default function GoogleSignInButton() {
         <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.4-4.5 2.4-7.2 2.4-5.2 0-9.6-3.3-11.2-8l-6.5 5C9.6 39.7 16.2 44 24 44z"/>
         <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.2 5.2c-.4.4 6.6-4.8 6.6-14.8 0-1.3-.1-2.6-.4-3.9z"/>
       </svg>
-      {pending ? "Redirecting…" : "Continue with Google"}
-    </button>
+      Continue with Google
+    </a>
   );
 }

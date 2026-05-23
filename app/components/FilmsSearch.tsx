@@ -1,23 +1,29 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 export default function FilmsSearch() {
   const router = useRouter();
   const params = useSearchParams();
   const [q, setQ] = useState(params.get("q") ?? "");
   const [, start] = useTransition();
+  const lastHrefRef = useRef(`/films?${params.toString()}`);
 
-  function update(next: string) {
-    setQ(next);
-    start(() => {
+  useEffect(() => {
+    const t = setTimeout(() => {
       const p = new URLSearchParams(params);
+      const next = q.trim();
       if (next) p.set("q", next);
       else p.delete("q");
-      router.push(`/films?${p.toString()}`);
-    });
-  }
+      const qs = p.toString();
+      const href = qs ? `/films?${qs}` : "/films";
+      if (href === lastHrefRef.current) return;
+      lastHrefRef.current = href;
+      start(() => router.replace(href, { scroll: false }));
+    }, 220);
+    return () => clearTimeout(t);
+  }, [params, q, router, start]);
 
   return (
     <div className="search-pill">
@@ -34,7 +40,7 @@ export default function FilmsSearch() {
         spellCheck={false}
         aria-label="Search films"
         value={q}
-        onChange={e => update(e.target.value)}
+        onChange={e => setQ(e.target.value)}
         placeholder="Title, director, year, genre…"
       />
     </div>

@@ -56,21 +56,30 @@ export async function upsertShowingsForTheater(
   if (theaterErr) throw theaterErr;
 
   const hashes = hashesForScrapedShowings(scraped);
+  const uniqueScraped: { showing: ScrapedTheaterShowing; hash: string }[] = [];
+  const seenHashes = new Set<string>();
+  for (let i = 0; i < scraped.length; i++) {
+    const hash = hashes[i];
+    if (seenHashes.has(hash)) continue;
+    seenHashes.add(hash);
+    uniqueScraped.push({ showing: scraped[i], hash });
+  }
+  const uniqueHashes = uniqueScraped.map(item => item.hash);
   const existing = hashes.length
     ? await client
         .from("theater_showings")
         .select("id, source_hash")
         .eq("theater_id", theater.id)
-        .in("source_hash", hashes)
+        .in("source_hash", uniqueHashes)
     : { data: [], error: null };
   if (existing.error) throw existing.error;
   const existingHashes = new Set((existing.data ?? []).map((row) => row.source_hash));
 
-  const rows = scraped.map((showing, index) => ({
+  const rows = uniqueScraped.map(({ showing, hash }) => ({
     theater_id: theater.id,
     source_url: showing.sourceUrl,
     source_id: showing.sourceId ?? null,
-    source_hash: hashes[index],
+    source_hash: hash,
     title: showing.title,
     normalized_title: normalizeTitle(showing.title),
     starts_at: showing.startsAt ?? null,
@@ -106,7 +115,7 @@ export async function upsertShowingsForTheater(
     .eq("is_active", true);
   if (active.error) throw active.error;
   const staleIds = (active.data ?? [])
-    .filter((row) => !hashes.includes(row.source_hash))
+    .filter((row) => !uniqueHashes.includes(row.source_hash))
     .filter((row) => row.starts_on == null || row.starts_on < today)
     .map((row) => row.id);
   if (staleIds.length > 0) {
@@ -119,8 +128,8 @@ export async function upsertShowingsForTheater(
   }
 
   return {
-    inserted: hashes.filter((hash) => !existingHashes.has(hash)).length,
-    updated: hashes.filter((hash) => existingHashes.has(hash)).length,
+    inserted: uniqueHashes.filter((hash) => !existingHashes.has(hash)).length,
+    updated: uniqueHashes.filter((hash) => existingHashes.has(hash)).length,
     staleMarkedInactive,
     showingIds,
   };
