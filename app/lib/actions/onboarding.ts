@@ -17,6 +17,7 @@ export interface OnboardingPayload {
 }
 
 const USERNAME_RE = /^[a-z0-9._]+$/;
+const DEFAULT_COVEN_USERNAME = "cthulhu.lemon";
 
 export async function _completeOnboarding(client: Client, p: OnboardingPayload): Promise<void> {
   const { data: { user } } = await client.auth.getUser();
@@ -52,6 +53,8 @@ export async function _completeOnboarding(client: Client, p: OnboardingPayload):
     if (fErr && fErr.code !== "23505") throw fErr;
   }
 
+  await ensureDefaultCovenBond(user.id);
+
   const inviteUsername = await readInviteCookie();
   if (inviteUsername) {
     try {
@@ -60,6 +63,24 @@ export async function _completeOnboarding(client: Client, p: OnboardingPayload):
       await clearInviteCookie();
     }
   }
+}
+
+async function ensureDefaultCovenBond(newUserId: string): Promise<void> {
+  const admin = serviceRoleClient();
+  const { data: defaultMember, error: lookupError } = await admin
+    .from("profiles")
+    .select("id")
+    .ilike("username", DEFAULT_COVEN_USERNAME)
+    .maybeSingle();
+  if (lookupError) throw lookupError;
+  if (!defaultMember || defaultMember.id === newUserId) return;
+
+  const user_a_id = defaultMember.id < newUserId ? defaultMember.id : newUserId;
+  const user_b_id = defaultMember.id < newUserId ? newUserId : defaultMember.id;
+  const { error } = await admin
+    .from("coven_members")
+    .insert({ user_a_id, user_b_id });
+  if (error && error.code !== "23505") throw error;
 }
 
 async function maybeCreateInviteCovenRequest(newUserId: string, inviterUsername: string): Promise<void> {

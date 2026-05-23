@@ -202,5 +202,41 @@ describe("RLS: notifications", () => {
         });
       } finally { await rollback(db.client); }
     });
+
+    it("goblin_pick_messages INSERT emits one goblin_summon per mentioned non-author", async () => {
+      await beginAs(db.client, null, "service_role");
+      const { rows: pickRows } = await db.client.query(
+        `INSERT INTO goblin_pick (film_id, effective_at)
+         VALUES ($1, now() - interval '1 minute')
+         RETURNING id`,
+        [fx.filmId]
+      );
+      const pickId = pickRows[0].id;
+      const { rows: msgRows } = await db.client.query(
+        `INSERT INTO goblin_pick_messages (pick_id, user_id, body, mentions)
+         VALUES ($1, $2, '@b @b @self', ARRAY[$3::uuid, $3::uuid, $2::uuid])
+         RETURNING id`,
+        [pickId, fx.userA.id, fx.userB.id]
+      );
+      const messageId = msgRows[0].id;
+      await commit(db.client);
+
+      await beginAs(db.client, null, "service_role");
+      try {
+        const r = await db.client.query(
+          `SELECT user_id, kind, actor_user_id, payload
+           FROM notifications
+           WHERE kind = 'goblin_summon'`
+        );
+        expect(r.rowCount).toBe(1);
+        expect(r.rows[0].user_id).toBe(fx.userB.id);
+        expect(r.rows[0].actor_user_id).toBe(fx.userA.id);
+        expect(r.rows[0].payload).toEqual({
+          pick_id: pickId,
+          message_id: messageId,
+          body: "@b @b @self",
+        });
+      } finally { await rollback(db.client); }
+    });
   });
 });

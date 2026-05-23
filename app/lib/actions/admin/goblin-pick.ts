@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { serviceRoleClient } from "@/lib/supabase/service-role";
 import type { Database } from "@/lib/supabase/types";
 
 type Result = { ok: true } | { ok: false; error: string };
@@ -69,6 +70,32 @@ export async function deleteGoblinPick(id: number): Promise<Result> {
   const { error } = await supabase.from("goblin_pick").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
   revalidatePath("/home");
+  revalidatePath("/admin/goblin-pick");
+  return { ok: true };
+}
+
+export async function clearGoblinPickChat(id: number): Promise<Result> {
+  const supabase = await createClient();
+  await requireAdminUser(supabase);
+
+  const service = serviceRoleClient();
+  const { error: notificationError } = await service
+    .from("notifications")
+    .delete()
+    .eq("kind", "goblin_summon")
+    .contains("payload", { pick_id: id });
+  if (notificationError) return { ok: false, error: notificationError.message };
+
+  const { error } = await service
+    .from("goblin_pick_messages")
+    .delete()
+    .eq("pick_id", id);
+
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/home");
+  revalidatePath("/ritual");
+  revalidatePath(`/ritual/${id}`);
+  revalidatePath("/ritual/archive");
   revalidatePath("/admin/goblin-pick");
   return { ok: true };
 }

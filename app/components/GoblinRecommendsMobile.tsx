@@ -1,32 +1,46 @@
 import Link from "next/link";
 import FilmPoster from "@/components/FilmPoster";
 import GoblinWhisperButton from "@/components/GoblinWhisperButton";
+import GoblinRitualLauncher from "@/components/GoblinRitualLauncher";
 import type { GoblinPickFilm } from "@/lib/queries/goblin-pick";
+import type { RitualMessage, RitualPick } from "@/lib/queries/ritual";
 
-// Mobile-only variant of GoblinRecommends. Sits above the feed, full-width,
-// poster left + meta/whisper right. Wrapper is .mobile-only so desktop never sees it.
-export default function GoblinRecommendsMobile({ film }: { film: GoblinPickFilm | null }) {
+// Compact mobile-only feed insert. Desktop keeps the full right-rail card.
+interface Props {
+  film: GoblinPickFilm | null;
+  ritual: {
+    pick: RitualPick | null;
+    initialMessages: RitualMessage[];
+    currentUserId: string | null;
+    viewerUsername: string | null;
+    viewerAvatarUrl: string | null;
+    viewerDisplayName: string | null;
+    viewerIsAdmin?: boolean;
+  };
+}
+
+export default function GoblinRecommendsMobile({ film, ritual }: Props) {
   if (!film) return null;
 
   return (
     <section
       className="mobile-only"
       style={{
-        marginBottom: 24,
-        padding: 14,
-        border: "1px solid #2a2a2a",
-        background: "var(--void-2, #141414)",
+        padding: "12px 0",
+        borderTop: "1px solid #2a2a2a",
+        borderBottom: "1px solid #2a2a2a",
+        background: "rgba(255, 255, 255, 0.018)",
         position: "relative",
       }}
     >
       <div
         className="eyebrow"
-        style={{ color: "var(--accent)", marginBottom: 12, letterSpacing: "0.12em", fontSize: 10 }}
+        style={{ color: "var(--accent)", marginBottom: 8, letterSpacing: "0.12em", fontSize: 9 }}
       >
-        The Goblin Recommends
+        Goblin Pick
       </div>
 
-      <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
         <Link
           href={`/film/${film.id}`}
           style={{ display: "block", flexShrink: 0, textDecoration: "none" }}
@@ -34,8 +48,8 @@ export default function GoblinRecommendsMobile({ film }: { film: GoblinPickFilm 
           <FilmPoster
             film={film}
             size="sm"
-            imageSizes="120px"
-            style={{ width: 110, height: 165, aspectRatio: "2 / 3" }}
+            imageSizes="72px"
+            style={{ width: 64, height: 96, aspectRatio: "2 / 3" }}
           />
         </Link>
 
@@ -44,10 +58,10 @@ export default function GoblinRecommendsMobile({ film }: { film: GoblinPickFilm 
             <div
               className="h-display"
               style={{
-                fontSize: 22,
+                fontSize: 18,
                 lineHeight: 1.1,
                 color: "var(--bone)",
-                marginBottom: 4,
+                marginBottom: 3,
                 wordBreak: "break-word",
               }}
             >
@@ -58,52 +72,42 @@ export default function GoblinRecommendsMobile({ film }: { film: GoblinPickFilm 
             style={{
               fontFamily: "var(--font-serif)",
               fontStyle: "italic",
-              fontSize: 12,
+              fontSize: 11,
               color: "var(--muted)",
-              marginBottom: 10,
+              marginBottom: 8,
             }}
           >
             {film.director} · {film.year}
           </div>
-          <a
-            href={film.itunes_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontFamily: "var(--font-ui)",
-              fontSize: 11,
-              color: "var(--accent)",
-              textDecoration: "none",
-              letterSpacing: "0.06em",
-              display: "inline-block",
-            }}
-          >
-            Watch on Apple TV →
-          </a>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <a
+              href={film.itunes_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: 10,
+                color: "var(--accent)",
+                textDecoration: "none",
+                letterSpacing: "0.06em",
+                display: "inline-block",
+              }}
+            >
+              Apple TV →
+            </a>
+            <GoblinRitualLauncher
+              pick={ritual.pick}
+              initialMessages={ritual.initialMessages}
+              currentUserId={ritual.currentUserId}
+              viewerUsername={ritual.viewerUsername}
+              viewerAvatarUrl={ritual.viewerAvatarUrl}
+              viewerDisplayName={ritual.viewerDisplayName}
+              viewerIsAdmin={ritual.viewerIsAdmin}
+              variant="mobile"
+            />
+          </div>
         </div>
       </div>
-
-      <Link
-        href="/ritual"
-        style={{
-          display: "block",
-          marginTop: 14,
-          padding: "12px 16px",
-          textAlign: "center",
-          fontFamily: "var(--font-ui)",
-          fontSize: 13,
-          fontWeight: 700,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: "var(--void)",
-          background: "var(--accent)",
-          textDecoration: "none",
-          border: "2px solid var(--void)",
-          boxShadow: "3px 3px 0 var(--void)",
-        }}
-      >
-        Join the Ritual →
-      </Link>
 
       {film.whisper_text && (
         <GoblinWhisperButton

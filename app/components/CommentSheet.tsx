@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import BottomSheet from "./BottomSheet";
+import ThreadSheet from "./ThreadSheet";
 import CommentList from "./CommentList";
 import CommentComposer from "./CommentComposer";
 import { addActivityComment, deleteActivityComment } from "@/lib/actions/activity-comments";
@@ -138,8 +138,8 @@ export default function CommentSheet({
   );
 
   return (
-    <BottomSheet open={open} onClose={onClose} title={title}>
-      <div style={{ display: "flex", flexDirection: "column", height: "70dvh" }}>
+    <ThreadSheet open={open} onClose={onClose} title={title}>
+      <>
         <div style={{ flex: 1, overflowY: "auto", paddingBottom: 8 }}>
           <CommentList
             items={items}
@@ -167,7 +167,7 @@ export default function CommentSheet({
             Sign in to comment.
           </div>
         )}
-      </div>
-    </BottomSheet>
+      </>
+    </ThreadSheet>
   );
 }

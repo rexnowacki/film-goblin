@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdminUser } from "@/lib/auth/require-admin";
 import { getServerUser } from "@/lib/supabase/cached";
+import { serviceRoleClient } from "@/lib/supabase/service-role";
 import { parseMentionUsernames } from "@/lib/ritual/mentions";
 
 const MAX_BODY = 1000;
@@ -46,8 +48,10 @@ export async function postRitualMessage(body: string): Promise<Result> {
     const { data: profs } = await supabase
       .from("profiles")
       .select("id, username")
-      .in("username", usernames);
+      .or(usernames.map(u => `username.ilike.${u}`).join(","));
+    const wanted = new Set(usernames);
     mentionIds = (profs ?? [])
+      .filter(p => wanted.has(p.username.toLowerCase()))
       .map(p => p.id)
       .filter(id => id !== user.id);
   }
@@ -99,4 +103,49 @@ export async function searchUsersForMention(prefix: string): Promise<{ id: strin
     .order("username", { ascending: true })
     .limit(8);
   return data ?? [];
+}
+
+export async function adminDeleteRitualMessage(messageId: string): Promise<Result> {
+  const supabase = await createClient();
+  await requireAdminUser(supabase);
+
+  const service = serviceRoleClient();
+  const { data: message, error: lookupError } = await service
+    .from("goblin_pick_messages")
+    .select("id, pick_id, body, mentions, created_at")
+    .eq("id", messageId)
+    .maybeSingle();
+
+  if (lookupError) return { ok: false, error: lookupError.message };
+  if (!message) return { ok: false, error: "Message not found." };
+
+  const { error: notificationError } = await service
+    .from("notifications")
+    .delete()
+    .eq("kind", "goblin_summon")
+    .contains("payload", { message_id: messageId });
+  if (notificationError) return { ok: false, error: notificationError.message };
+
+  const { error } = await service
+    .from("goblin_pick_messages")
+    .delete()
+    .eq("id", messageId);
+
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/home");
+  revalidatePath("/ritual");
+  revalidatePath(`/ritual/${message.pick_id}`);
+  revalidatePath("/ritual/archive");
+
+  return {
+    ok: true,
+    message: {
+      id: message.id,
+      pick_id: message.pick_id,
+      body: message.body,
+      mentions: message.mentions ?? [],
+      created_at: message.created_at,
+    },
+  };
 }

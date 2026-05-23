@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import FeedRow from "./activity/FeedRow";
 import FeedCardSkeleton from "./skeletons/FeedCardSkeleton";
@@ -36,9 +36,10 @@ interface Props {
   initialCursor: string | null;
   initialDone: boolean;
   filters: { actorId?: string; filmId?: string };
+  children?: ReactNode;
 }
 
-export default function FeedTabs({ initialItems, initialCursor, initialDone, filters }: Props) {
+export default function FeedTabs({ initialItems, initialCursor, initialDone, filters, children }: Props) {
   const router = useRouter();
   const params = useSearchParams();
   const urlTab = (params.get("tab") as Tab) || "all";
@@ -130,6 +131,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
     () => grouped.filter(i => feedItemMatches(i, MATCHERS[tab])),
     [grouped, tab],
   );
+  const showFeedInsert = tab === "all" && !filters.actorId && !filters.filmId;
 
   return (
     <div>
@@ -145,6 +147,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
         ))}
       </div>
       <div style={{ display: "grid", gap: 0 }}>
+        {showFeedInsert && children}
         {filtered.length === 0 ? (
           <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6, padding: "20px 0" }}>
             No activity yet. Visit <a href="/coven" style={{ color: "var(--accent)" }}>/coven</a> to follow someone.

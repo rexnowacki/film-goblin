@@ -8,8 +8,10 @@ interface Props {
   archived: boolean;
   initialMessages: RitualMessage[];
   currentUserId: string | null;
+  viewerUsername: string | null;
   viewerAvatarUrl: string | null;
   viewerDisplayName: string | null;
+  viewerIsAdmin?: boolean;
   header: React.ReactNode;
 }
 
@@ -18,8 +20,10 @@ export default function RitualPageBody({
   archived,
   initialMessages,
   currentUserId,
+  viewerUsername,
   viewerAvatarUrl,
   viewerDisplayName,
+  viewerIsAdmin = false,
   header,
 }: Props) {
   return (
@@ -40,8 +44,10 @@ export default function RitualPageBody({
         archived={archived}
         initialMessages={initialMessages}
         currentUserId={currentUserId}
+        viewerUsername={viewerUsername}
         viewerAvatarUrl={viewerAvatarUrl}
         viewerDisplayName={viewerDisplayName}
+        viewerIsAdmin={viewerIsAdmin}
       />
     </div>
   );

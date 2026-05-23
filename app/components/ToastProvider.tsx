@@ -3,10 +3,11 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 interface Ctx {
-  toast: (msg: string) => void;
+  toast: (msg: string, durationMs?: number, options?: { href?: string }) => void;
 }
 
 const ToastContext = createContext<Ctx>({ toast: () => {} });
+const DEFAULT_TOAST_DURATION_MS = 2000;
 
 export function useToast() {
   return useContext(ToastContext);
@@ -18,13 +19,13 @@ export function useToast() {
  * `useToast().toast("Saved")` without per-component state.
  */
 export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [msg, setMsg] = useState<string | null>(null);
+  const [toastState, setToastState] = useState<{ text: string; href?: string } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const toast = useCallback((text: string) => {
+  const toast = useCallback((text: string, durationMs = DEFAULT_TOAST_DURATION_MS, options?: { href?: string }) => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    setMsg(text);
-    timerRef.current = setTimeout(() => setMsg(null), 2000);
+    setToastState({ text, href: options?.href });
+    timerRef.current = setTimeout(() => setToastState(null), durationMs);
   }, []);
 
   useEffect(() => () => {
@@ -34,10 +35,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      {msg !== null && (
-        <div className="toast" role="status" aria-live="polite">
-          {msg}
-        </div>
+      {toastState !== null && (
+        toastState.href ? (
+          <a className="toast toast--interactive" role="status" aria-live="polite" href={toastState.href}>
+            {toastState.text}
+          </a>
+        ) : (
+          <div className="toast" role="status" aria-live="polite">
+            {toastState.text}
+          </div>
+        )
       )}
     </ToastContext.Provider>
   );

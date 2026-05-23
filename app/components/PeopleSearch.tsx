@@ -1,22 +1,28 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 export default function PeopleSearch() {
   const router = useRouter();
   const params = useSearchParams();
   const [q, setQ] = useState(params.get("q") ?? "");
   const [, start] = useTransition();
+  const lastHrefRef = useRef(`/coven?${params.toString()}`);
 
-  function update(next: string) {
-    setQ(next);
-    start(() => {
+  useEffect(() => {
+    const t = setTimeout(() => {
       const p = new URLSearchParams(params);
+      const next = q.trim();
       if (next) p.set("q", next); else p.delete("q");
-      router.push(`/coven?${p.toString()}`);
-    });
-  }
+      const qs = p.toString();
+      const href = qs ? `/coven?${qs}` : "/coven";
+      if (href === lastHrefRef.current) return;
+      lastHrefRef.current = href;
+      start(() => router.replace(href, { scroll: false }));
+    }, 220);
+    return () => clearTimeout(t);
+  }, [params, q, router, start]);
 
   return (
     <div className="search-pill">
@@ -33,7 +39,7 @@ export default function PeopleSearch() {
         spellCheck={false}
         aria-label="Search people"
         value={q}
-        onChange={e => update(e.target.value)}
+        onChange={e => setQ(e.target.value)}
         placeholder="Username or display name…"
       />
     </div>

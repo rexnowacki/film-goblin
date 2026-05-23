@@ -1,9 +1,24 @@
 import Link from "next/link";
 import FilmPoster from "@/components/FilmPoster";
 import GoblinWhisperButton from "@/components/GoblinWhisperButton";
+import GoblinRitualLauncher from "@/components/GoblinRitualLauncher";
 import type { GoblinPickFilm } from "@/lib/queries/goblin-pick";
+import type { RitualMessage, RitualPick } from "@/lib/queries/ritual";
 
-export default function GoblinRecommends({ film }: { film: GoblinPickFilm | null }) {
+interface Props {
+  film: GoblinPickFilm | null;
+  ritual: {
+    pick: RitualPick | null;
+    initialMessages: RitualMessage[];
+    currentUserId: string | null;
+    viewerUsername: string | null;
+    viewerAvatarUrl: string | null;
+    viewerDisplayName: string | null;
+    viewerIsAdmin?: boolean;
+  };
+}
+
+export default function GoblinRecommends({ film, ritual }: Props) {
   return (
     <div>
       <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 14, letterSpacing: "0.12em" }}>
@@ -38,12 +53,16 @@ export default function GoblinRecommends({ film }: { film: GoblinPickFilm | null
             >
               Watch on Apple TV →
             </a>
-            <Link
-              href="/ritual"
-              style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--bone)", textDecoration: "none", letterSpacing: "0.06em" }}
-            >
-              Join the Ritual →
-            </Link>
+            <GoblinRitualLauncher
+              pick={ritual.pick}
+              initialMessages={ritual.initialMessages}
+              currentUserId={ritual.currentUserId}
+              viewerUsername={ritual.viewerUsername}
+              viewerAvatarUrl={ritual.viewerAvatarUrl}
+              viewerDisplayName={ritual.viewerDisplayName}
+              viewerIsAdmin={ritual.viewerIsAdmin}
+              variant="desktop"
+            />
           </div>
 
           {film.whisper_text && (

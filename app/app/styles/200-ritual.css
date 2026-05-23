@@ -65,6 +65,12 @@
   font-size: 12px;
 }
 
+.ritual-mention-item__match {
+  background: rgba(255, 45, 136, 0.22);
+  color: inherit;
+  padding: 0 1px;
+}
+
 .ritual-mention-item__avatar {
   width: 26px;
   height: 26px;
@@ -73,4 +79,33 @@
   border: 1px solid #2a2a2a;
   object-fit: cover;
   flex-shrink: 0;
+}
+
+.ritual-composer-pill {
+  align-items: flex-end;
+  border-radius: 18px;
+  padding: 8px 12px;
+}
+
+.ritual-composer-pill textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  max-height: 112px;
+  border: 0;
+  background: transparent;
+  outline: none;
+  color: var(--bone);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.35;
+  padding: 0;
+  resize: none;
+  overflow-y: auto;
+}
+
+@media (max-width: 720px) {
+  .ritual-composer-pill textarea {
+    font-size: 16px;
+  }
 }

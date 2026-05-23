@@ -3,7 +3,8 @@ import { getServerUser } from "@/lib/supabase/cached";
 import { getEnrichedActivity } from "@/lib/queries/activity";
 import { getFollowedActivity } from "@/lib/queries/followed-activity";
 import { getWatchlistPriceDropFilms } from "@/lib/queries/ledger";
-import { getGoblinPick } from "@/lib/queries/goblin-pick";
+import type { GoblinPickFilm } from "@/lib/queries/goblin-pick";
+import { getActiveRitualPick, getRitualMessages } from "@/lib/queries/ritual";
 import FollowedActivityFeed from "@/components/FollowedActivityFeed";
 import LedgerPanel from "@/components/LedgerPanel";
 import GoblinRecommends from "@/components/GoblinRecommends";
@@ -48,10 +49,42 @@ export default async function HomePage({
 
   // Only load "From the Goblins" on the ALL tab — it's not relevant to filtered tabs.
   const followedActivity = (user && tabParam === "all") ? await getFollowedActivity(supabase, user.id) : [];
-  const [priceDropFilms, goblinPick] = await Promise.all([
+  const [priceDropFilms, ritualPick] = await Promise.all([
     user ? getWatchlistPriceDropFilms(supabase, user.id, 5) : Promise.resolve([]),
-    getGoblinPick(supabase),
+    getActiveRitualPick(supabase),
   ]);
+
+  const [ritualMessages, viewer, staffRow] = await Promise.all([
+    user && ritualPick ? getRitualMessages(supabase, ritualPick.pick_id) : Promise.resolve([]),
+    user
+      ? supabase
+          .from("profiles")
+          .select("id, username, avatar_url, display_name")
+          .eq("id", user.id)
+          .maybeSingle()
+          .then(({ data }) => data)
+      : Promise.resolve(null),
+    user
+      ? supabase
+          .from("staff")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle()
+          .then(({ data }) => data)
+      : Promise.resolve(null),
+  ]);
+  const goblinPick: GoblinPickFilm | null = ritualPick
+    ? { ...ritualPick.film, whisper_text: ritualPick.whisper_text }
+    : null;
+  const ritual = {
+    pick: ritualPick,
+    initialMessages: ritualMessages,
+    currentUserId: user?.id ?? null,
+    viewerUsername: viewer?.username ?? null,
+    viewerAvatarUrl: viewer?.avatar_url ?? null,
+    viewerDisplayName: viewer?.display_name ?? null,
+    viewerIsAdmin: staffRow?.role === "admin",
+  };
 
   // Resolve the active filter's display data so the chip can render.
   let active: React.ComponentProps<typeof FeedSearch>["active"] = null;
@@ -101,14 +134,15 @@ export default async function HomePage({
           )}
         </aside>
         <main>
-          <GoblinRecommendsMobile film={goblinPick} />
           {user && <FeedSearch active={active} />}
           <FeedTabs
             initialItems={initialItems}
             initialCursor={initialCursor}
             initialDone={initialDone}
             filters={{ actorId: actorId ?? undefined, filmId: filmId ?? undefined }}
-          />
+          >
+            <GoblinRecommendsMobile film={goblinPick} ritual={ritual} />
+          </FeedTabs>
           {tabParam === "all" && followedActivity.length > 0 && (
             <section style={{ marginTop: 48, paddingBottom: 48 }}>
               <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 14 }}>
@@ -122,7 +156,7 @@ export default async function HomePage({
           className="desktop-only"
           style={{ position: "sticky", top: "calc(46px + env(safe-area-inset-top))", maxHeight: "calc(100vh - 46px - env(safe-area-inset-top))", overflowY: "auto", paddingBottom: 32 }}
         >
-          <GoblinRecommends film={goblinPick} />
+          <GoblinRecommends film={goblinPick} ritual={ritual} />
         </aside>
       </div>
     </div>

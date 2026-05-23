@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { searchFeedTargets, type FeedSearchFilm } from "@/lib/actions/feed-search";
+import { useCachedTypeahead } from "@/lib/hooks/useCachedTypeahead";
 import {
   scheduleGoblinPick,
   updateGoblinPick,
   deleteGoblinPick,
+  clearGoblinPickChat,
 } from "@/lib/actions/admin/goblin-pick";
 import type { GoblinPickRow } from "@/lib/queries/goblin-pick";
 
@@ -97,6 +99,8 @@ function ActivePickCard({ row }: { row: GoblinPickRow }) {
   const [whisper, setWhisper] = useState(row.whisper_text ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [cleared, setCleared] = useState(false);
 
   async function save() {
     setSaving(true);
@@ -105,6 +109,19 @@ function ActivePickCard({ row }: { row: GoblinPickRow }) {
     if (r.ok) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
+    }
+  }
+
+  async function clearChat() {
+    if (!confirm(`Delete every ritual chat message for "${row.film.title}"? This cannot be undone.`)) return;
+    setClearing(true);
+    const r = await clearGoblinPickChat(row.id);
+    setClearing(false);
+    if (r.ok) {
+      setCleared(true);
+      setTimeout(() => setCleared(false), 3000);
+    } else {
+      alert(`Clear failed: ${r.error}`);
     }
   }
 
@@ -155,6 +172,38 @@ function ActivePickCard({ row }: { row: GoblinPickRow }) {
         <span style={{ marginLeft: "auto", fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--muted)" }}>
           {whisper.length}/280
         </span>
+      </div>
+
+      <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid #333" }}>
+        <div className="eyebrow" style={{ color: "var(--muted)", fontSize: 10, marginBottom: 8, letterSpacing: "0.12em" }}>
+          Moderation
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            disabled={clearing}
+            onClick={clearChat}
+            style={{
+              background: "transparent",
+              border: "1px solid var(--blood, #d93a2e)",
+              color: "var(--blood, #d93a2e)",
+              padding: "7px 10px",
+              cursor: clearing ? "default" : "pointer",
+              fontFamily: "var(--font-ui)",
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+            }}
+          >
+            {clearing ? "Clearing..." : "Nuke Chat"}
+          </button>
+          {cleared && (
+            <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12, color: "var(--accent)" }}>
+              Chat cleared
+            </span>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -329,20 +378,15 @@ function Label({ children }: { children: React.ReactNode }) {
 
 function FilmSearchPicker({ onPick }: { onPick: (f: FeedSearchFilm) => void }) {
   const [query, setQuery] = useState("");
-  const [films, setFilms] = useState<FeedSearchFilm[]>([]);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const q = query.trim();
-    if (q.length < 2) { setFilms([]); return; }
-    let cancelled = false;
-    const t = setTimeout(async () => {
-      const res = await searchFeedTargets(q);
-      if (!cancelled) setFilms(res.films);
-    }, 180);
-    return () => { cancelled = true; clearTimeout(t); };
-  }, [query]);
+  const emptyFilms = useMemo<FeedSearchFilm[]>(() => [], []);
+  const searchFilms = useCallback(async (q: string) => (await searchFeedTargets(q)).films, []);
+  const films = useCachedTypeahead(query, {
+    search: searchFilms,
+    filter: filterFilmSearchResults,
+    empty: emptyFilms,
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -401,5 +445,13 @@ function FilmSearchPicker({ onPick }: { onPick: (f: FeedSearchFilm) => void }) {
         </div>
       )}
     </div>
+  );
+}
+
+function filterFilmSearchResults(films: FeedSearchFilm[], query: string) {
+  return films.filter(f =>
+    f.title.toLowerCase().includes(query) ||
+    f.director.toLowerCase().includes(query) ||
+    String(f.year).includes(query)
   );
 }
