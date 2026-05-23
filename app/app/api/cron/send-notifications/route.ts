@@ -30,7 +30,9 @@ export async function GET(request: Request): Promise<NextResponse> {
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) return missing("RESEND_API_KEY");
 
-  const from = process.env.NOTIFY_FROM_EMAIL || "onboarding@resend.dev";
+  const from = process.env.NOTIFY_FROM_EMAIL;
+  if (!from) return missing("NOTIFY_FROM_EMAIL");
+
   const baseUrl = process.env.APP_BASE_URL || "https://film-goblin.vercel.app";
 
   if (process.env.SENTRY_DSN && !Sentry.isInitialized?.()) {

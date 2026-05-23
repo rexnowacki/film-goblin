@@ -108,7 +108,8 @@ export async function GET(request: Request): Promise<NextResponse> {
     jobs.sendNotifications = await runJob("send-notifications", async () => {
       const resendKey = process.env.RESEND_API_KEY;
       if (!resendKey) throw new Error("RESEND_API_KEY not configured");
-      const from = process.env.NOTIFY_FROM_EMAIL || "onboarding@resend.dev";
+      const from = process.env.NOTIFY_FROM_EMAIL;
+      if (!from) throw new Error("NOTIFY_FROM_EMAIL not configured");
       const baseUrl = process.env.APP_BASE_URL || "https://film-goblin.vercel.app";
       const digest = await sendDailyDigests(client, new Resend(resendKey), { from, baseUrl });
       const cleanup = await client.query(
