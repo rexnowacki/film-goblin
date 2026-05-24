@@ -21,7 +21,10 @@ export default async function AdminFilmsPage({
     <div>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <h1 className="h-display" style={{ margin: 0 }}>Films</h1>
-        <Link href="/admin/films/new" className="btn">+ Add film</Link>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Link href="/admin/films/bulk" className="btn btn-outline">Bulk add</Link>
+          <Link href="/admin/films/new" className="btn">+ Add film</Link>
+        </div>
       </div>
 
       <form method="get" style={{ marginBottom: 12 }}>
