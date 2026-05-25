@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { createClient } from "./server";
+import { serviceRoleClient } from "./service-role";
 import { getLandingMarquee as _getLandingMarquee } from "@/lib/queries/films";
 import { getActiveRitualPick as _getActiveRitualPick } from "@/lib/queries/ritual";
 
@@ -23,20 +24,17 @@ export const getServerUser = cache(async () => {
 // admin actions that mutate goblin-pick call revalidateTag("goblin-pick").
 // Do NOT use these wrappers for user-specific queries.
 
+// unstable_cache callbacks cannot use cookies() — createClient() from server.ts
+// reads cookies for SSR session hydration and will throw inside the cache boundary.
+// These queries are public (no per-user RLS scoping), so serviceRoleClient() is correct.
 export const getLandingMarquee = unstable_cache(
-  async () => {
-    const client = await createClient();
-    return _getLandingMarquee(client);
-  },
+  async () => _getLandingMarquee(serviceRoleClient()),
   ["landing-marquee"],
   { revalidate: 300, tags: ["films"] },
 );
 
 export const getActiveRitualPick = unstable_cache(
-  async () => {
-    const client = await createClient();
-    return _getActiveRitualPick(client);
-  },
+  async () => _getActiveRitualPick(serviceRoleClient()),
   ["active-ritual-pick"],
   { revalidate: 300, tags: ["goblin-pick"] },
 );
