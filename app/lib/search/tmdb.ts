@@ -78,6 +78,25 @@ export interface TmdbCastMember {
   known_for_department: string | null;
 }
 
+export type TmdbWatchProviderCategory = "flatrate" | "free" | "ads" | "rent" | "buy";
+
+export interface TmdbRawWatchProvider {
+  display_priority?: number;
+  logo_path?: string | null;
+  provider_id?: number;
+  provider_name?: string;
+}
+
+export interface TmdbWatchProvider {
+  provider_id: number;
+  provider_name: string;
+  provider_logo_path: string | null;
+  provider_logo_url: string | null;
+  category: TmdbWatchProviderCategory;
+  display_priority: number;
+  tmdb_link: string | null;
+}
+
 export async function searchTmdb(query: string): Promise<
   | { ok: true; candidates: TmdbCandidate[] }
   | { ok: false; error: string }
@@ -159,6 +178,61 @@ export function chooseTmdbCast(cast: TmdbCreditCastMember[], limit = 12): TmdbCa
       profile_path: member.profile_path ?? null,
       known_for_department: member.known_for_department ?? null,
     }));
+}
+
+const WATCH_PROVIDER_CATEGORY_ORDER: TmdbWatchProviderCategory[] = ["flatrate", "free", "ads", "rent", "buy"];
+
+export function tmdbProviderLogoUrl(path: string | null | undefined, size = "w92"): string | null {
+  if (!path) return null;
+  return `https://image.tmdb.org/t/p/${size}${path}`;
+}
+
+export function normalizeTmdbWatchProviders(
+  data: unknown,
+  region = "US",
+): TmdbWatchProvider[] {
+  const root = data as {
+    results?: Record<string, { link?: string; flatrate?: TmdbRawWatchProvider[]; free?: TmdbRawWatchProvider[]; ads?: TmdbRawWatchProvider[]; rent?: TmdbRawWatchProvider[]; buy?: TmdbRawWatchProvider[] }>;
+  };
+  const regionData = root.results?.[region.toUpperCase()];
+  if (!regionData) return [];
+
+  const rows: TmdbWatchProvider[] = [];
+  for (const category of WATCH_PROVIDER_CATEGORY_ORDER) {
+    for (const provider of regionData[category] ?? []) {
+      if (!Number.isFinite(provider.provider_id) || !provider.provider_name?.trim()) continue;
+      const logoPath = provider.logo_path ?? null;
+      rows.push({
+        provider_id: Number(provider.provider_id),
+        provider_name: provider.provider_name.trim(),
+        provider_logo_path: logoPath,
+        provider_logo_url: tmdbProviderLogoUrl(logoPath),
+        category,
+        display_priority: Number.isFinite(provider.display_priority) ? Number(provider.display_priority) : 999,
+        tmdb_link: regionData.link ?? null,
+      });
+    }
+  }
+
+  return rows.sort((a, b) => {
+    const categoryDiff = WATCH_PROVIDER_CATEGORY_ORDER.indexOf(a.category) - WATCH_PROVIDER_CATEGORY_ORDER.indexOf(b.category);
+    if (categoryDiff !== 0) return categoryDiff;
+    return a.display_priority - b.display_priority;
+  });
+}
+
+export async function lookupTmdbWatchProviders(tmdbId: number, region = "US"): Promise<
+  | { ok: true; providers: TmdbWatchProvider[] }
+  | { ok: false; error: string }
+> {
+  try {
+    const res = await fetch(`${TMDB_BASE}/movie/${tmdbId}/watch/providers?api_key=${apiKey()}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`TMDB watch providers fetch returned ${res.status}`);
+    const data = await res.json();
+    return { ok: true, providers: normalizeTmdbWatchProviders(data, region) };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "TMDB watch provider lookup failed." };
+  }
 }
 
 export async function lookupTmdbTrailer(tmdbId: number): Promise<
