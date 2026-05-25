@@ -113,6 +113,15 @@ export interface MissingEnrichmentFilm {
   tmdb_id: number | null;
 }
 
+export interface TrailerUpdatePayload {
+  trailer_url: string;
+  trailer_source: string;
+  trailer_youtube_id: string;
+  trailer_label: string;
+  trailer_verified: boolean;
+  trailer_updated_at: string;
+}
+
 export async function listMissingTrailers(
   client: PgClient,
   limit: number,
@@ -136,6 +145,36 @@ export async function listMissingTrailers(
     itunes_id: row.itunes_id == null ? null : Number(row.itunes_id),
     tmdb_id: row.tmdb_id == null ? null : Number(row.tmdb_id),
   }));
+}
+
+export async function updateFilmTrailer(
+  client: PgClient,
+  filmId: string,
+  payload: TrailerUpdatePayload,
+): Promise<boolean> {
+  const { rowCount } = await client.query(
+    `
+      UPDATE films
+      SET trailer_url = $2,
+          trailer_source = $3,
+          trailer_youtube_id = $4,
+          trailer_label = $5,
+          trailer_verified = $6,
+          trailer_updated_at = $7
+      WHERE id = $1
+        AND trailer_youtube_id IS NULL
+    `,
+    [
+      filmId,
+      payload.trailer_url,
+      payload.trailer_source,
+      payload.trailer_youtube_id,
+      payload.trailer_label,
+      payload.trailer_verified,
+      payload.trailer_updated_at,
+    ],
+  );
+  return (rowCount ?? 0) > 0;
 }
 
 export async function listMissingCast(

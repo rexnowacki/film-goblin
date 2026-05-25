@@ -10,6 +10,7 @@ import {
   runFullPriceSweep,
   runStalePriceRefresh,
 } from "./prices.js";
+import { searchMissingTrailers, type TrailerSearchOptions } from "./trailers.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -213,6 +214,61 @@ async function pricesRun(flags: Record<string, string | boolean>): Promise<void>
   });
 }
 
+function normalizeTrailerSearchOptions(flags: Record<string, string | boolean>): TrailerSearchOptions {
+  const threshold = Number(flags.threshold);
+  return {
+    limit: intFlag(flags, "limit", 25, 1, 200),
+    threshold: Number.isFinite(threshold) ? Math.max(0, Math.min(1, threshold)) : 0.88,
+    delayMs: intFlag(flags, "delay-ms", 1000, 0, 60_000),
+    write: boolFlag(flags, "write"),
+    yes: boolFlag(flags, "yes"),
+  };
+}
+
+async function trailersSearchMissing(flags: Record<string, string | boolean>): Promise<void> {
+  const options = normalizeTrailerSearchOptions(flags);
+  if (options.write) {
+    await confirm(
+      `This will write machine-found YouTube trailers to:\n${redactDatabaseUrl(requireEnv("DATABASE_URL"))}`,
+      options.yes,
+    );
+  }
+
+  await withClient(async (client) => {
+    section("Trailer Search");
+    row("limit", options.limit);
+    row("threshold", options.threshold);
+    row("delay", `${options.delayMs}ms`);
+    row("mode", options.write ? "write" : "dry-run");
+
+    const result = await searchMissingTrailers(client, options);
+    for (const item of result.rows) {
+      const filmLabel = `${item.film.title} (${item.film.year || "unknown"})`;
+      console.log("");
+      console.log(filmLabel);
+      if (!item.candidate) {
+        row("action", item.action);
+        if (item.error) row("error", item.error);
+        continue;
+      }
+      row("best", item.candidate.title);
+      row("url", item.candidate.url);
+      row("score", item.candidate.score.toFixed(2));
+      row("action", item.action);
+      row("reasons", item.candidate.reasons.join(", "));
+      if (item.error) row("error", item.error);
+    }
+
+    section("Result");
+    row("scanned", result.scanned);
+    row("candidates found", result.candidatesFound);
+    row("written", result.written);
+    row("below threshold", result.belowThreshold);
+    row("no candidates", result.noCandidates);
+    row("failed", result.failed);
+  });
+}
+
 function help(): void {
   console.log(`fg-maint
 
@@ -221,6 +277,7 @@ Usage:
   fg-maint db counts
   fg-maint missing trailers [--limit 100]
   fg-maint missing cast [--limit 100]
+  fg-maint trailers search-missing [options]
   fg-maint prices run [options]
 
 Commands:
@@ -228,7 +285,16 @@ Commands:
   db counts             Show catalog/enrichment/staleness counts
   missing trailers      List available films with no trailer_youtube_id
   missing cast          List available films with no film_cast rows
+  trailers search-missing
+                        Search YouTube via Brave for missing trailers
   prices run            Run a price refresh against the configured database
+
+Trailer search options:
+  --limit 25            Number of missing-trailer films to scan
+  --threshold 0.88      Minimum score required to save
+  --delay-ms 1000       Delay between Brave searches
+  --write               Write high-confidence matches to films
+  --yes                 Skip confirmation for write mode
 
 Price options:
   --all                 Full local sweep: check every tracked film with an iTunes ID once
@@ -245,6 +311,8 @@ Examples:
   fg-maint db counts
   fg-maint missing trailers
   fg-maint missing cast --limit 200
+  fg-maint trailers search-missing --limit 10
+  fg-maint trailers search-missing --limit 10 --threshold 0.92 --write
   fg-maint prices run --all
   fg-maint prices run --all --yes
   fg-maint prices run --all --batch-size 50 --delay-ms 3000 --yes
@@ -280,6 +348,10 @@ async function main(): Promise<void> {
   }
   if (a === "missing" && (b === "trailers" || b === "cast")) {
     await printMissing(b, flags);
+    return;
+  }
+  if (a === "trailers" && b === "search-missing") {
+    await trailersSearchMissing(flags);
     return;
   }
   if (a === "prices" && b === "run") {
