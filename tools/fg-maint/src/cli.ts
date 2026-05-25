@@ -1,9 +1,18 @@
 #!/usr/bin/env node
 import { execFile } from "node:child_process";
+import { createInterface } from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 import { promisify } from "node:util";
 import { appBaseUrl, loadEnv, redactDatabaseUrl, requireEnv } from "./env.js";
 import { confirm } from "./prompt.js";
-import { getCounts, listMissingCast, listMissingTrailers, withClient } from "./db.js";
+import {
+  getCounts,
+  listMissingCast,
+  listMissingTrailers,
+  updateFilmTrailer,
+  withClient,
+  type PgClient,
+} from "./db.js";
 import { row, section, table } from "./output.js";
 import {
   normalizePriceRunOptions,
@@ -11,8 +20,10 @@ import {
   runStalePriceRefresh,
 } from "./prices.js";
 import { searchMissingTrailers, type TrailerSearchOptions } from "./trailers.js";
+import { findTrailerCandidate, type TrailerCandidate } from "./trailers.js";
 
 const execFileAsync = promisify(execFile);
+const execFileNoThrow = promisify(execFile);
 
 interface ParsedArgs {
   command: string[];
@@ -269,6 +280,152 @@ async function trailersSearchMissing(flags: Record<string, string | boolean>): P
   });
 }
 
+function normalizeTrailerReviewOptions(flags: Record<string, string | boolean>) {
+  const minScore = Number(flags["min-score"]);
+  return {
+    limit: intFlag(flags, "limit", 25, 1, 200),
+    minScore: Number.isFinite(minScore) ? Math.max(0, Math.min(1, minScore)) : 0.55,
+    delayMs: intFlag(flags, "delay-ms", 1000, 0, 60_000),
+    open: boolFlag(flags, "open"),
+    yes: boolFlag(flags, "yes"),
+  };
+}
+
+function sleep(ms: number): Promise<void> {
+  if (ms <= 0) return Promise.resolve();
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function openUrl(url: string): Promise<void> {
+  const command = process.platform === "darwin"
+    ? "open"
+    : process.platform === "win32"
+      ? "cmd"
+      : "xdg-open";
+  const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
+  await execFileNoThrow(command, args).catch((err) => {
+    console.warn(`Could not open browser: ${err instanceof Error ? err.message : String(err)}`);
+  });
+}
+
+async function saveReviewedTrailer(
+  client: PgClient,
+  filmId: string,
+  candidate: TrailerCandidate,
+): Promise<boolean> {
+  return updateFilmTrailer(client, filmId, {
+    trailer_url: candidate.url,
+    trailer_source: "youtube",
+    trailer_youtube_id: candidate.youtubeId,
+    trailer_label: "Official Trailer",
+    trailer_verified: true,
+    trailer_updated_at: new Date().toISOString(),
+  });
+}
+
+async function trailersReviewMissing(flags: Record<string, string | boolean>): Promise<void> {
+  const options = normalizeTrailerReviewOptions(flags);
+  await confirm(
+    `This interactive review can write admin-approved YouTube trailers to:\n${redactDatabaseUrl(requireEnv("DATABASE_URL"))}`,
+    options.yes,
+  );
+
+  const rl = createInterface({ input, output });
+  try {
+    await withClient(async (client) => {
+      const films = await listMissingTrailers(client, options.limit);
+      let scanned = 0;
+      let reviewed = 0;
+      let saved = 0;
+      let skipped = 0;
+      let belowMinScore = 0;
+      let noCandidates = 0;
+      let failed = 0;
+
+      section("Trailer Review");
+      row("films", films.length);
+      row("min score", options.minScore);
+      row("delay", `${options.delayMs}ms`);
+
+      for (let i = 0; i < films.length; i += 1) {
+        const film = films[i];
+        scanned += 1;
+        let candidate: TrailerCandidate | null = null;
+        try {
+          candidate = await findTrailerCandidate(film);
+        } catch (err) {
+          failed += 1;
+          console.log("");
+          console.log(`${film.title} (${film.year || "unknown"})`);
+          row("error", err instanceof Error ? err.message : String(err));
+        }
+
+        if (!candidate) {
+          noCandidates += 1;
+          if (i < films.length - 1) await sleep(options.delayMs);
+          continue;
+        }
+        if (candidate.score < options.minScore) {
+          belowMinScore += 1;
+          if (i < films.length - 1) await sleep(options.delayMs);
+          continue;
+        }
+
+        reviewed += 1;
+        console.log("");
+        console.log(`${film.title} (${film.year || "unknown"})`);
+        row("director", film.director || "");
+        row("candidate", candidate.title);
+        row("url", candidate.url);
+        row("score", candidate.score.toFixed(2));
+        row("reasons", candidate.reasons.join(", "));
+
+        if (options.open) await openUrl(candidate.url);
+
+        while (true) {
+          const answer = (await rl.question("Save this trailer? [y/N/o/q] ")).trim().toLowerCase();
+          if (answer === "o") {
+            await openUrl(candidate.url);
+            continue;
+          }
+          if (answer === "q") {
+            row("quit", "yes");
+            i = films.length;
+            break;
+          }
+          if (answer === "y" || answer === "yes") {
+            const didSave = await saveReviewedTrailer(client, film.id, candidate);
+            if (didSave) {
+              saved += 1;
+              row("saved", "yes");
+            } else {
+              failed += 1;
+              row("saved", "no, film already has a trailer");
+            }
+            break;
+          }
+          skipped += 1;
+          row("skipped", "yes");
+          break;
+        }
+
+        if (i < films.length - 1) await sleep(options.delayMs);
+      }
+
+      section("Result");
+      row("scanned", scanned);
+      row("reviewed", reviewed);
+      row("saved", saved);
+      row("skipped", skipped);
+      row("below min score", belowMinScore);
+      row("no candidates", noCandidates);
+      row("failed", failed);
+    });
+  } finally {
+    rl.close();
+  }
+}
+
 function help(): void {
   console.log(`fg-maint
 
@@ -278,6 +435,7 @@ Usage:
   fg-maint missing trailers [--limit 100]
   fg-maint missing cast [--limit 100]
   fg-maint trailers search-missing [options]
+  fg-maint trailers review-missing [options]
   fg-maint prices run [options]
 
 Commands:
@@ -287,6 +445,8 @@ Commands:
   missing cast          List available films with no film_cast rows
   trailers search-missing
                         Search YouTube via Brave for missing trailers
+  trailers review-missing
+                        Interactively approve YouTube trailer candidates
   prices run            Run a price refresh against the configured database
 
 Trailer search options:
@@ -295,6 +455,13 @@ Trailer search options:
   --delay-ms 1000       Delay between Brave searches
   --write               Write high-confidence matches to films
   --yes                 Skip confirmation for write mode
+
+Trailer review options:
+  --limit 25            Number of missing-trailer films to scan
+  --min-score 0.55      Minimum score to show for review
+  --delay-ms 1000       Delay between Brave searches
+  --open                Open each candidate in the browser before prompting
+  --yes                 Skip initial production-write confirmation
 
 Price options:
   --all                 Full local sweep: check every tracked film with an iTunes ID once
@@ -313,6 +480,7 @@ Examples:
   fg-maint missing cast --limit 200
   fg-maint trailers search-missing --limit 10
   fg-maint trailers search-missing --limit 10 --threshold 0.92 --write
+  fg-maint trailers review-missing --limit 25 --min-score 0.55
   fg-maint prices run --all
   fg-maint prices run --all --yes
   fg-maint prices run --all --batch-size 50 --delay-ms 3000 --yes
@@ -352,6 +520,10 @@ async function main(): Promise<void> {
   }
   if (a === "trailers" && b === "search-missing") {
     await trailersSearchMissing(flags);
+    return;
+  }
+  if (a === "trailers" && b === "review-missing") {
+    await trailersReviewMissing(flags);
     return;
   }
   if (a === "prices" && b === "run") {
