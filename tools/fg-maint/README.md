@@ -7,6 +7,8 @@ Run from the repository root:
 ```sh
 fg-maint status
 fg-maint db counts
+fg-maint missing trailers
+fg-maint missing cast --limit 200
 fg-maint prices run --all --yes
 ```
 

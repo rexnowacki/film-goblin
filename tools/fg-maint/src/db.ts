@@ -103,3 +103,64 @@ export async function selectFullPriceSnapshot(client: PgClient): Promise<FullPri
     title: row.title,
   }));
 }
+
+export interface MissingEnrichmentFilm {
+  id: string;
+  title: string;
+  year: number;
+  director: string;
+  itunes_id: number | null;
+  tmdb_id: number | null;
+}
+
+export async function listMissingTrailers(
+  client: PgClient,
+  limit: number,
+): Promise<MissingEnrichmentFilm[]> {
+  const { rows } = await client.query(
+    `
+      SELECT id, title, year, director, itunes_id, tmdb_id
+      FROM films
+      WHERE available IS TRUE
+        AND trailer_youtube_id IS NULL
+      ORDER BY tmdb_id NULLS FIRST, year DESC, title ASC
+      LIMIT $1
+    `,
+    [limit],
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    year: Number(row.year),
+    director: row.director,
+    itunes_id: row.itunes_id == null ? null : Number(row.itunes_id),
+    tmdb_id: row.tmdb_id == null ? null : Number(row.tmdb_id),
+  }));
+}
+
+export async function listMissingCast(
+  client: PgClient,
+  limit: number,
+): Promise<MissingEnrichmentFilm[]> {
+  const { rows } = await client.query(
+    `
+      SELECT f.id, f.title, f.year, f.director, f.itunes_id, f.tmdb_id
+      FROM films f
+      WHERE f.available IS TRUE
+        AND NOT EXISTS (
+          SELECT 1 FROM film_cast fc WHERE fc.film_id = f.id
+        )
+      ORDER BY f.tmdb_id NULLS FIRST, f.year DESC, f.title ASC
+      LIMIT $1
+    `,
+    [limit],
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    year: Number(row.year),
+    director: row.director,
+    itunes_id: row.itunes_id == null ? null : Number(row.itunes_id),
+    tmdb_id: row.tmdb_id == null ? null : Number(row.tmdb_id),
+  }));
+}

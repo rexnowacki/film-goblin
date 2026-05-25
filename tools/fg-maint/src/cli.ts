@@ -3,8 +3,8 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { appBaseUrl, loadEnv, redactDatabaseUrl, requireEnv } from "./env.js";
 import { confirm } from "./prompt.js";
-import { getCounts, withClient } from "./db.js";
-import { row, section } from "./output.js";
+import { getCounts, listMissingCast, listMissingTrailers, withClient } from "./db.js";
+import { row, section, table } from "./output.js";
 import {
   normalizePriceRunOptions,
   runFullPriceSweep,
@@ -50,6 +50,18 @@ function parseArgs(argv: string[]): ParsedArgs {
 
 function boolFlag(flags: Record<string, string | boolean>, name: string): boolean {
   return Boolean(flags[name]);
+}
+
+function intFlag(
+  flags: Record<string, string | boolean>,
+  name: string,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  const value = Number(flags[name]);
+  if (!Number.isFinite(value)) return fallback;
+  return Math.max(min, Math.min(max, Math.floor(value)));
 }
 
 async function git(args: string[]): Promise<string> {
@@ -106,6 +118,36 @@ async function printCounts(): Promise<void> {
     section("Stale");
     row("prices", counts.stalePrices);
     row("streaming", counts.staleStreaming);
+  });
+}
+
+function formatMissingRows(rows: Array<{
+  title: string;
+  year: number;
+  director: string;
+  itunes_id: number | null;
+  tmdb_id: number | null;
+}>): Array<Record<string, unknown>> {
+  return rows.map((film) => ({
+    title: film.title,
+    year: film.year || "",
+    director: film.director || "",
+    tmdb_id: film.tmdb_id ?? "",
+    itunes_id: film.itunes_id ?? "",
+  }));
+}
+
+async function printMissing(kind: "trailers" | "cast", flags: Record<string, string | boolean>): Promise<void> {
+  const limit = intFlag(flags, "limit", 100, 1, 1000);
+  await withClient(async (client) => {
+    const rows = kind === "trailers"
+      ? await listMissingTrailers(client, limit)
+      : await listMissingCast(client, limit);
+
+    section(`Missing ${kind === "trailers" ? "Trailers" : "Cast"}`);
+    row("shown", rows.length);
+    row("limit", limit);
+    table(formatMissingRows(rows));
   });
 }
 
@@ -177,11 +219,15 @@ function help(): void {
 Usage:
   fg-maint status
   fg-maint db counts
+  fg-maint missing trailers [--limit 100]
+  fg-maint missing cast [--limit 100]
   fg-maint prices run [options]
 
 Commands:
   status                Show repo, production, and database health
   db counts             Show catalog/enrichment/staleness counts
+  missing trailers      List available films with no trailer_youtube_id
+  missing cast          List available films with no film_cast rows
   prices run            Run a price refresh against the configured database
 
 Price options:
@@ -197,6 +243,8 @@ Price options:
 Examples:
   fg-maint status
   fg-maint db counts
+  fg-maint missing trailers
+  fg-maint missing cast --limit 200
   fg-maint prices run --all
   fg-maint prices run --all --yes
   fg-maint prices run --all --batch-size 50 --delay-ms 3000 --yes
@@ -228,6 +276,10 @@ async function main(): Promise<void> {
   }
   if (a === "db" && b === "counts") {
     await printCounts();
+    return;
+  }
+  if (a === "missing" && (b === "trailers" || b === "cast")) {
+    await printMissing(b, flags);
     return;
   }
   if (a === "prices" && b === "run") {
