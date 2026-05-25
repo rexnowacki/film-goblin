@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { getServerUser } from "@/lib/supabase/cached";
+import { getServerUser, getActiveRitualPick } from "@/lib/supabase/cached";
 import { getEnrichedActivity } from "@/lib/queries/activity";
 import { getFollowedActivity } from "@/lib/queries/followed-activity";
 import { getWatchlistPriceDropFilms } from "@/lib/queries/ledger";
 import type { GoblinPickFilm } from "@/lib/queries/goblin-pick";
-import { getActiveRitualPick, getRitualMessages } from "@/lib/queries/ritual";
+import { getRitualMessages } from "@/lib/queries/ritual";
 import FollowedActivityFeed from "@/components/FollowedActivityFeed";
 import LedgerPanel from "@/components/LedgerPanel";
 import GoblinRecommends from "@/components/GoblinRecommends";
@@ -51,7 +51,7 @@ export default async function HomePage({
   const followedActivity = (user && tabParam === "all") ? await getFollowedActivity(supabase, user.id) : [];
   const [priceDropFilms, ritualPick] = await Promise.all([
     user ? getWatchlistPriceDropFilms(supabase, user.id, 5) : Promise.resolve([]),
-    getActiveRitualPick(supabase),
+    getActiveRitualPick(),
   ]);
 
   const [ritualMessages, viewer, staffRow] = await Promise.all([

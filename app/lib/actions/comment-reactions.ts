@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
+import { requireAuthUser } from "@/lib/auth/require-auth-user";
 import type { LikerProfile, LikersResponse } from "@/lib/actions/reactions";
 
 type Client = SupabaseClient<Database>;
@@ -18,8 +19,7 @@ export async function _toggleCommentReaction(
   client: Client,
   commentId: string,
 ): Promise<{ liked: boolean }> {
-  const { data: { user }, error: userErr } = await client.auth.getUser();
-  if (userErr || !user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
 
   const { data: existing } = await client
     .from("activity_comment_reactions")
@@ -59,8 +59,7 @@ export async function toggleCommentReaction(commentId: string): Promise<{ liked:
  */
 export async function fetchLikersForComment(commentId: string): Promise<LikersResponse> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(supabase);
 
   const { data: reactionRows, error: rxErr } = await supabase
     .from("activity_comment_reactions")

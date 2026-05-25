@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
+import { requireAuthUser } from "@/lib/auth/require-auth-user";
 
 type Client = SupabaseClient<Database>;
 
@@ -30,8 +31,7 @@ export async function _toggleReaction(
   client: Client,
   activityId: string,
 ): Promise<{ liked: boolean }> {
-  const { data: { user }, error: userErr } = await client.auth.getUser();
-  if (userErr || !user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
 
   // activity_reactions isn't in the generated types yet (post-types.ts migration).
   // Cast pattern from app/lib/actions/admin/films.ts.
@@ -77,8 +77,7 @@ export async function toggleReaction(activityId: string): Promise<{ liked: boole
  */
 export async function fetchLikersForActivity(activityId: string): Promise<LikersResponse> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(supabase);
 
   // activity_reactions isn't in the generated Supabase types yet; cast pattern.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

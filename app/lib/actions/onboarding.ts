@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
 import type { Database } from "@/lib/supabase/types";
+import { requireAuthUser } from "@/lib/auth/require-auth-user";
 import { readInviteCookie, clearInviteCookie } from "./invite-cookie";
 
 type Client = SupabaseClient<Database>;
@@ -20,8 +21,7 @@ const USERNAME_RE = /^[a-z0-9._]+$/;
 const DEFAULT_COVEN_USERNAME = "cthulhu.lemon";
 
 export async function _completeOnboarding(client: Client, p: OnboardingPayload): Promise<void> {
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
 
   const username = p.username.trim();
   if (!USERNAME_RE.test(username)) {

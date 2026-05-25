@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
+import { requireAuthUser } from "@/lib/auth/require-auth-user";
 import { fetchPrices, parseFilm } from "film-goblin-worker";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
 import { createTheaterNotificationsForUserFilm } from "@/lib/theaters/create-theater-notifications";
@@ -34,8 +35,7 @@ export async function _addToWatchlist(
   filmId: string,
   maxPriceUsd?: number,
 ): Promise<{ id: string }> {
-  const { data: { user }, error: userErr } = await client.auth.getUser();
-  if (userErr || !user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
 
   let threshold: number | null = null;
 
@@ -95,8 +95,7 @@ export async function _removeFromWatchlist(
   client: Client,
   filmId: string,
 ): Promise<void> {
-  const { data: { user }, error: userErr } = await client.auth.getUser();
-  if (userErr || !user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
   const { error } = await client
     .from("watchlists")
     .delete()

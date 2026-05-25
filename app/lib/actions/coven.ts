@@ -4,12 +4,12 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
+import { requireAuthUser } from "@/lib/auth/require-auth-user";
 
 type Client = SupabaseClient<Database>;
 
 export async function _sendCovenRequest(client: Client, toUserId: string): Promise<{ id: string }> {
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
   if (user.id === toUserId) throw new Error("cannot invite yourself to your own coven");
   const { data, error } = await client
     .from("coven_requests")
@@ -20,8 +20,7 @@ export async function _sendCovenRequest(client: Client, toUserId: string): Promi
 }
 
 export async function _acceptCovenRequest(client: Client, requestId: string): Promise<void> {
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
   const { error } = await client
     .from("coven_requests")
     .update({ status: "accepted", responded_at: new Date().toISOString() })
@@ -30,8 +29,7 @@ export async function _acceptCovenRequest(client: Client, requestId: string): Pr
 }
 
 export async function _declineCovenRequest(client: Client, requestId: string): Promise<void> {
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
   const { error } = await client
     .from("coven_requests")
     .update({ status: "declined", responded_at: new Date().toISOString() })
@@ -40,8 +38,7 @@ export async function _declineCovenRequest(client: Client, requestId: string): P
 }
 
 export async function _leaveCoven(client: Client, otherUserId: string): Promise<void> {
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
   const a = user.id < otherUserId ? user.id : otherUserId;
   const b = user.id < otherUserId ? otherUserId : user.id;
   const { error } = await client

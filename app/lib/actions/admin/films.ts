@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import pg from "pg";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
@@ -248,6 +248,7 @@ export async function adminCreateFilm(
     revalidatePath("/admin/film-requests");
   }
 
+  revalidateTag("films");
   revalidatePath("/admin/films");
   return { ok: true, filmId: data.id };
 }
@@ -305,6 +306,7 @@ export async function adminUpdateFilm(id: string, fields: FilmFormFields): Promi
     }
   }
 
+  revalidateTag("films");
   revalidatePath("/admin/films");
   revalidatePath(`/admin/films/${id}/edit`);
   return { ok: true };
@@ -318,6 +320,7 @@ export async function adminRetireFilm(id: string): Promise<{ ok: true } | { ok: 
     .update({ tracking: false, available: false })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
+  revalidateTag("films");
   revalidatePath("/admin/films");
   return { ok: true };
 }
@@ -334,6 +337,7 @@ export async function adminBackfillTmdbTrailers(batchSize = 25): Promise<
   const result = await backfillTmdbTrailers(service, limit);
   if (!result.ok) return result;
 
+  revalidateTag("films");
   revalidatePath("/admin/films");
   return { ok: true, ...result.stats };
 }
@@ -350,6 +354,7 @@ export async function adminBackfillTmdbCast(batchSize = 25): Promise<
   const result = await backfillTmdbCast(service, limit);
   if (!result.ok) return result;
 
+  revalidateTag("films");
   revalidatePath("/admin/films");
   return { ok: true, ...result.stats };
 }
@@ -383,6 +388,7 @@ export async function adminBackfillTmdbStreaming(batchSize = 40): Promise<
       staleHours: 0,
       region: "US",
     });
+    revalidateTag("films");
     revalidatePath("/admin/films");
     return { ok: true, ...result };
   } catch (err) {

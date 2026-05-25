@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
+import { requireAuthUser } from "@/lib/auth/require-auth-user";
 
 type Client = SupabaseClient<Database>;
 
@@ -31,8 +32,7 @@ export async function _logWatch(
   filmId: string,
   opts?: LogWatchOpts,
 ): Promise<{ id: string }> {
-  const { data: { user }, error: userErr } = await client.auth.getUser();
-  if (userErr || !user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
 
   const insertRow: { user_id: string; film_id: string; watched_at?: string; note?: string | null; recommended?: boolean | null } = {
     user_id: user.id,
@@ -75,8 +75,7 @@ export async function _editWatch(
   watchId: string,
   patch: EditWatchPatch,
 ): Promise<void> {
-  const { data: { user }, error: userErr } = await client.auth.getUser();
-  if (userErr || !user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
 
   const update: { watched_at?: string; note?: string | null; recommended?: boolean | null } = {};
   if (patch.watched_at !== undefined) update.watched_at = patch.watched_at;
@@ -109,8 +108,7 @@ export async function _editWatch(
 }
 
 export async function _deleteWatch(client: Client, watchId: string): Promise<void> {
-  const { data: { user }, error: userErr } = await client.auth.getUser();
-  if (userErr || !user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
 
   const { error } = await client
     .from("watched")

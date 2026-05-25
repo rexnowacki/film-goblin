@@ -4,12 +4,12 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
+import { requireAuthUser } from "@/lib/auth/require-auth-user";
 
 type Client = SupabaseClient<Database>;
 
 export async function _follow(client: Client, followedUserId: string): Promise<void> {
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
   const { error } = await client
     .from("follows")
     .insert({ follower_user_id: user.id, followed_user_id: followedUserId });
@@ -18,8 +18,7 @@ export async function _follow(client: Client, followedUserId: string): Promise<v
 }
 
 export async function _unfollow(client: Client, followedUserId: string): Promise<void> {
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
   const { error } = await client
     .from("follows")
     .delete()

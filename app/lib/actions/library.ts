@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
+import { requireAuthUser } from "@/lib/auth/require-auth-user";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
 import { createTheaterNotificationsForUserFilm } from "@/lib/theaters/create-theater-notifications";
 
@@ -17,8 +18,7 @@ type Client = SupabaseClient<Database>;
  * via PK; missing watchlist row = no-op delete).
  */
 export async function _addToLibrary(client: Client, filmId: string): Promise<void> {
-  const { data: { user }, error: userErr } = await client.auth.getUser();
-  if (userErr || !user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
 
   const { error: insertErr } = await client
     .from("library")
@@ -35,8 +35,7 @@ export async function _addToLibrary(client: Client, filmId: string): Promise<voi
 }
 
 export async function _removeFromLibrary(client: Client, filmId: string): Promise<void> {
-  const { data: { user }, error: userErr } = await client.auth.getUser();
-  if (userErr || !user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
   const { error } = await client
     .from("library")
     .delete()

@@ -1,13 +1,11 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { getLandingMarquee } from "@/lib/queries/films";
+import { getLandingMarquee } from "@/lib/supabase/cached";
 import FilmPoster from "@/components/FilmPoster";
 import PriceDrop from "@/components/PriceDrop";
 import HalftoneBar from "@/components/HalftoneBar";
 
 export default async function LandingPage() {
-  const supabase = await createClient();
-  const marqueeFilms = await getLandingMarquee(supabase);
+  const marqueeFilms = await getLandingMarquee();
 
   // Double the marquee for seamless loop
   const marqueeStrip = [...marqueeFilms, ...marqueeFilms];

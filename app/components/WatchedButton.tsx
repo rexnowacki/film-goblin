@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { logWatch } from "@/lib/actions/watched";
-import WatchModal from "./WatchModal";
+const WatchModal = dynamic(() => import("./WatchModal"));
 import { useToast } from "./ToastProvider";
 
 interface Props {

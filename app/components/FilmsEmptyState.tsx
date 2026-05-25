@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import FilmRequestSheet from "@/components/FilmRequestSheet";
+import dynamic from "next/dynamic";
+const FilmRequestSheet = dynamic(() => import("@/components/FilmRequestSheet"));
 
 interface Props {
   query: string;

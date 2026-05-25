@@ -4,12 +4,12 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
+import { requireAuthUser } from "@/lib/auth/require-auth-user";
 
 type Client = SupabaseClient<Database>;
 
 export async function _subscribeToList(client: Client, listId: string): Promise<void> {
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
   const { error } = await client
     .from("list_subscriptions")
     .insert({ user_id: user.id, list_id: listId });
@@ -17,8 +17,7 @@ export async function _subscribeToList(client: Client, listId: string): Promise<
 }
 
 export async function _unsubscribeFromList(client: Client, listId: string): Promise<void> {
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
   const { error } = await client
     .from("list_subscriptions")
     .delete()
