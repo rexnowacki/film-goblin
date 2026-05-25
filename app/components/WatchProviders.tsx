@@ -81,9 +81,7 @@ function ProviderGroup({ label, providers }: { label: string; providers: FilmWat
 export default function WatchProviders({ providers }: { providers: FilmWatchProvider[] }) {
   if (providers.length === 0) return null;
 
-  const primary = providers.filter((provider) => provider.category === "flatrate" || provider.category === "free" || provider.category === "ads");
-  const secondary = providers.filter((provider) => provider.category === "rent" || provider.category === "buy");
-  const secondaryByCategory = secondary.reduce<Record<string, FilmWatchProvider[]>>((groups, provider) => {
+  const providersByCategory = providers.reduce<Record<string, FilmWatchProvider[]>>((groups, provider) => {
     groups[provider.category] = [...(groups[provider.category] ?? []), provider];
     return groups;
   }, {});
@@ -91,21 +89,16 @@ export default function WatchProviders({ providers }: { providers: FilmWatchProv
   return (
     <section style={{ width: "100%", maxWidth: 760, marginTop: 30 }}>
       <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 12 }}>
-        Where to Watch
+        Streaming On
       </div>
       <div style={{ display: "grid", gap: 16 }}>
-        <ProviderGroup label="Streaming now" providers={primary} />
-        {secondary.length > 0 && (
-          <div style={{ display: "grid", gap: 12 }}>
-            {(["rent", "buy"] as const).map((category) => (
-              <ProviderGroup
-                key={category}
-                label={CATEGORY_LABELS[category]}
-                providers={secondaryByCategory[category] ?? []}
-              />
-            ))}
-          </div>
-        )}
+        {(["flatrate", "free", "ads"] as const).map((category) => (
+          <ProviderGroup
+            key={category}
+            label={CATEGORY_LABELS[category]}
+            providers={providersByCategory[category] ?? []}
+          />
+        ))}
       </div>
       <div style={{ marginTop: 10, fontFamily: "var(--font-ui)", fontSize: 10, color: "var(--muted)" }}>
         Availability data from TMDB.

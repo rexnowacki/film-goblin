@@ -18,6 +18,19 @@ export interface FilmWatchProvider {
 }
 
 const CATEGORY_ORDER: TmdbWatchProviderCategory[] = ["flatrate", "free", "ads", "rent", "buy"];
+const STREAMING_CATEGORY_ALLOWLIST: readonly TmdbWatchProviderCategory[] = ["flatrate", "free", "ads"];
+const FEATURED_STREAMING_PROVIDER_IDS = [
+  8, // Netflix
+  9, // Amazon Prime Video
+  15, // Hulu
+  73, // Tubi TV
+  350, // Apple TV+
+  1899, // HBO Max / Max
+  1796, // Netflix Standard with Ads
+  1825, // HBO Max Amazon Channel
+  2100, // Amazon Prime Video with Ads
+  613, // Amazon Prime Video Free with Ads
+] as const;
 
 function categoryRank(category: TmdbWatchProviderCategory): number {
   const rank = CATEGORY_ORDER.indexOf(category);
@@ -34,7 +47,9 @@ export async function getFilmWatchProviders(
     .from("film_watch_providers")
     .select("id, film_id, region, provider_id, provider_name, provider_logo_path, category, display_priority, tmdb_link")
     .eq("film_id", filmId)
-    .eq("region", region.toUpperCase());
+    .eq("region", region.toUpperCase())
+    .in("provider_id", [...FEATURED_STREAMING_PROVIDER_IDS])
+    .in("category", [...STREAMING_CATEGORY_ALLOWLIST]);
   if (error) throw error;
 
   return ((data ?? []) as Array<Omit<FilmWatchProvider, "provider_logo_url">>)
