@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { recommendFilm } from "@/lib/actions/recommendations";
-import { useToast } from "./ToastProvider";
-import BottomSheet from "./BottomSheet";
-import Avatar from "./Avatar";
-import { filterCovenMembers } from "./recommend-modal-search";
+import { useToast } from "../ToastProvider";
+import BottomSheet from "../BottomSheet";
+import Avatar from "../ui/Avatar";
+import { filterCovenMembers } from "../recommend-modal-search";
 
 interface CovenMember {
   id: string;

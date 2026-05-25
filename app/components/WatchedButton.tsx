@@ -3,7 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { logWatch } from "@/lib/actions/watched";
-const WatchModal = dynamic(() => import("./WatchModal"));
+const WatchModal = dynamic(() => import("./modals/WatchModal"));
 import { useToast } from "./ToastProvider";
 
 interface Props {

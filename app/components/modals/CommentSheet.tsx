@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import ThreadSheet from "./ThreadSheet";
-import CommentList from "./CommentList";
-import CommentComposer from "./CommentComposer";
+import CommentList from "../CommentList";
+import CommentComposer from "../CommentComposer";
 import { addActivityComment, deleteActivityComment } from "@/lib/actions/activity-comments";
 import type { CommentItem } from "@/lib/queries/activity-comments";
 

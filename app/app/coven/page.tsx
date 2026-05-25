@@ -9,9 +9,9 @@ import {
 import { getProfilesBySearch } from "@/lib/queries/profiles";
 import { getRankedCovenfolk } from "@/lib/queries/coven-interactions";
 import { getMyInviteCode } from "@/lib/queries/invite-codes";
-import TopNav from "@/components/TopNav";
-import BottomNav from "@/components/BottomNav";
-import Avatar from "@/components/Avatar";
+import TopNav from "@/components/nav/TopNav";
+import BottomNav from "@/components/nav/BottomNav";
+import Avatar from "@/components/ui/Avatar";
 import CovenInviteActions from "@/components/CovenInviteActions";
 import CovenChipRow from "@/components/coven/CovenChipRow";
 import PeopleSearch from "@/components/PeopleSearch";

@@ -14,7 +14,7 @@ import { ToastProvider } from "@/components/ToastProvider";
 import { getServerUser } from "@/lib/supabase/cached";
 import { createClient } from "@/lib/supabase/server";
 import { getPendingAnnouncement, type PendingAnnouncement } from "@/lib/queries/announcements";
-import AnnouncementOverlay from "@/components/AnnouncementOverlay";
+import AnnouncementOverlay from "@/components/modals/AnnouncementOverlay";
 import { THEME_COOKIE, readTheme } from "@/lib/theme";
 
 const rubikWetPaint = Rubik_Wet_Paint({

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Avatar from "../Avatar";
+import Avatar from "../ui/Avatar";
 import { relativeTime } from "../activity/relativeTime";
 import type { EnrichedNotification } from "@/lib/queries/notifications";
 import { notificationRichCopy, notificationTarget } from "@/lib/notifications/display";

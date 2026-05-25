@@ -9,8 +9,8 @@ import FollowedActivityFeed from "@/components/FollowedActivityFeed";
 import LedgerPanel from "@/components/LedgerPanel";
 import GoblinRecommends from "@/components/GoblinRecommends";
 import GoblinRecommendsMobile from "@/components/GoblinRecommendsMobile";
-import TopNav from "@/components/TopNav";
-import BottomNav from "@/components/BottomNav";
+import TopNav from "@/components/nav/TopNav";
+import BottomNav from "@/components/nav/BottomNav";
 import FeedTabs from "@/components/FeedTabs";
 import FeedSearch from "@/components/FeedSearch";
 

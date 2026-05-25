@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import Avatar from "./Avatar";
+import Avatar from "../ui/Avatar";
 import { signOut } from "@/lib/actions/auth";
 
 interface Props {

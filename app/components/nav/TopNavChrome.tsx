@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import UserMenu from "./UserMenu";
-import NotificationBell from "./NotificationBell";
+import NotificationBell from "../NotificationBell";
 import BackButton from "./BackButton";
-import AddFilmModal from "./AddFilmModal";
+import AddFilmModal from "../modals/AddFilmModal";
 import type { NotificationFeedItem } from "@/lib/queries/notifications";
 
 interface NavItem { id: string; label: string; href: string; badge?: number }

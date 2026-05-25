@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Avatar from "../Avatar";
+import Avatar from "../ui/Avatar";
 import { useCachedTypeahead } from "@/lib/hooks/useCachedTypeahead";
 
 export interface MentionCandidate {

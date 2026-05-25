@@ -3,8 +3,8 @@
 import { useCallback, useState, useTransition } from "react";
 import { toggleCommentReaction, fetchLikersForComment } from "@/lib/actions/comment-reactions";
 import { compactCount } from "@/lib/format";
-import HeartIcon from "./HeartIcon";
-import LikersBottomSheet from "./LikersBottomSheet";
+import HeartIcon from "./ui/HeartIcon";
+import LikersBottomSheet from "./modals/LikersBottomSheet";
 
 interface Props {
   commentId: string;

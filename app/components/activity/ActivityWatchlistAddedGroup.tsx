@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import Avatar from "../Avatar";
+import Avatar from "../ui/Avatar";
 import ActivityWatchlistAdded from "./ActivityWatchlistAdded";
 import { relativeTime } from "./relativeTime";
 import type { ActivityGroup, EnrichedActivity } from "@/lib/queries/activity";

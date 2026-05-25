@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
 import { getArchivedRituals } from "@/lib/queries/ritual";
-import TopNav from "@/components/TopNav";
-import BottomNav from "@/components/BottomNav";
+import TopNav from "@/components/nav/TopNav";
+import BottomNav from "@/components/nav/BottomNav";
 import FilmPoster from "@/components/FilmPoster";
 
 export const dynamic = "force-dynamic";

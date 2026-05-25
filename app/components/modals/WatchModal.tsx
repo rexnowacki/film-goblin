@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import BottomSheet from "./BottomSheet";
+import BottomSheet from "../BottomSheet";
 
 interface SaveValues {
   watched_at: string;

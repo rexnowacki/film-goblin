@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import type { EnrichedActivity } from "@/lib/queries/activity";
 import HeartButton from "../HeartButton";
 import CommentButton from "../CommentButton";
-import CommentSheet from "../CommentSheet";
+import CommentSheet from "../modals/CommentSheet";
 import { relativeTime } from "./relativeTime";
 import { createClient } from "@/lib/supabase/client";
 

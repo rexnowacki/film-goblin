@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { checkAdminAccess } from "@/lib/auth/require-admin";
-import TopNav from "@/components/TopNav";
-import BottomNav from "@/components/BottomNav";
+import TopNav from "@/components/nav/TopNav";
+import BottomNav from "@/components/nav/BottomNav";
 import type { ReactNode } from "react";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {

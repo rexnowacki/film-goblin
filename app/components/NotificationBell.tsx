@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import NotificationBadge from "./NotificationBadge";
+import NotificationBadge from "./ui/NotificationBadge";
 import NotificationsDropdown from "./NotificationsDropdown";
 import { markAllRead, clearAllNotifications } from "@/lib/actions/notifications";
 import { createClient } from "@/lib/supabase/client";

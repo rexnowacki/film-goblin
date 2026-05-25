@@ -2,6 +2,16 @@
 
 All files here are client components. Every file that uses hooks, browser APIs, or event handlers needs `"use client"` at the top.
 
+## Directory structure
+
+Three subdirectories for specific component types; everything else stays flat in root:
+
+- **`modals/`** — sheet/overlay interaction components (9 files): `RecommendModal`, `WatchModal`, `CommentSheet`, `FilmRequestSheet`, `AddFilmModal`, `ThreadSheet`, `AvatarEditor`, `LikersBottomSheet`, `AnnouncementOverlay`
+- **`nav/`** — chrome and navigation (6 files): `TopNav`, `TopNavChrome`, `BottomNav`, `BottomNavIcons`, `BackButton`, `UserMenu`
+- **`ui/`** — reusable display primitives (7 files): `Avatar`, `HeartIcon`, `Stars`, `HalftoneBar`, `MatchPill`, `RoleBadge`, `NotificationBadge`
+
+Import these via their full path: `@/components/nav/TopNav`, `@/components/ui/Avatar`, `@/components/modals/WatchModal`, etc.
+
 ## Type casting at PostgREST embed boundaries
 
 PostgREST `.select("film:films!inner(…)")` always returns one row but generated types in `types.ts` sometimes emit `T[]`. Cast at the **prop boundary**, not inline:

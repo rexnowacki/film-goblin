@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Avatar from "@/components/Avatar";
+import Avatar from "@/components/ui/Avatar";
 import LeaveCovenButton from "@/components/LeaveCovenButton";
 import CovenSeeAllSheet from "@/components/coven/CovenSeeAllSheet";
 import { filterCovenMembers } from "@/components/recommend-modal-search";

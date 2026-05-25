@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import Avatar from "../Avatar";
+import Avatar from "../ui/Avatar";
 import ActivityFooter from "./ActivityFooter";
 import type { EnrichedActivity } from "@/lib/queries/activity";
 

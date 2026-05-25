@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import Avatar from "../Avatar";
+import Avatar from "../ui/Avatar";
 import NotificationRow from "./NotificationRow";
 import { relativeTime } from "../activity/relativeTime";
 import type { NotificationGroup } from "@/lib/queries/notifications";

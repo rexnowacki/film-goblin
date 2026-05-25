@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import BottomSheet from "./BottomSheet";
-import Avatar from "./Avatar";
+import BottomSheet from "../BottomSheet";
+import Avatar from "../ui/Avatar";
 import type { LikersResponse } from "@/lib/actions/reactions";
 
 interface Props {

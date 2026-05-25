@@ -1,6 +1,6 @@
 import Link from "next/link";
 import FilmPoster from "./FilmPoster";
-import MatchPill from "./MatchPill";
+import MatchPill from "./ui/MatchPill";
 import type { ScoredFilm } from "@/lib/queries/fyp/score";
 import type { FilmLite } from "@/lib/queries/fyp/forYou";
 

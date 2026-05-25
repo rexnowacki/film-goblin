@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTransition } from "react";
-import Avatar from "./Avatar";
+import Avatar from "./ui/Avatar";
 import { sendCovenRequest, acceptCovenRequest } from "@/lib/actions/coven";
 
 export interface SearchPersonRowProps {

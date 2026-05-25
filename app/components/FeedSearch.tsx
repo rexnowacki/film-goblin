@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Avatar from "@/components/Avatar";
+import Avatar from "@/components/ui/Avatar";
 import { searchFeedTargets, type FeedSearchUser, type FeedSearchFilm } from "@/lib/actions/feed-search";
 import { useCachedTypeahead } from "@/lib/hooks/useCachedTypeahead";
 

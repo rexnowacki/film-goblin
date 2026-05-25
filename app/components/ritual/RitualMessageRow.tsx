@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Avatar from "@/components/Avatar";
+import Avatar from "@/components/ui/Avatar";
 import type { RitualMessage } from "@/lib/queries/ritual";
 
 interface Props {

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import Avatar from "@/components/Avatar";
-const AvatarEditor = dynamic(() => import("@/components/AvatarEditor"));
+import Avatar from "@/components/ui/Avatar";
+const AvatarEditor = dynamic(() => import("@/components/modals/AvatarEditor"));
 import { useToast } from "@/components/ToastProvider";
 import { updateProfile } from "@/lib/actions/profile";
 import { createClient } from "@/lib/supabase/client";

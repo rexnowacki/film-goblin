@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-const WatchModal = dynamic(() => import("@/components/WatchModal"));
+const WatchModal = dynamic(() => import("@/components/modals/WatchModal"));
 import { editWatch, deleteWatch } from "@/lib/actions/watched";
 import { useToast } from "@/components/ToastProvider";
 import type { DiaryRow as DiaryRowData } from "@/lib/queries/watched";

@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
 import { getForYou } from "@/lib/queries/fyp/forYou";
-import TopNav from "@/components/TopNav";
-import BottomNav from "@/components/BottomNav";
+import TopNav from "@/components/nav/TopNav";
+import BottomNav from "@/components/nav/BottomNav";
 import ForYouFeed from "@/components/ForYouFeed";
 
 const PAGE_SIZE = 20;

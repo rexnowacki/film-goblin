@@ -2,8 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
 import { getPublicLists, getMySubscribedLists } from "@/lib/queries/lists";
-import TopNav from "@/components/TopNav";
-import BottomNav from "@/components/BottomNav";
+import TopNav from "@/components/nav/TopNav";
+import BottomNav from "@/components/nav/BottomNav";
 import SubscribeButton from "@/components/SubscribeButton";
 
 export default async function ListsPage() {

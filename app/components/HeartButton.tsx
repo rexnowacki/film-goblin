@@ -3,8 +3,8 @@
 import { useCallback, useState, useTransition } from "react";
 import { toggleReaction, fetchLikersForActivity } from "@/lib/actions/reactions";
 import { compactCount } from "@/lib/format";
-import LikersBottomSheet from "./LikersBottomSheet";
-import HeartIcon from "./HeartIcon";
+import LikersBottomSheet from "./modals/LikersBottomSheet";
+import HeartIcon from "./ui/HeartIcon";
 
 interface Props {
   activityId: string;

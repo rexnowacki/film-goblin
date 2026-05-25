@@ -9,10 +9,10 @@ import {
   getListOwner,
   getMySubscribedLists,
 } from "@/lib/queries/lists";
-import TopNav from "@/components/TopNav";
-import BottomNav from "@/components/BottomNav";
+import TopNav from "@/components/nav/TopNav";
+import BottomNav from "@/components/nav/BottomNav";
 import FilmPoster from "@/components/FilmPoster";
-import Avatar from "@/components/Avatar";
+import Avatar from "@/components/ui/Avatar";
 import SubscribeButton from "@/components/SubscribeButton";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

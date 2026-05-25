@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getLandingMarquee } from "@/lib/supabase/cached";
 import FilmPoster from "@/components/FilmPoster";
 import PriceDrop from "@/components/PriceDrop";
-import HalftoneBar from "@/components/HalftoneBar";
+import HalftoneBar from "@/components/ui/HalftoneBar";
 
 export default async function LandingPage() {
   const marqueeFilms = await getLandingMarquee();

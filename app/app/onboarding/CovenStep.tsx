@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Avatar from "@/components/Avatar";
+import Avatar from "@/components/ui/Avatar";
 import { initialSelection, toggleFollower } from "./coven-step-logic";
 
 export interface StarterProfile {

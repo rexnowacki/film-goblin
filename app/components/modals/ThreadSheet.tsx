@@ -1,6 +1,6 @@
 "use client";
 
-import BottomSheet from "./BottomSheet";
+import BottomSheet from "../BottomSheet";
 
 interface Props {
   open: boolean;

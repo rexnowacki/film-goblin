@@ -9,7 +9,7 @@ import BottomSheet from "@/components/BottomSheet";
 import { useToast } from "@/components/ToastProvider";
 import { buildShareUrl, buildShareMessage } from "@/components/ShareFilmButton";
 import dynamic from "next/dynamic";
-const WatchModal = dynamic(() => import("@/components/WatchModal"));
+const WatchModal = dynamic(() => import("@/components/modals/WatchModal"));
 
 const TODAY_ISO = () => new Date().toISOString().slice(0, 10);
 

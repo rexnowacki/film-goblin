@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Avatar from "@/components/Avatar";
+import Avatar from "@/components/ui/Avatar";
 import BottomSheet from "@/components/BottomSheet";
 import type { WatcherProfile } from "@/lib/queries/film-watchers";
 

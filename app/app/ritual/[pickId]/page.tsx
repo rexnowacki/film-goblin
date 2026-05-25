@@ -2,8 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser, getActiveRitualPick } from "@/lib/supabase/cached";
 import { getRitualPickById, getRitualMessages } from "@/lib/queries/ritual";
-import TopNav from "@/components/TopNav";
-import BottomNav from "@/components/BottomNav";
+import TopNav from "@/components/nav/TopNav";
+import BottomNav from "@/components/nav/BottomNav";
 import RitualHeader from "@/components/ritual/RitualHeader";
 import RitualPageBody from "@/components/ritual/RitualPageBody";
 

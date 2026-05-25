@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Avatar from "./Avatar";
+import Avatar from "./ui/Avatar";
 
 const MAX_LEN = 140;
 

@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getLocalHauntDetail } from "@/lib/queries/theater-showings";
-import TopNav from "@/components/TopNav";
-import BottomNav from "@/components/BottomNav";
+import TopNav from "@/components/nav/TopNav";
+import BottomNav from "@/components/nav/BottomNav";
 import FilmPoster from "@/components/FilmPoster";
 
 function dateCopy(showing: NonNullable<Awaited<ReturnType<typeof getLocalHauntDetail>>>) {

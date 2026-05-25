@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Avatar from "./Avatar";
+import Avatar from "./ui/Avatar";
 import CommentHeartButton from "./CommentHeartButton";
 import { relativeTime } from "./activity/relativeTime";
 import type { CommentItem } from "@/lib/queries/activity-comments";

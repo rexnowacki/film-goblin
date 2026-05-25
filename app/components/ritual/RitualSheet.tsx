@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ThreadSheet from "@/components/ThreadSheet";
+import ThreadSheet from "@/components/modals/ThreadSheet";
 import { createClient } from "@/lib/supabase/client";
 import type { RitualMessage, RitualPick } from "@/lib/queries/ritual";
 import RitualChat from "./RitualChat";
