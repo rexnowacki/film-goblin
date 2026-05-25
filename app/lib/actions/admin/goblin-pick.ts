@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
@@ -31,6 +31,7 @@ export async function scheduleGoblinPick(
   });
 
   if (error) return { ok: false, error: error.message };
+  revalidateTag("goblin-pick");
   revalidatePath("/home");
   revalidatePath("/admin/goblin-pick");
   return { ok: true };
@@ -58,6 +59,7 @@ export async function updateGoblinPick(
 
   const { error } = await supabase.from("goblin_pick").update(patch).eq("id", id);
   if (error) return { ok: false, error: error.message };
+  revalidateTag("goblin-pick");
   revalidatePath("/home");
   revalidatePath("/admin/goblin-pick");
   return { ok: true };
@@ -69,6 +71,7 @@ export async function deleteGoblinPick(id: number): Promise<Result> {
 
   const { error } = await supabase.from("goblin_pick").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
+  revalidateTag("goblin-pick");
   revalidatePath("/home");
   revalidatePath("/admin/goblin-pick");
   return { ok: true };

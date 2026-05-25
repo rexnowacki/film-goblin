@@ -31,12 +31,14 @@ export async function GET(request: Request): Promise<NextResponse> {
     Sentry.init({ dsn: process.env.SENTRY_DSN });
   }
 
-  const maxFilms = Number(process.env.MAX_FILMS_PER_RUN) || 100;
+  const maxFilms = Number(process.env.MAX_FILMS_PER_RUN) || 10000;
+  const maxRuntimeMs = Number(process.env.PRICE_REFRESH_MAX_RUNTIME_MS) || 240_000;
+  const staleHours = Number(process.env.PRICE_REFRESH_STALE_HOURS) || 20;
   const client = new pg.Client({ connectionString: databaseUrl });
 
   try {
     await client.connect();
-    const digest = await runOnce(client, { maxFilms });
+    const digest = await runOnce(client, { maxFilms, maxRuntimeMs, staleHours });
     console.log(digest.render());
     return NextResponse.json({ ok: true, digest: digest.snapshot() });
   } catch (err) {

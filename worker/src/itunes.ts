@@ -38,6 +38,15 @@ interface FetchOptions {
   fetchImpl?: typeof fetch;
 }
 
+function retryAfterMs(value: string | null): number | null {
+  if (!value) return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
+  const dateMs = Date.parse(value);
+  if (!Number.isNaN(dateMs)) return Math.max(0, dateMs - Date.now());
+  return null;
+}
+
 export async function fetchPrices(
   iTunesIds: number[],
   opts: FetchOptions = {}
@@ -52,11 +61,13 @@ export async function fetchPrices(
 
   let lastError: unknown;
   for (let attempt = 1; attempt <= max; attempt++) {
+    let retryDelayMs: number | null = null;
     try {
       const res = await fetchImpl(url.toString());
       if (res.ok) return (await res.json()) as ITunesLookupResponse;
       if (res.status === 429 || res.status >= 500) {
         lastError = new Error(`itunes lookup ${res.status}`);
+        retryDelayMs = retryAfterMs(res.headers.get("retry-after"));
       } else {
         throw new Error(`itunes lookup ${res.status}`);
       }
@@ -64,7 +75,7 @@ export async function fetchPrices(
       lastError = err;
     }
     if (attempt < max) {
-      await new Promise(r => setTimeout(r, backoff * Math.pow(2, attempt - 1)));
+      await new Promise(r => setTimeout(r, retryDelayMs ?? backoff * Math.pow(2, attempt - 1)));
     }
   }
   throw lastError instanceof Error ? lastError : new Error(String(lastError));

@@ -31,6 +31,8 @@ describe("GET /api/cron/refresh-prices", () => {
     process.env.CRON_SECRET = "test-secret";
     process.env.DATABASE_URL = "postgres://fake/test";
     delete process.env.MAX_FILMS_PER_RUN;
+    delete process.env.PRICE_REFRESH_MAX_RUNTIME_MS;
+    delete process.env.PRICE_REFRESH_STALE_HOURS;
     connectMock.mockReset().mockResolvedValue(undefined);
     endMock.mockReset().mockResolvedValue(undefined);
     clientCtor.mockClear();
@@ -72,6 +74,7 @@ describe("GET /api/cron/refresh-prices", () => {
         parse_failures: 0,
         unavailable_marked: 0,
         parse_failure_ids: [],
+        stopped_reason: "complete",
       }),
     });
 
@@ -81,7 +84,7 @@ describe("GET /api/cron/refresh-prices", () => {
     expect(connectMock).toHaveBeenCalledTimes(1);
     expect(runOnceMock).toHaveBeenCalledTimes(1);
     const [, opts] = runOnceMock.mock.calls[0];
-    expect(opts).toEqual({ maxFilms: 100 });
+    expect(opts).toEqual({ maxFilms: 10000, maxRuntimeMs: 240_000, staleHours: 20 });
     const body = await res.json();
     expect(body.ok).toBe(true);
     expect(body.digest.films_refreshed).toBe(3);
@@ -99,12 +102,13 @@ describe("GET /api/cron/refresh-prices", () => {
         parse_failures: 0,
         unavailable_marked: 0,
         parse_failure_ids: [],
+        stopped_reason: "complete",
       }),
     });
 
     await GET(makeRequest("Bearer test-secret"));
     const [, opts] = runOnceMock.mock.calls[0];
-    expect(opts).toEqual({ maxFilms: 25 });
+    expect(opts).toEqual({ maxFilms: 25, maxRuntimeMs: 240_000, staleHours: 20 });
   });
 
   it("returns 500 and ends the client when runOnce throws", async () => {

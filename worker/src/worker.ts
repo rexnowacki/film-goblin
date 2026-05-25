@@ -11,16 +11,29 @@ import { Digest } from "./digest.js";
 export interface RunOnceOptions {
   batchSize?: number;
   maxFilms?: number;
+  maxRuntimeMs?: number;
+  staleHours?: number;
+  now?: () => number;
 }
 
 export async function runOnce(client: Client, opts: RunOnceOptions = {}): Promise<Digest> {
   const batchSize = opts.batchSize ?? 100;
   const maxFilms = opts.maxFilms ?? 10000;
+  const maxRuntimeMs = opts.maxRuntimeMs ?? 240_000;
+  const staleHours = opts.staleHours ?? 20;
+  const now = opts.now ?? Date.now;
+  const startedAt = now();
   const digest = new Digest();
 
   let processed = 0;
   while (processed < maxFilms) {
-    const films = await selectFilmsToRefresh(client, batchSize);
+    if (now() - startedAt >= maxRuntimeMs) {
+      digest.stopped("time_budget");
+      break;
+    }
+
+    const remaining = maxFilms - processed;
+    const films = await selectFilmsToRefresh(client, Math.min(batchSize, remaining), { staleHours });
     if (films.length === 0) break;
 
     const ids = films.map(f => f.itunes_id);
@@ -77,7 +90,15 @@ export async function runOnce(client: Client, opts: RunOnceOptions = {}): Promis
     }
 
     processed += films.length;
-    if (films.length < batchSize) break;
+    if (processed >= maxFilms) {
+      digest.stopped("max_films");
+      break;
+    }
+    if (now() - startedAt >= maxRuntimeMs) {
+      digest.stopped("time_budget");
+      break;
+    }
+    if (films.length < Math.min(batchSize, remaining)) break;
   }
 
   return digest;

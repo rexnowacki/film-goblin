@@ -3,6 +3,9 @@ const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["film-goblin-worker", "film-goblin-notifier"],
   images: {
+    // Vercel image optimization can return 402s when the project hits account
+    // limits. Apple/TMDB already serve sized poster assets, so load them direct.
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "*.mzstatic.com" },
       { protocol: "https", hostname: "image.tmdb.org" },

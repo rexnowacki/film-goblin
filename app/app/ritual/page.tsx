@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getServerUser } from "@/lib/supabase/cached";
-import { getActiveRitualPick, getRitualMessages } from "@/lib/queries/ritual";
+import { getServerUser, getActiveRitualPick } from "@/lib/supabase/cached";
+import { getRitualMessages } from "@/lib/queries/ritual";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import RitualHeader from "@/components/ritual/RitualHeader";
@@ -15,7 +15,7 @@ export default async function RitualPage() {
   if (!user) redirect("/auth/signin?redirect=/ritual");
 
   const supabase = await createClient();
-  const pick = await getActiveRitualPick(supabase);
+  const pick = await getActiveRitualPick();
   const messages = pick ? await getRitualMessages(supabase, pick.pick_id) : [];
   const [{ data: viewer }, { data: staffRow }] = await Promise.all([
     supabase

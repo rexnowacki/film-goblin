@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
+import { requireAuthUser } from "@/lib/auth/require-auth-user";
 
 type Client = SupabaseClient<Database>;
 
@@ -13,8 +14,7 @@ export async function _recommendFilm(
   toUserId: string,
   note: string
 ): Promise<{ id: string }> {
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
   if (user.id === toUserId) throw new Error("cannot recommend to self");
 
   const { data, error } = await client

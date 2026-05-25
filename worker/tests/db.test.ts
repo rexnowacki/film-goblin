@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeTestDb } from "./helpers/db.js";
 import { selectFilmsToRefresh, latestPriceHistory, findWatchlistsForFilm } from "../src/db.js";
 
-async function insertFilm(client: any, itunes_id: number, opts: any = {}) {
+async function insertFilm(client: any, itunes_id: number | null, opts: any = {}) {
   const r = await client.query(
     `INSERT INTO films (itunes_id, title, last_checked_at, tracking)
      VALUES ($1, $2, $3, $4) RETURNING id`,
@@ -29,15 +29,15 @@ describe("migrations", () => {
 });
 
 describe("selectFilmsToRefresh", () => {
-  it("orders by last_checked_at ASC NULLS FIRST and respects limit and tracking flag", async () => {
+  it("orders stale films by last_checked_at ASC NULLS FIRST and respects limit and tracking flag", async () => {
     const { client, close } = await makeTestDb();
     try {
       const a = await insertFilm(client, 1, { last_checked_at: null });
       const b = await insertFilm(client, 2, { last_checked_at: new Date("2020-01-01") });
-      const c = await insertFilm(client, 3, { last_checked_at: new Date("2030-01-01") });
+      await insertFilm(client, 3, { last_checked_at: new Date() });
       await insertFilm(client, 4, { tracking: false });
       const rows = await selectFilmsToRefresh(client, 10);
-      expect(rows.map(r => r.id)).toEqual([a, b, c]);
+      expect(rows.map(r => r.id)).toEqual([a, b]);
     } finally { await close(); }
   });
 });

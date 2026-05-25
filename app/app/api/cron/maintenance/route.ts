@@ -7,6 +7,7 @@ import { sendDailyDigests } from "film-goblin-notifier";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
 import { runRateReminders } from "@/lib/cron/rate-reminders";
 import { runItunesAvailabilityCheck } from "@/lib/itunes-availability/check";
+import { runStreamingAvailabilityRefresh } from "@/lib/streaming-availability/refresh";
 import { acquireCronLock } from "@/lib/theaters/lock";
 import { runTheaterAlerts } from "@/lib/theaters/scrape-theaters";
 
@@ -77,8 +78,10 @@ export async function GET(request: Request): Promise<NextResponse> {
     await client.connect();
 
     jobs.refreshPrices = await runJob("refresh-prices", async () => {
-      const maxFilms = Number(process.env.MAX_FILMS_PER_RUN) || 100;
-      const digest = await runOnce(client, { maxFilms });
+      const maxFilms = Number(process.env.MAX_FILMS_PER_RUN) || 10000;
+      const maxRuntimeMs = Number(process.env.PRICE_REFRESH_MAX_RUNTIME_MS) || 180_000;
+      const staleHours = Number(process.env.PRICE_REFRESH_STALE_HOURS) || 20;
+      const digest = await runOnce(client, { maxFilms, maxRuntimeMs, staleHours });
       console.log(digest.render());
       return digest.snapshot();
     });
@@ -104,6 +107,12 @@ export async function GET(request: Request): Promise<NextResponse> {
     } else {
       jobs.itunesAvailability = { ok: true, skipped: true, reason: "not scheduled today" };
     }
+
+    jobs.streamingAvailability = await runJob("streaming-availability", () => {
+      const maxFilms = Number(process.env.STREAMING_AVAILABILITY_MAX_FILMS_PER_RUN) || 40;
+      const staleHours = Number(process.env.STREAMING_AVAILABILITY_STALE_HOURS) || 24;
+      return runStreamingAvailabilityRefresh(client, { maxFilms, staleHours, region: "US" });
+    });
 
     jobs.sendNotifications = await runJob("send-notifications", async () => {
       const resendKey = process.env.RESEND_API_KEY;

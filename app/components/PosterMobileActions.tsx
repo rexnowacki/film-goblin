@@ -7,7 +7,8 @@ import { addToLibrary, removeFromLibrary } from "@/lib/actions/library";
 import { removeFromWatchlist } from "@/lib/actions/watchlists";
 import { logWatch } from "@/lib/actions/watched";
 import { buildShareUrl, buildShareMessage } from "@/components/ShareFilmButton";
-import WatchModal from "@/components/WatchModal";
+import dynamic from "next/dynamic";
+const WatchModal = dynamic(() => import("@/components/WatchModal"));
 
 const TODAY_ISO = () => new Date().toISOString().slice(0, 10);
 

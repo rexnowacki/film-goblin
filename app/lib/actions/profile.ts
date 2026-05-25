@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 import { friendlyError } from "@/lib/auth/friendly-errors";
+import { requireAuthUser } from "@/lib/auth/require-auth-user";
 
 type Client = SupabaseClient<Database>;
 
@@ -32,8 +33,7 @@ const USERNAME_RE = /^[a-z0-9._]+$/;
 const USERNAME_MAX_LENGTH = 24;
 
 export async function _updateProfile(client: Client, fields: ProfileFields): Promise<void> {
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) throw new Error("unauthenticated");
+  const user = await requireAuthUser(client);
 
   if (fields.username !== undefined) {
     const u = fields.username.trim().toLowerCase();

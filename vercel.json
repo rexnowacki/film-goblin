@@ -1,0 +1,9 @@
+{
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "buildCommand": "npm --workspace app run build",
+  "outputDirectory": "app/.next",
+  "crons": [
+    { "path": "/api/cron/maintenance", "schedule": "0 10 * * *" }
+  ]
+}

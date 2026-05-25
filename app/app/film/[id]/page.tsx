@@ -16,7 +16,8 @@ import Stars from "@/components/Stars";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FilmActions from "@/components/FilmActions";
-import RecommendModal from "@/components/RecommendModal";
+import dynamic from "next/dynamic";
+const RecommendModal = dynamic(() => import("@/components/RecommendModal"));
 import PriceStatBlock from "@/components/PriceStatBlock";
 import CovenScore from "@/components/CovenScore";
 import FilmTagsRow from "@/components/FilmTagsRow";
@@ -30,6 +31,8 @@ import { getFilmTags } from "@/lib/queries/film-tags";
 import { getFilmCast } from "@/lib/queries/film-cast";
 import { getCovenWatchersForFilm, getOtherWatchersForFilm } from "@/lib/queries/film-watchers";
 import FilmWatchersStrip from "@/components/FilmWatchersStrip";
+import WatchProviders from "@/components/WatchProviders";
+import { getFilmWatchProviders } from "@/lib/queries/streaming-availability";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -76,12 +79,15 @@ export default async function FilmDetailPage({
   const fromUsername = fromRaw && /^[a-z0-9._]+$/.test(fromRaw) ? fromRaw.toLowerCase() : null;
 
   const supabase = await createClient();
-  const [film, history, reviews, filmCast, user] = await Promise.all([
+  const [film, history, reviews, filmCast, watchProviders, user, filmTags, sharerWatch] = await Promise.all([
     getFilm(supabase, id),
     getLatestPriceHistory(supabase, id, 180),
     getPublishedReviewsForFilm(supabase, id),
     getFilmCast(supabase, id),
+    getFilmWatchProviders(supabase, id),
     getServerUser(),
+    getFilmTags(supabase, id),
+    fromUsername ? getSharerWatchForFilm(fromUsername, id) : Promise.resolve(null),
   ]);
   const [covenMembers, onList, owned, watchCount, topCovenMemberIds, myProfile, covenWatchers, otherWatchersResult] = user
     ? await Promise.all([
@@ -95,9 +101,6 @@ export default async function FilmDetailPage({
         getOtherWatchersForFilm(supabase, user.id, id),
       ])
     : [[], false, false, 0, [] as string[], null, [], { users: [], totalCount: 0 }];
-
-  const sharerWatch = fromUsername ? await getSharerWatchForFilm(fromUsername, id) : null;
-  const filmTags = await getFilmTags(supabase, id);
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
@@ -197,6 +200,8 @@ export default async function FilmDetailPage({
                 <FilmCastStrip cast={filmCast} />
               </div>
             )}
+
+            <WatchProviders providers={watchProviders} />
 
             {(film.watchlist_count > 0 || film.watcher_count > 0) && (
               <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, color: "var(--muted)", margin: "26px 0 0" }}>

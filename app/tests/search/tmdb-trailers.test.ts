@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   chooseBestTmdbTrailer,
   chooseTmdbCast,
+  lookupTmdbWatchProviders,
+  normalizeTmdbWatchProviders,
   lookupTmdbTrailer,
   lookupTmdbTrailerForFilm,
   resolveTmdbIdByTitleYear,
@@ -113,6 +115,45 @@ describe("chooseTmdbCast", () => {
   });
 });
 
+describe("normalizeTmdbWatchProviders", () => {
+  it("normalizes US providers in streaming-first category order", () => {
+    const providers = normalizeTmdbWatchProviders({
+      results: {
+        US: {
+          link: "https://www.themoviedb.org/movie/550-watch",
+          rent: [
+            { provider_id: 2, provider_name: "Rental B", logo_path: "/rent.jpg", display_priority: 4 },
+          ],
+          flatrate: [
+            { provider_id: 3, provider_name: "Stream C", logo_path: "/stream-c.jpg", display_priority: 8 },
+            { provider_id: 1, provider_name: "Stream A", logo_path: "/stream-a.jpg", display_priority: 1 },
+          ],
+          ads: [
+            { provider_id: 4, provider_name: "Ads D", logo_path: null, display_priority: 2 },
+          ],
+        },
+      },
+    });
+
+    expect(providers.map((provider) => `${provider.category}:${provider.provider_name}`)).toEqual([
+      "flatrate:Stream A",
+      "flatrate:Stream C",
+      "ads:Ads D",
+      "rent:Rental B",
+    ]);
+    expect(providers[0]).toMatchObject({
+      provider_id: 1,
+      provider_logo_path: "/stream-a.jpg",
+      provider_logo_url: "https://image.tmdb.org/t/p/w92/stream-a.jpg",
+      tmdb_link: "https://www.themoviedb.org/movie/550-watch",
+    });
+  });
+
+  it("returns an empty list when the requested region is missing", () => {
+    expect(normalizeTmdbWatchProviders({ results: { CA: { flatrate: [] } } }, "US")).toEqual([]);
+  });
+});
+
 describe("lookupTmdbTrailer", () => {
   it("fetches TMDB videos and returns the selected trailer", async () => {
     vi.stubEnv("TMDB_API_KEY", "tmdb-key");
@@ -138,6 +179,44 @@ describe("lookupTmdbTrailer", () => {
     });
     expect(fetchMock).toHaveBeenCalledWith(
       "https://api.themoviedb.org/3/movie/550/videos?api_key=tmdb-key&language=en-US",
+      { cache: "no-store" },
+    );
+  });
+});
+
+describe("lookupTmdbWatchProviders", () => {
+  it("fetches TMDB watch providers and normalizes the requested region", async () => {
+    vi.stubEnv("TMDB_API_KEY", "tmdb-key");
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        results: {
+          US: {
+            flatrate: [
+              { provider_id: 8, provider_name: "Shudder", logo_path: "/shudder.jpg", display_priority: 3 },
+            ],
+          },
+        },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(lookupTmdbWatchProviders(550, "US")).resolves.toEqual({
+      ok: true,
+      providers: [
+        {
+          provider_id: 8,
+          provider_name: "Shudder",
+          provider_logo_path: "/shudder.jpg",
+          provider_logo_url: "https://image.tmdb.org/t/p/w92/shudder.jpg",
+          category: "flatrate",
+          display_priority: 3,
+          tmdb_link: null,
+        },
+      ],
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.themoviedb.org/3/movie/550/watch/providers?api_key=tmdb-key",
       { cache: "no-store" },
     );
   });

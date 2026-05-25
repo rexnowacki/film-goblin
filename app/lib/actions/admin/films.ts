@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import pg from "pg";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { resolveAdamIdFromAppleTvUrl } from "@/lib/apple-tv/resolve-adam-id";
@@ -14,6 +15,7 @@ import { _fulfillRequest } from "@/lib/actions/film-requests";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
 import { backfillTmdbTrailers, lookupTrailerForFilm, trailerPayload } from "@/lib/trailers/tmdb-enrichment";
 import { backfillTmdbCast, lookupCastForFilm, replaceFilmCast } from "@/lib/cast/tmdb-enrichment";
+import { runStreamingAvailabilityRefresh } from "@/lib/streaming-availability/refresh";
 
 export type { ITunesSearchHit } from "@/lib/search/itunes-hit";
 
@@ -125,6 +127,51 @@ function validateForm(fields: FilmFormFields): string | null {
   return null;
 }
 
+async function recordInitialPriceForFilm(filmId: string, itunesId: number): Promise<void> {
+  const svc = serviceRoleClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const c = svc as unknown as { from: (t: string) => any };
+
+  const { data: existing, error: existingError } = await c
+    .from("price_history")
+    .select("id")
+    .eq("film_id", filmId)
+    .limit(1);
+  if (existingError) throw existingError;
+  if ((existing ?? []).length > 0) return;
+
+  const lookup = await fetchPrices([itunesId]);
+  const raw = lookup.results?.find(result => result.trackId === itunesId) ?? lookup.results?.[0];
+  const parsed = raw ? parseFilm(raw) : null;
+
+  if (!parsed || parsed.itunes_id !== itunesId) {
+    const { error } = await c
+      .from("films")
+      .update({ last_checked_at: new Date().toISOString() })
+      .eq("id", filmId);
+    if (error) throw error;
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const { error: insertError } = await c
+    .from("price_history")
+    .insert({
+      film_id: filmId,
+      price_usd: parsed.price_usd,
+      hd_price_usd: parsed.hd_price_usd,
+      is_sale: false,
+      captured_at: now,
+    });
+  if (insertError) throw insertError;
+
+  const { error: updateError } = await c
+    .from("films")
+    .update({ last_checked_at: now, last_priced_at: now })
+    .eq("id", filmId);
+  if (updateError) throw updateError;
+}
+
 export async function adminCreateFilm(
   fields: FilmFormFields,
   requestId?: string,
@@ -186,6 +233,14 @@ export async function adminCreateFilm(
     await replaceFilmCast(serviceRoleClient(), data.id, cast.cast);
   }
 
+  if (fields.itunes_id) {
+    try {
+      await recordInitialPriceForFilm(data.id, fields.itunes_id);
+    } catch (err) {
+      console.warn("adminCreateFilm: initial price check failed:", err);
+    }
+  }
+
   // Fulfill pending request if one triggered this add
   if (requestId) {
     const svc = serviceRoleClient();
@@ -193,6 +248,7 @@ export async function adminCreateFilm(
     revalidatePath("/admin/film-requests");
   }
 
+  revalidateTag("films");
   revalidatePath("/admin/films");
   return { ok: true, filmId: data.id };
 }
@@ -210,6 +266,12 @@ export async function adminUpdateFilm(id: string, fields: FilmFormFields): Promi
   const c = supabase as unknown as { from: (t: string) => any };
   const seriesRes = await resolveSeriesId(c, fields);
   if (!seriesRes.ok) return seriesRes;
+  const { data: previous, error: previousError } = await supabase
+    .from("films")
+    .select("itunes_id")
+    .eq("id", id)
+    .single();
+  if (previousError) return { ok: false, error: previousError.message };
 
   const updatePayload = {
     itunes_id: fields.itunes_id,
@@ -236,6 +298,15 @@ export async function adminUpdateFilm(id: string, fields: FilmFormFields): Promi
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
 
+  if (fields.itunes_id && fields.itunes_id !== previous.itunes_id) {
+    try {
+      await recordInitialPriceForFilm(id, fields.itunes_id);
+    } catch (err) {
+      console.warn("adminUpdateFilm: initial price check failed:", err);
+    }
+  }
+
+  revalidateTag("films");
   revalidatePath("/admin/films");
   revalidatePath(`/admin/films/${id}/edit`);
   return { ok: true };
@@ -249,6 +320,7 @@ export async function adminRetireFilm(id: string): Promise<{ ok: true } | { ok: 
     .update({ tracking: false, available: false })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
+  revalidateTag("films");
   revalidatePath("/admin/films");
   return { ok: true };
 }
@@ -265,6 +337,7 @@ export async function adminBackfillTmdbTrailers(batchSize = 25): Promise<
   const result = await backfillTmdbTrailers(service, limit);
   if (!result.ok) return result;
 
+  revalidateTag("films");
   revalidatePath("/admin/films");
   return { ok: true, ...result.stats };
 }
@@ -281,6 +354,46 @@ export async function adminBackfillTmdbCast(batchSize = 25): Promise<
   const result = await backfillTmdbCast(service, limit);
   if (!result.ok) return result;
 
+  revalidateTag("films");
   revalidatePath("/admin/films");
   return { ok: true, ...result.stats };
+}
+
+export async function adminBackfillTmdbStreaming(batchSize = 40): Promise<
+  | {
+      ok: true;
+      checked: number;
+      refreshed: number;
+      providersSaved: number;
+      failed: number;
+      skipped: number;
+      tmdbIdsResolved: number;
+      region: string;
+    }
+  | { ok: false; error: string }
+> {
+  const supabase = await createClient();
+  await requireAdmin(supabase);
+
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) return { ok: false, error: "Missing DATABASE_URL." };
+
+  const maxFilms = Math.max(1, Math.min(batchSize, 75));
+  const client = new pg.Client({ connectionString: databaseUrl });
+
+  try {
+    await client.connect();
+    const result = await runStreamingAvailabilityRefresh(client, {
+      maxFilms,
+      staleHours: 0,
+      region: "US",
+    });
+    revalidateTag("films");
+    revalidatePath("/admin/films");
+    return { ok: true, ...result };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Streaming backfill failed." };
+  } finally {
+    await client.end().catch(() => {});
+  }
 }

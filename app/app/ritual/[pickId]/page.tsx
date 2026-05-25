@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getServerUser } from "@/lib/supabase/cached";
-import { getActiveRitualPick, getRitualPickById, getRitualMessages } from "@/lib/queries/ritual";
+import { getServerUser, getActiveRitualPick } from "@/lib/supabase/cached";
+import { getRitualPickById, getRitualMessages } from "@/lib/queries/ritual";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import RitualHeader from "@/components/ritual/RitualHeader";
@@ -26,7 +26,7 @@ export default async function RitualByIdPage({
 
   const supabase = await createClient();
   const [active, pick] = await Promise.all([
-    getActiveRitualPick(supabase),
+    getActiveRitualPick(),
     getRitualPickById(supabase, pickId),
   ]);
   if (!pick) notFound();

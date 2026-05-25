@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import Avatar from "@/components/Avatar";
-import AvatarEditor from "@/components/AvatarEditor";
+const AvatarEditor = dynamic(() => import("@/components/AvatarEditor"));
 import { useToast } from "@/components/ToastProvider";
 import { updateProfile } from "@/lib/actions/profile";
 import { createClient } from "@/lib/supabase/client";
