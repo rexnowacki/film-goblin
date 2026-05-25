@@ -9,14 +9,22 @@ function numOrNull(v: unknown): number | null {
 
 export async function selectFilmsToRefresh(
   client: Client,
-  limit: number
+  limit: number,
+  opts: { staleHours?: number } = {},
 ): Promise<FilmRow[]> {
+  const staleHours = opts.staleHours ?? 20;
+  const staleBefore = new Date(Date.now() - staleHours * 60 * 60 * 1000);
   const r = await client.query(
     `SELECT * FROM films
      WHERE tracking = TRUE
+       AND itunes_id > 0
+       AND (
+         last_checked_at IS NULL
+         OR last_checked_at < $2
+       )
      ORDER BY last_checked_at ASC NULLS FIRST
      LIMIT $1`,
-    [limit]
+    [limit, staleBefore]
   );
   // BIGINT comes back as a string from pg; coerce at the boundary.
   return r.rows.map((row: any) => ({

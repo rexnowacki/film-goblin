@@ -125,4 +125,23 @@ describe("runOnce", () => {
       expect(r.rows[0].is_sale).toBe(true);
     } finally { await close(); }
   });
+
+  it("stops before work when the time budget is exhausted", async () => {
+    const { client, close } = await makeTestDb();
+    try {
+      await upsertFilm(client, {
+        itunes_id: 1468845007, title: "Midsommar", director: "Ari Aster",
+        year: 2019, runtime_min: 147, genre_primary: "Horror",
+        description: "", content_advisory: "R", artwork_url: "", itunes_url: "",
+        price_usd: 5.99, hd_price_usd: null,
+      });
+
+      const digest = await runOnce(client, { maxRuntimeMs: 0 });
+
+      expect(digest.snapshot()).toMatchObject({
+        films_refreshed: 0,
+        stopped_reason: "time_budget",
+      });
+    } finally { await close(); }
+  });
 });

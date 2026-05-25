@@ -78,8 +78,10 @@ export async function GET(request: Request): Promise<NextResponse> {
     await client.connect();
 
     jobs.refreshPrices = await runJob("refresh-prices", async () => {
-      const maxFilms = Number(process.env.MAX_FILMS_PER_RUN) || 100;
-      const digest = await runOnce(client, { maxFilms });
+      const maxFilms = Number(process.env.MAX_FILMS_PER_RUN) || 10000;
+      const maxRuntimeMs = Number(process.env.PRICE_REFRESH_MAX_RUNTIME_MS) || 180_000;
+      const staleHours = Number(process.env.PRICE_REFRESH_STALE_HOURS) || 20;
+      const digest = await runOnce(client, { maxFilms, maxRuntimeMs, staleHours });
       console.log(digest.render());
       return digest.snapshot();
     });

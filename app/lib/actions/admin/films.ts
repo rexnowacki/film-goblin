@@ -125,6 +125,51 @@ function validateForm(fields: FilmFormFields): string | null {
   return null;
 }
 
+async function recordInitialPriceForFilm(filmId: string, itunesId: number): Promise<void> {
+  const svc = serviceRoleClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const c = svc as unknown as { from: (t: string) => any };
+
+  const { data: existing, error: existingError } = await c
+    .from("price_history")
+    .select("id")
+    .eq("film_id", filmId)
+    .limit(1);
+  if (existingError) throw existingError;
+  if ((existing ?? []).length > 0) return;
+
+  const lookup = await fetchPrices([itunesId]);
+  const raw = lookup.results?.find(result => result.trackId === itunesId) ?? lookup.results?.[0];
+  const parsed = raw ? parseFilm(raw) : null;
+
+  if (!parsed || parsed.itunes_id !== itunesId) {
+    const { error } = await c
+      .from("films")
+      .update({ last_checked_at: new Date().toISOString() })
+      .eq("id", filmId);
+    if (error) throw error;
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const { error: insertError } = await c
+    .from("price_history")
+    .insert({
+      film_id: filmId,
+      price_usd: parsed.price_usd,
+      hd_price_usd: parsed.hd_price_usd,
+      is_sale: false,
+      captured_at: now,
+    });
+  if (insertError) throw insertError;
+
+  const { error: updateError } = await c
+    .from("films")
+    .update({ last_checked_at: now, last_priced_at: now })
+    .eq("id", filmId);
+  if (updateError) throw updateError;
+}
+
 export async function adminCreateFilm(
   fields: FilmFormFields,
   requestId?: string,
@@ -186,6 +231,14 @@ export async function adminCreateFilm(
     await replaceFilmCast(serviceRoleClient(), data.id, cast.cast);
   }
 
+  if (fields.itunes_id) {
+    try {
+      await recordInitialPriceForFilm(data.id, fields.itunes_id);
+    } catch (err) {
+      console.warn("adminCreateFilm: initial price check failed:", err);
+    }
+  }
+
   // Fulfill pending request if one triggered this add
   if (requestId) {
     const svc = serviceRoleClient();
@@ -210,6 +263,12 @@ export async function adminUpdateFilm(id: string, fields: FilmFormFields): Promi
   const c = supabase as unknown as { from: (t: string) => any };
   const seriesRes = await resolveSeriesId(c, fields);
   if (!seriesRes.ok) return seriesRes;
+  const { data: previous, error: previousError } = await supabase
+    .from("films")
+    .select("itunes_id")
+    .eq("id", id)
+    .single();
+  if (previousError) return { ok: false, error: previousError.message };
 
   const updatePayload = {
     itunes_id: fields.itunes_id,
@@ -235,6 +294,14 @@ export async function adminUpdateFilm(id: string, fields: FilmFormFields): Promi
     .update(updatePayload as never)
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
+
+  if (fields.itunes_id && fields.itunes_id !== previous.itunes_id) {
+    try {
+      await recordInitialPriceForFilm(id, fields.itunes_id);
+    } catch (err) {
+      console.warn("adminUpdateFilm: initial price check failed:", err);
+    }
+  }
 
   revalidatePath("/admin/films");
   revalidatePath(`/admin/films/${id}/edit`);

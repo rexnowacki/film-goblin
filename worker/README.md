@@ -24,17 +24,19 @@ npm run seed                # seed ~500 curated films
 npm run worker
 ```
 
-One pass: selects tracked films ordered by stalest `last_checked_at`,
-refreshes prices in batches of 100, writes history and alerts, prints a
+One pass: selects stale tracked films ordered by stalest `last_checked_at`,
+refreshes prices in batches of 100, writes history and alerts, and exits before
+its runtime budget is exhausted. It prints a
 digest line like:
 
 ```
-films_refreshed=87 price_changes=12 alerts_fired=4 parse_failures=0 unavailable_marked=1
+films_refreshed=87 price_changes=12 alerts_fired=4 parse_failures=0 unavailable_marked=1 stopped_reason=complete
 ```
 
-Intended to be invoked every 4 hours. The HTTP cron mount
-(`/api/cron/refresh-prices` on Vercel) lands in sub-project 3 when the
-Next.js scaffold exists; for now invoke this script directly.
+By default, a film is stale after 20 hours and a worker pass has a 240 second
+runtime budget. The app cron routes can override these with
+`PRICE_REFRESH_STALE_HOURS`, `PRICE_REFRESH_MAX_RUNTIME_MS`, and
+`MAX_FILMS_PER_RUN`.
 
 ## Admin: add a single film
 
