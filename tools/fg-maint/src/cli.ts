@@ -175,19 +175,34 @@ function help(): void {
   console.log(`fg-maint
 
 Usage:
-  npm run fg -- status
-  npm run fg -- db counts
-  npm run fg -- prices run [--all] [--yes]
+  fg-maint status
+  fg-maint db counts
+  fg-maint prices run [options]
+
+Commands:
+  status                Show repo, production, and database health
+  db counts             Show catalog/enrichment/staleness counts
+  prices run            Run a price refresh against the configured database
 
 Price options:
-  --all                 Check every tracked film with an iTunes ID once
+  --all                 Full local sweep: check every tracked film with an iTunes ID once
   --batch-size 100      iTunes lookup batch size, max 100
   --delay-ms 2000       Delay between Apple lookup batches
   --max-attempts 4      Retry attempts per Apple lookup batch
-  --budget-ms 240000    Runtime budget for stale mode
-  --stale-hours 20      Staleness cutoff for stale mode
-  --max-films 10000     Max films for stale mode
+  --budget-ms 240000    Runtime budget for stale mode only
+  --stale-hours 20      Staleness cutoff for stale mode only
+  --max-films 10000     Max films for stale mode only
   --yes                 Skip confirmation
+
+Examples:
+  fg-maint status
+  fg-maint db counts
+  fg-maint prices run --all
+  fg-maint prices run --all --yes
+  fg-maint prices run --all --batch-size 50 --delay-ms 3000 --yes
+
+Shortcut note:
+  --all belongs after "prices run"; use "fg-maint prices run --all", not "fg-maint --all".
 `);
 }
 
@@ -196,6 +211,13 @@ async function main(): Promise<void> {
   const { command, flags } = parseArgs(process.argv.slice(2));
   const [a, b] = command;
 
+  if (flags.all && command.length === 0) {
+    console.error("Did you mean: fg-maint prices run --all");
+    console.error("");
+    help();
+    process.exitCode = 1;
+    return;
+  }
   if (!a || a === "help" || a === "--help") {
     help();
     return;
