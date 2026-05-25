@@ -1,5 +1,5 @@
 import type pg from "pg";
-import { lookupTmdbWatchProviders, type TmdbWatchProvider } from "@/lib/search/tmdb";
+import { lookupTmdbWatchProviders, resolveTmdbIdByTitleYear, type TmdbWatchProvider } from "@/lib/search/tmdb";
 
 export interface StreamingAvailabilityRefreshOptions {
   maxFilms?: number;
@@ -13,12 +13,15 @@ export interface StreamingAvailabilityRefreshResult {
   providersSaved: number;
   failed: number;
   skipped: number;
+  tmdbIdsResolved: number;
   region: string;
 }
 
 interface FilmRow {
   id: string;
-  tmdb_id: number;
+  tmdb_id: number | null;
+  title: string;
+  year: number;
 }
 
 type PgClient = pg.Client | pg.PoolClient;
@@ -33,10 +36,9 @@ async function selectFilms(
 ): Promise<FilmRow[]> {
   const { rows } = await client.query<FilmRow>(
     `
-      SELECT id, tmdb_id
+      SELECT id, tmdb_id, title, year
       FROM films
-      WHERE tmdb_id IS NOT NULL
-        AND available IS TRUE
+      WHERE available IS TRUE
         AND (
           streaming_availability_checked_at IS NULL
           OR streaming_availability_checked_at < now() - ($2::text)::interval
@@ -47,6 +49,30 @@ async function selectFilms(
     [opts.maxFilms, `${opts.staleHours} hours`],
   );
   return rows;
+}
+
+async function markChecked(client: PgClient, filmId: string): Promise<void> {
+  await client.query(
+    `UPDATE films SET streaming_availability_checked_at = now() WHERE id = $1`,
+    [filmId],
+  );
+}
+
+async function resolveMissingTmdbId(client: PgClient, film: FilmRow): Promise<number | null> {
+  if (film.tmdb_id) return Number(film.tmdb_id);
+
+  const resolved = await resolveTmdbIdByTitleYear(film.title, Number(film.year));
+  if (!resolved.ok) throw new Error(resolved.error);
+  if (!resolved.tmdb_id) {
+    await markChecked(client, film.id);
+    return null;
+  }
+
+  await client.query(
+    `UPDATE films SET tmdb_id = $2 WHERE id = $1 AND tmdb_id IS NULL`,
+    [film.id, resolved.tmdb_id],
+  );
+  return resolved.tmdb_id;
 }
 
 async function replaceProviders(
@@ -109,16 +135,27 @@ export async function runStreamingAvailabilityRefresh(
     providersSaved: 0,
     failed: 0,
     skipped: 0,
+    tmdbIdsResolved: 0,
     region,
   };
 
   for (const film of films) {
-    if (!film.tmdb_id) {
+    let tmdbId: number | null = null;
+    try {
+      tmdbId = await resolveMissingTmdbId(client, film);
+      if (!film.tmdb_id && tmdbId) result.tmdbIdsResolved += 1;
+    } catch (err) {
+      result.failed += 1;
+      console.warn(`streaming availability TMDB id resolution failed for film ${film.id}:`, err);
+      continue;
+    }
+
+    if (!tmdbId) {
       result.skipped += 1;
       continue;
     }
 
-    const lookup = await lookupTmdbWatchProviders(Number(film.tmdb_id), region);
+    const lookup = await lookupTmdbWatchProviders(tmdbId, region);
     if (!lookup.ok) {
       result.failed += 1;
       console.warn(`streaming availability refresh failed for film ${film.id}: ${lookup.error}`);
