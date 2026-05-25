@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import pg from "pg";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { resolveAdamIdFromAppleTvUrl } from "@/lib/apple-tv/resolve-adam-id";
@@ -14,6 +15,7 @@ import { _fulfillRequest } from "@/lib/actions/film-requests";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
 import { backfillTmdbTrailers, lookupTrailerForFilm, trailerPayload } from "@/lib/trailers/tmdb-enrichment";
 import { backfillTmdbCast, lookupCastForFilm, replaceFilmCast } from "@/lib/cast/tmdb-enrichment";
+import { runStreamingAvailabilityRefresh } from "@/lib/streaming-availability/refresh";
 
 export type { ITunesSearchHit } from "@/lib/search/itunes-hit";
 
@@ -350,4 +352,42 @@ export async function adminBackfillTmdbCast(batchSize = 25): Promise<
 
   revalidatePath("/admin/films");
   return { ok: true, ...result.stats };
+}
+
+export async function adminBackfillTmdbStreaming(batchSize = 40): Promise<
+  | {
+      ok: true;
+      checked: number;
+      refreshed: number;
+      providersSaved: number;
+      failed: number;
+      skipped: number;
+      tmdbIdsResolved: number;
+      region: string;
+    }
+  | { ok: false; error: string }
+> {
+  const supabase = await createClient();
+  await requireAdmin(supabase);
+
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) return { ok: false, error: "Missing DATABASE_URL." };
+
+  const maxFilms = Math.max(1, Math.min(batchSize, 75));
+  const client = new pg.Client({ connectionString: databaseUrl });
+
+  try {
+    await client.connect();
+    const result = await runStreamingAvailabilityRefresh(client, {
+      maxFilms,
+      staleHours: 0,
+      region: "US",
+    });
+    revalidatePath("/admin/films");
+    return { ok: true, ...result };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Streaming backfill failed." };
+  } finally {
+    await client.end().catch(() => {});
+  }
 }
