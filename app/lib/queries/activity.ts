@@ -68,6 +68,9 @@ export interface ActivityGroup {
 
 export interface FeedFilters {
   limit?: number;
+  // "coven" is the legacy home feed scope: viewer + coven mates, plus recs
+  // sent to the viewer. "site" is the public activity firehose.
+  scope?: "coven" | "site";
   // When set, return only this user's activity (overrides the follow-graph scope).
   actorId?: string;
   // When set, return only activity whose payload references this film_id.
@@ -105,18 +108,22 @@ export async function getEnrichedActivity(
   opts: FeedFilters = {},
 ): Promise<EnrichedActivityPage> {
   const limit = opts.limit ?? 20;
+  const scope = opts.scope ?? "coven";
 
-  // Feed scope is the user's coven graph (mutual bonds), not the older
-  // one-directional follows table. coven_members has the user_a_id <
-  // user_b_id invariant; expand both sides into a flat list of mates.
-  const { data: covenRows } = await client
-    .from("coven_members")
-    .select("user_a_id, user_b_id")
-    .or(`user_a_id.eq.${followerUserId},user_b_id.eq.${followerUserId}`);
-  const covenMateIds = (covenRows ?? []).map(r =>
-    r.user_a_id === followerUserId ? r.user_b_id : r.user_a_id,
-  );
-  const actorIds = Array.from(new Set([followerUserId, ...covenMateIds]));
+  let actorIds: string[] | null = null;
+  if (scope === "coven") {
+    // Feed scope is the user's coven graph (mutual bonds), not the older
+    // one-directional follows table. coven_members has the user_a_id <
+    // user_b_id invariant; expand both sides into a flat list of mates.
+    const { data: covenRows } = await client
+      .from("coven_members")
+      .select("user_a_id, user_b_id")
+      .or(`user_a_id.eq.${followerUserId},user_b_id.eq.${followerUserId}`);
+    const covenMateIds = (covenRows ?? []).map(r =>
+      r.user_a_id === followerUserId ? r.user_b_id : r.user_a_id,
+    );
+    actorIds = Array.from(new Set([followerUserId, ...covenMateIds]));
+  }
 
   const isFiltered = !!(opts.actorId || opts.filmId);
 
@@ -130,7 +137,7 @@ export async function getEnrichedActivity(
     .order("created_at", { ascending: false });
   if (opts.actorId) {
     primary = primary.eq("actor_user_id", opts.actorId);
-  } else {
+  } else if (actorIds) {
     primary = primary.in("actor_user_id", actorIds);
   }
   if (opts.filmId) {
@@ -144,9 +151,10 @@ export async function getEnrichedActivity(
   }
   primary = primary.limit(limit);
 
-  // Skip recsToMe when kinds are specified and don't include recommendation_sent —
-  // no point fetching recs for a reviews or lists tab.
-  const includeRecsToMe = !isFiltered && (!opts.kinds?.length || opts.kinds.includes("recommendation_sent"));
+  // For the coven-scoped feed, preserve the legacy behavior of including
+  // recommendations sent to the viewer even if the sender is not in their
+  // coven graph. The site-wide feed already includes those rows naturally.
+  const includeRecsToMe = scope === "coven" && !isFiltered && (!opts.kinds?.length || opts.kinds.includes("recommendation_sent"));
 
   const [byActor, recsToMe] = await Promise.all([
     primary,

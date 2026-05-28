@@ -1,11 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser, getActiveRitualPick } from "@/lib/supabase/cached";
 import { getEnrichedActivity } from "@/lib/queries/activity";
-import { getFollowedActivity } from "@/lib/queries/followed-activity";
 import { getWatchlistPriceDropFilms } from "@/lib/queries/ledger";
 import type { GoblinPickFilm } from "@/lib/queries/goblin-pick";
 import { getRitualMessages } from "@/lib/queries/ritual";
-import FollowedActivityFeed from "@/components/FollowedActivityFeed";
 import LedgerPanel from "@/components/LedgerPanel";
 import GoblinRecommends from "@/components/GoblinRecommends";
 import GoblinRecommendsMobile from "@/components/GoblinRecommendsMobile";
@@ -16,11 +14,18 @@ import FeedSearch from "@/components/FeedSearch";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PAGE_SIZE = 20;
+type FeedTab = "all" | "coven" | "recs";
 
-const TAB_KINDS: Record<string, string[]> = {
-  reviews: ["review_published"],
+const VALID_TABS = new Set<FeedTab>(["all", "coven", "recs"]);
+
+const TAB_KINDS: Partial<Record<FeedTab, string[]>> = {
   recs: ["recommendation_sent"],
-  lists: ["list_created", "list_film_added"],
+};
+
+const TAB_SCOPE: Record<FeedTab, "site" | "coven"> = {
+  all: "site",
+  coven: "coven",
+  recs: "coven",
 };
 
 export default async function HomePage({
@@ -31,7 +36,7 @@ export default async function HomePage({
   const sp = await searchParams;
   const actorId = sp.actor && UUID_RE.test(sp.actor) ? sp.actor : null;
   const filmId = sp.film && UUID_RE.test(sp.film) ? sp.film : null;
-  const tabParam = sp.tab ?? "all";
+  const tabParam = VALID_TABS.has(sp.tab as FeedTab) ? (sp.tab as FeedTab) : "all";
   const user = await getServerUser();
   const supabase = await createClient();
 
@@ -41,14 +46,13 @@ export default async function HomePage({
         actorId: actorId ?? undefined,
         filmId: filmId ?? undefined,
         kinds: TAB_KINDS[tabParam],
+        scope: TAB_SCOPE[tabParam],
       })
     : { items: [], nextCursor: null, done: true };
   const initialItems = initialPage.items;
   const initialCursor = initialPage.nextCursor;
   const initialDone = initialPage.done;
 
-  // Only load "From the Goblins" on the ALL tab — it's not relevant to filtered tabs.
-  const followedActivity = (user && tabParam === "all") ? await getFollowedActivity(supabase, user.id) : [];
   const [priceDropFilms, ritualPick] = await Promise.all([
     user ? getWatchlistPriceDropFilms(supabase, user.id, 5) : Promise.resolve([]),
     getActiveRitualPick(),
@@ -143,14 +147,6 @@ export default async function HomePage({
           >
             <GoblinRecommendsMobile film={goblinPick} ritual={ritual} />
           </FeedTabs>
-          {tabParam === "all" && followedActivity.length > 0 && (
-            <section style={{ marginTop: 48, paddingBottom: 48 }}>
-              <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 14 }}>
-                From the Goblins
-              </div>
-              <FollowedActivityFeed items={followedActivity} />
-            </section>
-          )}
         </main>
         <aside
           className="desktop-only"

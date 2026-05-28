@@ -21,6 +21,7 @@ function listSqlFiles(dir: string): string[] {
 //   - CREATE/DROP VIEW (correlated subquery views fail to parse; tests don't read views)
 function stripUnsupported(sql: string): string {
   let out = sql.replace(/CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\b[\s\S]*?\$\$[\s\S]*?\$\$\s*;/gi, "");
+  out = out.replace(/DO\s+\$\$[\s\S]*?\$\$\s*;/gi, "");
   out = out.replace(/CREATE\s+(?:OR\s+REPLACE\s+)?TRIGGER\b[\s\S]*?;/gi, "");
   out = out.replace(/DROP\s+TRIGGER\b[\s\S]*?;/gi, "");
   return out
@@ -30,8 +31,12 @@ function stripUnsupported(sql: string): string {
     .filter(s => !/DROP\s+POLICY\b/i.test(s))
     .filter(s => !/^\s*GRANT\b/im.test(s))
     .filter(s => !/^\s*REVOKE\b/im.test(s))
+    .filter(s => !/DROP\s+FUNCTION\b/i.test(s))
     .filter(s => !/CREATE\s+(?:OR\s+REPLACE\s+)?VIEW\b/i.test(s))
     .filter(s => !/DROP\s+VIEW\b/i.test(s))
+    .filter(s => !/USING\s+GIN\b/i.test(s))
+    .filter(s => !/ALTER\s+TYPE\b/i.test(s))
+    .filter(s => !/ALTER\s+FUNCTION\b/i.test(s))
     .join(";\n");
 }
 
@@ -79,12 +84,25 @@ export async function setupTestDb(): Promise<{ client: Client; cleanup: () => Pr
   for (const f of listSqlFiles(DB_MIGRATIONS)) {
     if (f.includes("avatars_bucket")) continue; // pg-mem has no Supabase storage schema
     if (f.includes("backfill")) continue;       // correlated-subquery UPDATE FROMs pg-mem can't run
+    // Depends on enum values added by ALTER TYPE, which pg-mem does not apply.
+    // Notifier tests do not exercise this local-haunts partial index.
+    if (f === "0165_local_haunts_notification_guard.sql") continue;
+    // Search/dedupe index maintenance uses DELETE ... USING, expression
+    // indexes, and trigram GIN indexes that pg-mem does not support. These
+    // notifier tests only need the notifications table shape.
+    if (f === "0188_notification_dedupe_and_search_indexes.sql") continue;
     let raw = readFileSync(join(DB_MIGRATIONS, f), "utf8");
     // pg-mem doesn't update index expressions when a column is renamed, so
     // a subsequent DROP INDEX referencing the old column errors with
     // "Column not found". Pre-drop the index before the rename runs.
     if (f === "0137_rename_handle_to_username.sql") {
       raw = `DROP INDEX IF EXISTS profiles_handle_lower_idx;\n${raw}`;
+    }
+    // Postgres auto-names the original tags.type CHECK as tags_type_check,
+    // but pg-mem gives the same unnamed constraint a synthetic name. Drop the
+    // pg-mem name too so 0152 can replace the v1 facets before reseeding.
+    if (f === "0152_tagging_system_v2.sql") {
+      raw = `ALTER TABLE tags DROP CONSTRAINT IF EXISTS tags_constraint_1;\n${raw}`;
     }
     const stripped = stripUnsupported(raw);
     // pg-mem chokes on comment-only blocks ("Unexpected end of input") — skip

@@ -5,6 +5,7 @@ import { getEnrichedActivity, type EnrichedActivity, type FeedFilters } from "@/
 
 export interface LoadMoreFeedArgs {
   before: string;            // cursor — return rows strictly older than this ISO timestamp
+  scope?: FeedFilters["scope"];
   actorId?: string;
   filmId?: string;
   kinds?: string[];          // when set, restrict to these activity kinds
@@ -36,6 +37,7 @@ export async function loadMoreFeed(args: LoadMoreFeedArgs): Promise<LoadMoreFeed
   const opts: FeedFilters = {
     limit,
     before: args.before,
+    scope: args.scope === "site" ? "site" : "coven",
     actorId: args.actorId && UUID_RE.test(args.actorId) ? args.actorId : undefined,
     filmId: args.filmId && UUID_RE.test(args.filmId) ? args.filmId : undefined,
     kinds: args.kinds?.length ? args.kinds : undefined,

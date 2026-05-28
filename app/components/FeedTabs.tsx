@@ -8,22 +8,26 @@ import type { EnrichedActivity, FeedItem } from "@/lib/queries/activity";
 import { groupFeed } from "@/lib/queries/group-activity";
 import { loadMoreFeed } from "@/lib/actions/feed-load-more";
 
-type Tab = "all" | "reviews" | "recs" | "lists";
+type Tab = "all" | "coven" | "recs";
 
 const MATCHERS: Record<Tab, (k: EnrichedActivity["kind"]) => boolean> = {
   all: () => true,
-  reviews: (k) => k === "review_published",
+  coven: () => true,
   recs: (k) => k === "recommendation_sent",
-  lists: (k) => k === "list_created" || k === "list_film_added",
 };
 
 // Mirrors TAB_KINDS in home/page.tsx — passed to loadMoreFeed so pagination
 // stays scoped to the active tab, matching the server-rendered initial page.
 const TAB_KINDS: Record<Tab, string[]> = {
   all: [],
-  reviews: ["review_published"],
+  coven: [],
   recs: ["recommendation_sent"],
-  lists: ["list_created", "list_film_added"],
+};
+
+const TAB_SCOPES: Record<Tab, "site" | "coven"> = {
+  all: "site",
+  coven: "coven",
+  recs: "coven",
 };
 
 function feedItemMatches(item: FeedItem, matcher: (k: EnrichedActivity["kind"]) => boolean): boolean {
@@ -42,7 +46,8 @@ interface Props {
 export default function FeedTabs({ initialItems, initialCursor, initialDone, filters, children }: Props) {
   const router = useRouter();
   const params = useSearchParams();
-  const urlTab = (params.get("tab") as Tab) || "all";
+  const rawTab = params.get("tab");
+  const urlTab: Tab = rawTab === "coven" || rawTab === "recs" ? rawTab : "all";
   const [tab, setTab] = useState<Tab>(urlTab);
 
   const [items, setItems] = useState<EnrichedActivity[]>(initialItems);
@@ -87,6 +92,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
       const kinds = TAB_KINDS[tabRef.current];
       const res = await loadMoreFeed({
         before: cursorRef.current,
+        scope: TAB_SCOPES[tabRef.current],
         actorId: filters.actorId,
         filmId: filters.filmId,
         kinds: kinds.length ? kinds : undefined,
@@ -123,7 +129,8 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
   function pickTab(next: Tab) {
     const p = new URLSearchParams(params);
     if (next === "all") p.delete("tab"); else p.set("tab", next);
-    router.push(`/home?${p.toString()}`);
+    const query = p.toString();
+    router.push(query ? `/home?${query}` : "/home");
   }
 
   const grouped = useMemo(() => groupFeed(items), [items]);
@@ -132,11 +139,16 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
     [grouped, tab],
   );
   const showFeedInsert = tab === "all" && !filters.actorId && !filters.filmId;
+  const emptyCopy = tab === "all"
+    ? "No activity yet."
+    : tab === "coven"
+      ? "No coven activity yet. Visit /coven to follow someone."
+      : "No recommendations yet.";
 
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
-        {(["all", "reviews", "recs", "lists"] as Tab[]).map(t => (
+        {(["all", "coven", "recs"] as Tab[]).map(t => (
           <button key={t} onClick={() => pickTab(t)} className="caps" style={{
             background: tab === t ? "var(--accent)" : "transparent",
             color: tab === t ? "var(--accent-ink)" : "var(--muted)",
@@ -150,7 +162,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
         {showFeedInsert && children}
         {filtered.length === 0 ? (
           <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6, padding: "20px 0" }}>
-            No activity yet. Visit <a href="/coven" style={{ color: "var(--accent)" }}>/coven</a> to follow someone.
+            {emptyCopy}
           </div>
         ) : (
           filtered.map(item => (
