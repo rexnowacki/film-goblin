@@ -55,10 +55,11 @@ async function writeSetting(
   value: unknown,
   userId: string,
 ): Promise<void> {
-  await (client as any).from(TABLE).upsert(
+  const { error } = await (client as any).from(TABLE).upsert(
     { key, value, updated_at: new Date().toISOString(), updated_by: userId },
     { onConflict: "key" },
   );
+  if (error) throw new Error(`site_settings upsert failed: ${error.message}`);
 }
 
 // Admin action: flip the invite gate. Throws NotAdminError for non-admins.
@@ -71,12 +72,16 @@ export async function setInviteGate(enabled: boolean): Promise<void> {
 
 // Read for the admin page: current value + when it last changed.
 export async function getInviteGateSetting(): Promise<{ enabled: boolean; updatedAt: string | null }> {
-  const sr = serviceRoleClient();
-  const { data } = await (sr as any)
-    .from(TABLE)
-    .select("value, updated_at")
-    .eq("key", "invite_gate")
-    .maybeSingle();
-  if (!data) return { enabled: true, updatedAt: null };
-  return { enabled: data.value === true, updatedAt: data.updated_at ?? null };
+  try {
+    const sr = serviceRoleClient();
+    const { data } = await (sr as any)
+      .from(TABLE)
+      .select("value, updated_at")
+      .eq("key", "invite_gate")
+      .maybeSingle();
+    if (!data) return { enabled: true, updatedAt: null };
+    return { enabled: data.value === true, updatedAt: data.updated_at ?? null };
+  } catch {
+    return { enabled: true, updatedAt: null };
+  }
 }
