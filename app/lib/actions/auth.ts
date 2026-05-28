@@ -8,6 +8,7 @@ import { safeRedirect } from "@/lib/auth/safe-redirect";
 import { setInviteCookie } from "./invite-cookie";
 import { peekInviteCode, burnInviteCode } from "@/lib/actions/invite-codes";
 import { readInviteCodeCookie } from "@/lib/actions/invite-cookie";
+import { isInviteGateEnabled } from "@/lib/actions/admin/site-settings";
 
 const USERNAME_RE = /^[a-z0-9._]+$/;
 const SYNTHETIC_EMAIL_DOMAIN = "noreply.film-goblin.app";
@@ -61,9 +62,12 @@ export async function signUp(formData: FormData): Promise<{ error?: string; info
     return { error: "Password must be at least 6 characters." };
   }
 
-  // Gate check — validate cookie before touching auth.users
+  // Gate check — validate cookie before touching auth.users. The gate is a
+  // runtime DB setting (site_settings.invite_gate); read once and reuse below
+  // so a mid-request toggle can't make the two checks disagree.
+  const gateEnabled = await isInviteGateEnabled();
   let inviteCode: string | null = null;
-  if (process.env.INVITE_GATE === "1") {
+  if (gateEnabled) {
     inviteCode = await readInviteCodeCookie();
     const isValid = await peekInviteCode(inviteCode);
     if (!isValid) return { error: "You need a valid invite link to join." };
@@ -98,7 +102,7 @@ export async function signUp(formData: FormData): Promise<{ error?: string; info
   }
 
   // Burn invite after user is created — newUserId is now known
-  if (process.env.INVITE_GATE === "1" && inviteCode && createData?.user?.id) {
+  if (gateEnabled && inviteCode && createData?.user?.id) {
     await burnInviteCode(inviteCode, createData.user.id);
   }
 
