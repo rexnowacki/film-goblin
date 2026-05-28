@@ -46,3 +46,37 @@ export async function readSettingBool(key: string, fallback: boolean): Promise<b
 export async function isInviteGateEnabled(): Promise<boolean> {
   return readSettingBool("invite_gate", true);
 }
+
+// Module-private upsert. `client` is the service-role client (cast to any
+// because `site_settings` is not yet in lib/supabase/types.ts).
+async function writeSetting(
+  client: ReturnType<typeof serviceRoleClient>,
+  key: string,
+  value: unknown,
+  userId: string,
+): Promise<void> {
+  await (client as any).from(TABLE).upsert(
+    { key, value, updated_at: new Date().toISOString(), updated_by: userId },
+    { onConflict: "key" },
+  );
+}
+
+// Admin action: flip the invite gate. Throws NotAdminError for non-admins.
+export async function setInviteGate(enabled: boolean): Promise<void> {
+  const supabase = await createClient();
+  const user = await requireAdminUser(supabase);
+  await writeSetting(serviceRoleClient(), "invite_gate", enabled, user.id);
+  revalidatePath("/admin/site-settings");
+}
+
+// Read for the admin page: current value + when it last changed.
+export async function getInviteGateSetting(): Promise<{ enabled: boolean; updatedAt: string | null }> {
+  const sr = serviceRoleClient();
+  const { data } = await (sr as any)
+    .from(TABLE)
+    .select("value, updated_at")
+    .eq("key", "invite_gate")
+    .maybeSingle();
+  if (!data) return { enabled: true, updatedAt: null };
+  return { enabled: data.value === true, updatedAt: data.updated_at ?? null };
+}
