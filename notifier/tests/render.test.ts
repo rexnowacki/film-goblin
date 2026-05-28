@@ -80,4 +80,47 @@ describe("renderDigestEmail", () => {
     expect(out.text).toContain("$4.99");
     expect(out.text).toContain("Dario Argento");
   });
+
+  it("renders the Film Goblin wordmark and footer controls", () => {
+    const alert: AlertLite = { id: "a1", old_price_usd: 9.99, new_price_usd: 4.99, film: FILM_A };
+    const out = renderDigestEmail(USER, [alert], BASE_URL);
+    // Wordmark split so "GOBLIN" can be accented separately.
+    expect(out.html).toContain("FILM");
+    expect(out.html).toContain("GOBLIN");
+    expect(out.html).toContain("Watch Weirder");
+    expect(out.html).toContain("Manage preferences");
+    expect(out.html).toContain("https://film-goblin.vercel.app/settings");
+  });
+
+  it("renders a black-on-yellow percent-off stamp", () => {
+    const alert: AlertLite = { id: "a1", old_price_usd: 9.99, new_price_usd: 4.99, film: FILM_A };
+    const out = renderDigestEmail(USER, [alert], BASE_URL);
+    // 9.99 -> 4.99 == 50% off (rounded).
+    expect(out.html).toContain("50% OFF");
+    expect(out.html).toContain("Summon on Apple TV");
+  });
+
+  it("uses singular intro copy for one deal", () => {
+    const alert: AlertLite = { id: "a1", old_price_usd: 9.99, new_price_usd: 4.99, film: FILM_A };
+    const out = renderDigestEmail(USER, [alert], BASE_URL);
+    expect(out.html).toContain("coughed up a drop");
+    expect(out.html).not.toContain("coughed up 1 drops");
+    expect(out.text).toContain("coughed up a drop");
+  });
+
+  it("uses pluralized intro copy for multiple deals", () => {
+    const alerts: AlertLite[] = [
+      { id: "a1", old_price_usd: 9.99, new_price_usd: 4.99, film: FILM_A },
+      { id: "a2", old_price_usd: 14.99, new_price_usd: 6.99, film: FILM_B },
+    ];
+    const out = renderDigestEmail(USER, alerts, BASE_URL);
+    expect(out.html).toContain("coughed up 2 drops");
+    expect(out.text).toContain("coughed up 2 drops");
+  });
+
+  it("greets the user by username in the body", () => {
+    const alert: AlertLite = { id: "a1", old_price_usd: 9.99, new_price_usd: 4.99, film: FILM_A };
+    const out = renderDigestEmail(USER, [alert], BASE_URL);
+    expect(out.html).toContain("moss.witch");
+  });
 });
