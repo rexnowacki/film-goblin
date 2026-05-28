@@ -28,7 +28,7 @@ The `pgClient` is a raw `pg.Client` (not Supabase). The cron route in `app/` cre
 
 ## Sender domain
 
-Email sender is currently in Resend sandbox mode — digest emails are blocked from reaching real inboxes outside of verified addresses. This needs a real domain configured in Resend before digests can reach production users. See root CLAUDE.md "Next up" for status.
+`goblin@freshfromthepit.com` — domain verified in Resend, fully out of sandbox. `NOTIFY_FROM_EMAIL` in Vercel is set to `"Fresh From The Pit <goblin@freshfromthepit.com>"`.
 
 ## Tests (run from `notifier/`)
 

@@ -18,7 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 For full history → `docs/sub-project-history.md`.
 
-**Next up:** Nothing queued. **Invite gate is live.** Pre-launch high-priority: real sender email domain via Resend (sandbox blocks digests reaching real users); list detail page `/lists/[id]` (currently dead-ends from feed). Adjacent quick wins: trailer surface on `/film/[id]` (mig 0150 + `fg-trailers` populate columns, no UI); comment editing + pagination; `/settings` handle validation (regex mismatch with onboarding).
+**Next up:** Nothing queued. **Invite gate is live.** Pre-launch: list detail page `/lists/[id]` (currently dead-ends from feed). Adjacent quick wins: trailer surface on `/film/[id]` (mig 0150 + `fg-trailers` populate columns, no UI); comment editing + pagination; `/settings` handle validation (regex mismatch with onboarding).
 
 **Open threads:**
 - **`CRON_SECRET` rotation procedure.** Vercel marks it "Sensitive" — value can't be viewed after creation. If crons go silent with no visible logs, suspect the secret first (Hobby log retention is ~1h). Local copy at `.cron-secret` (gitignored). Rotation: `openssl rand -base64 32` → save to `.cron-secret` → paste into Vercel dashboard → redeploy from repo root → smoke with `curl -H "Authorization: Bearer $(cat .cron-secret)" https://film-goblin.vercel.app/api/cron/refresh-prices` (expect `{"ok":true,"digest":{...}}`).
