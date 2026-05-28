@@ -12,6 +12,7 @@ export default function AdminHome() {
         <Tile href="/admin/goblin-pick" title="Goblin Pick" blurb="Set the weekly film recommendation shown on the home feed." />
         <Tile href="/admin/film-requests" title="Film Requests" blurb="Review and fulfill user requests for films not yet in the catalog." />
         <Tile href="/admin/invite-codes" title="Invite Codes" blurb="Create and revoke invite links. See who's used each code." />
+        <Tile href="/admin/site-settings" title="Site Settings" blurb="Toggle site-wide controls like invite gating." />
       </div>
     </div>
   );
