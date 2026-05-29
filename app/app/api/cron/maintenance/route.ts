@@ -10,6 +10,7 @@ import { runItunesAvailabilityCheck } from "@/lib/itunes-availability/check";
 import { runStreamingAvailabilityRefresh } from "@/lib/streaming-availability/refresh";
 import { acquireCronLock } from "@/lib/theaters/lock";
 import { runTheaterAlerts } from "@/lib/theaters/scrape-theaters";
+import { recordCronRun } from "@/lib/cron/record-run";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,29 +28,6 @@ function unauthorized() {
 function missing(envVar: string) {
   console.error(`maintenance missing required env: ${envVar}`);
   return NextResponse.json({ error: "server misconfigured" }, { status: 500 });
-}
-
-function errorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === "string") return err;
-  try {
-    return JSON.stringify(err);
-  } catch {
-    return String(err);
-  }
-}
-
-async function runJob(name: string, fn: () => Promise<unknown>): Promise<JobResult> {
-  try {
-    const result = await fn();
-    console.log(`maintenance ${name}:`, result);
-    return { ok: true, result };
-  } catch (err) {
-    const message = errorMessage(err);
-    console.error(`maintenance ${name} failed:`, message);
-    Sentry.captureException(err);
-    return { ok: false, error: "job failed" };
-  }
 }
 
 export async function GET(request: Request): Promise<NextResponse> {
@@ -76,8 +54,23 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   try {
     await client.connect();
+    const sr = serviceRoleClient();
 
-    jobs.refreshPrices = await runJob("refresh-prices", async () => {
+    const recordedJob = async (name: string, fn: () => Promise<unknown>): Promise<JobResult> => {
+      const result = await recordCronRun(sr, name, "cron", fn);
+      if (!result.ok) {
+        console.error(`maintenance ${name} failed:`, result.error);
+        return { ok: false, error: "job failed" };
+      }
+      console.log(`maintenance ${name}:`, result.stats);
+      if (result.status === "skipped") {
+        const reason = (result.stats as { reason?: string } | null)?.reason ?? "skipped";
+        return { ok: true, skipped: true, reason };
+      }
+      return { ok: true, result: result.stats };
+    };
+
+    jobs.refreshPrices = await recordedJob("refresh-prices", async () => {
       const maxFilms = Number(process.env.MAX_FILMS_PER_RUN) || 10000;
       const maxRuntimeMs = Number(process.env.PRICE_REFRESH_MAX_RUNTIME_MS) || 180_000;
       const staleHours = Number(process.env.PRICE_REFRESH_STALE_HOURS) || 20;
@@ -86,35 +79,31 @@ export async function GET(request: Request): Promise<NextResponse> {
       return digest.snapshot();
     });
 
-    jobs.rateReminders = await runJob("rate-reminders", () => runRateReminders(client));
+    jobs.rateReminders = await recordedJob("send-rate-reminders", () => runRateReminders(client));
 
     if (isTheaterDay) {
-      jobs.theaterAlerts = await runJob("theater-alerts", async () => {
-        const supabase = serviceRoleClient();
-        const locked = await acquireCronLock(supabase, "theater-alerts");
+      jobs.theaterAlerts = await recordedJob("theater-alerts", async () => {
+        const locked = await acquireCronLock(sr, "theater-alerts");
         if (!locked) return { skipped: true, reason: "locked" };
-        return runTheaterAlerts(supabase);
+        return runTheaterAlerts(sr);
       });
     } else {
       jobs.theaterAlerts = { ok: true, skipped: true, reason: "not scheduled today" };
     }
 
     if (isMonday) {
-      jobs.itunesAvailability = await runJob("check-itunes-availability", async () => {
-        const supabase = serviceRoleClient();
-        return runItunesAvailabilityCheck(supabase);
-      });
+      jobs.itunesAvailability = await recordedJob("check-itunes-availability", () => runItunesAvailabilityCheck(sr));
     } else {
       jobs.itunesAvailability = { ok: true, skipped: true, reason: "not scheduled today" };
     }
 
-    jobs.streamingAvailability = await runJob("streaming-availability", () => {
+    jobs.streamingAvailability = await recordedJob("streaming-availability", () => {
       const maxFilms = Number(process.env.STREAMING_AVAILABILITY_MAX_FILMS_PER_RUN) || 40;
       const staleHours = Number(process.env.STREAMING_AVAILABILITY_STALE_HOURS) || 24;
       return runStreamingAvailabilityRefresh(client, { maxFilms, staleHours, region: "US" });
     });
 
-    jobs.sendNotifications = await runJob("send-notifications", async () => {
+    jobs.sendNotifications = await recordedJob("send-notifications", async () => {
       const resendKey = process.env.RESEND_API_KEY;
       if (!resendKey) throw new Error("RESEND_API_KEY not configured");
       const from = process.env.NOTIFY_FROM_EMAIL;
@@ -124,7 +113,10 @@ export async function GET(request: Request): Promise<NextResponse> {
       const cleanup = await client.query(
         `DELETE FROM notifications WHERE created_at < now() - INTERVAL '30 days'`,
       );
-      return { digest, notificationsDeleted: cleanup.rowCount ?? 0 };
+      const runCleanup = await client.query(
+        `DELETE FROM cron_runs WHERE started_at < now() - INTERVAL '90 days'`,
+      );
+      return { digest, notificationsDeleted: cleanup.rowCount ?? 0, cronRunsDeleted: runCleanup.rowCount ?? 0 };
     });
   } finally {
     await client.end().catch(() => {});

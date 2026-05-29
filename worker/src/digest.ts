@@ -1,6 +1,7 @@
 export interface DigestSnapshot {
   films_refreshed: number;
   price_changes: number;
+  price_drops: number;
   alerts_fired: number;
   parse_failures: number;
   unavailable_marked: number;
@@ -12,6 +13,7 @@ export class Digest {
   private s: DigestSnapshot = {
     films_refreshed: 0,
     price_changes: 0,
+    price_drops: 0,
     alerts_fired: 0,
     parse_failures: 0,
     unavailable_marked: 0,
@@ -21,6 +23,7 @@ export class Digest {
 
   filmRefreshed() { this.s.films_refreshed++; }
   priceChanged() { this.s.price_changes++; }
+  priceDropped() { this.s.price_drops++; }
   alertFired() { this.s.alerts_fired++; }
   parseFailure(itunesId: number) {
     this.s.parse_failures++;
@@ -36,6 +39,7 @@ export class Digest {
     const parts = [
       `films_refreshed=${s.films_refreshed}`,
       `price_changes=${s.price_changes}`,
+      `price_drops=${s.price_drops}`,
       `alerts_fired=${s.alerts_fired}`,
       `parse_failures=${s.parse_failures}`,
       `unavailable_marked=${s.unavailable_marked}`,
