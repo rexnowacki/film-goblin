@@ -2,7 +2,7 @@
 
 import { useToast } from "./ToastProvider";
 
-const SITE_ORIGIN = "https://film-goblin.vercel.app";
+const SITE_ORIGIN = "https://freshfromthepit.com";
 
 export function buildProfileInviteUrl(username: string): string {
   return `${SITE_ORIGIN}/p/${encodeURIComponent(username)}?invite=1`;

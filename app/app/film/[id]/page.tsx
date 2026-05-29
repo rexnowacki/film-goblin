@@ -42,9 +42,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   const title = `${film.title} (${film.year})`;
   const description = film.description?.trim() || `${film.director}, ${film.year}.`;
-  const url = `https://film-goblin.vercel.app/film/${film.id}`;
+  const url = `https://freshfromthepit.com/film/${film.id}`;
 
-  const ogImageUrl = `https://film-goblin.vercel.app/api/og/film/${film.id}`;
+  const ogImageUrl = `https://freshfromthepit.com/api/og/film/${film.id}`;
   const ogImages = [{ url: ogImageUrl, width: 1200, height: 630, alt: film.title }];
   const twitterImages = [ogImageUrl];
 

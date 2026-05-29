@@ -11,7 +11,7 @@ interface Props {
 
 export default function InviteFriendButton({ inviteCode }: Props) {
   const { toast } = useToast();
-  const message = TEMPLATE(`https://film-goblin.vercel.app/invite/${encodeURIComponent(inviteCode)}`);
+  const message = TEMPLATE(`https://freshfromthepit.com/invite/${encodeURIComponent(inviteCode)}`);
 
   async function invite() {
     try {

@@ -139,7 +139,7 @@ export async function adminSendPasswordReset(
   const hdrs = await headers();
   const origin =
     hdrs.get("origin") ??
-    `https://${hdrs.get("host") ?? "film-goblin.vercel.app"}`;
+    `https://${hdrs.get("host") ?? "freshfromthepit.com"}`;
 
   const { error } = await sr.auth.resetPasswordForEmail(userData.user.email, {
     redirectTo: `${origin}/auth/reset`,

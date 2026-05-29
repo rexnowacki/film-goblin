@@ -33,7 +33,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   const from = process.env.NOTIFY_FROM_EMAIL;
   if (!from) return missing("NOTIFY_FROM_EMAIL");
 
-  const baseUrl = process.env.APP_BASE_URL || "https://film-goblin.vercel.app";
+  const baseUrl = process.env.APP_BASE_URL || "https://freshfromthepit.com";
 
   if (process.env.SENTRY_DSN && !Sentry.isInitialized?.()) {
     Sentry.init({ dsn: process.env.SENTRY_DSN });
