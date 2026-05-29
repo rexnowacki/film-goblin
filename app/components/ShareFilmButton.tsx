@@ -2,7 +2,7 @@
 
 import { useToast } from "./ToastProvider";
 
-const SITE_ORIGIN = "https://film-goblin.vercel.app";
+const SITE_ORIGIN = "https://freshfromthepit.com";
 
 export function buildShareUrl(filmId: string, sharerUsername: string | null): string {
   const base = `${SITE_ORIGIN}/film/${filmId}`;

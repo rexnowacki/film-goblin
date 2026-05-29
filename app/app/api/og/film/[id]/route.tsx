@@ -193,7 +193,7 @@ export async function GET(
                 letterSpacing: "0.04em",
               }}
             >
-              film-goblin.vercel.app
+              freshfromthepit.com
             </div>
           </div>
         </div>

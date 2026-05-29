@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { adminCreateInviteCode, adminRevokeInviteCode } from "@/lib/actions/invite-codes";
 import type { InviteCodeWithOwner } from "@/lib/queries/invite-codes";
 
-const BASE_URL = "https://film-goblin.vercel.app";
+const BASE_URL = "https://freshfromthepit.com";
 
 export function CreateInviteForm() {
   const [result, setResult] = useState<string | null>(null);

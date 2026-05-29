@@ -2,7 +2,7 @@ import { getMyInviteCode } from "@/lib/queries/invite-codes";
 import CopyInviteButton from "@/components/settings/CopyInviteButton";
 import SettingsSection from "@/components/settings/SettingsSection";
 
-const BASE_URL = "https://film-goblin.vercel.app";
+const BASE_URL = "https://freshfromthepit.com";
 
 export default async function InviteLinkSection({ userId }: { userId: string }) {
   const code = await getMyInviteCode(userId);

@@ -36,7 +36,7 @@ describe("GET /api/cron/send-notifications", () => {
     process.env.DATABASE_URL = "postgres://fake/test";
     process.env.RESEND_API_KEY = "re_test";
     process.env.NOTIFY_FROM_EMAIL = "onboarding@resend.dev";
-    process.env.APP_BASE_URL = "https://film-goblin.vercel.app";
+    process.env.APP_BASE_URL = "https://freshfromthepit.com";
     connectMock.mockReset().mockResolvedValue(undefined);
     endMock.mockReset().mockResolvedValue(undefined);
     queryMock.mockReset().mockResolvedValue({ rowCount: 0 });

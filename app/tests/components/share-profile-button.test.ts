@@ -3,11 +3,11 @@ import { buildProfileInviteUrl, buildProfileInviteMessage } from "@/components/S
 
 describe("buildProfileInviteUrl", () => {
   it("appends ?invite=1", () => {
-    expect(buildProfileInviteUrl("teethtony")).toBe("https://film-goblin.vercel.app/p/teethtony?invite=1");
+    expect(buildProfileInviteUrl("teethtony")).toBe("https://freshfromthepit.com/p/teethtony?invite=1");
   });
 
   it("URL-encodes the username", () => {
-    expect(buildProfileInviteUrl("weird.name")).toBe("https://film-goblin.vercel.app/p/weird.name?invite=1");
+    expect(buildProfileInviteUrl("weird.name")).toBe("https://freshfromthepit.com/p/weird.name?invite=1");
   });
 });
 
