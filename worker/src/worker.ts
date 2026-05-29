@@ -78,6 +78,7 @@ export async function runOnce(client: Client, opts: RunOnceOptions = {}): Promis
       digest.filmRefreshed();
 
       if (diff.decreased) {
+        digest.priceDropped();
         const now = new Date();
         const oldPrice = latest!.price_usd; // already a number — coerced in latestPriceHistory
         const watchlists = await findWatchlistsForFilm(client, film.id);
