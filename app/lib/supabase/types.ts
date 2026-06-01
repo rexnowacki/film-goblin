@@ -1592,6 +1592,7 @@ export type Database = {
         | "coven_joined"
         | "watch_logged"
         | "library_added"
+        | "user_joined"
       coven_request_status: "pending" | "accepted" | "declined"
       notification_kind:
         | "coven_invite_pending"
@@ -1746,6 +1747,7 @@ export const Constants = {
         "coven_joined",
         "watch_logged",
         "library_added",
+        "user_joined",
       ],
       coven_request_status: ["pending", "accepted", "declined"],
       review_status: ["draft", "published"],
