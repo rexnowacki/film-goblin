@@ -43,6 +43,7 @@ export type EnrichedActivity = (
   | { kind: "list_created"; list: ListLite }
   | { kind: "list_film_added"; list: ListLite; film: FilmLite }
   | { kind: "coven_joined"; other: RecipientLite }
+  | { kind: "user_joined" }
 ) & {
   id: string;
   created_at: string;
@@ -243,6 +244,9 @@ export async function getEnrichedActivity(
         break;
       case "coven_joined":
         if (recipient) out.push({ ...base, kind: "coven_joined", other: recipient });
+        break;
+      case "user_joined":
+        out.push({ ...base, kind: "user_joined" });
         break;
     }
   }

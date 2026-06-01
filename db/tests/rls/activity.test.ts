@@ -19,7 +19,9 @@ describe("RLS: activity", () => {
 
     await beginAs(db.client, null, "anon");
     try {
-      const r = await db.client.query(`SELECT id FROM activity WHERE actor_user_id = $1`, [fx.userA.id]);
+      // Scope to the kind we inserted — seedFixtures' profile creation also
+      // emits a user_joined activity row for this actor (0195 trigger).
+      const r = await db.client.query(`SELECT id FROM activity WHERE actor_user_id = $1 AND kind = 'list_created'`, [fx.userA.id]);
       expect(r.rowCount).toBe(1);
     } finally { await rollback(db.client); }
   });
