@@ -5,6 +5,7 @@ import {
   selectFilmsToRefresh, latestPriceHistory, findWatchlistsForFilm,
   insertPriceHistory, updateLastChecked, markUnavailable, createAlertAndMark,
   maxPriceInWindow, upsertFilm, insertManualFilm,
+  tryAdvisoryRunLock, releaseAdvisoryRunLock,
 } from "./db.js";
 import { Digest } from "./digest.js";
 
@@ -14,6 +15,9 @@ export interface RunOnceOptions {
   maxRuntimeMs?: number;
   staleHours?: number;
   now?: () => number;
+  // Injectable for tests; default to the Postgres advisory-lock implementation.
+  acquireLock?: (client: Client) => Promise<boolean>;
+  releaseLock?: (client: Client) => Promise<void>;
 }
 
 export async function runOnce(client: Client, opts: RunOnceOptions = {}): Promise<Digest> {
@@ -25,6 +29,17 @@ export async function runOnce(client: Client, opts: RunOnceOptions = {}): Promis
   const startedAt = now();
   const digest = new Digest();
 
+  // Refuse to run if another invocation is already mid-flight. Two overlapping
+  // runs racing on the same stale film both read its pre-drop price and each fire
+  // an alert — the duplicate-digest bug. The lock makes runs strictly serial.
+  const acquireLock = opts.acquireLock ?? tryAdvisoryRunLock;
+  const releaseLock = opts.releaseLock ?? releaseAdvisoryRunLock;
+  if (!(await acquireLock(client))) {
+    digest.stopped("locked");
+    return digest;
+  }
+
+  try {
   let processed = 0;
   while (processed < maxFilms) {
     if (now() - startedAt >= maxRuntimeMs) {
@@ -84,8 +99,8 @@ export async function runOnce(client: Client, opts: RunOnceOptions = {}): Promis
         const watchlists = await findWatchlistsForFilm(client, film.id);
         for (const w of watchlists) {
           if (!shouldAlert(w, parsed.price_usd, now)) continue;
-          await createAlertAndMark(client, w.id, film.id, oldPrice, parsed.price_usd);
-          digest.alertFired();
+          const created = await createAlertAndMark(client, w.id, film.id, oldPrice, parsed.price_usd);
+          if (created) digest.alertFired();
         }
       }
     }
@@ -103,6 +118,9 @@ export async function runOnce(client: Client, opts: RunOnceOptions = {}): Promis
   }
 
   return digest;
+  } finally {
+    await releaseLock(client).catch(() => {});
+  }
 }
 
 // Re-exports for the Next.js admin dashboard — do not break these without updating

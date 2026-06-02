@@ -87,6 +87,11 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
     // These are partial-index constraints that reference enum literals not present in pg-mem's
     // version of the enum. The smoke only asserts table presence, not index behavior.
     if (f === "0165_local_haunts_notification_guard.sql") continue;
+    // Mig 0196 dedupes open price_alerts with a `DELETE … USING` row-value
+    // comparison `(created_at, id) > (…)` that pg-mem's parser rejects. The smoke
+    // only asserts table presence; the partial-index behavior is covered by the
+    // worker pg-mem suite (which mirrors the same index) and the RLS suite.
+    if (f === "0196_price_alerts_open_uniq.sql") continue;
     const raw = readFileSync(join(DB_MIGRATIONS, f), "utf8");
     // pg-mem can't parse `LANGUAGE plpgsql SECURITY DEFINER` functions. Skip
     // any migration file that defines one — the smoke only asserts table

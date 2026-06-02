@@ -126,6 +126,30 @@ describe("runOnce", () => {
     } finally { await close(); }
   });
 
+  it("skips the run entirely when another run already holds the advisory lock", async () => {
+    // Defense in depth: two overlapping cron invocations must not both process
+    // the catalog. If the run lock is held, runOnce does no work and reports it.
+    const { client, close } = await makeTestDb();
+    try {
+      const filmId = await upsertFilm(client, {
+        itunes_id: 1468845007, title: "Midsommar", director: "Ari Aster",
+        year: 2019, runtime_min: 147, genre_primary: "Horror",
+        description: "", content_advisory: "R", artwork_url: "", itunes_url: "",
+        price_usd: 5.99, hd_price_usd: null,
+      });
+
+      const digest = await runOnce(client, { acquireLock: async () => false });
+
+      expect(digest.snapshot()).toMatchObject({
+        films_refreshed: 0,
+        stopped_reason: "locked",
+      });
+      // The film was never touched — last_checked_at stays null.
+      const r = await client.query(`SELECT last_checked_at FROM films WHERE id = $1`, [filmId]);
+      expect(r.rows[0].last_checked_at).toBeNull();
+    } finally { await close(); }
+  });
+
   it("stops before work when the time budget is exhausted", async () => {
     const { client, close } = await makeTestDb();
     try {

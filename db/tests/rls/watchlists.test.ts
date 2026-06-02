@@ -86,6 +86,55 @@ describe("RLS: watchlists + price_alerts", () => {
     } finally { await rollback(db.client); }
   });
 
+  it("rejects a second open alert for the same watchlist+film (price_alerts_open_uniq)", async () => {
+    // Regression: overlapping refresh runs each fired an alert for the same drop,
+    // so a user saw the same film twice in one digest. The partial unique index
+    // makes at most one un-notified alert per watchlist+film.
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    try {
+      const wl = await db.client.query<{ id: string }>(
+        `INSERT INTO watchlists (user_id, film_id) VALUES ($1, $2) RETURNING id`,
+        [fx.userA.id, fx.filmId]
+      );
+      const wlId = wl.rows[0].id;
+      await db.client.query(
+        `INSERT INTO price_alerts (watchlist_id, film_id, old_price_usd, new_price_usd) VALUES ($1, $2, 14.99, 4.99)`,
+        [wlId, fx.filmId]
+      );
+      await expect(
+        db.client.query(
+          `INSERT INTO price_alerts (watchlist_id, film_id, old_price_usd, new_price_usd) VALUES ($1, $2, 14.99, 4.99)`,
+          [wlId, fx.filmId]
+        )
+      ).rejects.toMatchObject({ code: "23505" });
+    } finally { await rollback(db.client); }
+  });
+
+  it("allows a fresh alert once the prior one is notified", async () => {
+    // The index only constrains OPEN (un-notified) alerts. After a digest sends,
+    // a later drop on the same film must be able to alert again.
+    const fx = await seedFixtures(db.client);
+    await beginAs(db.client, null, "service_role");
+    try {
+      const wl = await db.client.query<{ id: string }>(
+        `INSERT INTO watchlists (user_id, film_id) VALUES ($1, $2) RETURNING id`,
+        [fx.userA.id, fx.filmId]
+      );
+      const wlId = wl.rows[0].id;
+      await db.client.query(
+        `INSERT INTO price_alerts (watchlist_id, film_id, old_price_usd, new_price_usd, notified_at)
+         VALUES ($1, $2, 14.99, 4.99, now())`,
+        [wlId, fx.filmId]
+      );
+      const r = await db.client.query(
+        `INSERT INTO price_alerts (watchlist_id, film_id, old_price_usd, new_price_usd) VALUES ($1, $2, 9.99, 5.99) RETURNING id`,
+        [wlId, fx.filmId]
+      );
+      expect(r.rowCount).toBe(1);
+    } finally { await rollback(db.client); }
+  });
+
   it("authenticated client cannot INSERT into price_alerts (worker-only)", async () => {
     const fx = await seedFixtures(db.client);
     await beginAs(db.client, null, "service_role");

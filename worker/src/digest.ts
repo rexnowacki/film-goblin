@@ -6,7 +6,7 @@ export interface DigestSnapshot {
   parse_failures: number;
   unavailable_marked: number;
   parse_failure_ids: number[];
-  stopped_reason: "complete" | "max_films" | "time_budget";
+  stopped_reason: "complete" | "max_films" | "time_budget" | "locked";
 }
 
 export class Digest {

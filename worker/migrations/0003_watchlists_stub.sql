@@ -19,5 +19,13 @@ CREATE TABLE IF NOT EXISTS price_alerts (
   film_id         UUID NOT NULL REFERENCES films(id) ON DELETE CASCADE,
   old_price_usd   NUMERIC(6,2) NOT NULL,
   new_price_usd   NUMERIC(6,2) NOT NULL,
+  notified_at     TIMESTAMPTZ,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- At most one un-notified ("open") alert per watchlist+film. Stops overlapping
+-- refresh runs from firing the same drop twice into a single digest. The column
+-- and this index live canonically in db/migrations; mirrored here so the
+-- worker's bootstrap schema enforces the same guarantee.
+CREATE UNIQUE INDEX IF NOT EXISTS price_alerts_open_uniq
+  ON price_alerts (watchlist_id, film_id) WHERE notified_at IS NULL;

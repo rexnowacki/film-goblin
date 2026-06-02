@@ -160,4 +160,24 @@ describe("createAlertAndMark", () => {
       expect(w.rows[0].last_alerted_at).not.toBeNull();
     } finally { await close(); }
   });
+
+  it("is idempotent — a second alert for the same open watchlist+film is a no-op", async () => {
+    // Regression: two overlapping refresh runs both detected the same drop and
+    // each fired an alert, so a user saw the same film twice in one digest.
+    // A partial unique index on (watchlist_id, film_id) WHERE notified_at IS NULL
+    // makes the duplicate insert a no-op rather than a second row.
+    const { client, close } = await makeTestDb();
+    try {
+      const film = await upsertFilm(client, sampleParsed);
+      const wl = await client.query(
+        `INSERT INTO watchlists (user_id, film_id) VALUES (gen_random_uuid(), $1) RETURNING id`,
+        [film]
+      );
+      const watchlistId = wl.rows[0].id;
+      await createAlertAndMark(client, watchlistId, film, 14.99, 4.99);
+      await createAlertAndMark(client, watchlistId, film, 14.99, 4.99);
+      const alerts = await client.query(`SELECT * FROM price_alerts WHERE watchlist_id = $1`, [watchlistId]);
+      expect(alerts.rowCount).toBe(1);
+    } finally { await close(); }
+  });
 });
