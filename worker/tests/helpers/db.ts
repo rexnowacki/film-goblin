@@ -23,6 +23,23 @@ export async function makeTestDb(): Promise<{ client: Client; close: () => Promi
       impure: true,
     });
   });
+  // pg-mem has no advisory locks; shim them so runOnce's run-lock gate is a no-op
+  // in single-connection tests (always acquirable). Real serialization is a
+  // Postgres concern, exercised against the live DB, not pg-mem.
+  mem.public.registerFunction({
+    name: "pg_try_advisory_lock",
+    args: [DataType.integer],
+    returns: DataType.bool,
+    implementation: () => true,
+    impure: true,
+  });
+  mem.public.registerFunction({
+    name: "pg_advisory_unlock",
+    args: [DataType.integer],
+    returns: DataType.bool,
+    implementation: () => true,
+    impure: true,
+  });
   const { Client: PgMemClient } = mem.adapters.createPg();
   const client = new PgMemClient() as unknown as Client;
   await client.connect();

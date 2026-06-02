@@ -171,13 +171,36 @@ export async function markUnavailable(client: Client, filmId: string): Promise<v
   );
 }
 
+// Returns true if a new alert row was created, false if an equivalent open
+// alert already existed (e.g. an overlapping refresh run beat us to it). The
+// partial unique index price_alerts_open_uniq guarantees at most one un-notified
+// alert per watchlist+film; a concurrent duplicate insert surfaces as a unique
+// violation (23505), which we treat as a benign no-op rather than a second row.
+// Advisory lock guarding a whole price-refresh run. The key is a 64-bit constant
+// unique to this job; two overlapping runs cannot both hold it, so the second
+// exits without touching the catalog. Prevents the duplicate price_history /
+// price_alert rows that an overlap produced (see worker.ts runOnce).
+const RUN_LOCK_KEY = 40712026;
+
+export async function tryAdvisoryRunLock(client: Client): Promise<boolean> {
+  const r = await client.query<{ locked: boolean }>(
+    `SELECT pg_try_advisory_lock($1) AS locked`,
+    [RUN_LOCK_KEY]
+  );
+  return r.rows[0]?.locked === true;
+}
+
+export async function releaseAdvisoryRunLock(client: Client): Promise<void> {
+  await client.query(`SELECT pg_advisory_unlock($1)`, [RUN_LOCK_KEY]);
+}
+
 export async function createAlertAndMark(
   client: Client,
   watchlistId: string,
   filmId: string,
   oldPrice: number,
   newPrice: number
-): Promise<void> {
+): Promise<boolean> {
   await client.query("BEGIN");
   try {
     await client.query(
@@ -190,8 +213,10 @@ export async function createAlertAndMark(
       [watchlistId]
     );
     await client.query("COMMIT");
+    return true;
   } catch (e) {
     await client.query("ROLLBACK");
+    if ((e as { code?: string }).code === "23505") return false;
     throw e;
   }
 }
