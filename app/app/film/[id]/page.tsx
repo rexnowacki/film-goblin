@@ -22,6 +22,7 @@ import PriceStatBlock from "@/components/PriceStatBlock";
 import CovenScore from "@/components/CovenScore";
 import FilmTagsRow from "@/components/FilmTagsRow";
 import ShareFilmButton from "@/components/ShareFilmButton";
+import ShowtimesSheet from "@/components/ShowtimesSheet";
 import TrailerButton from "@/components/TrailerButton";
 import SharerWatchPin from "@/components/SharerWatchPin";
 import FilmCTABanner from "@/components/FilmCTABanner";
@@ -33,6 +34,7 @@ import { getCovenWatchersForFilm, getOtherWatchersForFilm } from "@/lib/queries/
 import FilmWatchersStrip from "@/components/FilmWatchersStrip";
 import WatchProviders from "@/components/WatchProviders";
 import { getFilmWatchProviders } from "@/lib/queries/streaming-availability";
+import { getActiveShowtimesForFilm } from "@/lib/queries/showtimes";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -79,12 +81,13 @@ export default async function FilmDetailPage({
   const fromUsername = fromRaw && /^[a-z0-9._]+$/.test(fromRaw) ? fromRaw.toLowerCase() : null;
 
   const supabase = await createClient();
-  const [film, history, reviews, filmCast, watchProviders, user, filmTags, sharerWatch] = await Promise.all([
+  const [film, history, reviews, filmCast, watchProviders, showtimes, user, filmTags, sharerWatch] = await Promise.all([
     getFilm(supabase, id),
     getLatestPriceHistory(supabase, id, 180),
     getPublishedReviewsForFilm(supabase, id),
     getFilmCast(supabase, id),
     getFilmWatchProviders(supabase, id),
+    getActiveShowtimesForFilm(supabase, id),
     getServerUser(),
     getFilmTags(supabase, id),
     fromUsername ? getSharerWatchForFilm(fromUsername, id) : Promise.resolve(null),
@@ -177,6 +180,14 @@ export default async function FilmDetailPage({
                 year={film.year}
                 sharerUsername={myProfile?.username ?? null}
               />
+              {showtimes.length > 0 && (
+                <ShowtimesSheet
+                  showtimes={showtimes}
+                  filmId={film.id}
+                  filmTitle={film.title}
+                  canInvite={Boolean(user)}
+                />
+              )}
               {film.itunes_url && (
                 <a href={film.itunes_url} target="_blank" rel="noreferrer" className="btn btn-lg">
                   Buy on Apple TV →

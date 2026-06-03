@@ -25,6 +25,7 @@ For full history → `docs/sub-project-history.md`.
 - **iTunes cron — manual only.** Schedule dropped due to Hobby cap. `curl -H "Authorization: Bearer $CRON_SECRET" https://film-goblin.vercel.app/api/cron/check-itunes-availability`. Review candidates at `/admin/itunes-candidates`. Rejection cooldown is 14 days.
 - **Rate-reminder cron** — schedule dropped. `curl -H "Authorization: Bearer $CRON_SECRET" https://film-goblin.vercel.app/api/cron/send-rate-reminders`.
 - **Theater-alerts cron** — schedule dropped. `curl -H "Authorization: Bearer $CRON_SECRET" https://film-goblin.vercel.app/api/cron/theater-alerts`. Details: `app/lib/theaters/CLAUDE.md`.
+- **Showtimes refresh** — runs inside the daily maintenance cron on Mondays. Manual smoke endpoint: `curl -H "Authorization: Bearer $CRON_SECRET" https://film-goblin.vercel.app/api/cron/refresh-showtimes`. Scrapes Loft next-7-days showtimes into `theater_showtimes`; powers the "Now at The Loft" pill on `/film/[id]` and the `/gazing/[token]` share. Details: `docs/superpowers/specs/2026-06-03-loft-showtimes-shared-gazing-design.md`.
 - **3 films untagged** — Materialists, Smashing Machine (catalog stragglers — could delete), The Surrender (needs manual review).
 - **Recommender v3 unverified at user scale.** Watch `/for-you`; tuning constants in `app/lib/queries/fyp/CLAUDE.md`.
 - **`fg-trailers/`** — `cargo run --release` from `fg-trailers/`. Needs `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` in `fg-trailers/.env`. Trailer columns exist (mig 0150), no UI reads them yet.

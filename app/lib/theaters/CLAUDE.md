@@ -14,6 +14,7 @@ Scrapes local theater listings, matches films against user watchlists/grimoires,
 - `source-hash.ts` — hashes raw HTML for change detection (skip upsert if source unchanged)
 - `date-label.ts` — formats screening dates for display
 - `lock.ts` — `acquireCronLock` prevents concurrent cron invocations from double-firing
+- `showtimes/` — Loft-only datetime-granular showtimes pipeline. Parses `https://loftcinema.org/showtimes/`, resolves Phoenix timestamps, filters to the next 7 days, upserts `theater_showtimes`, and powers the `/film/[id]` pill plus `/gazing/[token]` shares.
 
 ## Adding a new theater provider
 
@@ -32,3 +33,9 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://film-goblin.vercel.app/api/
 ```
 
 The `acquireCronLock` in `lock.ts` makes concurrent invocations safe — a second call while one is running is a no-op.
+
+The Loft showtimes refresh runs inside the daily maintenance cron on Mondays. Manual smoke:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" https://film-goblin.vercel.app/api/cron/refresh-showtimes
+```

@@ -22,6 +22,8 @@
 //                  effective_at (TIMESTAMPTZ) — added by mig 0181 (no longer single-row)
 //   goblin_pick_messages: entire table — added by mig 0183
 //                  notification_kind 'goblin_summon' — added by mig 0182
+//   theater_showtimes: entire table — added by mig 0197
+//   gazing_invites: entire table — added by mig 0197
 //   notification_kind enum: film_request_fulfilled — added by mig 0170
 //
 // Workflow when regen is needed on the other machine:
@@ -556,6 +558,66 @@ export type Database = {
         }
         Relationships: []
       }
+      gazing_invites: {
+        Row: {
+          created_at: string
+          created_by: string
+          film_id: string | null
+          film_title: string
+          format_label: string | null
+          id: string
+          poster_url: string | null
+          showtime_id: string | null
+          starts_at: string
+          theater_name: string
+          tickets_url: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          film_id?: string | null
+          film_title: string
+          format_label?: string | null
+          id?: string
+          poster_url?: string | null
+          showtime_id?: string | null
+          starts_at: string
+          theater_name: string
+          tickets_url: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          film_id?: string | null
+          film_title?: string
+          format_label?: string | null
+          id?: string
+          poster_url?: string | null
+          showtime_id?: string | null
+          starts_at?: string
+          theater_name?: string
+          tickets_url?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gazing_invites_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gazing_invites_showtime_id_fkey"
+            columns: ["showtime_id"]
+            isOneToOne: false
+            referencedRelation: "theater_showtimes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       itunes_candidates: {
         Row: {
           confidence: number
@@ -940,6 +1002,75 @@ export type Database = {
             columns: ["showing_id"]
             isOneToOne: false
             referencedRelation: "theater_showings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      theater_showtimes: {
+        Row: {
+          created_at: string
+          film_id: string | null
+          format_label: string | null
+          id: string
+          is_active: boolean
+          last_seen_at: string
+          normalized_title: string
+          screen_label: string | null
+          source_sid: string
+          source_url: string
+          starts_at: string
+          theater_id: string
+          tickets_url: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          film_id?: string | null
+          format_label?: string | null
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string
+          normalized_title: string
+          screen_label?: string | null
+          source_sid: string
+          source_url: string
+          starts_at: string
+          theater_id: string
+          tickets_url: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          film_id?: string | null
+          format_label?: string | null
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string
+          normalized_title?: string
+          screen_label?: string | null
+          source_sid?: string
+          source_url?: string
+          starts_at?: string
+          theater_id?: string
+          tickets_url?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "theater_showtimes_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "theater_showtimes_theater_id_fkey"
+            columns: ["theater_id"]
+            isOneToOne: false
+            referencedRelation: "theaters"
             referencedColumns: ["id"]
           },
         ]
