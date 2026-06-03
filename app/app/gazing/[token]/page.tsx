@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
 import { getServerUser } from "@/lib/supabase/cached";
+import TopNav from "@/components/TopNav";
+import BottomNav from "@/components/BottomNav";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -89,50 +91,67 @@ export default async function GazingPage({ params }: { params: Promise<{ token: 
   const signupHref = `/auth/signup?redirect=${encodeURIComponent(filmHref)}`;
   const watchlistHref = user ? filmHref : signupHref;
 
+  const metaParts = [when(invite.starts_at), invite.theater_name, invite.format_label].filter(Boolean) as string[];
+
   return (
-    <main className="gazing-page">
-      <div className="gazing">
-        <section className="gazing-hero">
-          <div className="gazing-eyebrow">
-            {invite.inviter} summons you to a<br />
-            <b>Shared Gazing</b>
-          </div>
-          {invite.poster_url ? (
-            <img className="gazing-poster" src={invite.poster_url} alt={invite.film_title} />
-          ) : null}
-          <p className="gazing-flavor">&ldquo;A fellow goblin invites you into the dark.&rdquo;</p>
-        </section>
+    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
+      <TopNav current="films" showBack />
+      <BottomNav current="films" />
 
-        <section className="gazing-deets" aria-label="Shared gazing details">
-          <div className="gazing-title">{invite.film_title}</div>
-          <div className="gazing-row">
-            <span className="gazing-key">When</span>
-            <span>{when(invite.starts_at)}</span>
+      {/* Bone header band — mirrors /film: eyebrow + display title + meta row. */}
+      <section className="grain-light" style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }}>
+        <div className="container-wide">
+          <div className="eyebrow" style={{ fontSize: 11, marginBottom: 6, color: "var(--accent-deep)" }}>Shared Gazing</div>
+          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)", margin: 0, lineHeight: 0.92 }}>
+            {invite.film_title}.
+          </h1>
+          <div style={{ marginTop: 10, fontFamily: "var(--font-ui)", fontSize: 13, color: "var(--void)", opacity: 0.75, display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {metaParts.map((part, i) => (
+              <span key={i} style={{ display: "flex", gap: 12 }}>
+                {i > 0 && <span aria-hidden="true">·</span>}
+                <span>{part}</span>
+              </span>
+            ))}
           </div>
-          <div className="gazing-row">
-            <span className="gazing-key">Where</span>
-            <span>{invite.theater_name}</span>
+        </div>
+      </section>
+
+      {/* Cinematic hero — oversized poster, invite flavor + CTA cluster. */}
+      <section style={{ background: "var(--void)", color: "var(--bone)", borderBottom: "3px solid var(--void)" }}>
+        <div className="container-wide stackable" style={{ paddingTop: 56, paddingBottom: 56, "--stack-template": "minmax(280px, 420px) 1fr", "--stack-gap": "56px", alignItems: "start" } as React.CSSProperties}>
+          <div style={{ width: "100%", maxWidth: 420, margin: "0 auto" }}>
+            {invite.poster_url ? (
+              <img
+                src={invite.poster_url}
+                alt={invite.film_title}
+                style={{ width: "100%", height: "auto", aspectRatio: "2 / 3", objectFit: "cover", boxShadow: "10px 10px 0 var(--accent)", border: "2px solid var(--void)" }}
+              />
+            ) : null}
           </div>
-          {invite.format_label ? (
-            <div className="gazing-row">
-              <span className="gazing-key">Form</span>
-              <span>{invite.format_label}</span>
+          <div className="film-hero-text">
+            <div className="eyebrow" style={{ fontSize: 12, marginBottom: 16, color: "var(--accent)" }}>
+              {invite.inviter} summons you to a shared gazing
             </div>
-          ) : null}
-        </section>
+            <p style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontStyle: "italic", lineHeight: 1.4, margin: "0 0 28px", maxWidth: 640 }}>
+              &ldquo;A fellow goblin invites you into the dark.&rdquo;
+            </p>
 
-        <nav className="gazing-cta" aria-label="Shared gazing actions">
-          <a className="btn" href={invite.tickets_url} target="_blank" rel="noreferrer">
-            Get tickets
-          </a>
-          <Link className="btn-outline" href={watchlistHref}>
-            Add to watchlist
-          </Link>
-          <Link className="btn-outline" href={signupHref}>
-            Join the coven
-          </Link>
-        </nav>
-      </div>
-    </main>
+            <div className="hero-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <a className="btn btn-lg" href={invite.tickets_url} target="_blank" rel="noreferrer">
+                Get tickets →
+              </a>
+              <Link className="btn-outline btn-lg" href={watchlistHref}>
+                Add to watchlist
+              </Link>
+              {!user && (
+                <Link className="btn-outline btn-lg" href={signupHref}>
+                  Join the coven
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

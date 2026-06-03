@@ -8,22 +8,28 @@ function upscale(url: string): string {
   return url.replace(/\d+x\d+bb/, "600x900bb");
 }
 
-function when(iso: string): string {
+function titleSize(title: string): number {
+  if (title.length > 45) return 50;
+  if (title.length > 30) return 64;
+  if (title.length > 18) return 78;
+  return 92;
+}
+
+function dayLine(iso: string): string {
   return new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Phoenix",
-    weekday: "short",
-    month: "short",
+    weekday: "long",
+    month: "long",
     day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
   }).format(new Date(iso));
 }
 
-function titleSize(title: string): number {
-  if (title.length > 45) return 44;
-  if (title.length > 30) return 54;
-  if (title.length > 18) return 64;
-  return 76;
+function timeLine(iso: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Phoenix",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(iso));
 }
 
 const fallback = (
@@ -63,7 +69,7 @@ export async function GET(
   }
 
   const poster = invite.poster_url ? upscale(invite.poster_url) : null;
-  const meta = [when(invite.starts_at), invite.theater_name, invite.format_label].filter(Boolean).join("  ·  ");
+  const whereLine = [invite.theater_name, invite.format_label].filter(Boolean).join("  ·  ");
 
   return new ImageResponse(
     (
@@ -77,29 +83,39 @@ export async function GET(
           fontFamily: "sans-serif",
         }}
       >
-        {poster && (
-          <div style={{ display: "flex", width: 280, height: 630, flexShrink: 0, position: "relative" }}>
-            <img src={poster} width={280} height={630} style={{ objectFit: "cover" }} alt="" />
+        {/* Poster column — dominant, full-height, whole artwork visible. */}
+        <div style={{ display: "flex", width: 500, height: 630, flexShrink: 0, background: "#FF2D88" }}>
+          {poster ? (
+            <img src={poster} width={500} height={630} style={{ objectFit: "cover" }} alt="" />
+          ) : (
             <div
               style={{
                 display: "flex",
-                position: "absolute",
-                top: 0,
-                right: 0,
-                bottom: 0,
-                width: 100,
-                background: "linear-gradient(to right, transparent, #0A0A0A)",
+                width: "100%",
+                height: "100%",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#0A0A0A",
+                fontSize: 44,
+                fontWeight: 800,
+                letterSpacing: "0.06em",
               }}
-            />
-          </div>
-        )}
+            >
+              FILM GOBLIN
+            </div>
+          )}
+        </div>
 
+        {/* Accent seam between poster and text. */}
+        <div style={{ display: "flex", width: 8, height: 630, background: "#FF2D88", flexShrink: 0 }} />
+
+        {/* Text column — large, high-contrast, poster-forward invite. */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            padding: poster ? "52px 60px 52px 36px" : "52px 60px",
+            padding: "56px 56px 50px",
             flex: 1,
           }}
         >
@@ -107,15 +123,16 @@ export async function GET(
             <div
               style={{
                 display: "flex",
-                fontSize: 14,
-                letterSpacing: "0.18em",
+                fontSize: 30,
+                letterSpacing: "0.1em",
                 textTransform: "uppercase",
                 color: "#FF2D88",
-                fontWeight: 700,
-                marginBottom: 20,
+                fontWeight: 800,
+                marginBottom: 24,
+                lineHeight: 1.1,
               }}
             >
-              Shared Gazing
+              A fellow goblin is calling
             </div>
 
             <div
@@ -125,22 +142,23 @@ export async function GET(
                 fontWeight: 800,
                 lineHeight: 1.0,
                 color: "#F3ECD8",
-                marginBottom: 22,
+                marginBottom: 30,
               }}
             >
               {invite.film_title}
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                fontSize: 20,
-                color: "rgba(243, 236, 216, 0.68)",
-                letterSpacing: "0.04em",
-              }}
-            >
-              {meta}
+            <div style={{ display: "flex", fontSize: 38, fontWeight: 700, color: "#F3ECD8", marginBottom: 8 }}>
+              {dayLine(invite.starts_at)}
             </div>
+            <div style={{ display: "flex", fontSize: 52, fontWeight: 800, color: "#FF2D88", marginBottom: 16 }}>
+              {timeLine(invite.starts_at)}
+            </div>
+            {whereLine && (
+              <div style={{ display: "flex", fontSize: 28, color: "rgba(243, 236, 216, 0.72)", letterSpacing: "0.02em" }}>
+                {whereLine}
+              </div>
+            )}
           </div>
 
           <div
@@ -150,11 +168,11 @@ export async function GET(
               alignItems: "flex-end",
             }}
           >
-            <div style={{ fontSize: 19, fontStyle: "italic", color: "rgba(243, 236, 216, 0.75)" }}>
-              a fellow goblin invites you to a shared gazing
+            <div style={{ fontSize: 24, fontStyle: "italic", color: "rgba(243, 236, 216, 0.8)" }}>
+              a shared gazing awaits
             </div>
-            <div style={{ fontSize: 13, color: "rgba(243, 236, 216, 0.35)", letterSpacing: "0.04em" }}>
-              freshfromthepit.com
+            <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(243, 236, 216, 0.4)" }}>
+              Film Goblin
             </div>
           </div>
         </div>
