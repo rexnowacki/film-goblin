@@ -116,6 +116,14 @@
   box-shadow: none;
 }
 
+.showtimes-summon {
+  margin-top: 8px;
+  background: var(--void);
+  color: var(--bone);
+  border-color: var(--bone);
+  box-shadow: 4px 4px 0 var(--accent);
+}
+
 /* The shared-gazing landing page (/gazing/[token]) reuses the /film page's
    layout language directly — bone header band + void hero, container-wide,
    .h-display, .eyebrow, .btn family — so it needs no bespoke styles here. */

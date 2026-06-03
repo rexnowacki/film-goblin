@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import BottomSheet from "@/components/BottomSheet";
 import { useToast } from "@/components/ToastProvider";
-import { createGazingInvite } from "@/lib/actions/gazing";
+import { createGazingInvite, summonCoven } from "@/lib/actions/gazing";
 import type { FilmShowtime } from "@/lib/queries/showtimes";
 
 function dayLabel(iso: string): string {
@@ -43,6 +43,7 @@ export default function ShowtimesSheet({ showtimes, filmId, filmTitle, canInvite
   const [open, setOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [summoning, setSummoning] = useState(false);
   const { toast } = useToast();
 
   const theaterName = showtimes[0]?.theater_name ?? "The Loft";
@@ -84,6 +85,25 @@ export default function ShowtimesSheet({ showtimes, filmId, filmTitle, canInvite
       if (name !== "AbortError") toast("Invite failed");
     } finally {
       setSharing(false);
+    }
+  }
+
+  async function onSummon() {
+    if (!canInvite) {
+      window.location.href = `/auth/signup?redirect=${encodeURIComponent(`/film/${filmId}`)}`;
+      return;
+    }
+    if (!selected) return;
+
+    setSummoning(true);
+    try {
+      await summonCoven(selected.id);
+      toast("Summoned the coven");
+      setOpen(false);
+    } catch {
+      toast("Summon failed");
+    } finally {
+      setSummoning(false);
     }
   }
 
@@ -130,6 +150,18 @@ export default function ShowtimesSheet({ showtimes, filmId, filmTitle, canInvite
               : selected
                 ? `Invite a goblin to ${timeLabel(selected.starts_at)}`
                 : "Pick a showtime to invite a goblin"}
+          </button>
+          <button
+            type="button"
+            className="showtimes-share showtimes-summon"
+            disabled={(canInvite && !selected) || summoning}
+            onClick={onSummon}
+          >
+            {!canInvite
+              ? "Sign in to summon the coven"
+              : selected
+                ? "👁 Summon the coven"
+                : "Pick a showtime to summon the coven"}
           </button>
         </div>
       </BottomSheet>
