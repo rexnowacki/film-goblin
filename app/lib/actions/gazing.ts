@@ -1,6 +1,7 @@
 "use server";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
 import type { Database } from "@/lib/supabase/types";
@@ -21,19 +22,26 @@ interface ShowtimeSnapshot {
   film: { title: string; artwork_url: string | null } | { title: string; artwork_url: string | null }[] | null;
 }
 
+interface InviteSnapshot {
+  showtime_id: string;
+  film_id: string;
+  film_title: string;
+  poster_url: string | null;
+  theater_name: string;
+  starts_at: string;
+  format_label: string | null;
+  tickets_url: string;
+}
+
 function one<T>(value: T | T[] | null | undefined): T | null {
   if (Array.isArray(value)) return value[0] ?? null;
   return value ?? null;
 }
 
-export interface CreateGazingResult {
-  url: string;
-}
-
-export async function _createGazingInvite(client: Client, showtimeId: string): Promise<CreateGazingResult> {
-  const user = await requireAuthUser(client);
+/** Loads a matched, active showtime and freezes its display fields. Shared by
+ *  the SMS-share and summon paths. Throws if the showtime isn't film-matched. */
+async function loadInviteSnapshot(showtimeId: string): Promise<InviteSnapshot> {
   const svc = serviceRoleClient();
-
   const { data, error } = await svc
     .from("theater_showtimes")
     .select("id, film_id, starts_at, format_label, tickets_url, theater:theaters(name), film:films(title, artwork_url)")
@@ -49,10 +57,7 @@ export async function _createGazingInvite(client: Client, showtimeId: string): P
     throw new Error("Showtime is not matched to a film yet");
   }
 
-  const token = generateGazingToken();
-  const { error: insertErr } = await client.from("gazing_invites").insert({
-    token,
-    created_by: user.id,
+  return {
     showtime_id: showtime.id,
     film_id: showtime.film_id,
     film_title: film.title,
@@ -61,13 +66,57 @@ export async function _createGazingInvite(client: Client, showtimeId: string): P
     starts_at: showtime.starts_at,
     format_label: showtime.format_label,
     tickets_url: showtime.tickets_url,
-  });
-  if (insertErr) throw insertErr;
+  };
+}
 
+export interface CreateGazingResult {
+  url: string;
+}
+
+async function insertInvite(
+  client: Client,
+  snapshot: InviteSnapshot,
+  userId: string,
+  broadcast: boolean,
+): Promise<CreateGazingResult> {
+  const token = generateGazingToken();
+  const { error } = await client.from("gazing_invites").insert({
+    token,
+    created_by: userId,
+    showtime_id: snapshot.showtime_id,
+    film_id: snapshot.film_id,
+    film_title: snapshot.film_title,
+    poster_url: snapshot.poster_url,
+    theater_name: snapshot.theater_name,
+    starts_at: snapshot.starts_at,
+    format_label: snapshot.format_label,
+    tickets_url: snapshot.tickets_url,
+    broadcast,
+  });
+  if (error) throw error;
   return { url: `${SITE_ORIGIN}/gazing/${token}` };
+}
+
+export async function _createGazingInvite(client: Client, showtimeId: string): Promise<CreateGazingResult> {
+  const user = await requireAuthUser(client);
+  const snapshot = await loadInviteSnapshot(showtimeId);
+  return insertInvite(client, snapshot, user.id, false);
 }
 
 export async function createGazingInvite(showtimeId: string): Promise<CreateGazingResult> {
   const supabase = await createClient();
   return _createGazingInvite(supabase, showtimeId);
+}
+
+export async function _summonCoven(client: Client, showtimeId: string): Promise<CreateGazingResult> {
+  const user = await requireAuthUser(client);
+  const snapshot = await loadInviteSnapshot(showtimeId);
+  return insertInvite(client, snapshot, user.id, true);
+}
+
+export async function summonCoven(showtimeId: string): Promise<CreateGazingResult> {
+  const supabase = await createClient();
+  const result = await _summonCoven(supabase, showtimeId);
+  revalidatePath("/home");
+  return result;
 }
