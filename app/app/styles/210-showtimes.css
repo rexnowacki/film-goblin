@@ -1,0 +1,233 @@
+/* ============================================================
+   Loft showtimes + shared gazing
+   ============================================================ */
+
+.showtimes-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 2px solid var(--void);
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 3px 3px 0 var(--void);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  transform: rotate(-1.5deg);
+  cursor: pointer;
+}
+
+.showtimes-pill:hover {
+  transform: rotate(-1.5deg) translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--void);
+}
+
+.showtimes-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.showtimes-day {
+  margin: 0;
+}
+
+.showtimes-day-hdr {
+  border-bottom: 1.5px dashed var(--muted-dark);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+}
+
+.showtimes-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+  gap: 8px;
+}
+
+.showtimes-slot {
+  min-height: 62px;
+  padding: 9px 10px;
+  border: 2px solid var(--bone);
+  background: var(--void);
+  color: var(--bone);
+  box-shadow: 2px 2px 0 var(--accent);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.showtimes-slot[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--void);
+  box-shadow: 2px 2px 0 var(--bone);
+}
+
+.showtimes-slot-tag,
+.showtimes-slot-screen {
+  display: block;
+  margin-top: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.showtimes-slot[aria-pressed="true"] .showtimes-slot-tag,
+.showtimes-slot[aria-pressed="true"] .showtimes-slot-screen {
+  color: var(--accent-ink);
+}
+
+.showtimes-share {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border: 2px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 4px 4px 0 var(--bone);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.showtimes-share:disabled {
+  opacity: 0.55;
+  cursor: default;
+  box-shadow: none;
+}
+
+.gazing-page {
+  background: var(--bone);
+  color: var(--void);
+  min-height: 100dvh;
+  padding: 24px 18px 56px;
+}
+
+.gazing {
+  width: min(100%, 500px);
+  margin: 0 auto;
+}
+
+.gazing-hero {
+  border: 2px solid var(--void);
+  background: var(--bone);
+  box-shadow: 8px 8px 0 var(--void);
+  padding: 22px 18px;
+  text-align: center;
+}
+
+.gazing-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.gazing-eyebrow b {
+  display: inline-block;
+  margin-top: 7px;
+  padding: 3px 8px;
+  border: 2px solid var(--void);
+  background: var(--accent);
+  color: var(--accent-ink);
+  transform: rotate(-2deg);
+}
+
+.gazing-poster {
+  display: block;
+  width: min(180px, 54vw);
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  margin: 20px auto;
+  border: 2px solid var(--void);
+  box-shadow: 5px 5px 0 var(--void);
+  transform: rotate(-2deg);
+}
+
+.gazing-flavor {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-style: italic;
+  line-height: 1.35;
+}
+
+.gazing-deets {
+  margin-top: 24px;
+}
+
+.gazing-title {
+  font-family: var(--font-head);
+  font-size: clamp(34px, 10vw, 52px);
+  line-height: 0.95;
+  margin-bottom: 16px;
+}
+
+.gazing-row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  border-top: 1px dashed var(--muted);
+  padding: 10px 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.gazing-key {
+  flex: 0 0 64px;
+  color: var(--accent-deep);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.gazing-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.gazing-cta .btn,
+.gazing-cta .btn-outline {
+  justify-content: center;
+  width: 100%;
+}
+
+.gazing-cta .btn-outline {
+  color: var(--void);
+  border-color: var(--void);
+}
+
+@media (max-width: 420px) {
+  .showtimes-slots {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .showtimes-slot {
+    min-height: 70px;
+    font-size: 13px;
+  }
+}

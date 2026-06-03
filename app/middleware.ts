@@ -65,6 +65,7 @@ export async function middleware(request: NextRequest) {
   if (
     user &&
     path !== "/onboarding" &&
+    !path.startsWith("/gazing") &&
     !path.startsWith("/api/") &&
     !path.startsWith("/auth/")
   ) {
