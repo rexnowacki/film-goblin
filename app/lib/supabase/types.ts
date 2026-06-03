@@ -24,6 +24,8 @@
 //                  notification_kind 'goblin_summon' — added by mig 0182
 //   theater_showtimes: entire table — added by mig 0197
 //   gazing_invites: entire table — added by mig 0197
+//   gazing_invites: broadcast (boolean) — added by mig 0199
+//   activity_kind enum: gazing_invited — added by mig 0198
 //   notification_kind enum: film_request_fulfilled — added by mig 0170
 //
 // Workflow when regen is needed on the other machine:
@@ -560,6 +562,7 @@ export type Database = {
       }
       gazing_invites: {
         Row: {
+          broadcast: boolean
           created_at: string
           created_by: string
           film_id: string | null
@@ -574,6 +577,7 @@ export type Database = {
           token: string
         }
         Insert: {
+          broadcast?: boolean
           created_at?: string
           created_by: string
           film_id?: string | null
@@ -588,6 +592,7 @@ export type Database = {
           token: string
         }
         Update: {
+          broadcast?: boolean
           created_at?: string
           created_by?: string
           film_id?: string | null
@@ -1724,6 +1729,7 @@ export type Database = {
         | "watch_logged"
         | "library_added"
         | "user_joined"
+        | "gazing_invited"
       coven_request_status: "pending" | "accepted" | "declined"
       notification_kind:
         | "coven_invite_pending"
@@ -1879,6 +1885,7 @@ export const Constants = {
         "watch_logged",
         "library_added",
         "user_joined",
+        "gazing_invited",
       ],
       coven_request_status: ["pending", "accepted", "declined"],
       review_status: ["draft", "published"],
