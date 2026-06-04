@@ -18,8 +18,8 @@ export default function WatchedButton({ filmId, filmTitle, initialCount, onLogge
   const [count, setCount] = useState(initialCount);
   const [modalOpen, setModalOpen] = useState(false);
 
-  async function saveModal({ watched_at, note, recommended }: { watched_at: string; note: string; recommended: boolean | null }) {
-    await logWatch(filmId, { watched_at, note: note || null, recommended });
+  async function saveModal({ watched_at, note, recommended, spoiler }: { watched_at: string; note: string; recommended: boolean | null; spoiler: boolean }) {
+    await logWatch(filmId, { watched_at, note: note || null, recommended, spoiler });
     const wasFirst = count === 0;
     setCount(c => c + 1);
     if (wasFirst) onLogged?.();
@@ -39,7 +39,7 @@ export default function WatchedButton({ filmId, filmTitle, initialCount, onLogge
         <WatchModal
           open={modalOpen}
           mode="new"
-          initial={{ watched_at: new Date().toISOString().slice(0, 10), note: "", recommended: null }}
+          initial={{ watched_at: new Date().toISOString().slice(0, 10), note: "", recommended: null, spoiler: false }}
           filmTitle={filmTitle}
           onSave={saveModal}
           onClose={() => setModalOpen(false)}

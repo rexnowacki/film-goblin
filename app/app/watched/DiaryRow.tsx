@@ -27,8 +27,8 @@ export default function DiaryRow({ row }: Props) {
     if (params?.get("rate") === row.id) setOpen(true);
   }, [params, row.id]);
 
-  async function save({ watched_at, note, recommended }: { watched_at: string; note: string; recommended: boolean | null }) {
-    await editWatch(row.id, { watched_at, note: note || null, recommended });
+  async function save({ watched_at, note, recommended, spoiler }: { watched_at: string; note: string; recommended: boolean | null; spoiler: boolean }) {
+    await editWatch(row.id, { watched_at, note: note || null, recommended, spoiler });
     toast("Watch updated");
   }
 
@@ -69,6 +69,7 @@ export default function DiaryRow({ row }: Props) {
           </div>
           {row.note && (
             <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, marginTop: 6, color: "var(--bone)", opacity: 0.85, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {row.spoiler && <span className="caps" style={{ color: "var(--accent)", marginRight: 6, fontSize: 9 }}>Spoiler</span>}
               &ldquo;{row.note}&rdquo;
             </div>
           )}
@@ -78,7 +79,7 @@ export default function DiaryRow({ row }: Props) {
         <WatchModal
           open={open}
           mode="edit"
-          initial={{ id: row.id, watched_at: row.watched_at, note: row.note ?? "", recommended: row.recommended ?? null }}
+          initial={{ id: row.id, watched_at: row.watched_at, note: row.note ?? "", recommended: row.recommended ?? null, spoiler: row.spoiler }}
           filmTitle={row.film.title}
           onSave={save}
           onDelete={del}

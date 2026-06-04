@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Avatar from "../Avatar";
 import ActivityFooter from "./ActivityFooter";
+import SpoilerNote from "./SpoilerNote";
 import type { EnrichedActivity } from "@/lib/queries/activity";
 
 type Item = Extract<EnrichedActivity, { kind: "watch_logged" }>;
@@ -31,7 +32,12 @@ export default function ActivityWatchLogged({ item }: { item: Item }) {
           )}
           {"."}
         </div>
-        {item.note && <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, marginTop: 4, color: "var(--muted)" }}>&ldquo;{item.note}&rdquo;</div>}
+        {item.note && (
+          <SpoilerNote
+            note={item.note}
+            hidden={item.spoiler && !item.viewerHasWatched}
+          />
+        )}
         <ActivityFooter item={item} />
       </div>
       <Link prefetch={false} href={`/film/${item.film.id}`}>

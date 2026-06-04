@@ -236,7 +236,7 @@ export default function PosterQuickAdd({
           open={watchOpen}
           mode="new"
           filmTitle={filmTitle}
-          initial={{ watched_at: TODAY_ISO(), note: "", recommended: null }}
+          initial={{ watched_at: TODAY_ISO(), note: "", recommended: null, spoiler: false }}
           onSave={async (values) => {
             await logWatch(filmId, values);
             toast("Watch logged");

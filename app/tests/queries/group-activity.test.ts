@@ -83,6 +83,8 @@ function watchLog(opts: { id: string; actorId: string; minutesAgo: number }): En
     },
     note: null,
     recommended: null,
+    spoiler: false,
+    viewerHasWatched: true,
   };
 }
 

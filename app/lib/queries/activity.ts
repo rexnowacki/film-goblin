@@ -39,7 +39,7 @@ export type EnrichedActivity = (
   | { kind: "recommendation_sent"; film: FilmLite; recipient: RecipientLite; note: string }
   | { kind: "review_published"; film: FilmLite; title: string; pullquote: string | null }
   | { kind: "watchlist_added"; film: FilmLite }
-  | { kind: "watch_logged"; film: FilmLite; note: string | null; recommended: boolean | null }
+  | { kind: "watch_logged"; film: FilmLite; note: string | null; recommended: boolean | null; spoiler: boolean; viewerHasWatched: boolean }
   | { kind: "library_added"; film: FilmLite }
   | { kind: "list_created"; list: ListLite }
   | { kind: "list_film_added"; list: ListLite; film: FilmLite }
@@ -199,8 +199,14 @@ export async function getEnrichedActivity(
     .filter(r => r.kind === "gazing_invited")
     .map(r => (r.payload as { token?: string }).token)
     .filter((token): token is string => Boolean(token));
+  const watchLoggedFilmIds = Array.from(new Set(
+    raw
+      .filter(r => r.kind === "watch_logged")
+      .map(r => (r.payload as { film_id?: string }).film_id)
+      .filter((filmId): filmId is string => Boolean(filmId))
+  ));
 
-  const [actors, films, recipients, lists, reactionsMap, commentsMap, gazingRosters] = await Promise.all([
+  const [actors, films, recipients, lists, reactionsMap, commentsMap, gazingRosters, viewerWatchedRows] = await Promise.all([
     rawActorIds.length ? client.from("profiles").select("id, username, display_name, avatar_url").in("id", rawActorIds) : Promise.resolve({ data: [] as any }),
     filmIds.length ? client.from("films").select("id, title, director, year, artwork_url, itunes_url").in("id", filmIds) : Promise.resolve({ data: [] as any }),
     recipientIds.length ? client.from("profiles").select("id, username, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] as any }),
@@ -208,12 +214,17 @@ export async function getEnrichedActivity(
     getReactionsForActivities(client, raw.map(r => r.id), followerUserId),
     getCommentSummariesForActivities(client, raw.map(r => r.id), followerUserId),
     getGazingRostersForTokens(client, gazingTokens, followerUserId),
+    watchLoggedFilmIds.length
+      ? client.from("watched").select("film_id").eq("user_id", followerUserId).in("film_id", watchLoggedFilmIds)
+      : Promise.resolve({ data: [] as Array<{ film_id: string }> }),
   ]);
 
   const actorMap = new Map((actors.data ?? []).map((r: any) => [r.id, r]));
+  if ("error" in viewerWatchedRows && viewerWatchedRows.error) throw viewerWatchedRows.error;
   const filmMap = new Map((films.data ?? []).map((r: any) => [r.id, r]));
   const recipientMap = new Map((recipients.data ?? []).map((r: any) => [r.id, r]));
   const listMap = new Map((lists.data ?? []).map((r: any) => [r.id, r]));
+  const viewerWatchedFilmIds = new Set((viewerWatchedRows.data ?? []).map((row: { film_id: string }) => row.film_id));
 
   const out: EnrichedActivity[] = [];
   for (const r of raw) {
@@ -239,7 +250,15 @@ export async function getEnrichedActivity(
         if (film) out.push({ ...base, kind: "watchlist_added", film });
         break;
       case "watch_logged":
-        if (film) out.push({ ...base, kind: "watch_logged", film, note: payload.note ?? null, recommended: typeof payload.recommended === "boolean" ? payload.recommended : null });
+        if (film) out.push({
+          ...base,
+          kind: "watch_logged",
+          film,
+          note: payload.note ?? null,
+          recommended: typeof payload.recommended === "boolean" ? payload.recommended : null,
+          spoiler: payload.spoiler === true,
+          viewerHasWatched: viewerWatchedFilmIds.has(film.id),
+        });
         break;
       case "library_added":
         if (film) out.push({ ...base, kind: "library_added", film });

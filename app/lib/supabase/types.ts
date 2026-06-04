@@ -15,7 +15,7 @@
 //                  role (Enum or string), notify_* opt-out columns,
 //                  notify_film_requests (BOOLEAN) — added by mig 0170
 //                  must_change_password (BOOLEAN) — added by mig 0174
-//   watched:       recommended (BOOLEAN | null)
+//   watched:       recommended (BOOLEAN | null), spoiler (BOOLEAN)
 //   films_with_stats (view): coven_rating_pct, coven_rating_count
 //   tags:          type is a 6-value literal union, not generic string
 //   goblin_pick:   whisper_text (TEXT | null) — added by mig 0169
@@ -1579,6 +1579,7 @@ export type Database = {
           id: string
           note: string | null
           recommended: boolean | null
+          spoiler: boolean
           user_id: string
           watched_at: string
         }
@@ -1588,6 +1589,7 @@ export type Database = {
           id?: string
           note?: string | null
           recommended?: boolean | null
+          spoiler?: boolean
           user_id: string
           watched_at?: string
         }
@@ -1597,6 +1599,7 @@ export type Database = {
           id?: string
           note?: string | null
           recommended?: boolean | null
+          spoiler?: boolean
           user_id?: string
           watched_at?: string
         }

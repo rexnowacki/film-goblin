@@ -120,18 +120,28 @@ async function enrichOwnActivity(supabase: any, rows: any[], profile: any, viewe
   const filmIds = Array.from(new Set(rows.map(r => r.payload?.film_id).filter(Boolean)));
   const recipientIds = Array.from(new Set(rows.map(r => r.payload?.to_user_id).filter(Boolean)));
   const listIds = Array.from(new Set(rows.map(r => r.payload?.list_id).filter(Boolean)));
+  const watchLoggedFilmIds = Array.from(new Set(
+    rows
+      .filter(r => r.kind === "watch_logged")
+      .map(r => r.payload?.film_id)
+      .filter(Boolean)
+  ));
 
-  const [films, recipients, lists, reactionsMap, commentsMap] = await Promise.all([
+  const [films, recipients, lists, reactionsMap, commentsMap, viewerWatchedRows] = await Promise.all([
     filmIds.length ? supabase.from("films").select("id, title, director, year, artwork_url, itunes_url").in("id", filmIds) : Promise.resolve({ data: [] }),
     recipientIds.length ? supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] }),
     listIds.length ? supabase.from("lists").select("id, title").in("id", listIds) : Promise.resolve({ data: [] }),
     getReactionsForActivities(supabase, rows.map(r => r.id), viewerId),
     getCommentSummariesForActivities(supabase, rows.map(r => r.id), viewerId),
+    viewerId && watchLoggedFilmIds.length
+      ? supabase.from("watched").select("film_id").eq("user_id", viewerId).in("film_id", watchLoggedFilmIds)
+      : Promise.resolve({ data: [] }),
   ]);
 
   const filmMap = new Map((films.data ?? []).map((r: any) => [r.id, r]));
   const recipMap = new Map((recipients.data ?? []).map((r: any) => [r.id, r]));
   const listMap = new Map((lists.data ?? []).map((r: any) => [r.id, r]));
+  const viewerWatchedFilmIds = new Set((viewerWatchedRows.data ?? []).map((row: any) => row.film_id));
 
   const actor = { id: profile.id, username: profile.username, display_name: profile.display_name, avatar_url: profile.avatar_url };
   const out: any[] = [];
@@ -139,14 +149,14 @@ async function enrichOwnActivity(supabase: any, rows: any[], profile: any, viewe
     const reactions = reactionsMap.get(r.id) ?? { count: 0, likedByMe: false };
     const comments = commentsMap.get(r.id) ?? { count: 0, items: [] };
     const base = { id: r.id, created_at: r.created_at, actor, reactions, comments };
-    const film = r.payload?.film_id ? filmMap.get(r.payload.film_id) : undefined;
+    const film = r.payload?.film_id ? filmMap.get(r.payload.film_id) as any : undefined;
     const recipient = r.payload?.to_user_id ? recipMap.get(r.payload.to_user_id) : undefined;
     const list = r.payload?.list_id ? listMap.get(r.payload.list_id) : undefined;
     switch (r.kind) {
       case "recommendation_sent": if (film && recipient) out.push({ ...base, kind: "recommendation_sent", film, recipient, note: r.payload.note ?? "" }); break;
       case "review_published":   if (film) out.push({ ...base, kind: "review_published", film, title: r.payload.title ?? "", pullquote: r.payload.pullquote ?? null }); break;
       case "watchlist_added":    if (film) out.push({ ...base, kind: "watchlist_added", film }); break;
-      case "watch_logged":       if (film) out.push({ ...base, kind: "watch_logged", film, note: r.payload.note ?? null, recommended: typeof r.payload.recommended === "boolean" ? r.payload.recommended : null }); break;
+      case "watch_logged":       if (film) out.push({ ...base, kind: "watch_logged", film, note: r.payload.note ?? null, recommended: typeof r.payload.recommended === "boolean" ? r.payload.recommended : null, spoiler: r.payload.spoiler === true, viewerHasWatched: viewerWatchedFilmIds.has(film.id) }); break;
       case "library_added":      if (film) out.push({ ...base, kind: "library_added", film }); break;
       case "list_created":       if (list) out.push({ ...base, kind: "list_created", list }); break;
       case "list_film_added":    if (list && film) out.push({ ...base, kind: "list_film_added", list, film }); break;

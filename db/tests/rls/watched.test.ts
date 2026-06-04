@@ -261,7 +261,7 @@ describe("trigger: activity_on_watch_insert", () => {
     await commit(db.client);
     expect(r.rowCount).toBe(1);
     expect(r.rows[0].kind).toBe("watch_logged");
-    expect(r.rows[0].payload).toEqual({ film_id: fx.filmId, note: null, recommended: null });
+    expect(r.rows[0].payload).toEqual({ film_id: fx.filmId, note: null, recommended: null, spoiler: false });
   });
 
   it("does NOT fire when broadcast_watched = FALSE", async () => {

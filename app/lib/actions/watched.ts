@@ -12,12 +12,14 @@ interface LogWatchOpts {
   watched_at?: string; // ISO YYYY-MM-DD; defaults to today
   note?: string | null;
   recommended?: boolean | null;
+  spoiler?: boolean;
 }
 
 interface EditWatchPatch {
   watched_at?: string;
   note?: string | null;
   recommended?: boolean | null;
+  spoiler?: boolean;
 }
 
 /**
@@ -34,13 +36,14 @@ export async function _logWatch(
 ): Promise<{ id: string }> {
   const user = await requireAuthUser(client);
 
-  const insertRow: { user_id: string; film_id: string; watched_at?: string; note?: string | null; recommended?: boolean | null } = {
+  const insertRow: { user_id: string; film_id: string; watched_at?: string; note?: string | null; recommended?: boolean | null; spoiler?: boolean } = {
     user_id: user.id,
     film_id: filmId,
   };
   if (opts?.watched_at) insertRow.watched_at = opts.watched_at;
   if (opts?.note !== undefined) insertRow.note = opts.note;
   if (opts?.recommended !== undefined) insertRow.recommended = opts.recommended;
+  if (opts?.spoiler !== undefined) insertRow.spoiler = opts.spoiler;
 
   const { data, error } = await client
     .from("watched")
@@ -77,10 +80,11 @@ export async function _editWatch(
 ): Promise<void> {
   const user = await requireAuthUser(client);
 
-  const update: { watched_at?: string; note?: string | null; recommended?: boolean | null } = {};
+  const update: { watched_at?: string; note?: string | null; recommended?: boolean | null; spoiler?: boolean } = {};
   if (patch.watched_at !== undefined) update.watched_at = patch.watched_at;
   if (patch.note !== undefined) update.note = patch.note;
   if (patch.recommended !== undefined) update.recommended = patch.recommended;
+  if (patch.spoiler !== undefined) update.spoiler = patch.spoiler;
 
   // Enforce single verdict: when setting a non-null verdict, clear it from
   // all other watched rows for this (user, film) first.

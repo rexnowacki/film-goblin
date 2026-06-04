@@ -7,12 +7,13 @@ interface SaveValues {
   watched_at: string;
   note: string;
   recommended: boolean | null;
+  spoiler: boolean;
 }
 
 interface Props {
   open: boolean;
   mode: "new" | "edit";
-  initial: { watched_at: string; note: string; recommended: boolean | null; id?: string };
+  initial: { watched_at: string; note: string; recommended: boolean | null; spoiler?: boolean; id?: string };
   filmTitle: string;
   onSave(values: SaveValues): Promise<void>;
   onDelete?(): Promise<void>;
@@ -25,6 +26,7 @@ export default function WatchModal({ open, mode, initial, filmTitle, onSave, onD
   const [watchedAt, setWatchedAt] = useState(initial.watched_at);
   const [note, setNote] = useState(initial.note);
   const [recommended, setRecommended] = useState<boolean | null>(initial.recommended);
+  const [spoiler, setSpoiler] = useState(Boolean(initial.spoiler));
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -32,7 +34,7 @@ export default function WatchModal({ open, mode, initial, filmTitle, onSave, onD
     start(async () => {
       setError(null);
       try {
-        await onSave({ watched_at: watchedAt, note, recommended });
+        await onSave({ watched_at: watchedAt, note, recommended, spoiler });
         onClose();
       } catch (e: any) {
         setError(e?.message ?? String(e));
@@ -87,6 +89,15 @@ export default function WatchModal({ open, mode, initial, filmTitle, onSave, onD
             placeholder="What did you think?"
             style={{ width: "100%", padding: 10, background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)", fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, resize: "none" }}
           />
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={spoiler}
+            onChange={e => setSpoiler(e.target.checked)}
+            style={{ width: 18, height: 18, accentColor: "var(--accent)" }}
+          />
+          <span className="caps" style={{ fontSize: 11, color: "var(--bone)" }}>Spoiler note</span>
         </label>
         <div>
           <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Verdict (optional)</div>

@@ -39,20 +39,30 @@ export async function getFollowedActivity(
   const filmIds = Array.from(new Set(raw.map(r => (r.payload as any)?.film_id).filter(Boolean)));
   const recipientIds = Array.from(new Set(raw.map(r => (r.payload as any)?.to_user_id).filter(Boolean)));
   const listIds = Array.from(new Set(raw.map(r => (r.payload as any)?.list_id).filter(Boolean)));
+  const watchLoggedFilmIds = Array.from(new Set(
+    raw
+      .filter(r => r.kind === "watch_logged")
+      .map(r => (r.payload as any)?.film_id)
+      .filter(Boolean)
+  ));
 
-  const [actors, films, recipients, lists, reactionsMap, commentsMap] = await Promise.all([
+  const [actors, films, recipients, lists, reactionsMap, commentsMap, viewerWatchedRows] = await Promise.all([
     actorIds.length ? client.from("profiles").select("id, username, display_name, avatar_url").in("id", actorIds) : Promise.resolve({ data: [] as any[] }),
     filmIds.length ? client.from("films").select("id, title, director, year, artwork_url, itunes_url").in("id", filmIds) : Promise.resolve({ data: [] as any[] }),
     recipientIds.length ? client.from("profiles").select("id, username, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] as any[] }),
     listIds.length ? client.from("lists").select("id, title").in("id", listIds) : Promise.resolve({ data: [] as any[] }),
     getReactionsForActivities(client, raw.map(r => r.id), userId),
     getCommentSummariesForActivities(client, raw.map(r => r.id), userId),
+    watchLoggedFilmIds.length
+      ? client.from("watched").select("film_id").eq("user_id", userId).in("film_id", watchLoggedFilmIds)
+      : Promise.resolve({ data: [] as Array<{ film_id: string }> }),
   ]);
 
   const actorMap = new Map((actors.data ?? []).map((r: any) => [r.id, r]));
   const filmMap = new Map((films.data ?? []).map((r: any) => [r.id, r]));
   const recipientMap = new Map((recipients.data ?? []).map((r: any) => [r.id, r]));
   const listMap = new Map((lists.data ?? []).map((r: any) => [r.id, r]));
+  const viewerWatchedFilmIds = new Set((viewerWatchedRows.data ?? []).map((row: { film_id: string }) => row.film_id));
 
   const out: EnrichedActivity[] = [];
   for (const r of raw) {
@@ -77,7 +87,15 @@ export async function getFollowedActivity(
         if (film) out.push({ ...base, kind: "watchlist_added", film });
         break;
       case "watch_logged":
-        if (film) out.push({ ...base, kind: "watch_logged", film, note: payload.note ?? null, recommended: typeof payload.recommended === "boolean" ? payload.recommended : null });
+        if (film) out.push({
+          ...base,
+          kind: "watch_logged",
+          film,
+          note: payload.note ?? null,
+          recommended: typeof payload.recommended === "boolean" ? payload.recommended : null,
+          spoiler: payload.spoiler === true,
+          viewerHasWatched: viewerWatchedFilmIds.has(film.id),
+        });
         break;
       case "library_added":
         if (film) out.push({ ...base, kind: "library_added", film });
