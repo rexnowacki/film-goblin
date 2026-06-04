@@ -3,13 +3,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
 import { getServerUser } from "@/lib/supabase/cached";
+import { getGazingRoster } from "@/lib/queries/gazing-roster";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
+import Avatar from "@/components/Avatar";
+import GazingRsvpButton from "@/components/GazingRsvpButton";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 interface GazingInvite {
+  id: string;
   token: string;
   created_by: string;
   film_id: string | null;
@@ -26,7 +30,7 @@ async function loadInvite(token: string): Promise<GazingInvite | null> {
   const supabase = serviceRoleClient();
   const { data } = await supabase
     .from("gazing_invites")
-    .select("token, created_by, film_id, film_title, poster_url, theater_name, starts_at, format_label, tickets_url")
+    .select("id, token, created_by, film_id, film_title, poster_url, theater_name, starts_at, format_label, tickets_url")
     .eq("token", token)
     .maybeSingle();
   if (!data) return null;
@@ -87,9 +91,15 @@ export default async function GazingPage({ params }: { params: Promise<{ token: 
   if (!invite) notFound();
 
   const user = await getServerUser();
+  const roster = await getGazingRoster(
+    serviceRoleClient(),
+    { id: invite.id, token: invite.token, created_by: invite.created_by },
+    user?.id ?? null,
+  );
+  const isHost = Boolean(user) && invite.created_by === user!.id;
   const filmHref = invite.film_id ? `/film/${invite.film_id}` : "/films";
-  const signupHref = `/auth/signup?redirect=${encodeURIComponent(filmHref)}`;
-  const watchlistHref = user ? filmHref : signupHref;
+  const signupHref = `/auth/signup?redirect=${encodeURIComponent(`/gazing/${invite.token}`)}`;
+  const watchlistHref = user ? filmHref : `/auth/signup?redirect=${encodeURIComponent(filmHref)}`;
 
   const metaParts = [when(invite.starts_at), invite.theater_name, invite.format_label].filter(Boolean) as string[];
 
@@ -137,6 +147,14 @@ export default async function GazingPage({ params }: { params: Promise<{ token: 
             </p>
 
             <div className="hero-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <GazingRsvpButton
+                token={invite.token}
+                initialAttending={roster.viewerIsIn}
+                isHost={isHost}
+                canRsvp={Boolean(user)}
+                signupHref={signupHref}
+                size="lg"
+              />
               <a className="btn btn-lg" href={invite.tickets_url} target="_blank" rel="noreferrer">
                 Get tickets →
               </a>
@@ -149,6 +167,20 @@ export default async function GazingPage({ params }: { params: Promise<{ token: 
                 </Link>
               )}
             </div>
+            {roster.count > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 20 }}>
+                <div style={{ display: "flex" }}>
+                  {roster.avatars.map(a => (
+                    <span key={a.id} style={{ marginRight: -6 }}>
+                      <Avatar name={a.username} color="var(--accent)" size={30} url={a.avatar_url} />
+                    </span>
+                  ))}
+                </div>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--bone)", opacity: 0.8, letterSpacing: "0.04em" }}>
+                  {roster.count} {roster.count === 1 ? "goblin is" : "goblins are"} in
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </section>

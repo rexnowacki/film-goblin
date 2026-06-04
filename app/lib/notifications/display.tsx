@@ -39,6 +39,10 @@ export function notificationTarget(n: EnrichedNotification): string {
       const filmId = (n.payload as { film_id?: string }).film_id;
       return filmId ? `/film/${filmId}` : "/home";
     }
+    case "gazing_rsvp": {
+      const token = (n.payload as { token?: string }).token;
+      return token ? `/gazing/${token}` : "/home";
+    }
     case "goblin_summon": {
       const pickId = (n.payload as { pick_id?: number }).pick_id;
       const messageId = (n.payload as { message_id?: string }).message_id;
@@ -94,6 +98,8 @@ export function notificationRichCopy(n: EnrichedNotification): React.ReactNode {
       const filmTitle = (n.payload as { film_title?: string }).film_title ?? "A film you requested";
       return <>Your spell of summoning was answered. <em>{filmTitle}</em> is now available.</>;
     }
+    case "gazing_rsvp":
+      return <><strong>{actorName}</strong> is in for your gazing of <em>{title}</em>.</>;
     case "goblin_summon": {
       const snippet = richSnippet((n.payload as { body?: string }).body, 80);
       return <><strong>{actorName}</strong> mentioned you in ritual chat{snippet ? <>: &ldquo;{snippet}&rdquo;</> : "."}</>;
@@ -130,5 +136,7 @@ export function notificationToastText(n: EnrichedNotification): string {
       return "A film from your Hoard found a screen";
     case "film_request_fulfilled":
       return "A film request was fulfilled";
+    case "gazing_rsvp":
+      return `${actorName} is in for your gazing of ${title}`;
   }
 }

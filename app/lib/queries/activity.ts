@@ -3,6 +3,7 @@ import type { Database } from "../supabase/types";
 import { getReactionsForActivities, type ReactionSummary } from "./activity-reactions";
 import { getCommentSummariesForActivities, type CommentSummary } from "./activity-comments";
 import { groupFeed } from "./group-activity";
+import { getGazingRostersForTokens, EMPTY_ROSTER, type GazingRoster } from "./gazing-roster";
 
 type Client = SupabaseClient<Database>;
 
@@ -44,7 +45,8 @@ export type EnrichedActivity = (
   | { kind: "list_film_added"; list: ListLite; film: FilmLite }
   | { kind: "coven_joined"; other: RecipientLite }
   | { kind: "user_joined" }
-  | { kind: "gazing_invited"; film: FilmLite; token: string; theaterName: string; startsAt: string; formatLabel: string | null }
+  | { kind: "gazing_invited"; film: FilmLite; token: string; theaterName: string; startsAt: string; formatLabel: string | null; roster: GazingRoster }
+  | { kind: "gazing_attending"; film: FilmLite; host: RecipientLite; token: string; theaterName: string; startsAt: string; formatLabel: string | null }
 ) & {
   id: string;
   created_at: string;
@@ -193,14 +195,19 @@ export async function getEnrichedActivity(
   const filmIds = Array.from(new Set(raw.map(r => (r.payload as any)?.film_id).filter(Boolean)));
   const recipientIds = Array.from(new Set(raw.map(r => (r.payload as any)?.to_user_id).filter(Boolean)));
   const listIds = Array.from(new Set(raw.map(r => (r.payload as any)?.list_id).filter(Boolean)));
+  const gazingTokens = raw
+    .filter(r => r.kind === "gazing_invited")
+    .map(r => (r.payload as { token?: string }).token)
+    .filter((token): token is string => Boolean(token));
 
-  const [actors, films, recipients, lists, reactionsMap, commentsMap] = await Promise.all([
+  const [actors, films, recipients, lists, reactionsMap, commentsMap, gazingRosters] = await Promise.all([
     rawActorIds.length ? client.from("profiles").select("id, username, display_name, avatar_url").in("id", rawActorIds) : Promise.resolve({ data: [] as any }),
     filmIds.length ? client.from("films").select("id, title, director, year, artwork_url, itunes_url").in("id", filmIds) : Promise.resolve({ data: [] as any }),
     recipientIds.length ? client.from("profiles").select("id, username, display_name, avatar_url").in("id", recipientIds) : Promise.resolve({ data: [] as any }),
     listIds.length ? client.from("lists").select("id, title").in("id", listIds) : Promise.resolve({ data: [] as any }),
     getReactionsForActivities(client, raw.map(r => r.id), followerUserId),
     getCommentSummariesForActivities(client, raw.map(r => r.id), followerUserId),
+    getGazingRostersForTokens(client, gazingTokens, followerUserId),
   ]);
 
   const actorMap = new Map((actors.data ?? []).map((r: any) => [r.id, r]));
@@ -254,6 +261,19 @@ export async function getEnrichedActivity(
           ...base,
           kind: "gazing_invited",
           film,
+          token: payload.token ?? "",
+          theaterName: payload.theater_name ?? "",
+          startsAt: payload.starts_at ?? "",
+          formatLabel: payload.format_label ?? null,
+          roster: gazingRosters.get(payload.token) ?? EMPTY_ROSTER,
+        });
+        break;
+      case "gazing_attending":
+        if (film && recipient) out.push({
+          ...base,
+          kind: "gazing_attending",
+          film,
+          host: recipient,
           token: payload.token ?? "",
           theaterName: payload.theater_name ?? "",
           startsAt: payload.starts_at ?? "",

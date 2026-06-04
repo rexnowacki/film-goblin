@@ -29,4 +29,14 @@ describe("notification display helpers", () => {
   it("falls back to ritual index when pick id is missing", () => {
     expect(notificationTarget(notification({ payload: { message_id: "m1" } }))).toBe("/ritual");
   });
+
+  it("routes gazing RSVP notifications to the gazing invite", () => {
+    const n = notification({
+      kind: "gazing_rsvp",
+      payload: { film_id: "film-1", token: "gaz-123" },
+      film: { id: "film-1", title: "Messiah of Evil", artwork_url: "/poster.jpg" },
+    });
+    expect(notificationTarget(n)).toBe("/gazing/gaz-123");
+    expect(notificationToastText(n)).toBe("jellybones is in for your gazing of Messiah of Evil");
+  });
 });

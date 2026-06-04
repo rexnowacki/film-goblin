@@ -38,6 +38,10 @@ function one<T>(value: T | T[] | null | undefined): T | null {
   return value ?? null;
 }
 
+function isUniqueViolation(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === "23505";
+}
+
 /** Loads a matched, active showtime and freezes its display fields. Shared by
  *  the SMS-share and summon paths. Throws if the showtime isn't film-matched. */
 async function loadInviteSnapshot(showtimeId: string): Promise<InviteSnapshot> {
@@ -118,5 +122,50 @@ export async function summonCoven(showtimeId: string): Promise<CreateGazingResul
   const supabase = await createClient();
   const result = await _summonCoven(supabase, showtimeId);
   revalidatePath("/home");
+  return result;
+}
+
+export interface ToggleRsvpResult {
+  attending: boolean;
+}
+
+export async function _toggleGazingRsvp(client: Client, token: string): Promise<ToggleRsvpResult> {
+  const user = await requireAuthUser(client);
+
+  const svc = serviceRoleClient();
+  const { data: invite, error: inviteErr } = await svc
+    .from("gazing_invites")
+    .select("id, created_by")
+    .eq("token", token)
+    .maybeSingle();
+  if (inviteErr) throw inviteErr;
+  if (!invite) throw new Error("That gazing has expired");
+  if (invite.created_by === user.id) throw new Error("You're hosting this gazing");
+
+  const { data: existing, error: existErr } = await client
+    .from("gazing_attendees")
+    .select("id")
+    .eq("invite_id", invite.id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (existErr) throw existErr;
+
+  if (existing) {
+    const { error } = await client.from("gazing_attendees").delete().eq("id", existing.id);
+    if (error) throw error;
+    return { attending: false };
+  }
+
+  const { error } = await client.from("gazing_attendees").insert({ invite_id: invite.id, user_id: user.id });
+  if (isUniqueViolation(error)) return { attending: true };
+  if (error) throw error;
+  return { attending: true };
+}
+
+export async function toggleGazingRsvp(token: string): Promise<ToggleRsvpResult> {
+  const supabase = await createClient();
+  const result = await _toggleGazingRsvp(supabase, token);
+  revalidatePath("/home");
+  revalidatePath(`/gazing/${token}`);
   return result;
 }

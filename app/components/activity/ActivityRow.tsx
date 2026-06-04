@@ -9,6 +9,7 @@ import ActivityCovenJoined from "./ActivityCovenJoined";
 import ActivityLibraryAdded from "./ActivityLibraryAdded";
 import ActivityUserJoined from "./ActivityUserJoined";
 import ActivityGazingInvited from "./ActivityGazingInvited";
+import ActivityGazingAttending from "./ActivityGazingAttending";
 
 export default function ActivityRow({ item }: { item: EnrichedActivity }) {
   switch (item.kind) {
@@ -22,5 +23,6 @@ export default function ActivityRow({ item }: { item: EnrichedActivity }) {
     case "library_added": return <ActivityLibraryAdded item={item} />;
     case "user_joined": return <ActivityUserJoined item={item} />;
     case "gazing_invited": return <ActivityGazingInvited item={item} />;
+    case "gazing_attending": return <ActivityGazingAttending item={item} />;
   }
 }

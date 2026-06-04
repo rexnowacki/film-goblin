@@ -1,14 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import Avatar from "../Avatar";
-import GazingRsvpButton from "../GazingRsvpButton";
 import ActivityFooter from "./ActivityFooter";
 import { formatSummonMeta } from "@/lib/gazing/summon-meta";
 import type { EnrichedActivity } from "@/lib/queries/activity";
 
-type Item = Extract<EnrichedActivity, { kind: "gazing_invited" }>;
+type Item = Extract<EnrichedActivity, { kind: "gazing_attending" }>;
 
-export default function ActivityGazingInvited({ item }: { item: Item }) {
+export default function ActivityGazingAttending({ item }: { item: Item }) {
   const gazingHref = `/gazing/${item.token}`;
   const meta = formatSummonMeta(item.theaterName, item.startsAt, item.formatLabel);
 
@@ -18,30 +17,13 @@ export default function ActivityGazingInvited({ item }: { item: Item }) {
       <div style={{ flex: 1 }}>
         <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, lineHeight: 1.4 }}>
           <Link prefetch={false} href={`/p/${encodeURIComponent(item.actor.username)}`} style={{ color: "var(--bone)", fontWeight: 700 }}>{item.actor.username}</Link>
-          {" summons the coven to a shared gazing of "}
-          <Link prefetch={false} href={gazingHref} style={{ color: "var(--accent)", fontStyle: "italic" }}>{item.film.title}</Link>.
+          {" is attending a ritual gazing of "}
+          <Link prefetch={false} href={gazingHref} style={{ color: "var(--accent)", fontStyle: "italic" }}>{item.film.title}</Link>
+          {" with "}
+          <Link prefetch={false} href={`/p/${encodeURIComponent(item.host.username)}`} style={{ color: "var(--bone)", fontWeight: 700 }}>{item.host.username}</Link>
+          .
         </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, marginTop: 4, color: "var(--muted)", letterSpacing: "0.04em" }}>{meta}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-          <GazingRsvpButton
-            token={item.token}
-            initialAttending={item.roster.viewerIsIn}
-            isHost={item.roster.viewerIsHost}
-            canRsvp
-            signupHref={`/gazing/${item.token}`}
-            size="sm"
-          />
-          {item.roster.count > 0 && (
-            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              {item.roster.avatars.map(a => (
-                <Avatar key={a.id} name={a.username} color="var(--accent)" size={22} url={a.avatar_url} />
-              ))}
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>
-                {item.roster.count} in
-              </span>
-            </span>
-          )}
-        </div>
         <ActivityFooter item={item} />
       </div>
       <Link prefetch={false} href={gazingHref}>

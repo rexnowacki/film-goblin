@@ -25,8 +25,11 @@
 //   theater_showtimes: entire table — added by mig 0197
 //   gazing_invites: entire table — added by mig 0197
 //   gazing_invites: broadcast (boolean) — added by mig 0199
+//   gazing_attendees: entire table — added by mig 0201
 //   activity_kind enum: gazing_invited — added by mig 0198
+//   activity_kind enum: gazing_attending — added by mig 0200
 //   notification_kind enum: film_request_fulfilled — added by mig 0170
+//   notification_kind enum: gazing_rsvp — added by mig 0200
 //
 // Workflow when regen is needed on the other machine:
 //   1. Run `npm run gen:types` to get fresh output.
@@ -559,6 +562,35 @@ export type Database = {
           year?: number
         }
         Relationships: []
+      }
+      gazing_attendees: {
+        Row: {
+          created_at: string
+          id: string
+          invite_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invite_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invite_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gazing_attendees_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "gazing_invites"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gazing_invites: {
         Row: {
@@ -1730,6 +1762,7 @@ export type Database = {
         | "library_added"
         | "user_joined"
         | "gazing_invited"
+        | "gazing_attending"
       coven_request_status: "pending" | "accepted" | "declined"
       notification_kind:
         | "coven_invite_pending"
@@ -1743,6 +1776,7 @@ export type Database = {
         | "reply_on_comment"
         | "theater_showing_match"
         | "goblin_summon"
+        | "gazing_rsvp"
       review_status: "draft" | "published"
       staff_role: "reviewer" | "admin"
     }
@@ -1886,6 +1920,7 @@ export const Constants = {
         "library_added",
         "user_joined",
         "gazing_invited",
+        "gazing_attending",
       ],
       coven_request_status: ["pending", "accepted", "declined"],
       review_status: ["draft", "published"],

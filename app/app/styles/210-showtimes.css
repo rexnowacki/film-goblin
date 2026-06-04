@@ -124,6 +124,57 @@
   box-shadow: 4px 4px 0 var(--accent);
 }
 
+.gazing-rsvp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 12px 18px;
+  border: 2px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 4px 4px 0 var(--void);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.gazing-rsvp-btn.is-in {
+  background: var(--void);
+  color: var(--bone);
+  border-color: var(--bone);
+}
+
+.gazing-rsvp-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.gazing-rsvp-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 12px 16px;
+  border: 2px dashed var(--muted-dark);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gazing-rsvp-sm {
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 10px;
+  box-shadow: 3px 3px 0 var(--void);
+}
+
 /* The shared-gazing landing page (/gazing/[token]) reuses the /film page's
    layout language directly — bone header band + void hero, container-wide,
    .h-display, .eyebrow, .btn family — so it needs no bespoke styles here. */

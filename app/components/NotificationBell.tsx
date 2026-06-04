@@ -69,6 +69,8 @@ function toastCopy(row: NotificationRow, items: NotificationFeedItem[]): string 
       return "A film from your Hoard found a screen";
     case "film_request_fulfilled":
       return "A film request was fulfilled";
+    case "gazing_rsvp":
+      return `${actor} is in for your gazing`;
   }
 }
 
