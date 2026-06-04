@@ -93,27 +93,34 @@
   color: var(--accent-ink);
 }
 
+/* Flat rounded pills — same visual language as the feed verdict /
+   match pills (border-radius 999px, 1px void border, no offset shadow,
+   UI font) rather than the zine sticker box. */
 .showtimes-share {
   width: 100%;
-  min-height: 46px;
-  margin-top: 4px;
-  padding: 12px 14px;
-  border: 2px solid var(--accent);
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 11px 18px;
+  border: 1.5px solid var(--void);
+  border-radius: 999px;
   background: var(--accent);
   color: var(--accent-ink);
-  box-shadow: 4px 4px 0 var(--bone);
   cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 11px;
+  font-family: var(--font-ui);
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  transition: filter 0.12s ease;
+}
+
+.showtimes-share:hover:not(:disabled) {
+  filter: brightness(1.06);
 }
 
 .showtimes-share:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: default;
-  box-shadow: none;
 }
 
 .showtimes-summon {
@@ -121,7 +128,6 @@
   background: var(--void);
   color: var(--bone);
   border-color: var(--bone);
-  box-shadow: 4px 4px 0 var(--accent);
 }
 
 .gazing-rsvp-btn {
