@@ -9,8 +9,10 @@ export default function UniversalFilmSearch() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [mobileExpanded, setMobileExpanded] = useState(false);
   const [, startTransition] = useTransition();
   const wrapRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const emptyResults = useMemo(() => [] as FilmSearchHit[], []);
   const filter = useCallback((films: FilmSearchHit[], raw: string) => {
     const q = raw.toLowerCase();
@@ -30,7 +32,10 @@ export default function UniversalFilmSearch() {
     if (!open) return;
     function onDoc(e: MouseEvent) {
       if (!wrapRef.current) return;
-      if (!wrapRef.current.contains(e.target as Node)) setOpen(false);
+      if (!wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setMobileExpanded(false);
+      }
     }
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
@@ -38,20 +43,34 @@ export default function UniversalFilmSearch() {
 
   function goToFilm(id: string) {
     setOpen(false);
+    setMobileExpanded(false);
     setQuery("");
     startTransition(() => router.push(`/film/${id}`));
+  }
+
+  function openMobileSearch() {
+    setMobileExpanded(true);
+    setOpen(true);
+    requestAnimationFrame(() => inputRef.current?.focus());
   }
 
   const trimmed = query.trim();
 
   return (
-    <div ref={wrapRef} className="universal-film-search">
+    <div ref={wrapRef} className={`universal-film-search${mobileExpanded ? " is-mobile-expanded" : ""}`}>
+      <button type="button" className="universal-film-search-trigger" aria-label="Find a film" onClick={openMobileSearch}>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <line x1="21" y1="21" x2="16.5" y2="16.5" />
+        </svg>
+      </button>
       <div className="search-pill universal-film-search-pill">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="11" cy="11" r="7" />
           <line x1="21" y1="21" x2="16.5" y2="16.5" />
         </svg>
         <input
+          ref={inputRef}
           type="search"
           name="global-film-search"
           autoComplete="off"
