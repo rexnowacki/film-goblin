@@ -44,6 +44,7 @@ export type EnrichedActivity = (
   | { kind: "list_film_added"; list: ListLite; film: FilmLite }
   | { kind: "coven_joined"; other: RecipientLite }
   | { kind: "user_joined" }
+  | { kind: "gazing_invited"; film: FilmLite; token: string; theaterName: string; startsAt: string; formatLabel: string | null }
 ) & {
   id: string;
   created_at: string;
@@ -247,6 +248,17 @@ export async function getEnrichedActivity(
         break;
       case "user_joined":
         out.push({ ...base, kind: "user_joined" });
+        break;
+      case "gazing_invited":
+        if (film) out.push({
+          ...base,
+          kind: "gazing_invited",
+          film,
+          token: payload.token ?? "",
+          theaterName: payload.theater_name ?? "",
+          startsAt: payload.starts_at ?? "",
+          formatLabel: payload.format_label ?? null,
+        });
         break;
     }
   }
