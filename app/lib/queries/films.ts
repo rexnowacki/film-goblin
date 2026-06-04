@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
 import { getOwnedFilmIds } from "./library";
 import { getWatchlistedFilmIds } from "./watchlists";
+import { getCurrentlyShowingFilmIds } from "./current-showing";
 
 type Client = SupabaseClient<Database>;
 
@@ -57,7 +58,7 @@ export async function getFilms(
     year: number; runtime_min: number; genre_primary: string; artwork_url: string;
     latest_price: number | null; watchlist_count: number; watcher_count: number;
     coven_rating_pct: number | null;
-    on_watchlist: boolean; in_library: boolean;
+    on_watchlist: boolean; in_library: boolean; currently_showing: boolean;
   }>;
   total: number;
   pageSize: number;
@@ -126,11 +127,13 @@ export async function getFilms(
   const to = from + FILMS_PAGE_SIZE - 1;
   const { data, error, count } = await query.range(from, to);
   if (error) throw error;
+  const showingIds = await getCurrentlyShowingFilmIds(client, ((data ?? []) as Array<{ id: string }>).map(r => r.id));
   const rows = ((data ?? []) as Array<{ id: string }>).map(r => ({
     ...r,
     on_watchlist: watchlistedSet.has(r.id),
     in_library: ownedSet.has(r.id),
-  }));
+    currently_showing: showingIds.has(r.id),
+  })).sort((a, b) => Number(b.currently_showing) - Number(a.currently_showing));
   return { rows: rows as never, total: count ?? 0, pageSize: FILMS_PAGE_SIZE };
 }
 

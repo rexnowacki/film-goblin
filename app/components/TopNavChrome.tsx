@@ -6,6 +6,7 @@ import UserMenu from "./UserMenu";
 import NotificationBell from "./NotificationBell";
 import BackButton from "./BackButton";
 import AddFilmModal from "./AddFilmModal";
+import UniversalFilmSearch from "./UniversalFilmSearch";
 import type { NotificationFeedItem } from "@/lib/queries/notifications";
 
 interface NavItem { id: string; label: string; href: string; badge?: number }
@@ -54,6 +55,7 @@ export default function TopNavChrome({ items, current, user, profile, isAdmin, u
               </Link>
             ))}
           </nav>
+          <UniversalFilmSearch />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {user ? (

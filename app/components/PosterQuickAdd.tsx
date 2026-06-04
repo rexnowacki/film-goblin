@@ -17,6 +17,7 @@ interface Props {
   filmId: string;
   initialOnWatchlist: boolean;
   initialInLibrary?: boolean;
+  currentlyShowing?: boolean;
   /** Required for mobile share action (used in the bottom sheet). */
   filmTitle?: string;
   filmYear?: number;
@@ -45,6 +46,7 @@ export default function PosterQuickAdd({
   filmId,
   initialOnWatchlist,
   initialInLibrary = false,
+  currentlyShowing = false,
   filmTitle,
   filmYear,
   sharerUsername = null,
@@ -237,8 +239,12 @@ export default function PosterQuickAdd({
           mode="new"
           filmTitle={filmTitle}
           initial={{ watched_at: TODAY_ISO(), note: "", recommended: null, spoiler: false }}
+          onWatchlist={onWatchlist}
+          currentlyShowing={currentlyShowing}
           onSave={async (values) => {
             await logWatch(filmId, values);
+            setOnWatchlist(values.watchlistDisposition === "keep");
+            if (values.watchlistDisposition === "library") setInLibrary(true);
             toast("Watch logged");
             setWatchOpen(false);
           }}

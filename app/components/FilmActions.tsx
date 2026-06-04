@@ -11,9 +11,10 @@ interface Props {
   initialOnWatchlist: boolean;
   initialOwned: boolean;
   initialWatchCount: number;
+  currentlyShowing: boolean;
 }
 
-export default function FilmActions({ filmId, filmTitle, initialOnWatchlist, initialOwned, initialWatchCount }: Props) {
+export default function FilmActions({ filmId, filmTitle, initialOnWatchlist, initialOwned, initialWatchCount, currentlyShowing }: Props) {
   const [onWatchlist, setOnWatchlist] = useState(initialOnWatchlist);
 
   return (
@@ -32,7 +33,9 @@ export default function FilmActions({ filmId, filmTitle, initialOnWatchlist, ini
         filmId={filmId}
         filmTitle={filmTitle}
         initialCount={initialWatchCount}
-        onLogged={() => setOnWatchlist(false)}
+        onWatchlist={onWatchlist}
+        currentlyShowing={currentlyShowing}
+        onLogged={(disposition) => setOnWatchlist(disposition === "keep")}
       />
     </>
   );

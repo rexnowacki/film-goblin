@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
+import { getCurrentlyShowingFilmIds } from "./current-showing";
 
 type Client = SupabaseClient<Database>;
 
@@ -20,6 +21,7 @@ export interface WatchlistRowData {
     runtime_min: number;
     latest_price: number | null;
     coven_rating_pct: number | null;
+    currently_showing: boolean;
   };
 }
 
@@ -77,7 +79,9 @@ export async function getMyWatchlistWithFilms(client: Client): Promise<Watchlist
     `)
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((r: any) => ({
+  const rows = data ?? [];
+  const showingIds = await getCurrentlyShowingFilmIds(client, rows.map((r: any) => r.film_id));
+  return rows.map((r: any) => ({
     id: r.id,
     film_id: r.film_id,
     max_price_usd: toNumber(r.max_price_usd),
@@ -94,6 +98,7 @@ export async function getMyWatchlistWithFilms(client: Client): Promise<Watchlist
       runtime_min: r.film.runtime_min,
       latest_price: toNumber(r.film.latest_price),
       coven_rating_pct: r.film.coven_rating_pct ?? null,
+      currently_showing: showingIds.has(r.film_id),
     },
   }));
 }

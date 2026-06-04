@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { sortWatchlist, computeDropPct, type WatchlistSort } from "@/lib/queries/sort-watchlist";
 import type { WatchlistRowData } from "@/lib/queries/watchlists";
 
-function row(overrides: Partial<WatchlistRowData> & { id: string; title?: string; latest_price?: number | null; max_price_usd?: number | null; created_at?: string }): WatchlistRowData {
+function row(overrides: Partial<WatchlistRowData> & { id: string; title?: string; latest_price?: number | null; max_price_usd?: number | null; created_at?: string; currently_showing?: boolean }): WatchlistRowData {
   return {
     id: overrides.id,
     film_id: overrides.id + "-film",
@@ -20,6 +20,7 @@ function row(overrides: Partial<WatchlistRowData> & { id: string; title?: string
       runtime_min: 100,
       latest_price: overrides.latest_price ?? null,
       coven_rating_pct: null,
+      currently_showing: overrides.currently_showing ?? false,
     },
   };
 }
@@ -96,5 +97,14 @@ describe("sortWatchlist", () => {
       row({ id: "b", latest_price: 5, max_price_usd: 10, created_at: "2026-04-01T00:00:00Z" }),
     ];
     expect(sortWatchlist(rows, "drop").map(r => r.id)).toEqual(["b", "a"]);
+  });
+
+  it("keeps currently-showing films ahead of non-theatrical rows", () => {
+    const rows: WatchlistRowData[] = [
+      row({ id: "a", title: "Zulu" }),
+      row({ id: "b", title: "Alpha", currently_showing: true }),
+      row({ id: "c", title: "Beta" }),
+    ];
+    expect(sortWatchlist(rows, "alphabetical").map(r => r.id)).toEqual(["b", "c", "a"]);
   });
 });

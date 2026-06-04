@@ -7,12 +7,14 @@ import type { Database } from "@/lib/supabase/types";
 import { requireAuthUser } from "@/lib/auth/require-auth-user";
 
 type Client = SupabaseClient<Database>;
+export type WatchlistDisposition = "keep" | "remove" | "library";
 
 interface LogWatchOpts {
   watched_at?: string; // ISO YYYY-MM-DD; defaults to today
   note?: string | null;
   recommended?: boolean | null;
   spoiler?: boolean;
+  watchlistDisposition?: WatchlistDisposition;
 }
 
 interface EditWatchPatch {
@@ -24,10 +26,8 @@ interface EditWatchPatch {
 
 /**
  * Logs a watch entry. When called with no opts, inserts today's date and no note.
- * Side-effect: silently deletes any matching (user, film) watchlist row — watching
- * supersedes wanting. Mirrors _addToLibrary's two-statement shape; the two ops are
- * not in a single SQL transaction, but both scope to auth.uid() = user_id and
- * neither is destructive on conflict.
+ * Side-effect: the caller chooses what to do with a matching watchlist row.
+ * Default remains "remove" for backwards compatibility.
  */
 export async function _logWatch(
   client: Client,
@@ -63,12 +63,21 @@ export async function _logWatch(
       .neq("id", data.id);
   }
 
-  // Auto-remove from watchlist (silent — no error if it wasn't there).
-  await client
-    .from("watchlists")
-    .delete()
-    .eq("user_id", user.id)
-    .eq("film_id", filmId);
+  const disposition = opts?.watchlistDisposition ?? "remove";
+  if (disposition === "remove" || disposition === "library") {
+    await client
+      .from("watchlists")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("film_id", filmId);
+  }
+
+  if (disposition === "library") {
+    const { error: libraryErr } = await client
+      .from("library")
+      .insert({ user_id: user.id, film_id: filmId });
+    if (libraryErr && libraryErr.code !== "23505") throw libraryErr;
+  }
 
   return { id: data.id };
 }
@@ -126,6 +135,7 @@ export async function logWatch(filmId: string, opts?: LogWatchOpts): Promise<{ i
   const result = await _logWatch(supabase, filmId, opts);
   revalidatePath("/watched");
   revalidatePath("/watchlist");
+  revalidatePath("/library");
   revalidatePath(`/film/${filmId}`);
   return result;
 }

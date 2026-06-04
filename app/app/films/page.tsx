@@ -76,6 +76,7 @@ export default async function FilmsPage({
                       filmId={f.id}
                       initialOnWatchlist={f.on_watchlist}
                       initialInLibrary={f.in_library}
+                      currentlyShowing={f.currently_showing}
                       filmTitle={f.title}
                       filmYear={f.year}
                       sharerUsername={myProfile?.username ?? null}
@@ -106,6 +107,9 @@ export default async function FilmsPage({
                         <span style={{ marginLeft: 6, color: "var(--accent)" }}>· In grimoire</span>
                       ) : f.on_watchlist ? (
                         <span style={{ marginLeft: 6, color: "var(--accent)" }}>· On watchlist</span>
+                      ) : null}
+                      {f.currently_showing ? (
+                        <span style={{ marginLeft: 6, color: "var(--accent)" }}>· In theaters</span>
                       ) : null}
                     </div>
                   </div>

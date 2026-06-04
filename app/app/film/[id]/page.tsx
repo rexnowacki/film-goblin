@@ -167,7 +167,16 @@ export default async function FilmDetailPage({
 
             {/* Primary action cluster — save/own/log + recommend + share + buy. */}
             <div className="hero-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {user && <FilmActions filmId={film.id} filmTitle={film.title} initialOnWatchlist={onList} initialOwned={owned} initialWatchCount={watchCount} />}
+              {user && (
+                <FilmActions
+                  filmId={film.id}
+                  filmTitle={film.title}
+                  initialOnWatchlist={onList}
+                  initialOwned={owned}
+                  initialWatchCount={watchCount}
+                  currentlyShowing={showtimes.length > 0}
+                />
+              )}
               {user && <RecommendModal
                 filmId={film.id}
                 filmTitle={film.title}

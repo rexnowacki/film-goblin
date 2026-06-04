@@ -2,12 +2,14 @@
 
 import { useState, useTransition } from "react";
 import BottomSheet from "./BottomSheet";
+import type { WatchlistDisposition } from "@/lib/actions/watched";
 
 interface SaveValues {
   watched_at: string;
   note: string;
   recommended: boolean | null;
   spoiler: boolean;
+  watchlistDisposition?: WatchlistDisposition;
 }
 
 interface Props {
@@ -15,6 +17,8 @@ interface Props {
   mode: "new" | "edit";
   initial: { watched_at: string; note: string; recommended: boolean | null; spoiler?: boolean; id?: string };
   filmTitle: string;
+  onWatchlist?: boolean;
+  currentlyShowing?: boolean;
   onSave(values: SaveValues): Promise<void>;
   onDelete?(): Promise<void>;
   onClose(): void;
@@ -22,11 +26,12 @@ interface Props {
 
 const MAX_NOTE = 500;
 
-export default function WatchModal({ open, mode, initial, filmTitle, onSave, onDelete, onClose }: Props) {
+export default function WatchModal({ open, mode, initial, filmTitle, onWatchlist = false, currentlyShowing = false, onSave, onDelete, onClose }: Props) {
   const [watchedAt, setWatchedAt] = useState(initial.watched_at);
   const [note, setNote] = useState(initial.note);
   const [recommended, setRecommended] = useState<boolean | null>(initial.recommended);
   const [spoiler, setSpoiler] = useState(Boolean(initial.spoiler));
+  const [watchlistDisposition, setWatchlistDisposition] = useState<WatchlistDisposition>(currentlyShowing ? "keep" : "remove");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -34,7 +39,13 @@ export default function WatchModal({ open, mode, initial, filmTitle, onSave, onD
     start(async () => {
       setError(null);
       try {
-        await onSave({ watched_at: watchedAt, note, recommended, spoiler });
+        await onSave({
+          watched_at: watchedAt,
+          note,
+          recommended,
+          spoiler,
+          watchlistDisposition: onWatchlist ? watchlistDisposition : undefined,
+        });
         onClose();
       } catch (e: any) {
         setError(e?.message ?? String(e));
@@ -135,6 +146,44 @@ export default function WatchModal({ open, mode, initial, filmTitle, onSave, onD
             Tap again to clear. Feeds the coven score.
           </div>
         </div>
+        {onWatchlist && (
+          <div>
+            <div className="caps" style={{ fontSize: 11, marginBottom: 6 }}>Watchlist</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {[
+                { value: "keep" as const, label: "Keep" },
+                { value: "remove" as const, label: "Remove" },
+                { value: "library" as const, label: "Move to grimoire" },
+              ].map(opt => {
+                const active = watchlistDisposition === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setWatchlistDisposition(opt.value)}
+                    style={{
+                      flex: 1,
+                      minWidth: opt.value === "library" ? 150 : 96,
+                      padding: "8px 12px",
+                      border: `2px solid ${active ? "var(--accent)" : "var(--muted)"}`,
+                      borderRadius: 999,
+                      background: active ? "var(--accent)" : "transparent",
+                      color: active ? "var(--accent-ink)" : "var(--bone)",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-ui)",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {error && <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: 13 }}>{error}</div>}
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 6 }}>
           <button

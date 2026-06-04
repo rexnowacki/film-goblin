@@ -9,6 +9,10 @@ export function computeDropPct(r: WatchlistRowData): number | null {
 }
 
 export function sortWatchlist(rows: WatchlistRowData[], sort: WatchlistSort): WatchlistRowData[] {
+  function showingFirst(sorted: WatchlistRowData[]) {
+    return [...sorted].sort((a, b) => Number(b.film.currently_showing) - Number(a.film.currently_showing));
+  }
+
   switch (sort) {
     case "drop": {
       const dropped: Array<[WatchlistRowData, number]> = [];
@@ -20,19 +24,19 @@ export function sortWatchlist(rows: WatchlistRowData[], sort: WatchlistSort): Wa
       }
       dropped.sort((a, b) => b[1] - a[1]);
       rest.sort((a, b) => b.created_at.localeCompare(a.created_at));
-      return [...dropped.map(([r]) => r), ...rest];
+      return showingFirst([...dropped.map(([r]) => r), ...rest]);
     }
     case "recency":
-      return [...rows].sort((a, b) => b.created_at.localeCompare(a.created_at));
+      return showingFirst([...rows].sort((a, b) => b.created_at.localeCompare(a.created_at)));
     case "price-low":
-      return [...rows].sort((a, b) => {
+      return showingFirst([...rows].sort((a, b) => {
         const pa = a.film.latest_price, pb = b.film.latest_price;
         if (pa == null && pb == null) return 0;
         if (pa == null) return 1;
         if (pb == null) return -1;
         return pa - pb;
-      });
+      }));
     case "alphabetical":
-      return [...rows].sort((a, b) => a.film.title.localeCompare(b.film.title));
+      return showingFirst([...rows].sort((a, b) => a.film.title.localeCompare(b.film.title)));
   }
 }

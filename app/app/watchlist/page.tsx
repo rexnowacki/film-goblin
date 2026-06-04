@@ -101,6 +101,7 @@ export default async function WatchlistPage({
                             filmTitle={r.film.title}
                             filmYear={r.film.year}
                             sharerUsername={myProfile?.username ?? null}
+                            currentlyShowing={r.film.currently_showing}
                           />
                         </div>
                         <div style={{ marginTop: 10 }}>
@@ -108,6 +109,7 @@ export default async function WatchlistPage({
                           <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {r.film.year}
                             {r.film.director ? <span> · {r.film.director}</span> : null}
+                            {r.film.currently_showing ? <span style={{ color: "var(--accent)" }}> · In theaters</span> : null}
                           </div>
                         </div>
                       </Link>

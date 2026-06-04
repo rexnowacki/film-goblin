@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import BottomSheet from "@/components/BottomSheet";
 import { useToast } from "@/components/ToastProvider";
 import { addToLibrary, removeFromLibrary } from "@/lib/actions/library";
@@ -20,6 +21,7 @@ interface Props {
   filmTitle: string;
   filmYear: number;
   sharerUsername: string | null;
+  currentlyShowing?: boolean;
 }
 
 /**
@@ -31,10 +33,11 @@ interface Props {
  * Hidden on desktop via the existing .poster-quick-add__mobile-btn
  * media query (display: none default, inline-flex ≤720px).
  */
-export default function PosterMobileActions({ kind, filmId, filmTitle, filmYear, sharerUsername }: Props) {
+export default function PosterMobileActions({ kind, filmId, filmTitle, filmYear, sharerUsername, currentlyShowing = false }: Props) {
   const [open, setOpen] = useState(false);
   const [watchOpen, setWatchOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
   const { toast } = useToast();
 
   function stopAndPrevent(e: React.MouseEvent) {
@@ -150,10 +153,13 @@ export default function PosterMobileActions({ kind, filmId, filmTitle, filmYear,
         mode="new"
         filmTitle={filmTitle}
         initial={{ watched_at: TODAY_ISO(), note: "", recommended: null, spoiler: false }}
+        onWatchlist={kind === "watchlist"}
+        currentlyShowing={currentlyShowing}
         onSave={async (values) => {
           await logWatch(filmId, values);
           toast("Watch logged");
           setWatchOpen(false);
+          if (values.watchlistDisposition !== "keep") router.refresh();
         }}
         onClose={() => setWatchOpen(false)}
       />

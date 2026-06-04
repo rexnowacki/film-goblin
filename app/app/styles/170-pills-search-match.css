@@ -121,6 +121,31 @@
 }
 .feed-search-item:hover { background: rgba(255, 45, 136, 0.08); }
 
+.universal-film-search {
+  position: relative;
+  width: min(260px, 28vw);
+  flex-shrink: 1;
+}
+.universal-film-search-pill {
+  margin-bottom: 0;
+  padding: 6px 12px;
+  border-width: 1.5px;
+  box-shadow: none;
+}
+.universal-film-search-pill input {
+  font-size: 12px;
+}
+.universal-film-search-dropdown {
+  min-width: 320px;
+  right: auto;
+}
+
+@media (max-width: 980px) {
+  .universal-film-search {
+    display: none;
+  }
+}
+
 .feed-active-filter {
   display: inline-flex;
   align-items: center;
