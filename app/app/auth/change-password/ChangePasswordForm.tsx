@@ -26,12 +26,12 @@ export default function ChangePasswordForm() {
 
   return (
     <form action={submit}>
-      <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>New Password (min 6)</div>
+      <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>New Password (min 8)</div>
       <input
         name="new_password"
         type="password"
         required
-        minLength={6}
+        minLength={8}
         autoComplete="new-password"
         style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 16, fontFamily: "var(--font-ui)" }}
       />
@@ -40,7 +40,7 @@ export default function ChangePasswordForm() {
         name="confirm"
         type="password"
         required
-        minLength={6}
+        minLength={8}
         autoComplete="new-password"
         style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 16, fontFamily: "var(--font-ui)" }}
       />

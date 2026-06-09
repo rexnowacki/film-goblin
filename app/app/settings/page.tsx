@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
 import { getAllTagsGroupedByType } from "@/lib/queries/film-tags";
+import { PROFILE_SELECT_COLUMNS } from "@/lib/queries/profiles";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import SettingsForm from "./SettingsForm";
@@ -33,7 +34,7 @@ export default async function SettingsPage() {
   const supabase = await createClient();
 
   const [profile, vocab] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select(PROFILE_SELECT_COLUMNS).eq("id", user.id).maybeSingle(),
     getAllTagsGroupedByType(supabase),
   ]);
 

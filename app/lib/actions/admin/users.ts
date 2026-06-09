@@ -107,7 +107,7 @@ export async function adminForcePasswordChange(
   await requireAdmin(supabase);
 
   if (!userId) return { ok: false, error: "Missing user id." };
-  if (tempPassword.length < 6) return { ok: false, error: "Temp password must be at least 6 characters." };
+  if (tempPassword.length < 8) return { ok: false, error: "Temp password must be at least 8 characters." };
 
   const sr = serviceRoleClient();
 

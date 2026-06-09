@@ -3,12 +3,16 @@ import type { Database } from "../supabase/types";
 
 type Client = SupabaseClient<Database>;
 
+export const PROFILE_SELECT_COLUMNS = "id, username, display_name, bio, avatar_url, role, created_at, updated_at, broadcast_watchlist_adds, broadcast_library, broadcast_watched, email_added_at, email_price_drops, email_coven_recs, email_comments, email_coven_invites, notify_rate_reminders, notify_comment_likes, notify_film_requests, lane_tag_ids, discoverable, is_starter, starter_order, onboarded_at, must_change_password" as const;
+
+export const PUBLIC_PROFILE_COLUMNS = "id, username, display_name, avatar_url, bio, role, created_at" as const;
+
 export async function getMyProfile(client: Client) {
   const { data: { user } } = await client.auth.getUser();
   if (!user) return null;
   const { data, error } = await client
     .from("profiles")
-    .select("*")
+    .select(PROFILE_SELECT_COLUMNS)
     .eq("id", user.id)
     .single();
   if (error) throw error;
@@ -18,7 +22,7 @@ export async function getMyProfile(client: Client) {
 export async function getProfileByUsername(client: Client, username: string) {
   const { data, error } = await client
     .from("profiles")
-    .select("*")
+    .select(PUBLIC_PROFILE_COLUMNS)
     .ilike("username", username)
     .maybeSingle();
   if (error) throw error;

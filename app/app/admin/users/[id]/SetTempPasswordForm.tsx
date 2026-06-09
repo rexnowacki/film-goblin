@@ -17,8 +17,8 @@ export default function SetTempPasswordForm({ userId, username }: Props) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (state === "submitting") return;
-    if (pw.length < 6) {
-      setErrMsg("Temp password must be at least 6 characters.");
+    if (pw.length < 8) {
+      setErrMsg("Temp password must be at least 8 characters.");
       setState("error");
       return;
     }
@@ -55,7 +55,7 @@ export default function SetTempPasswordForm({ userId, username }: Props) {
         type="text"
         value={pw}
         onChange={(e) => setPw(e.target.value)}
-        placeholder="temp password (min 6)"
+        placeholder="temp password (min 8)"
         autoComplete="off"
         style={{
           fontFamily: "var(--font-mono, monospace)",
@@ -70,7 +70,7 @@ export default function SetTempPasswordForm({ userId, username }: Props) {
         <button
           type="submit"
           className="btn btn-sm btn-dark"
-          disabled={state === "submitting" || pw.length < 6}
+          disabled={state === "submitting" || pw.length < 8}
         >
           {state === "submitting" ? "Saving…" : "Set temp password"}
         </button>

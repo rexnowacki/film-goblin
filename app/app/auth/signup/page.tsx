@@ -3,9 +3,9 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signUp, checkUsernameAvailability } from "@/lib/actions/auth";
+import { isValidUsername } from "@/lib/auth/username";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 
-const USERNAME_RE = /^[a-z0-9._]+$/;
 type CheckState = "idle" | "checking" | "ok" | "taken" | "invalid";
 
 function SignUpInner() {
@@ -27,7 +27,7 @@ function SignUpInner() {
       setCheck("idle");
       return;
     }
-    if (trimmed.length > 24 || !USERNAME_RE.test(trimmed)) {
+    if (!isValidUsername(trimmed)) {
       setCheck("invalid");
       return;
     }
@@ -99,8 +99,8 @@ function SignUpInner() {
           <div style={{ fontFamily: "var(--font-serif)", fontSize: 11, fontStyle: "italic", opacity: 0.6, marginBottom: 20 }}>
             Lowercase letters, numbers, dots, underscores. This is your @. Add a display name later in settings.
           </div>
-          <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Password (min 6)</div>
-          <input name="password" type="password" required minLength={6} autoComplete="new-password"
+          <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Password (min 8)</div>
+          <input name="password" type="password" required minLength={8} autoComplete="new-password"
             style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 6, fontFamily: "var(--font-ui)" }} />
           <div style={{ fontFamily: "var(--font-serif)", fontSize: 11, fontStyle: "italic", opacity: 0.6, marginBottom: 20 }}>
             Email is optional — add one later from settings if you want price-drop alerts by email.

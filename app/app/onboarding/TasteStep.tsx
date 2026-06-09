@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { isValidUsername, USERNAME_RULES_MESSAGE } from "@/lib/auth/username";
 import { FLAVOR_CARDS, getSelectedTagIds } from "./taste-step-logic";
 
 interface Props {
@@ -9,16 +10,14 @@ interface Props {
   onNext: (username: string, laneTagIds: string[]) => void;
 }
 
-const USERNAME_RE = /^[a-z0-9._]+$/;
-
 export default function TasteStep({ initialUsername, laneTagMap, onNext }: Props) {
   const [username, setUsername] = useState(initialUsername);
   const [selected, setSelected] = useState<string[]>([]);
 
-  const trimmed = username.trim();
-  const usernameOk = trimmed.length > 0 && USERNAME_RE.test(trimmed);
-  const usernameError = trimmed.length > 0 && !USERNAME_RE.test(trimmed)
-    ? "lowercase letters, numbers, dots, underscores only"
+  const trimmed = username.trim().toLowerCase();
+  const usernameOk = isValidUsername(trimmed);
+  const usernameError = trimmed.length > 0 && !isValidUsername(trimmed)
+    ? USERNAME_RULES_MESSAGE
     : "";
 
   function toggleCard(label: string) {
@@ -38,6 +37,7 @@ export default function TasteStep({ initialUsername, laneTagMap, onNext }: Props
           placeholder="your.handle"
           autoCapitalize="none"
           autoCorrect="off"
+          maxLength={24}
           style={{
             fontFamily: "var(--font-ui)",
             fontSize: 18,

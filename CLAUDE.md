@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > **Convention:** This section is updated before each session close so the next session can pick up cold. Update it at the end of every session — what just shipped, what's next, any open threads worth carrying forward.
 
-**Last updated:** 2026-05-25
+**Last updated:** 2026-06-09
+
+**Last shipped (2026-06-09):** Tier-1 security hardening branch in progress. Migs 0203–0205 add profile column-level grants, pre-auth subject/IP rate limits, and DB CHECK constraints for profile text fields and watched notes. App changes remove client-role `profiles.select("*")`, add auth throttles with fail-open pre-auth limiter helpers, raise new-password minimum to 8, consolidate username validation, and add friendly profile length validation. **Rollout order matters:** deploy app first, then apply migrations; running 0203 before the app deploy can break old `profiles.select("*")` code.
 
 **Last shipped (2026-05-25):** Sub-CLAUDE.md files added throughout the repo to give Claude institutional context at each layer without re-reading root CLAUDE.md. Files at: `app/CLAUDE.md`, `app/components/CLAUDE.md`, `app/lib/actions/CLAUDE.md`, `app/lib/queries/CLAUDE.md`, `app/lib/queries/fyp/CLAUDE.md`, `app/lib/supabase/CLAUDE.md`, `app/lib/theaters/CLAUDE.md`, `db/CLAUDE.md`, `db/migrations/CLAUDE.md`, `worker/CLAUDE.md`, `notifier/CLAUDE.md`.
 
@@ -31,6 +33,7 @@ For full history → `docs/sub-project-history.md`.
 - **`fg-trailers/`** — `cargo run --release` from `fg-trailers/`. Needs `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` in `fg-trailers/.env`. Trailer columns exist (mig 0150), no UI reads them yet.
 - **`passwords.txt`** at repo root (gitignored) — Supabase prod pooler URL + password. Second machine: `npx vercel env pull app/.env.local --yes --environment=production`.
 - **Supabase "Confirm email" toggle stays ON.** Synthetic-email signups bypass via `email_confirm: true`. Don't flip it off.
+- **Supabase dashboard hardening (manual, post-merge):** set Auth minimum password length to 8 and enable leaked-password protection if the plan allows.
 - **`onboarded_at` backfill:** To force a user through onboarding again, null it directly in DB.
 - **Genre filter on `/films` is unwired.** `films.genre_primary` exists but no UI reads it.
 - **Sub-project #25 deferred:** comment editing/pagination/@-mentions/markdown; emoji quick-react strip.

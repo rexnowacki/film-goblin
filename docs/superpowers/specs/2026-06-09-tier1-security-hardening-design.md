@@ -233,11 +233,13 @@ attributes. Without this, an over-limit submit would surface a raw Postgres erro
 ## Rollout
 
 1. One branch `security/tier1-hardening`, one PR (migrations 0203–0205 + app changes).
-2. After merge: apply migrations against prod via the session pooler
+2. Deploy the app first: `npx vercel deploy --prod --yes` from repo root. The
+   explicit profile selects work under the old grants, and the limiter fails open
+   until the RPC exists.
+3. Apply migrations against prod via the session pooler
    (`set -a; source app/.env.local; set +a; cd db && npm run migrate`).
-3. `npx vercel deploy --prod --yes` from repo root.
-4. Either order is safe: explicit selects work under old and new grants; the limiter
-   fails open until the RPC exists.
+4. Do **not** run 0203 before the app deploy: current prod code still has
+   `profiles.select("*")` call sites that will fail once column grants land.
 5. Smoke after deploy: signed-out `/film/[id]` and `/p/[username]` render; settings
    page loads; `curl` the REST API for `unsubscribe_token` with the anon key →
    permission denied; 11 rapid bad-password sign-ins → throttle message.

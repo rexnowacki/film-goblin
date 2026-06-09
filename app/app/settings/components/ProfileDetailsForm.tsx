@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { useToast } from "@/components/ToastProvider";
 import { updateProfile } from "@/lib/actions/profile";
+import { isValidUsername, USERNAME_RULES_MESSAGE } from "@/lib/auth/username";
 import SettingsSection from "@/components/settings/SettingsSection";
 import { SettingsTextArea, SettingsTextField } from "./SettingsControls";
-
-const USERNAME_RE = /^[a-z0-9._]+$/;
 
 interface ProfileDetailsFormProps {
   username: string;
@@ -25,7 +24,7 @@ export default function ProfileDetailsForm({
   const [saving, setSaving] = useState(false);
   const [username, setUsername] = useState(initialUsername);
   const trimmedUsername = username.trim().toLowerCase();
-  const usernameInvalid = trimmedUsername.length > 0 && (!USERNAME_RE.test(trimmedUsername) || trimmedUsername.length > 24);
+  const usernameInvalid = trimmedUsername.length > 0 && !isValidUsername(trimmedUsername);
 
   async function save(fd: FormData) {
     setSaving(true);
@@ -57,10 +56,10 @@ export default function ProfileDetailsForm({
           onChange={e => setUsername(e.target.value)}
           required
           maxLength={24}
-          error={usernameInvalid ? "Lowercase letters, numbers, dots, underscores only (max 24)." : null}
+          error={usernameInvalid ? USERNAME_RULES_MESSAGE : null}
         />
-        <SettingsTextField name="display_name" label="Display Name" defaultValue={displayName} required />
-        <SettingsTextArea name="bio" label="Bio" defaultValue={bio} rows={4} />
+        <SettingsTextField name="display_name" label="Display Name" defaultValue={displayName} required maxLength={50} />
+        <SettingsTextArea name="bio" label="Bio" defaultValue={bio} rows={4} maxLength={500} />
         <button type="submit" disabled={saving || usernameInvalid} className="btn" style={{ justifySelf: "start" }}>
           {saving ? "Saving..." : "Save profile"}
         </button>

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 import { friendlyError } from "@/lib/auth/friendly-errors";
 import { requireAuthUser } from "@/lib/auth/require-auth-user";
+import { isValidUsername, USERNAME_RULES_MESSAGE } from "@/lib/auth/username";
 
 type Client = SupabaseClient<Database>;
 
@@ -29,18 +30,29 @@ export interface ProfileFields {
 
 type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
-const USERNAME_RE = /^[a-z0-9._]+$/;
-const USERNAME_MAX_LENGTH = 24;
+const DISPLAY_NAME_MAX = 50;
+const BIO_MAX = 500;
+const AVATAR_URL_MAX = 1000;
 
 export async function _updateProfile(client: Client, fields: ProfileFields): Promise<void> {
   const user = await requireAuthUser(client);
 
   if (fields.username !== undefined) {
     const u = fields.username.trim().toLowerCase();
-    if (!u || u.length > USERNAME_MAX_LENGTH || !USERNAME_RE.test(u)) {
-      throw new Error("Invalid username: lowercase letters, numbers, dots, underscores only (max 24).");
+    if (!isValidUsername(u)) {
+      throw new Error(USERNAME_RULES_MESSAGE);
     }
     fields = { ...fields, username: u };
+  }
+
+  if (fields.display_name !== undefined && fields.display_name.length > DISPLAY_NAME_MAX) {
+    throw new Error(`Display name is too long (max ${DISPLAY_NAME_MAX} characters).`);
+  }
+  if (fields.bio !== undefined && fields.bio.length > BIO_MAX) {
+    throw new Error(`Bio is too long (max ${BIO_MAX} characters).`);
+  }
+  if (fields.avatar_url !== undefined && fields.avatar_url.length > AVATAR_URL_MAX) {
+    throw new Error(`Avatar URL is too long (max ${AVATAR_URL_MAX} characters).`);
   }
 
   const patch: ProfileUpdate = { ...fields };
@@ -98,7 +110,7 @@ export async function changePassword(formData: FormData): Promise<{ error?: stri
   const currentPassword = String(formData.get("current_password") || "");
   const newPassword = String(formData.get("new_password") || "");
   const confirm = String(formData.get("confirm") || "");
-  if (newPassword.length < 6) return { error: "New password must be at least 6 characters." };
+  if (newPassword.length < 8) return { error: "New password must be at least 8 characters." };
   if (newPassword !== confirm) return { error: "New passwords don't match." };
 
   const supabase = await createClient();

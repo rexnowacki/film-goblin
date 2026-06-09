@@ -50,6 +50,19 @@ Admin actions call `requireAdmin()` from `app/lib/auth/require-admin.ts` before 
 
 No new server action needed — the spread handles it automatically.
 
+## Rate limiting
+
+Two limiters live in `@/lib/rate-limit`:
+
+- `consumeRateLimit` is user-keyed (mig 0190) for authenticated actions. It
+  fails closed on RPC errors.
+- `consumeIpRateLimit` is subject-keyed (mig 0204) for pre-auth actions such as
+  sign-in, sign-up, and username availability checks. It fails open on RPC
+  errors so auth is not bricked during deploys or rate-limit infra issues.
+
+Use `getClientIpHash()` for IP buckets and `hashKey()` for non-IP subject
+buckets such as sign-in identifier throttles.
+
 ## Env-blocked integration tests
 
 Tests that need real Supabase require **both** guards:

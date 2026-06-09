@@ -16,6 +16,7 @@ Files are named `0NNN_description.sql` and applied in lexicographic order.
 | 0170–0179 | Social gate: film requests, invite codes, must_change_password, iTunes availability |
 | 0180–0189 | Ritual system: film cast, goblin pick schedule/messages/summon, notification dedupe |
 | 0190–0199 | Infrastructure: rate limits, streaming providers |
+| 0200–0209 | Gazing attendees + tier-1 security hardening |
 
 ## Adding a migration
 

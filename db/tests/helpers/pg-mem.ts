@@ -92,6 +92,10 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
     // only asserts table presence; the partial-index behavior is covered by the
     // worker pg-mem suite (which mirrors the same index) and the RLS suite.
     if (f === "0196_price_alerts_open_uniq.sql") continue;
+    // Mig 0205 adds production data cleanup plus regex CHECK constraints.
+    // pg-mem's schema state around the handle→username rename is not reliable
+    // here; real Postgres behavior is covered by input-constraints.test.ts.
+    if (f === "0205_input_check_constraints.sql") continue;
     const raw = readFileSync(join(DB_MIGRATIONS, f), "utf8");
     // pg-mem can't parse `LANGUAGE plpgsql SECURITY DEFINER` functions. Skip
     // any migration file that defines one — the smoke only asserts table

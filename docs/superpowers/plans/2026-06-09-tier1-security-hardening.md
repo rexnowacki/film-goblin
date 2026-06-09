@@ -4,7 +4,7 @@
 
 **Goal:** Lock down the `profiles` table with column-level grants, add IP-keyed rate limiting to the pre-auth surface, and add DB CHECK constraints so PostgREST writes can't bypass app validation.
 
-**Architecture:** Three migrations (0203 grants, 0204 IP rate-limit table+RPC, 0205 CHECK constraints) plus targeted app changes: one explicit-select fix, new helpers in `lib/rate-limit.ts`, throttle wiring + password-min-8 in the auth actions, a cron cleanup, and friendly length validation. RLS policies are untouched; grants and constraints layer on top.
+**Architecture:** Three migrations (0203 grants, 0204 IP rate-limit table+RPC, 0205 CHECK constraints) plus targeted app changes: explicit profile selects, new helpers in `lib/rate-limit.ts`, throttle wiring + password-min-8 in the auth actions, a cron cleanup, and friendly length validation. RLS policies are untouched; grants and constraints layer on top.
 
 **Tech Stack:** Postgres column-level privileges, plpgsql SECURITY DEFINER RPC (mirrors mig 0190), Next.js 15 server actions, vitest (app unit tests), testcontainers Postgres (db RLS suite), pg-mem (db smoke).
 
@@ -210,8 +210,8 @@ Create `db/migrations/0203_profiles_column_grants.sql`:
 --
 -- Side effects to know about:
 --   * PostgREST `select=*` on profiles now FAILS for client roles (SELECT *
---     requires privilege on every column). App code must use explicit column
---     lists — the only call site was app/settings/page.tsx, fixed alongside.
+  --     requires privilege on every column). App code must use explicit column
+  --     lists — see Task 2 in the implementation plan for the known call sites.
 --   * must_change_password / role / is_starter / starter_order / email_added_at
 --     are no longer client-updatable (closes the self-clearable-flag hole).
 --   * unsubscribe_token keeps UPDATE (not SELECT): _updateProfile rotates it
@@ -246,7 +246,33 @@ cd /Users/christophernowacki/film-goblin/db
 npm run test:rls -- tests/rls/profiles-grants.test.ts
 ```
 (Colima env vars from Step 2 still exported.)
-Expected: PASS (all 7 tests).
+Expected: initially this still FAILS in testcontainers because `db/tests/helpers/testcontainers.ts` applies all migrations, then blanket-grants every table to the test roles. Patch that helper after the blanket grants so it re-applies the 0203 profile privileges:
+
+```ts
+  await client.query(`REVOKE ALL ON TABLE profiles FROM anon, authenticated;`);
+  await client.query(`
+    GRANT SELECT (id, username, display_name, avatar_url, bio, role, created_at)
+      ON profiles TO anon
+  `);
+  await client.query(`
+    GRANT SELECT (id, username, display_name, bio, avatar_url, broadcast_watchlist_adds,
+      created_at, updated_at, broadcast_library, broadcast_watched, onboarded_at,
+      email_added_at, email_price_drops, email_coven_recs, email_comments,
+      email_coven_invites, role, notify_rate_reminders, notify_comment_likes,
+      lane_tag_ids, discoverable, is_starter, starter_order, notify_film_requests,
+      must_change_password)
+      ON profiles TO authenticated
+  `);
+  await client.query(`
+    GRANT UPDATE (username, display_name, bio, avatar_url, broadcast_watchlist_adds,
+      broadcast_library, broadcast_watched, email_price_drops, email_coven_recs,
+      email_comments, email_coven_invites, notify_rate_reminders, notify_comment_likes,
+      notify_film_requests, discoverable, lane_tag_ids, onboarded_at, unsubscribe_token)
+      ON profiles TO authenticated
+  `);
+```
+
+Then re-run the test. Expected: PASS (all 7 tests).
 
 - [ ] **Step 5: Run the pg-mem smoke**
 
@@ -272,7 +298,7 @@ Expected: PASS. If another suite fails on a profiles column read, it's selecting
 
 ```bash
 cd /Users/christophernowacki/film-goblin
-git add db/migrations/0203_profiles_column_grants.sql db/tests/rls/profiles-grants.test.ts db/tests/helpers/pg-mem.ts
+git add db/migrations/0203_profiles_column_grants.sql db/tests/rls/profiles-grants.test.ts db/tests/helpers/testcontainers.ts db/tests/helpers/pg-mem.ts
 git commit -m "feat(db): column-level grants on profiles (mig 0203)"
 ```
 
@@ -1534,9 +1560,9 @@ Then create the PR with `gh pr create` — title `security: tier-1 hardening (pr
 
 ```markdown
 ## Post-merge rollout
-1. Apply migrations: `set -a; source db/.env; set +a; cd db && npm run migrate`
+1. Deploy app first: `npx vercel deploy --prod --yes` from repo root
+2. Apply migrations: `set -a; source db/.env; set +a; cd db && npm run migrate`
    (migrate runner is incremental — applies only 0203–0205)
-2. Deploy: `npx vercel deploy --prod --yes` from repo root
 3. Supabase dashboard (manual): Auth → min password length 8; enable leaked-password protection
 4. Smoke:
    - signed-out `/film/<id>` and `/p/<username>` render
@@ -1547,4 +1573,4 @@ Then create the PR with `gh pr create` — title `security: tier-1 hardening (pr
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
-Either deploy/migrate order is safe (fail-open limiter; explicit selects work under old and new grants).
+Deploy-before-migrate is the safe order: explicit selects work under old grants, and the limiter fails open until 0204 exists. Running 0203 before the app deploy can break old `profiles.select("*")` code.

@@ -119,7 +119,7 @@ describe("RLS: profiles", () => {
     } finally { await rollback(db.client); }
   });
 
-  it("username uniqueness is case-insensitive", async () => {
+  it("username uniqueness is enforced", async () => {
     const fx = await seedFixtures(db.client);
     await beginAs(db.client, null, "service_role");
     try {
@@ -128,7 +128,7 @@ describe("RLS: profiles", () => {
         db.client.query(
           `INSERT INTO profiles (id, username, display_name)
            VALUES (gen_random_uuid(), $1, 'Clash')`,
-          [fx.userA.username.toUpperCase()]
+          [fx.userA.username]
         )
       ).rejects.toThrow(/unique/i);
     } finally { await rollback(db.client); }

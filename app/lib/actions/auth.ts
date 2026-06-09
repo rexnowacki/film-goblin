@@ -5,13 +5,15 @@ import { serviceRoleClient } from "@/lib/supabase/service-role";
 import { redirect } from "next/navigation";
 import { friendlyError } from "@/lib/auth/friendly-errors";
 import { safeRedirect } from "@/lib/auth/safe-redirect";
+import { isValidUsername, USERNAME_RULES_MESSAGE } from "@/lib/auth/username";
+import { consumeIpRateLimit, getClientIpHash, hashKey, utcHourBucket, utcQuarterHourBucket } from "@/lib/rate-limit";
 import { setInviteCookie } from "./invite-cookie";
 import { peekInviteCode, burnInviteCode } from "@/lib/actions/invite-codes";
 import { readInviteCodeCookie } from "@/lib/actions/invite-cookie";
 import { isInviteGateEnabled } from "@/lib/actions/admin/site-settings";
 
-const USERNAME_RE = /^[a-z0-9._]+$/;
 const SYNTHETIC_EMAIL_DOMAIN = "noreply.film-goblin.app";
+const THROTTLE_ERROR = "Too many attempts. Try again in a few minutes.";
 
 function syntheticEmailFor(username: string): string {
   return `${username}@${SYNTHETIC_EMAIL_DOMAIN}`;
@@ -25,19 +27,36 @@ export async function signIn(formData: FormData): Promise<{ error?: string }> {
 
   if (!identifier) return { error: "Enter your username or email." };
 
+  const svc = serviceRoleClient();
+  const ipHash = await getClientIpHash();
+  const bucket = utcQuarterHourBucket();
+  const perIp = await consumeIpRateLimit(svc, {
+    ipHash, key: "signin-ip", limit: 30, windowStart: bucket,
+  });
+  if (!perIp.allowed) return { error: THROTTLE_ERROR };
+  const identifierHash = hashKey(identifier.toLowerCase());
+  const perId = await consumeIpRateLimit(svc, {
+    ipHash, key: `signin-id:${identifierHash}`, limit: 10, windowStart: bucket,
+  });
+  if (!perId.allowed) return { error: THROTTLE_ERROR };
+  const globalId = await consumeIpRateLimit(svc, {
+    ipHash: `id:${identifierHash}`, key: "signin-global", limit: 50, windowStart: bucket,
+  });
+  if (!globalId.allowed) return { error: THROTTLE_ERROR };
+
   let email = identifier;
   if (!identifier.includes("@")) {
-    if (!USERNAME_RE.test(identifier)) {
+    const username = identifier.toLowerCase();
+    if (!isValidUsername(username)) {
       return { error: "Invalid credentials." };
     }
-    const admin = serviceRoleClient();
-    const { data: profile } = await admin
+    const { data: profile } = await svc
       .from("profiles")
       .select("id")
-      .ilike("username", identifier)
+      .ilike("username", username)
       .maybeSingle();
     if (!profile) return { error: "Invalid credentials." };
-    const { data: user, error: lookupErr } = await admin.auth.admin.getUserById(profile.id);
+    const { data: user, error: lookupErr } = await svc.auth.admin.getUserById(profile.id);
     if (lookupErr || !user?.user?.email) return { error: "Invalid credentials." };
     email = user.user.email;
   }
@@ -55,12 +74,18 @@ export async function signUp(formData: FormData): Promise<{ error?: string; info
   const target = safeRedirect(redirectIn);
   const invite = String(formData.get("invite") || "").trim().toLowerCase();
 
-  if (!USERNAME_RE.test(username) || username.length > 24) {
-    return { error: "Username: lowercase letters, numbers, dots, underscores only (max 24)." };
+  if (!isValidUsername(username)) {
+    return { error: USERNAME_RULES_MESSAGE };
   }
-  if (password.length < 6) {
-    return { error: "Password must be at least 6 characters." };
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
   }
+
+  const ipHash = await getClientIpHash();
+  const signupLimit = await consumeIpRateLimit(serviceRoleClient(), {
+    ipHash, key: "signup-ip", limit: 5, windowStart: utcHourBucket(),
+  });
+  if (!signupLimit.allowed) return { error: THROTTLE_ERROR };
 
   // Gate check — validate cookie before touching auth.users. The gate is a
   // runtime DB setting (site_settings.invite_gate); read once and reuse below
@@ -120,9 +145,16 @@ export async function checkUsernameAvailability(
   usernameRaw: string,
 ): Promise<{ status: UsernameCheckStatus }> {
   const username = String(usernameRaw || "").trim().toLowerCase();
-  if (!username || username.length > 24 || !USERNAME_RE.test(username)) {
+  if (!isValidUsername(username)) {
     return { status: "invalid" };
   }
+
+  const ipHash = await getClientIpHash();
+  const limit = await consumeIpRateLimit(serviceRoleClient(), {
+    ipHash, key: "username-check", limit: 60, windowStart: utcQuarterHourBucket(),
+  });
+  if (!limit.allowed) return { status: "ok" };
+
   const admin = serviceRoleClient();
   const { data: existing } = await admin
     .from("profiles")
@@ -166,7 +198,7 @@ export async function sendPasswordReset(formData: FormData): Promise<{ message: 
 export async function resetPassword(formData: FormData): Promise<{ error?: string; ok?: boolean }> {
   const newPassword = String(formData.get("new_password") || "");
   const confirm = String(formData.get("confirm") || "");
-  if (newPassword.length < 6) return { error: "Password must be at least 6 characters." };
+  if (newPassword.length < 8) return { error: "Password must be at least 8 characters." };
   if (newPassword !== confirm) return { error: "Passwords don't match." };
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password: newPassword });
@@ -182,7 +214,7 @@ export async function completeForcedPasswordChange(
 ): Promise<{ error?: string; ok?: boolean }> {
   const newPassword = String(formData.get("new_password") || "");
   const confirm = String(formData.get("confirm") || "");
-  if (newPassword.length < 6) return { error: "Password must be at least 6 characters." };
+  if (newPassword.length < 8) return { error: "Password must be at least 8 characters." };
   if (newPassword !== confirm) return { error: "Passwords don't match." };
 
   const supabase = await createClient();

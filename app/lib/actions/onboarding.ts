@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
 import type { Database } from "@/lib/supabase/types";
 import { requireAuthUser } from "@/lib/auth/require-auth-user";
+import { isValidUsername, USERNAME_RULES_MESSAGE } from "@/lib/auth/username";
 import { readInviteCookie, clearInviteCookie } from "./invite-cookie";
 
 type Client = SupabaseClient<Database>;
@@ -17,15 +18,14 @@ export interface OnboardingPayload {
   starterFollowIds: string[];
 }
 
-const USERNAME_RE = /^[a-z0-9._]+$/;
 const DEFAULT_COVEN_USERNAME = "cthulhu.lemon";
 
 export async function _completeOnboarding(client: Client, p: OnboardingPayload): Promise<void> {
   const user = await requireAuthUser(client);
 
-  const username = p.username.trim();
-  if (!USERNAME_RE.test(username)) {
-    throw new Error("Invalid username: lowercase letters, numbers, dots, underscores only.");
+  const username = p.username.trim().toLowerCase();
+  if (!isValidUsername(username)) {
+    throw new Error(USERNAME_RULES_MESSAGE);
   }
 
   const { error: pErr } = await client

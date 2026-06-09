@@ -27,3 +27,14 @@ The hand-edit warning block lists columns that `gen:types` doesn't capture (e.g.
 ## `cached.ts`
 
 Wraps expensive read queries with Next.js `unstable_cache`. Only use this for data that doesn't change per-user (e.g. the film catalog). User-specific data should NOT be cached here — it bypasses RLS scoping.
+
+## profiles column-level grants
+
+`profiles` has column-level privileges layered on its RLS policies (mig 0203).
+Never `.select("*")` on profiles with anon/authenticated clients: PostgREST
+expands `*` to all columns and fails with `permission denied`. Use explicit
+column lists from `app/lib/queries/profiles.ts`.
+
+`unsubscribe_token` is service-role-only for reads. Client roles also cannot
+update `must_change_password`, `role`, `is_starter`, `starter_order`, or
+`email_added_at`.

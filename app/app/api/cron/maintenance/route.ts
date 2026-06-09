@@ -114,6 +114,18 @@ export async function GET(request: Request): Promise<NextResponse> {
       return runStreamingAvailabilityRefresh(client, { maxFilms, staleHours, region: "US" });
     });
 
+    jobs.rateLimitCleanup = await recordedJob("rate-limit-cleanup", async () => {
+      const ipCutoff = new Date(now.getTime() - 2 * 86_400_000).toISOString().slice(0, 10);
+      const ip = await client.query(
+        `DELETE FROM app_ip_rate_limits WHERE window_start < $1`,
+        [ipCutoff],
+      );
+      const user = await client.query(
+        `DELETE FROM app_rate_limits WHERE window_start < now() - INTERVAL '7 days'`,
+      );
+      return { ipRowsDeleted: ip.rowCount ?? 0, userRowsDeleted: user.rowCount ?? 0 };
+    });
+
     jobs.sendNotifications = await recordedJob("send-notifications", async () => {
       const resendKey = process.env.RESEND_API_KEY;
       if (!resendKey) throw new Error("RESEND_API_KEY not configured");
