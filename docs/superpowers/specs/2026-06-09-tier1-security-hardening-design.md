@@ -11,8 +11,9 @@ before the invite gate (`site_settings.invite_gate`) is opened to the public.
    `profiles_read` policy (mig 0101) is `FOR SELECT TO anon, authenticated USING (true)`.
    The anon key ships in the JS bundle, so anyone — no account — can
    `GET /rest/v1/profiles?select=*` and scrape every column of every user:
-   `unsubscribe_token` (mass-unsubscribe attack), `must_change_password`, email-pref
-   flags, full member list including non-`discoverable` users.
+   `unsubscribe_token` (mass-unsubscribe attack), `must_change_password`, and all
+   email-pref flags. (Identity-subset enumeration remains possible by design — see
+   "Accepted residual risk" under Fix 1.)
 2. **No abuse controls on the auth surface.** `signIn` allows unlimited password
    brute force (and `signUp` uses `admin.createUser`, which bypasses Supabase's own
    auth rate limits). `checkUsernameAvailability` is an unauthenticated, unlimited,
@@ -79,11 +80,29 @@ Notes:
 - SECURITY DEFINER triggers (profile bootstrap, invite-code creation) run as owner —
   unaffected by client grants.
 
-**App change:** `app/settings/page.tsx:36` — `.select("*")` on profiles must become an
-explicit column list. Under column-level privileges, PostgREST `select=*` expands to
-`SELECT *` and fails with `permission denied`. This is the only `select("*")` against
-profiles in the codebase; all other call sites use explicit lists that fall within the
-granted sets (verified by grep).
+**App changes:** under column-level privileges, PostgREST `select=*` expands to
+`SELECT *` and fails with `permission denied` for client roles. Three call sites
+select `*` from profiles and must switch to explicit column lists (multi-line-aware
+sweep, 2026-06-09):
+
+- `app/app/settings/page.tsx:36` — settings page (authenticated).
+- `app/lib/queries/profiles.ts` `getMyProfile()` — serves `/film/[id]`, `/films`,
+  `/library`, `/watchlist`; missing this would 500 those pages for signed-in users.
+- `app/lib/queries/profiles.ts` `getProfileByUsername()` — zero callers today (dead
+  export), narrowed to the public identity subset anyway in case the other machine
+  has WIP against it.
+
+All other profile call sites use explicit lists within the granted sets.
+
+**Accepted residual risk — anonymous identity enumeration.** With the public identity
+subset granted to `anon`, `GET /rest/v1/profiles?select=id,username,…` still lists
+every member's public identity. That is the explicit product posture chosen for this
+design (public profile pages, film-page comments, and gazing shares render for
+logged-out visitors). The `discoverable` flag does not promise otherwise: its
+checkbox copy is "Show me in 'who's watching' on film pages," and it is enforced
+inside the `get_other_watchers_for_film` SECURITY DEFINER RPC (mig 0161); zero
+production users have it disabled today. Revisit (auth-gated profile reads, or a row
+policy on a future privacy flag) if the launch posture changes.
 
 ## Fix 2 — IP-keyed rate limiting on the auth surface
 
@@ -117,10 +136,22 @@ granted sets (verified by grep).
 |---|---|---|
 | `signIn` | `signin-ip` per IP | 30 / 15 min |
 | `signIn` | `signin-id:<sha256(identifier)>` per IP | 10 / 15 min |
+| `signIn` | `signin-global` per identifier, across all IPs | 50 / 15 min |
 | `signUp` | `signup-ip` per IP | 5 / hour |
 | `checkUsernameAvailability` | `username-check` per IP | 60 / 15 min |
 
 - Limits are consumed **before** the credential check / user creation.
+- The identifier-global bucket caps distributed (many-IP) attacks on a single
+  account, which the per-IP buckets can't see. It reuses the same RPC: `p_ip_hash`
+  is a generic subject hash — IP buckets pass `sha256(ip)`, the global bucket passes
+  `id:<sha256(identifier)>`. Trade-off: an attacker who burns the bucket locks that
+  account's sign-in for the remainder of the 15-minute window — transient and
+  preferable to unbounded brute force.
+- **Trusted IP source:** on Vercel, `x-forwarded-for` is set by the platform and
+  client-supplied values are stripped, so the first hop is trustworthy; `x-real-ip`
+  is the fallback. Header parsing lives in a pure `parseClientIp()` helper,
+  unit-tested against multi-value/garbage/missing headers. Revisit this trust
+  assumption if hosting ever moves off Vercel.
 - Over-limit `signIn`/`signUp` return
   `{ error: "Too many attempts. Try again in a few minutes." }`.
 - Over-limit `checkUsernameAvailability` returns `{ status: "ok" }` (neutral): the
@@ -150,7 +181,12 @@ length to 8; enable leaked-password protection if the plan allows.
 UPDATE profiles SET username = lower(username) WHERE username <> lower(username);
 
 ALTER TABLE profiles
-  ADD CONSTRAINT profiles_username_format  CHECK (username ~ '^[a-z0-9._]{1,24}$'),
+  ADD CONSTRAINT profiles_username_format CHECK (
+    username ~ '^[a-z0-9._]{1,24}$'
+    AND username ~ '[a-z0-9]'
+    AND username !~ '^\.'
+    AND username !~ '\.$'
+  ),
   ADD CONSTRAINT profiles_display_name_len CHECK (char_length(display_name) <= 50),
   ADD CONSTRAINT profiles_bio_len          CHECK (char_length(bio) <= 500),
   ADD CONSTRAINT profiles_avatar_url_len   CHECK (char_length(avatar_url) <= 1000);
@@ -159,9 +195,16 @@ ALTER TABLE watched
   ADD CONSTRAINT watched_note_len CHECK (note IS NULL OR char_length(note) <= 500);
 ```
 
+- The username rule is tighter than the app's historical regex: it additionally
+  requires at least one alphanumeric and bans leading/trailing dots, killing
+  path-weird handles (`.`, `..`, `a.`) that break `/p/[username]` URLs. The app's
+  four duplicated `USERNAME_RE` checks (signup, onboarding, profile action, settings
+  form) consolidate into a shared `app/lib/auth/username.ts` validator so the app
+  and DB rules can't drift.
 - Verified against prod (2026-06-09): max display_name 20, bio 35, avatar_url 135,
-  note 211; only the 3 lowercased usernames violated the format. Constraints apply
-  cleanly.
+  note 211; only the 3 lowercased usernames violated the format, and zero usernames
+  violate the tightened rule (no edge dots, all contain alphanumerics). Constraints
+  apply cleanly.
 - The unique index is on `lower(username)`, so lowercasing the 3 rows cannot collide.
 - Note cap matches `MAX_NOTE = 500` in `WatchModal`.
 
@@ -181,9 +224,11 @@ attributes. Without this, an over-limit submit would surface a raw Postgres erro
 - **pg-mem smoke (`db/ npm test`):** 0204 auto-skips (SECURITY DEFINER). GRANT is
   already stripped; extend `db/tests/helpers/pg-mem.ts` strip list for REVOKE and/or
   the regex CHECK if pg-mem chokes (per db/CLAUDE.md guidance).
-- **`app/tests/`:** unit tests for `getClientIpHash`/`consumeIpRateLimit` (mocked
-  rpc, fail-open behavior) and auth-action tests for limit responses + password-min-8
-  messages, following the existing `app/tests/auth` patterns.
+- **`app/tests/`:** unit tests for `parseClientIp` (multi-value/garbage/missing
+  headers), `hashKey`/bucket helpers, `consumeIpRateLimit` (mocked rpc, fail-open
+  behavior), the shared username validator (edge dots, no-alphanumeric), and
+  auth-action tests for limit responses (including the identifier-global bucket) +
+  password-min-8 messages, following the existing `app/tests/auth` patterns.
 
 ## Rollout
 

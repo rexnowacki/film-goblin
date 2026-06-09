@@ -278,16 +278,71 @@ git commit -m "feat(db): column-level grants on profiles (mig 0203)"
 
 ---
 
-### Task 2: Settings page explicit select
+### Task 2: Replace every profiles `select("*")` with explicit column lists
 
 **Files:**
+- Modify: `app/lib/queries/profiles.ts` (`getMyProfile`, `getProfileByUsername`)
 - Modify: `app/app/settings/page.tsx:35-38`
 
-Under column grants, PostgREST `select=*` fails with `permission denied` for client roles. This is the only `.select("*")` against profiles in app code (verified by grep; test files use the service-role `adminClient()`).
+Under column grants, PostgREST `select=*` fails with `permission denied` for client roles. Three call sites select `*` from profiles (multi-line-aware sweep 2026-06-09 — single-line greps MISS chained PostgREST calls; always grep with `-B3` context or on `select("*")` itself):
 
-- [ ] **Step 1: Replace the select**
+1. `app/lib/queries/profiles.ts:11` `getMyProfile()` — used by `/film/[id]`, `/films`, `/library`, `/watchlist`. **Missing this 500s those pages for signed-in users.**
+2. `app/lib/queries/profiles.ts:21` `getProfileByUsername()` — zero callers today (dead export); narrow anyway (the other machine may have WIP against it).
+3. `app/app/settings/page.tsx:36` — settings page.
 
-In `app/app/settings/page.tsx`, replace:
+Test files are fine: all their profiles reads use the service-role `adminClient()`.
+
+- [ ] **Step 1: Add shared column-list constants and fix the queries**
+
+In `app/lib/queries/profiles.ts`, add below the `type Client = ...` line:
+
+```ts
+// Explicit column lists: profiles has column-level grants (mig 0203) and
+// PostgREST `select=*` fails for client roles. unsubscribe_token is
+// server-only by design.
+
+/** Every column the authenticated role can SELECT (all except unsubscribe_token). */
+export const PROFILE_SELECT_COLUMNS =
+  "id, username, display_name, bio, avatar_url, role, created_at, updated_at, " +
+  "broadcast_watchlist_adds, broadcast_library, broadcast_watched, " +
+  "email_added_at, email_price_drops, email_coven_recs, email_comments, email_coven_invites, " +
+  "notify_rate_reminders, notify_comment_likes, notify_film_requests, " +
+  "lane_tag_ids, discoverable, is_starter, starter_order, onboarded_at, must_change_password";
+
+/** The public identity subset granted to anon. */
+export const PUBLIC_PROFILE_COLUMNS =
+  "id, username, display_name, avatar_url, bio, role, created_at";
+```
+
+Then change `getMyProfile`'s select:
+
+```ts
+  const { data, error } = await client
+    .from("profiles")
+    .select(PROFILE_SELECT_COLUMNS)
+    .eq("id", user.id)
+    .single();
+```
+
+and `getProfileByUsername`'s select (it can serve logged-out renders, so use the anon-safe subset):
+
+```ts
+  const { data, error } = await client
+    .from("profiles")
+    .select(PUBLIC_PROFILE_COLUMNS)
+    .ilike("username", username)
+    .maybeSingle();
+```
+
+- [ ] **Step 2: Fix the settings page**
+
+In `app/app/settings/page.tsx`, add to the imports:
+
+```ts
+import { PROFILE_SELECT_COLUMNS } from "@/lib/queries/profiles";
+```
+
+and replace:
 
 ```ts
   const [profile, vocab] = await Promise.all([
@@ -299,25 +354,15 @@ In `app/app/settings/page.tsx`, replace:
 with:
 
 ```ts
-  // Explicit column list: profiles has column-level grants (mig 0203) and
-  // PostgREST `select=*` fails for client roles. unsubscribe_token is
-  // server-only by design.
-  const PROFILE_COLUMNS =
-    "id, username, display_name, bio, avatar_url, role, created_at, updated_at, " +
-    "broadcast_watchlist_adds, broadcast_library, broadcast_watched, " +
-    "email_added_at, email_price_drops, email_coven_recs, email_comments, email_coven_invites, " +
-    "notify_rate_reminders, notify_comment_likes, notify_film_requests, " +
-    "lane_tag_ids, discoverable, is_starter, starter_order, onboarded_at, must_change_password";
-
   const [profile, vocab] = await Promise.all([
-    supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select(PROFILE_SELECT_COLUMNS).eq("id", user.id).maybeSingle(),
     getAllTagsGroupedByType(supabase),
   ]);
 ```
 
-(`SettingsForm`'s `initialProfile` prop is typed `any` — no type changes needed.)
+(`SettingsForm`'s `initialProfile` prop is typed `any` — no type changes needed. `getMyProfile`'s callers consume identity + lane fields, all present in the explicit list; if typecheck flags a consumer of a dropped field, the only dropped field is `unsubscribe_token`, which nothing client-side reads — verified by grep.)
 
-- [ ] **Step 2: Typecheck**
+- [ ] **Step 3: Typecheck**
 
 ```bash
 cd /Users/christophernowacki/film-goblin/app
@@ -325,12 +370,12 @@ PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH npm run typecheck
 ```
 Expected: clean.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 cd /Users/christophernowacki/film-goblin
-git add app/app/settings/page.tsx
-git commit -m "fix(settings): explicit profiles column list (select(*) breaks under column grants)"
+git add app/lib/queries/profiles.ts app/app/settings/page.tsx
+git commit -m "fix(profiles): explicit column lists everywhere (select(*) breaks under column grants)"
 ```
 
 ---
@@ -452,8 +497,10 @@ Create `db/migrations/0204_ip_rate_limits.sql`:
 -- Text buckets compare lexicographically, so cleanup can prune with
 -- `window_start < 'YYYY-MM-DD'`.
 --
--- ip_hash is sha256(client ip) truncated — no raw IPs are stored. Rows are
--- pruned by the daily maintenance cron after 2 days.
+-- ip_hash is a generic SUBJECT hash, sha256-truncated — no raw values stored.
+-- IP buckets pass sha256(client ip); the signin-global bucket passes
+-- 'id:' || sha256(identifier) to cap distributed attacks on one account.
+-- Rows are pruned by the daily maintenance cron after 2 days.
 
 CREATE TABLE app_ip_rate_limits (
   ip_hash      TEXT NOT NULL,
@@ -557,10 +604,28 @@ Create `app/tests/rate-limit-ip.test.ts`:
 import { describe, it, expect, vi } from "vitest";
 import {
   hashKey,
+  parseClientIp,
   utcQuarterHourBucket,
   utcHourBucket,
   consumeIpRateLimit,
 } from "../lib/rate-limit";
+
+describe("parseClientIp", () => {
+  it("takes the first hop of a multi-value x-forwarded-for", () => {
+    expect(parseClientIp("203.0.113.7, 10.0.0.1, 10.0.0.2", null)).toBe("203.0.113.7");
+    expect(parseClientIp("203.0.113.7", "10.9.9.9")).toBe("203.0.113.7");
+  });
+
+  it("falls back to x-real-ip, then 'unknown'", () => {
+    expect(parseClientIp(null, "203.0.113.9")).toBe("203.0.113.9");
+    expect(parseClientIp(null, null)).toBe("unknown");
+  });
+
+  it("treats garbage/empty header values as unknown", () => {
+    expect(parseClientIp("  ,", " ")).toBe("unknown");
+    expect(parseClientIp("", "")).toBe("unknown");
+  });
+});
 
 describe("hashKey", () => {
   it("returns a stable 32-char hex digest", () => {
@@ -643,11 +708,23 @@ export function hashKey(value: string): string {
   return createHash("sha256").update(value).digest("hex").slice(0, 32);
 }
 
+/**
+ * Pure header parsing, exported for tests. Trust model: on Vercel,
+ * x-forwarded-for is set by the platform and client-supplied values are
+ * stripped, so the first hop is the real client IP; x-real-ip is the
+ * platform-set fallback. Revisit if hosting ever moves off Vercel.
+ */
+export function parseClientIp(xForwardedFor: string | null, xRealIp: string | null): string {
+  const first = xForwardedFor?.split(",")[0]?.trim();
+  if (first) return first;
+  const real = xRealIp?.trim();
+  if (real) return real;
+  return "unknown";
+}
+
 export async function getClientIpHash(): Promise<string> {
   const h = await headers();
-  const fwd = h.get("x-forwarded-for");
-  const ip = (fwd?.split(",")[0] ?? h.get("x-real-ip") ?? "unknown").trim();
-  return hashKey(ip || "unknown");
+  return hashKey(parseClientIp(h.get("x-forwarded-for"), h.get("x-real-ip")));
 }
 
 /** Floors to a 15-minute UTC bucket, e.g. "2026-06-09T14:15". */
@@ -764,6 +841,19 @@ describe("signIn throttling", () => {
     const res = await signIn(fd({ identifier: "someone", password: "whatever1" }));
     expect(res.error).toBe(THROTTLE);
   });
+
+  it("returns the throttle error when the identifier-global limit is exhausted (distributed attack)", async () => {
+    vi.mocked(consumeIpRateLimit)
+      .mockResolvedValueOnce({ allowed: true, count: 1, remaining: 29 })
+      .mockResolvedValueOnce({ allowed: true, count: 1, remaining: 9 })
+      .mockResolvedValueOnce({ allowed: false, count: 50, remaining: 0 });
+    const res = await signIn(fd({ identifier: "someone", password: "whatever1" }));
+    expect(res.error).toBe(THROTTLE);
+    // Global bucket keys on the identifier hash, not the caller's IP
+    const thirdCall = vi.mocked(consumeIpRateLimit).mock.calls[2][1];
+    expect(thirdCall.key).toBe("signin-global");
+    expect(thirdCall.ipHash).toMatch(/^id:/);
+  });
 });
 
 describe("signUp", () => {
@@ -839,6 +929,18 @@ const THROTTLE_ERROR = "Too many attempts. Try again in a few minutes.";
     ipHash, key: `signin-id:${hashKey(identifier.toLowerCase())}`, limit: 10, windowStart: bucket,
   });
   if (!perId.allowed) return { error: THROTTLE_ERROR };
+  // Identifier-global bucket: caps distributed (many-IP) attacks on one
+  // account. p_ip_hash is a generic subject hash — here it carries the
+  // identifier, not the caller's IP. Generous enough that legit retries never
+  // hit it; an attacker burning it locks this account's sign-in only for the
+  // rest of the 15-minute window.
+  const globalId = await consumeIpRateLimit(svc, {
+    ipHash: `id:${hashKey(identifier.toLowerCase())}`,
+    key: "signin-global",
+    limit: 50,
+    windowStart: bucket,
+  });
+  if (!globalId.allowed) return { error: THROTTLE_ERROR };
 ```
 
 and in the username branch below, change `const admin = serviceRoleClient();` to use `svc` (replace the two `admin.` references with `svc.`).
@@ -990,6 +1092,28 @@ describe("input CHECK constraints (mig 0205)", () => {
     } finally { await rollback(db.client); }
   });
 
+  it("rejects path-weird and alphanumeric-free usernames", async () => {
+    const fx = await seedFixtures(db.client);
+    for (const bad of [".", "..", "a.", ".a", "___", "._."]) {
+      await beginAs(db.client, null, "service_role");
+      try {
+        await expect(
+          db.client.query(`UPDATE profiles SET username = $2 WHERE id = $1`, [fx.userA.id, bad]),
+        ).rejects.toThrow(/profiles_username_format/);
+      } finally { await rollback(db.client); }
+    }
+
+    // Edge underscores and interior dots remain legal
+    await beginAs(db.client, null, "service_role");
+    try {
+      const r = await db.client.query(
+        `UPDATE profiles SET username = '_moss.whorre_' WHERE id = $1`,
+        [fx.userA.id],
+      );
+      expect(r.rowCount).toBe(1);
+    } finally { await rollback(db.client); }
+  });
+
   it("rejects oversized display_name, bio, and avatar_url", async () => {
     const fx = await seedFixtures(db.client);
     for (const [column, len, constraint] of [
@@ -1074,8 +1198,17 @@ Create `db/migrations/0205_input_check_constraints.sql`:
 
 UPDATE profiles SET username = lower(username) WHERE username <> lower(username);
 
+-- Username rule is tighter than the app's historical regex: at least one
+-- alphanumeric and no leading/trailing dot, killing path-weird handles
+-- ('.', '..', 'a.') that break /p/[username] URLs. The app-side mirror lives
+-- in app/lib/auth/username.ts — keep the two in sync.
 ALTER TABLE profiles
-  ADD CONSTRAINT profiles_username_format  CHECK (username ~ '^[a-z0-9._]{1,24}$'),
+  ADD CONSTRAINT profiles_username_format CHECK (
+    username ~ '^[a-z0-9._]{1,24}$'
+    AND username ~ '[a-z0-9]'
+    AND username !~ '^\.'
+    AND username !~ '\.$'
+  ),
   ADD CONSTRAINT profiles_display_name_len CHECK (char_length(display_name) <= 50),
   ADD CONSTRAINT profiles_bio_len          CHECK (char_length(bio) <= 500),
   ADD CONSTRAINT profiles_avatar_url_len   CHECK (char_length(avatar_url) <= 1000);
@@ -1112,16 +1245,43 @@ git commit -m "feat(db): CHECK constraints on profiles + watched.note (mig 0205)
 
 ---
 
-### Task 8: Friendly length validation in `_updateProfile` + form caps (TDD)
+### Task 8: Shared username validator + friendly length validation (TDD)
 
 **Files:**
+- Create: `app/lib/auth/username.ts`
+- Create: `app/tests/auth/username.test.ts`
 - Create: `app/tests/actions/profile-validation.test.ts`
 - Modify: `app/lib/actions/profile.ts` (`_updateProfile`)
-- Modify: `app/app/settings/components/ProfileDetailsForm.tsx` (input `maxLength`s)
+- Modify: `app/lib/actions/auth.ts` (`signIn`, `signUp`, `checkUsernameAvailability`)
+- Modify: `app/lib/actions/onboarding.ts` (`_completeOnboarding`)
+- Modify: `app/app/settings/components/ProfileDetailsForm.tsx`
 
-- [ ] **Step 1: Write the failing unit tests**
+The username rule is currently duplicated as `const USERNAME_RE = /^[a-z0-9._]+$/` in four places (auth.ts, onboarding.ts, profile.ts, ProfileDetailsForm.tsx) with inconsistent length checks (onboarding has none). Mig 0205 tightens the DB rule (at least one alphanumeric, no leading/trailing dot), so consolidate into ONE shared validator that mirrors the constraint — app and DB can't drift.
 
-Create `app/tests/actions/profile-validation.test.ts`:
+- [ ] **Step 1: Write the failing validator tests**
+
+Create `app/lib/auth/username.ts` consumers' tests first. `app/tests/auth/username.test.ts`:
+
+```ts
+import { describe, it, expect } from "vitest";
+import { isValidUsername } from "../../lib/auth/username";
+
+describe("isValidUsername", () => {
+  it("accepts normal handles", () => {
+    for (const ok of ["moss.whorre", "jarbo", "a", "_moss_", "x.y.z", "goblin99", "a".repeat(24)]) {
+      expect(isValidUsername(ok), ok).toBe(true);
+    }
+  });
+
+  it("rejects path-weird, alphanumeric-free, oversized, and bad-charset handles", () => {
+    for (const bad of [".", "..", "a.", ".a", "___", "._.", "", "a".repeat(25), "Has Caps", "sp ace", "héllo"]) {
+      expect(isValidUsername(bad), bad).toBe(false);
+    }
+  });
+});
+```
+
+And the profile-validation tests — create `app/tests/actions/profile-validation.test.ts`:
 
 ```ts
 import { describe, it, expect } from "vitest";
@@ -1137,9 +1297,11 @@ function stubClient(userId = "u-1") {
 }
 
 describe("_updateProfile input validation", () => {
-  it("rejects an invalid username", async () => {
+  it("rejects an invalid username (charset + tightened edge-dot rule)", async () => {
     await expect(_updateProfile(stubClient(), { username: "Bad Name!" }))
-      .rejects.toThrow(/invalid username/i);
+      .rejects.toThrow(/username/i);
+    await expect(_updateProfile(stubClient(), { username: ".dot" }))
+      .rejects.toThrow(/username/i);
   });
 
   it("rejects a display name over 50 chars", async () => {
@@ -1163,13 +1325,71 @@ describe("_updateProfile input validation", () => {
 
 ```bash
 cd /Users/christophernowacki/film-goblin/app
-PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH npm test -- tests/actions/profile-validation.test.ts
+PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH npm test -- tests/auth/username.test.ts tests/actions/profile-validation.test.ts
 ```
-Expected: the username test passes (existing validation); the three length tests FAIL with "DB should not be reached".
+Expected: FAIL — `lib/auth/username.ts` doesn't exist; the `.dot` username and three length tests fail.
 
-- [ ] **Step 3: Implement the validation**
+- [ ] **Step 3: Create the shared validator**
 
-In `app/lib/actions/profile.ts`, add next to `USERNAME_MAX_LENGTH`:
+Create `app/lib/auth/username.ts`:
+
+```ts
+// Shared username rule — MUST stay in sync with the DB CHECK constraint
+// profiles_username_format (mig 0205): charset [a-z0-9._], 1-24 chars, at
+// least one alphanumeric, no leading/trailing dot (path-weird handles like
+// "." or "a." break /p/[username] URLs).
+export const USERNAME_MAX_LENGTH = 24;
+export const USERNAME_RE = /^[a-z0-9._]+$/;
+export const USERNAME_RULES_MESSAGE =
+  "Username: lowercase letters, numbers, dots, underscores only (max 24); needs a letter or number; can't start or end with a dot.";
+
+export function isValidUsername(u: string): boolean {
+  return (
+    u.length > 0 &&
+    u.length <= USERNAME_MAX_LENGTH &&
+    USERNAME_RE.test(u) &&
+    /[a-z0-9]/.test(u) &&
+    !u.startsWith(".") &&
+    !u.endsWith(".")
+  );
+}
+```
+
+- [ ] **Step 4: Swap the four duplicated checks to the shared validator**
+
+In `app/lib/actions/auth.ts`: delete `const USERNAME_RE = /^[a-z0-9._]+$/;`, add
+`import { isValidUsername, USERNAME_RULES_MESSAGE } from "@/lib/auth/username";`, then:
+- `signIn`: replace `if (!USERNAME_RE.test(identifier)) {` with `if (!isValidUsername(identifier)) {` (still returns "Invalid credentials.").
+- `signUp`: replace `if (!USERNAME_RE.test(username) || username.length > 24) { return { error: "Username: lowercase letters, numbers, dots, underscores only (max 24)." }; }` with `if (!isValidUsername(username)) { return { error: USERNAME_RULES_MESSAGE }; }`.
+- `checkUsernameAvailability`: replace `if (!username || username.length > 24 || !USERNAME_RE.test(username)) {` with `if (!isValidUsername(username)) {`.
+
+In `app/lib/actions/onboarding.ts`: delete its `const USERNAME_RE = ...`, import `isValidUsername` + `USERNAME_RULES_MESSAGE`, and in `_completeOnboarding` replace `if (!USERNAME_RE.test(username)) { throw new Error("Invalid username: lowercase letters, numbers, dots, underscores only."); }` with `if (!isValidUsername(username)) { throw new Error(USERNAME_RULES_MESSAGE); }`. (This also fixes onboarding's missing 24-char cap.)
+
+In `app/lib/actions/profile.ts`: delete its `const USERNAME_RE = ...` and `USERNAME_MAX_LENGTH`, import the shared module, and replace the username block in `_updateProfile` with:
+
+```ts
+  if (fields.username !== undefined) {
+    const u = fields.username.trim().toLowerCase();
+    if (!isValidUsername(u)) {
+      throw new Error(USERNAME_RULES_MESSAGE);
+    }
+    fields = { ...fields, username: u };
+  }
+```
+
+In `app/app/settings/components/ProfileDetailsForm.tsx`: delete its `const USERNAME_RE = ...`, add `import { isValidUsername, USERNAME_RULES_MESSAGE } from "@/lib/auth/username";` (pure module — safe in a client component), and replace the invalid calc + error copy:
+
+```ts
+  const usernameInvalid = trimmedUsername.length > 0 && !isValidUsername(trimmedUsername);
+```
+
+```tsx
+          error={usernameInvalid ? USERNAME_RULES_MESSAGE : null}
+```
+
+- [ ] **Step 5: Add the length validation**
+
+In `app/lib/actions/profile.ts`, add near the top constants:
 
 ```ts
 const DISPLAY_NAME_MAX = 50;
@@ -1177,7 +1397,7 @@ const BIO_MAX = 500;
 const AVATAR_URL_MAX = 1000;
 ```
 
-In `_updateProfile`, directly after the existing username-validation block, add:
+In `_updateProfile`, directly after the username-validation block, add:
 
 ```ts
   // Length caps mirror the DB CHECK constraints (mig 0205) so users get a
@@ -1193,7 +1413,7 @@ In `_updateProfile`, directly after the existing username-validation block, add:
   }
 ```
 
-- [ ] **Step 4: Cap the form inputs**
+- [ ] **Step 6: Cap the form inputs**
 
 In `app/app/settings/components/ProfileDetailsForm.tsx`:
 
@@ -1204,23 +1424,23 @@ In `app/app/settings/components/ProfileDetailsForm.tsx`:
 
 (`SettingsTextField`/`SettingsTextArea` in `SettingsControls.tsx` spread extra props onto the underlying `input`/`textarea`; if they don't, add `maxLength` pass-through there.)
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [ ] **Step 7: Run tests to verify they pass (plus auth regression — signUp/onboarding still accept normal names)**
 
 ```bash
 cd /Users/christophernowacki/film-goblin/app
-PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH npm test -- tests/actions/profile-validation.test.ts
+PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH npm test -- tests/auth/username.test.ts tests/actions/profile-validation.test.ts tests/auth/auth-rate-limit.test.ts tests/actions/change-password.test.ts
 PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH npm run typecheck
 ```
 Expected: PASS, typecheck clean.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 cd /Users/christophernowacki/film-goblin
-git add app/lib/actions/profile.ts app/app/settings/components/ProfileDetailsForm.tsx app/app/settings/components/SettingsControls.tsx app/tests/actions/profile-validation.test.ts
-git commit -m "feat(profile): friendly length validation mirroring mig 0205 caps"
+git add app/lib/auth/username.ts app/lib/actions/profile.ts app/lib/actions/auth.ts app/lib/actions/onboarding.ts app/app/settings/components/ProfileDetailsForm.tsx app/tests/auth/username.test.ts app/tests/actions/profile-validation.test.ts
+git commit -m "feat(profile): shared username validator + length validation mirroring mig 0205"
 ```
-(Drop `SettingsControls.tsx` from the add list if it wasn't modified.)
+(Add `app/app/settings/components/SettingsControls.tsx` to the list if it needed a `maxLength` pass-through.)
 
 ---
 
