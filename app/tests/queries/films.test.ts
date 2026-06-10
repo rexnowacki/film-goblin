@@ -36,11 +36,18 @@ function makeFilmsClient(opts: {
       error: null,
     }),
   };
+  const showtimesChain: any = {
+    select: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockResolvedValue({ data: [], error: null }),
+  };
   const client = {
     from: vi.fn((table: string) => {
       fromCalls.push(table);
       if (table === "library") return libraryChain;
       if (table === "watchlists") return watchlistsChain;
+      if (table === "theater_showtimes") return showtimesChain;
       return filmsChain;
     }),
   } as any;
