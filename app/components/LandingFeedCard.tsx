@@ -8,7 +8,7 @@ import type { LandingFeedRow, LandingFilm } from "@/lib/queries/landing";
 // site activity (cached 5 min upstream) — timestamps are as-of cache time.
 
 function Title({ film }: { film: LandingFilm }) {
-  return <em style={{ fontFamily: "var(--font-head)", fontStyle: "italic" }}>{film.title}</em>;
+  return <em className="head">{film.title}</em>;
 }
 
 function Sentence({ row }: { row: LandingFeedRow }) {
@@ -50,13 +50,13 @@ export default function LandingFeedCard({ rows }: { rows: LandingFeedRow[] }) {
   return (
     <div className="landing-feed-card">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-        <span className="caps" style={{ fontSize: 11, color: "var(--highlight)" }}>⛧ The Feed</span>
+        <span className="caps" style={{ fontSize: 11, color: "var(--highlight)" }}><span aria-hidden="true">⛧</span> The Feed</span>
         <span className="caps" style={{ fontSize: 9, color: "var(--muted)" }}>live · unhallowed hours</span>
       </div>
       {rows.map(row => (
         <div key={row.id} className="landing-feed-row">
           {row.kind === "price_drop" ? (
-            <span aria-hidden style={{ width: 26, flexShrink: 0 }} />
+            <span style={{ width: 26, flexShrink: 0 }} />
           ) : (
             <Avatar name={row.actor.display_name || row.actor.username} url={row.actor.avatar_url} size={26} />
           )}
