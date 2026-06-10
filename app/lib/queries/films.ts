@@ -6,13 +6,13 @@ import { getCurrentlyShowingFilmIds } from "./current-showing";
 
 type Client = SupabaseClient<Database>;
 
-export async function getLandingMarquee(client: Client) {
+export async function getRecentlySummoned(client: Client, limit = 10) {
   const { data, error } = await client
     .from("films")
     .select("id, itunes_id, title, director, year, runtime_min, genre_primary, artwork_url, itunes_url")
     .eq("available", true)
-    .order("last_priced_at", { ascending: false, nullsFirst: false })
-    .limit(10);
+    .order("first_seen_at", { ascending: false })
+    .limit(limit);
   if (error) throw error;
   return data ?? [];
 }

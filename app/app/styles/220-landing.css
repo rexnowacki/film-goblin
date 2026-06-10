@@ -1,0 +1,64 @@
+/* ============================================================
+   Landing page (pre-login) — feed card + rites band
+   ============================================================ */
+
+.landing-feed-card {
+  background: var(--void-2);
+  border: 3px solid var(--bone);
+  box-shadow: 8px 8px 0 var(--accent);
+  transform: rotate(var(--card-rotation));
+  padding: 18px 20px;
+  max-width: 420px;
+  width: 100%;
+  justify-self: center;
+}
+
+.landing-feed-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 11px 0;
+  border-bottom: 2px dashed var(--muted-dark);
+}
+.landing-feed-row:last-child {
+  border-bottom: none;
+  padding-bottom: 2px;
+}
+
+.landing-pct {
+  background: var(--highlight);
+  color: var(--void);
+  font-family: var(--font-ui);
+  font-weight: 900;
+  font-size: 11px;
+  padding: 1px 5px;
+}
+
+.landing-rites {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.landing-rite {
+  padding: 0 22px;
+}
+.landing-rite:first-child {
+  padding-left: 0;
+}
+.landing-rite + .landing-rite {
+  border-left: 2px solid var(--void);
+}
+@media (max-width: 720px) {
+  .landing-rites {
+    grid-template-columns: 1fr;
+  }
+  .landing-rite {
+    padding: 14px 0;
+  }
+  .landing-rite:first-child {
+    padding-top: 0;
+  }
+  .landing-rite + .landing-rite {
+    border-left: none;
+    border-top: 2px solid var(--void);
+  }
+}

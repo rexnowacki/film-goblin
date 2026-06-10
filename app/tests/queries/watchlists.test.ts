@@ -2,11 +2,20 @@ import { describe, it, expect, vi } from "vitest";
 import { getMyWatchlistWithFilms } from "@/lib/queries/watchlists";
 
 function makeClient(rows: any[]) {
+  const watchlistsChain: any = {
+    select: vi.fn().mockReturnThis(),
+    order: vi.fn().mockResolvedValue({ data: rows, error: null }),
+  };
+  const showtimesChain: any = {
+    select: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockResolvedValue({ data: [], error: null }),
+  };
   return {
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        order: vi.fn().mockResolvedValue({ data: rows, error: null }),
-      }),
+    from: vi.fn((table: string) => {
+      if (table === "theater_showtimes") return showtimesChain;
+      return watchlistsChain;
     }),
   } as any;
 }

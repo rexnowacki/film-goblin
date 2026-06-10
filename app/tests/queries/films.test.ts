@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getFilms } from "@/lib/queries/films";
+import { getFilms, getRecentlySummoned } from "@/lib/queries/films";
 
 // Mocks the chained PostgREST builder for `films_with_stats`, `library`, and
 // `watchlists`. Returns the client + spies so tests can assert on which calls
@@ -36,11 +36,18 @@ function makeFilmsClient(opts: {
       error: null,
     }),
   };
+  const showtimesChain: any = {
+    select: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockResolvedValue({ data: [], error: null }),
+  };
   const client = {
     from: vi.fn((table: string) => {
       fromCalls.push(table);
       if (table === "library") return libraryChain;
       if (table === "watchlists") return watchlistsChain;
+      if (table === "theater_showtimes") return showtimesChain;
       return filmsChain;
     }),
   } as any;
@@ -118,5 +125,24 @@ describe("getFilms — search lifts the exclusion but tags rows", () => {
     await getFilms(client, { viewerUserId: "u1", q: "   " });
     expect(filmsChain.not).toHaveBeenCalled();
     expect(filmsChain.or).not.toHaveBeenCalled();
+  });
+});
+
+describe("getRecentlySummoned", () => {
+  it("orders by first_seen_at desc and filters to available films", async () => {
+    const order = vi.fn().mockReturnThis();
+    const chain: any = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order,
+      limit: vi.fn().mockResolvedValue({ data: [{ id: "f1" }], error: null }),
+    };
+    const client = { from: vi.fn(() => chain) } as any;
+    const rows = await getRecentlySummoned(client);
+    expect(rows).toEqual([{ id: "f1" }]);
+    expect(client.from).toHaveBeenCalledWith("films");
+    expect(chain.limit).toHaveBeenCalledWith(10);
+    expect(chain.eq).toHaveBeenCalledWith("available", true);
+    expect(order).toHaveBeenCalledWith("first_seen_at", { ascending: false });
   });
 });

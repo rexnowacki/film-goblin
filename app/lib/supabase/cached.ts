@@ -2,7 +2,8 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { createClient } from "./server";
 import { serviceRoleClient } from "./service-role";
-import { getLandingMarquee as _getLandingMarquee } from "@/lib/queries/films";
+import { getRecentlySummoned as _getRecentlySummoned } from "@/lib/queries/films";
+import { getLandingFeed as _getLandingFeed } from "@/lib/queries/landing";
 import { getActiveRitualPick as _getActiveRitualPick } from "@/lib/queries/ritual";
 
 // Per-request memoized auth lookup. Within a single RSC render, TopNav,
@@ -27,10 +28,19 @@ export const getServerUser = cache(async () => {
 // unstable_cache callbacks cannot use cookies() — createClient() from server.ts
 // reads cookies for SSR session hydration and will throw inside the cache boundary.
 // These queries are public (no per-user RLS scoping), so serviceRoleClient() is correct.
-export const getLandingMarquee = unstable_cache(
-  async () => _getLandingMarquee(serviceRoleClient()),
-  ["landing-marquee"],
+export const getRecentlySummoned = unstable_cache(
+  async () => _getRecentlySummoned(serviceRoleClient()),
+  ["recently-summoned"],
   { revalidate: 300, tags: ["films"] },
+);
+
+// Landing feed card. Errors propagate uncached — the landing page catches and
+// hides the card for that request, and the next request retries. Tagged
+// "films" so admin film mutations flush rows pointing at changed/deleted films.
+export const getLandingFeed = unstable_cache(
+  async () => _getLandingFeed(serviceRoleClient()),
+  ["landing-feed"],
+  { revalidate: 300, tags: ["landing-feed", "films"] },
 );
 
 export const getActiveRitualPick = unstable_cache(
