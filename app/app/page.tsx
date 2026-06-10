@@ -14,7 +14,10 @@ export default async function LandingPage() {
       console.error("[landing] feed query failed, hiding card:", err);
       return [];
     }),
-    getRecentlySummoned(),
+    getRecentlySummoned().catch(err => {
+      console.error("[landing] summoned query failed, hiding marquee:", err);
+      return [];
+    }),
   ]);
   const hasFeed = feedRows.length > 0;
 
@@ -24,7 +27,7 @@ export default async function LandingPage() {
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh", fontFamily: "var(--font-ui)" }}>
       {/* Top bar */}
-      <div style={{ borderBottom: "2px solid var(--bone)", paddingTop: "env(safe-area-inset-top)" }}>
+      <div style={{ background: "var(--void)", borderBottom: "2px solid var(--bone)", paddingTop: "env(safe-area-inset-top)" }}>
         <div className="container-wide" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px var(--container-pad)" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
             <div style={{ fontFamily: "var(--font-display)", fontSize: 30, lineHeight: 1, letterSpacing: "-0.02em" }}>
@@ -48,7 +51,7 @@ export default async function LandingPage() {
             style={{ "--stack-template": hasFeed ? "1.15fr 1fr" : "1fr", "--stack-gap": "40px", alignItems: "center" } as React.CSSProperties}
           >
             <div style={hasFeed ? undefined : { maxWidth: 640, margin: "0 auto", textAlign: "center" }}>
-              <div className="stamp" style={{ color: "var(--highlight)", marginBottom: 20 }}>✦ Watch Weirder ✦</div>
+              <div className="stamp" style={{ color: "var(--highlight)", marginBottom: 20 }}><span aria-hidden="true">✦</span> Watch Weirder <span aria-hidden="true">✦</span></div>
               <h1 className="display" style={{ fontSize: "clamp(64px, 11vw, 160px)", margin: 0, lineHeight: 0.82, letterSpacing: "-0.02em" }}>
                 FILM
                 <br />
@@ -62,7 +65,7 @@ export default async function LandingPage() {
                 that hunts price drops on Apple TV while you sleep.
               </p>
               <div style={{ display: "flex", gap: 14, flexWrap: "wrap", justifyContent: hasFeed ? undefined : "center" }}>
-                <Link href="/auth/signup" className="btn btn-lg">✦ Join The Coven</Link>
+                <Link href="/auth/signup" className="btn btn-lg"><span aria-hidden="true">✦</span> Join The Coven</Link>
                 <Link href="/films" className="btn btn-outline btn-lg">Browse Films</Link>
               </div>
             </div>
@@ -76,22 +79,22 @@ export default async function LandingPage() {
       <section className="grain-light" style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "2px solid var(--void)" }}>
         <div className="container-wide landing-rites" style={{ padding: "30px var(--container-pad)" }}>
           <div className="landing-rite">
-            <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 6 }}>⛧ Rite I</div>
-            <div className="head" style={{ fontSize: 22, marginBottom: 6 }}>The Feed</div>
+            <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 6 }}><span aria-hidden="true">⛧</span> Rite I</div>
+            <h2 className="head" style={{ fontSize: 22, margin: "0 0 6px" }}>The Feed</h2>
             <p style={{ fontSize: 13, lineHeight: 1.45, margin: 0, color: "var(--ink)" }}>
               Every watch, rating, and review your coven logs — one haunted scroll.
             </p>
           </div>
           <div className="landing-rite">
-            <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 6 }}>⛧ Rite II</div>
-            <div className="head" style={{ fontSize: 22, marginBottom: 6 }}>Recommendations</div>
+            <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 6 }}><span aria-hidden="true">⛧</span> Rite II</div>
+            <h2 className="head" style={{ fontSize: 22, margin: "0 0 6px" }}>Recommendations</h2>
             <p style={{ fontSize: 13, lineHeight: 1.45, margin: 0, color: "var(--ink)" }}>
               Press a film on a friend. They&apos;ll see it until they watch it. No escape.
             </p>
           </div>
           <div className="landing-rite">
-            <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 6 }}>⛧ Rite III</div>
-            <div className="head" style={{ fontSize: 22, marginBottom: 6 }}>The Hunt</div>
+            <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 6 }}><span aria-hidden="true">⛧</span> Rite III</div>
+            <h2 className="head" style={{ fontSize: 22, margin: "0 0 6px" }}>The Hunt</h2>
             <p style={{ fontSize: 13, lineHeight: 1.45, margin: 0, color: "var(--ink)" }}>
               Your watchlist stalks Apple TV prices and howls when one drops.
             </p>
@@ -100,27 +103,29 @@ export default async function LandingPage() {
       </section>
 
       {/* RECENTLY SUMMONED — marquee */}
-      <section style={{ background: "var(--void-2)", padding: "28px 0 32px", overflow: "hidden" }}>
-        <div className="container-wide" style={{ marginBottom: 18 }}>
-          <h2 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
-            Recently <span style={{ color: "var(--accent)", fontStyle: "italic" }}>Summoned</span>
-          </h2>
-        </div>
-        <div style={{ overflow: "hidden", padding: "10px 0" }}>
-          <div className="marquee" style={{ gap: 24 }}>
-            {marqueeStrip.map((f, i) => (
-              <FilmPoster key={`${f.id}-${i}`} film={f} size="md" />
-            ))}
+      {summoned.length > 0 && (
+        <section style={{ background: "var(--void-2)", padding: "28px 0 32px", overflow: "hidden" }}>
+          <div className="container-wide" style={{ marginBottom: 18 }}>
+            <h2 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
+              Recently <span style={{ color: "var(--accent)", fontStyle: "italic" }}>Summoned</span>
+            </h2>
           </div>
-        </div>
-      </section>
+          <div style={{ overflow: "hidden", padding: "10px 0" }}>
+            <div className="marquee" style={{ gap: 24 }}>
+              {marqueeStrip.map((f, i) => (
+                <FilmPoster key={`${f.id}-${i}`} film={f} size="md" />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* FOOTER CTA */}
-      <section style={{ borderTop: "2px solid var(--bone)", textAlign: "center", padding: "44px var(--container-pad) 56px" }}>
+      <section aria-label="Join Film Goblin" style={{ borderTop: "2px solid var(--bone)", textAlign: "center", padding: "44px var(--container-pad) 56px" }}>
         <div className="head" style={{ fontSize: "clamp(22px, 3.5vw, 32px)", fontStyle: "italic", marginBottom: 22 }}>
           The moon is right. The prices are wrong.
         </div>
-        <Link href="/auth/signup" className="btn btn-lg">✦ Join The Coven</Link>
+        <Link href="/auth/signup" className="btn btn-lg"><span aria-hidden="true">✦</span> Join The Coven</Link>
         <div className="eyebrow" style={{ color: "var(--muted)", marginTop: 28 }}>
           Film Goblin · Est. 2026 · Printed in a garage
         </div>
