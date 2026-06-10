@@ -34,19 +34,13 @@ export const getRecentlySummoned = unstable_cache(
   { revalidate: 300, tags: ["films"] },
 );
 
-// Landing feed card. Failure degrades to an empty list (page hides the card)
-// rather than 500ing the front door. Nothing revalidates the tag — the 300s
-// TTL is the only refresh, which is fine for a logged-out landing page.
+// Landing feed card. Errors propagate uncached — the landing page catches and
+// hides the card for that request, and the next request retries. Tagged
+// "films" so admin film mutations flush rows pointing at changed/deleted films.
 export const getLandingFeed = unstable_cache(
-  async () => {
-    try {
-      return await _getLandingFeed(serviceRoleClient());
-    } catch {
-      return [];
-    }
-  },
+  async () => _getLandingFeed(serviceRoleClient()),
   ["landing-feed"],
-  { revalidate: 300, tags: ["landing-feed"] },
+  { revalidate: 300, tags: ["landing-feed", "films"] },
 );
 
 export const getActiveRitualPick = unstable_cache(

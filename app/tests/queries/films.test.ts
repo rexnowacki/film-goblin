@@ -140,6 +140,8 @@ describe("getRecentlySummoned", () => {
     const client = { from: vi.fn(() => chain) } as any;
     const rows = await getRecentlySummoned(client);
     expect(rows).toEqual([{ id: "f1" }]);
+    expect(client.from).toHaveBeenCalledWith("films");
+    expect(chain.limit).toHaveBeenCalledWith(10);
     expect(chain.eq).toHaveBeenCalledWith("available", true);
     expect(order).toHaveBeenCalledWith("first_seen_at", { ascending: false });
   });
