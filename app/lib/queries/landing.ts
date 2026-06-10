@@ -177,11 +177,13 @@ export async function getLandingFeed(client: Client, limit = 5): Promise<Landing
         created_at: alert.created_at,
         film: { id: filmRow.id, title: filmRow.title, artwork_url: filmRow.artwork_url },
         newPriceUsd: newPrice,
-        pctOff: Math.round((1 - newPrice / oldPrice) * 100),
+        pctOff: oldPrice > 0 ? Math.round((1 - newPrice / oldPrice) * 100) : 0,
       });
     }
   }
 
-  out.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+  out.sort((a, b) =>
+    a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : a.id < b.id ? 1 : -1,
+  );
   return out.slice(0, limit);
 }

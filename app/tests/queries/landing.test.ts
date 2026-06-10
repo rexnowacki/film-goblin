@@ -146,6 +146,17 @@ describe("getLandingFeed — price drop splice", () => {
     const rows = await getLandingFeed(client);
     expect(rows.map(r => r.kind)).toEqual(["watch_logged"]);
   });
+
+  it("ignores alerts with a zero old price", async () => {
+    const { client } = makeClient({
+      activityRows: [{ id: "a1", kind: "watch_logged", payload: { film_id: "f1" }, created_at: iso(MIN), actor_user_id: "u1" }],
+      profiles: [actor],
+      films: [film],
+      alertRows: [{ id: "pa1", film_id: "f1", old_price_usd: 0, new_price_usd: 4.99, created_at: iso(MIN) }],
+    });
+    const rows = await getLandingFeed(client);
+    expect(rows.map(r => r.kind)).toEqual(["watch_logged"]);
+  });
 });
 
 describe("getLandingFeed — empty states", () => {
