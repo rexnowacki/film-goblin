@@ -30,13 +30,20 @@ export interface MatchScore {
 }
 
 const ARTICLES = /^(the|a|an)\s+/i;
+// Apple names many listings "Title (YYYY)" — strip the suffix, but never a
+// bare year title like "1917".
+const YEAR_SUFFIX = /\s+\((19|20)\d{2}\)$/;
+
+function stripYearSuffix(s: string): string {
+  return s.replace(YEAR_SUFFIX, "");
+}
 
 function lowercaseOnly(s: string): string {
-  return s.toLowerCase().trim();
+  return stripYearSuffix(s.trim()).toLowerCase();
 }
 
 function fullyNormalize(s: string): string {
-  return s
+  return stripYearSuffix(s.trim())
     .normalize("NFKC")
     .toLowerCase()
     .replace(ARTICLES, "")

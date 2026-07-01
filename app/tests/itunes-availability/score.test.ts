@@ -82,4 +82,57 @@ describe("scoreMatch", () => {
     const r = scoreMatch(film(), cand());
     expect(r.confidence).toBeLessThanOrEqual(1.0);
   });
+
+  // Apple names new listings with a parenthesized year suffix — e.g.
+  // "Obsession (2026)", "The Boy Next Door (2015)", "Magnificent Obsession (1954)".
+  it("treats a trailing (YYYY) suffix on the candidate as exact title", () => {
+    const r = scoreMatch(
+      film({ title: "Obsession", year: 2026, director: "Curry Barker" }),
+      cand({
+        trackName: "Obsession (2026)",
+        releaseDate: "2026-06-26T07:00:00Z",
+        artistName: "Curry Barker",
+      }),
+    );
+    expect(r.confidence).toBe(1.0);
+    expect(r.matchType).toBe("exact_title_year_director");
+  });
+
+  it("strips a trailing (YYYY) suffix from the film title side too", () => {
+    const r = scoreMatch(
+      film({ title: "Obsession (2026)", year: 2026, director: "Curry Barker" }),
+      cand({
+        trackName: "Obsession",
+        releaseDate: "2026-06-26T07:00:00Z",
+        artistName: "Curry Barker",
+      }),
+    );
+    expect(r.confidence).toBe(1.0);
+    expect(r.matchType).toBe("exact_title_year_director");
+  });
+
+  it("does not strip non-year parentheticals", () => {
+    const r = scoreMatch(
+      film({ title: "Obsession", year: 2026, director: "Curry Barker" }),
+      cand({
+        trackName: "Obsession (Unrated)",
+        releaseDate: "2026-06-26T07:00:00Z",
+        artistName: "Curry Barker",
+      }),
+    );
+    expect(r.matchType).toBe("below_threshold");
+  });
+
+  it("does not treat a bare year title as a strippable suffix", () => {
+    const r = scoreMatch(
+      film({ title: "1917", year: 2019, director: "Sam Mendes" }),
+      cand({
+        trackName: "1917",
+        releaseDate: "2019-12-25T07:00:00Z",
+        artistName: "Sam Mendes",
+      }),
+    );
+    expect(r.confidence).toBe(1.0);
+    expect(r.matchType).toBe("exact_title_year_director");
+  });
 });

@@ -13,6 +13,7 @@ import {
 import { toHit, type ITunesSearchHit } from "@/lib/search/itunes-hit";
 import { _fulfillRequest } from "@/lib/actions/film-requests";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
+import { promoteTmdbTwin } from "@/lib/admin/promote-tmdb-twin";
 import { backfillTmdbTrailers, lookupTrailerForFilm, trailerPayload } from "@/lib/trailers/tmdb-enrichment";
 import { backfillTmdbCast, lookupCastForFilm, replaceFilmCast } from "@/lib/cast/tmdb-enrichment";
 import { runStreamingAvailabilityRefresh } from "@/lib/streaming-availability/refresh";
@@ -218,6 +219,34 @@ export async function adminCreateFilm(
     series_order: seriesRes.id ? fields.series_order : null,
     ...(trailer ? trailerPayload(trailer) : {}),
   };
+
+  // A film added from TMDB while in theaters may already exist as a row
+  // without an iTunes identity. Grafting onto that row (instead of inserting
+  // a twin) keeps users' watch logs, watchlists, and reviews attached.
+  if (payload.itunes_id) {
+    const twinId = await promoteTmdbTwin(c, payload.tmdb_id, {
+      itunes_id: payload.itunes_id,
+      itunes_url: payload.itunes_url,
+      tracking: payload.tracking,
+      available: payload.available,
+      artwork_url: payload.artwork_url,
+    });
+    if (twinId) {
+      try {
+        await recordInitialPriceForFilm(twinId, payload.itunes_id);
+      } catch (err) {
+        console.warn("adminCreateFilm: initial price check failed:", err);
+      }
+      if (requestId) {
+        const svc = serviceRoleClient();
+        await _fulfillRequest(svc, requestId, twinId, fields.title.trim());
+        revalidatePath("/admin/film-requests");
+      }
+      revalidateTag("films");
+      revalidatePath("/admin/films");
+      return { ok: true, filmId: twinId };
+    }
+  }
 
   // Cast needed because lib/supabase/types.ts pre-dates migration 0118 which
   // made films.itunes_id nullable, plus mig 0177 added series_id /
