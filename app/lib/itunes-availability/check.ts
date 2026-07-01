@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { scoreMatch, type FilmInput } from "./score";
+import { scoreMatch, type FilmInput, type ItunesCandidate } from "./score";
 import { searchItunesMovies } from "./itunes-search";
+import { searchAppleTv } from "@/lib/search/apple-tv";
 
 const AUTO_PROMOTE_THRESHOLD = 0.85;
 const QUEUE_THRESHOLD = 0.45;
@@ -23,8 +24,32 @@ interface FilmRow {
   theatrical_release_date: string | null;
 }
 
+export type AppleTvFallback = (film: FilmInput) => Promise<ItunesCandidate[]>;
+
+export interface CheckOptions {
+  appleTvFallback?: AppleTvFallback;
+}
+
+// The iTunes Search API frequently fails to surface new releases (and its
+// movie filter is broken outright — see itunes-search.ts). When it yields no
+// viable candidate, fall back to the same Brave → Apple TV page → adamId →
+// iTunes Lookup pipeline the manual admin add flow uses.
+async function defaultAppleTvFallback(film: FilmInput): Promise<ItunesCandidate[]> {
+  const res = await searchAppleTv(film.title);
+  if (!res.ok) return [];
+  return res.candidates.map(hit => ({
+    trackId: hit.itunes_id,
+    trackName: hit.title,
+    releaseDate: hit.year ? `${hit.year}-01-01` : "",
+    artistName: hit.director,
+    trackViewUrl: hit.itunes_url,
+    artworkUrl100: hit.artwork_url,
+  }));
+}
+
 export async function runItunesAvailabilityCheck(
   client: SupabaseClient<Database>,
+  options: CheckOptions = {},
 ): Promise<CheckSummary> {
   const summary: CheckSummary = {
     considered: 0,
@@ -94,9 +119,11 @@ export async function runItunesAvailabilityCheck(
 
   summary.considered = films.length;
 
+  const appleTvFallback = options.appleTvFallback ?? defaultAppleTvFallback;
+
   for (const film of films) {
     try {
-      await processFilm(client, film, summary);
+      await processFilm(client, film, summary, appleTvFallback);
     } catch (e) {
       summary.errors++;
       console.error(`itunes-check ${film.id} (${film.title}): ${(e as Error).message}`);
@@ -111,25 +138,39 @@ export async function runItunesAvailabilityCheck(
   return summary;
 }
 
-async function processFilm(
-  client: SupabaseClient<Database>,
-  film: FilmRow,
-  summary: CheckSummary,
-): Promise<void> {
-  const input: FilmInput = { title: film.title, year: film.year, director: film.director };
-  const candidates = await searchItunesMovies(film.title);
-  if (candidates.length === 0) {
-    summary.belowThreshold++;
-    return;
-  }
+interface BestMatch {
+  score: number;
+  matchType: string;
+  cand: ItunesCandidate;
+}
 
-  let best: { score: number; matchType: string; cand: typeof candidates[0] } | null = null;
+function pickBest(input: FilmInput, candidates: ItunesCandidate[]): BestMatch | null {
+  let best: BestMatch | null = null;
   for (const c of candidates) {
     const r = scoreMatch(input, c);
     if (best === null || r.confidence > best.score) {
       best = { score: r.confidence, matchType: r.matchType, cand: c };
     }
   }
+  return best;
+}
+
+async function processFilm(
+  client: SupabaseClient<Database>,
+  film: FilmRow,
+  summary: CheckSummary,
+  appleTvFallback: AppleTvFallback,
+): Promise<void> {
+  const input: FilmInput = { title: film.title, year: film.year, director: film.director };
+  let best = pickBest(input, await searchItunesMovies(film.title));
+
+  if (!best || best.score < QUEUE_THRESHOLD) {
+    const fallbackBest = pickBest(input, await appleTvFallback(input));
+    if (fallbackBest && (!best || fallbackBest.score > best.score)) {
+      best = fallbackBest;
+    }
+  }
+
   if (!best || best.score < QUEUE_THRESHOLD) {
     summary.belowThreshold++;
     return;

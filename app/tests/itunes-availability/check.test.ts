@@ -35,6 +35,7 @@ const ITUNES_RESPONSES: Record<string, unknown> = {
   "The Substance": {
     resultCount: 1,
     results: [{
+      kind: "feature-movie",
       trackId: 111,
       trackName: "The Substance",
       releaseDate: "2024-09-20T07:00:00Z",
@@ -46,6 +47,7 @@ const ITUNES_RESPONSES: Record<string, unknown> = {
   "Hereditary": {
     resultCount: 1,
     results: [{
+      kind: "feature-movie",
       trackId: 222,
       // Trailing period normalizes to "hereditary" — exact-title check fails but
       // fullyNormalize strips punctuation, giving a normalized-title match.
@@ -178,6 +180,49 @@ describe("runItunesAvailabilityCheck", () => {
 
     // Null: no candidate row, no auto-promote, but still touched
     expect(filmsState.get("f-null")!.itunes_id).toBe(null);
+  });
+
+  it("falls back to Apple TV search when iTunes search finds no viable candidate", async () => {
+    // Live iTunes search never surfaced this film ("Obsession", 2026-06) even
+    // though it exists on the store — the fallback path has to find it.
+    filmsState.set("f-fallback", {
+      id: "f-fallback",
+      title: "Obsession",
+      year: 2026,
+      director: "Curry Barker",
+      theatrical_release_date: isoDate(-40),
+      last_itunes_check_at: null,
+      itunes_id: null,
+      tracking: false,
+      available: true,
+      artwork_url: "",
+    });
+    const calls: string[] = [];
+    const appleTvFallback = async (film: { title: string; year: number; director: string }) => {
+      calls.push(film.title);
+      if (film.title !== "Obsession") return [];
+      return [{
+        trackId: 1895945921,
+        trackName: "Obsession (2026)",
+        releaseDate: "2026-06-26T07:00:00Z",
+        artistName: "Curry Barker",
+        trackViewUrl: "https://itunes.apple.com/us/movie/obsession-2026/id1895945921?uo=4",
+        artworkUrl100: "https://example.com/ob100.jpg",
+      }];
+    };
+
+    const client = makeStubClient();
+    const summary = await runItunesAvailabilityCheck(client, { appleTvFallback });
+
+    expect(summary.autoPromoted).toBe(2);
+    expect(filmsState.get("f-fallback")!.itunes_id).toBe(1895945921);
+    expect(filmsState.get("f-fallback")!.tracking).toBe(true);
+
+    // Fallback fires only when the primary search yields nothing viable —
+    // not for films that already matched or queued.
+    expect(calls).toContain("Obsession");
+    expect(calls).not.toContain("The Substance");
+    expect(calls).not.toContain("Hereditary");
   });
 
   it("touches last_itunes_check_at for every considered film", async () => {
