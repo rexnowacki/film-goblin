@@ -17,6 +17,8 @@ export const SIGNAL_WEIGHTS = {
   watchlist_added: 0.75,
   reaction: 0.20,
   watch_disliked: -4.0,
+  // "Not for me" is milder than "watched and hated" (v3.5 FYP dismissals).
+  not_interested: -1.5,
 } as const;
 
 export const FACET_MULTIPLIERS = {
@@ -227,23 +229,37 @@ export async function getUserAversion(
   client: Client,
   userId: string,
 ): Promise<AffinityVector> {
-  const { data: disliked } = await client
-    .from("watched")
-    .select("film_id, created_at")
-    .eq("user_id", userId)
-    .eq("recommended", false);
+  const [dislikedRes, dismissedRes] = await Promise.all([
+    client
+      .from("watched")
+      .select("film_id, created_at")
+      .eq("user_id", userId)
+      .eq("recommended", false),
+    client
+      .from("fyp_not_interested")
+      .select("film_id, created_at")
+      .eq("user_id", userId),
+  ]);
 
-  if (!disliked || disliked.length === 0) return { byTag: {} };
+  const disliked = dislikedRes.data ?? [];
+  const dismissed = dismissedRes.data ?? [];
+  if (disliked.length === 0 && dismissed.length === 0) return { byTag: {} };
 
   const now = Date.now();
   const filmWeights = new Map<string, number>();
-  const aversionSignalWeight = Math.abs(SIGNAL_WEIGHTS.watch_disliked); // 4.0
 
   for (const w of disliked) {
     const decay = timeDecay(w.created_at, now);
     filmWeights.set(
       w.film_id,
-      (filmWeights.get(w.film_id) ?? 0) + aversionSignalWeight * decay,
+      (filmWeights.get(w.film_id) ?? 0) + Math.abs(SIGNAL_WEIGHTS.watch_disliked) * decay,
+    );
+  }
+  for (const d of dismissed) {
+    const decay = timeDecay(d.created_at, now);
+    filmWeights.set(
+      d.film_id,
+      (filmWeights.get(d.film_id) ?? 0) + Math.abs(SIGNAL_WEIGHTS.not_interested) * decay,
     );
   }
 
