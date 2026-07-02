@@ -1,0 +1,32 @@
+import Link from "next/link";
+import FilmPoster from "./FilmPoster";
+import MatchPill from "./MatchPill";
+import type { ScoredFilm } from "@/lib/queries/fyp/score";
+import type { FilmLite } from "@/lib/queries/fyp/forYou";
+
+export default function DailyOmenHero({ film, scored }: { film: FilmLite; scored: ScoredFilm }) {
+  return (
+    <Link prefetch={false} href={`/film/${film.id}`} className="stackable" style={{
+      "--stack-template": "180px 1fr", "--stack-gap": "20px",
+      display: "grid", textDecoration: "none", color: "inherit",
+      border: "2px solid var(--accent)", padding: 16, marginBottom: 28,
+    } as React.CSSProperties}>
+      <div style={{ position: "relative" }}>
+        <FilmPoster film={film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
+        <MatchPill band={scored.matchBand} covenFavorite={scored.covenFavorite} />
+      </div>
+      <div>
+        <div className="caps" style={{ fontSize: 10, color: "var(--accent)", letterSpacing: "0.1em" }}>
+          Daily Omen
+        </div>
+        <div className="head" style={{ fontSize: 28, lineHeight: 1.05, marginTop: 8 }}>{film.title}</div>
+        <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 6 }}>
+          {film.director} · {film.year}
+        </div>
+        <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, color: "var(--muted)", marginTop: 10 }}>
+          The goblin consulted the entrails. Today they point here.
+        </div>
+      </div>
+    </Link>
+  );
+}

@@ -6,7 +6,7 @@ import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import DiscoverTabs from "./DiscoverTabs";
 import BrowseAll from "./BrowseAll";
-import ForYouShelves from "@/components/ForYouShelves"; // Task 12; placeholder until then
+import ForYouShelves from "@/components/ForYouShelves";
 
 const VALID_SORTS: FilmsSort[] = ["added", "release", "title", "watchlisted", "price_low", "price_high"];
 function parseSort(raw: string | undefined): FilmsSort {
