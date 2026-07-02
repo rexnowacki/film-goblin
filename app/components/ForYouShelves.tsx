@@ -26,13 +26,11 @@ export default function ForYouShelves({ omen, shelves, filmsEntries, scoredEntri
   const { toast } = useToast();
 
   // ── Impression logging ────────────────────────────────────────────────────
-  const queueRef = useRef<ReturnType<typeof createImpressionQueue> | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const dwellTimers = useRef(new Map<Element, ReturnType<typeof setTimeout>>());
 
   useEffect(() => {
     const queue = createImpressionQueue(ids => void recordFypImpressions(ids));
-    queueRef.current = queue;
     const io = new IntersectionObserver(entries => {
       for (const e of entries) {
         const filmId = (e.target as HTMLElement).dataset.filmId;
@@ -98,9 +96,15 @@ export default function ForYouShelves({ omen, shelves, filmsEntries, scoredEntri
 
   return (
     <>
-      {omen && omenFilm && !dismissed.has(omen.filmId) && (
+      {omen && omenFilm && (
         <div ref={el => registerCard(el as HTMLElement | null, omen.filmId)} data-film-id={omen.filmId}>
-          <DailyOmenHero film={omenFilm} scored={omen} />
+          <DailyOmenHero
+            film={omenFilm}
+            scored={omen}
+            dismissed={dismissed.has(omen.filmId)}
+            onDismiss={onDismiss}
+            onUndo={onUndo}
+          />
         </div>
       )}
       {shelves.map(shelf => (

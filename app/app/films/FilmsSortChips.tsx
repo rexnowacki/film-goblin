@@ -31,8 +31,11 @@ export default function FilmsSortChips({ currentSort, currentQ }: Props) {
     if (value === "added") p.delete("sort"); else p.set("sort", value);
     if (currentQ) p.set("q", currentQ); else p.delete("q");
     p.delete("page");
-    const s = p.toString();
-    router.push(s ? `/films?${s}` : "/films");
+    // Always stamp tab=browse — selecting the default "added" chip can clear
+    // every other param, and an empty query string resolves to bare /films,
+    // which flips a signed-in user back to the For You tab.
+    p.set("tab", "browse");
+    router.push(`/films?${p.toString()}`);
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLButtonElement>, idx: number) {

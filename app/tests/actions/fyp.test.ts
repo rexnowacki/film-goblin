@@ -1,5 +1,22 @@
-import { describe, it, expect } from "vitest";
-import { _recordFypImpressions, _setNotInterested, _undoNotInterested } from "@/lib/actions/fyp";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+const revalidateCalls: string[] = [];
+vi.mock("next/cache", () => ({
+  revalidatePath: (path: string) => { revalidateCalls.push(path); },
+}));
+
+let fakeAuthClient: unknown;
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: async () => fakeAuthClient,
+}));
+
+import {
+  _recordFypImpressions,
+  _setNotInterested,
+  _undoNotInterested,
+  setNotInterested,
+  undoNotInterested,
+} from "@/lib/actions/fyp";
 
 function stubClient() {
   const calls: Array<{ kind: string; args: unknown }> = [];
@@ -49,5 +66,22 @@ describe("_setNotInterested / _undoNotInterested", () => {
     const { client, calls } = stubClient();
     await _undoNotInterested(client, "f1");
     expect(calls).toEqual([{ kind: "delete:fyp_not_interested", args: { user_id: "u1", film_id: "f1" } }]);
+  });
+});
+
+describe("setNotInterested / undoNotInterested public wrappers", () => {
+  beforeEach(() => {
+    revalidateCalls.length = 0;
+    fakeAuthClient = stubClient().client;
+  });
+
+  it("setNotInterested does NOT revalidate — optimistic client state is the in-session truth, so an RSC refresh mid-interaction would unmount the still-visible undo stub", async () => {
+    await setNotInterested("f1");
+    expect(revalidateCalls).toEqual([]);
+  });
+
+  it("undoNotInterested still revalidates so the next natural request recomputes from the DB", async () => {
+    await undoNotInterested("f1");
+    expect(revalidateCalls).toEqual(["/films"]);
   });
 });

@@ -40,6 +40,6 @@ export async function setLanes(tagIds: string[]): Promise<{ ok: true } | { ok: f
   if (updErr) return { ok: false, error: updErr.message };
 
   revalidatePath("/settings");
-  revalidatePath("/for-you");
+  revalidatePath("/films");
   return { ok: true };
 }

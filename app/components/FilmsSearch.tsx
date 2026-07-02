@@ -1,10 +1,11 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 export default function FilmsSearch() {
   const router = useRouter();
+  const pathname = usePathname();
   const params = useSearchParams();
   const [q, setQ] = useState(params.get("q") ?? "");
   const [, start] = useTransition();
@@ -16,6 +17,11 @@ export default function FilmsSearch() {
       const next = q.trim();
       if (next) p.set("q", next);
       else p.delete("q");
+      // Clearing the query can drop the last param, collapsing the URL to
+      // bare /films — which flips a signed-in user back to For You. Only
+      // stamp tab=browse when this component is actually rendered on the
+      // films route (it's a shared component, so guard on pathname).
+      if (pathname === "/films") p.set("tab", "browse");
       const qs = p.toString();
       const href = qs ? `/films?${qs}` : "/films";
       if (href === lastHrefRef.current) return;
@@ -23,7 +29,7 @@ export default function FilmsSearch() {
       start(() => router.replace(href, { scroll: false }));
     }, 220);
     return () => clearTimeout(t);
-  }, [params, q, router, start]);
+  }, [params, pathname, q, router, start]);
 
   return (
     <div className="search-pill">

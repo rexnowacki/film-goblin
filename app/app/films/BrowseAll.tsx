@@ -29,11 +29,13 @@ export default async function BrowseAll({
 
   function pageHref(p: number) {
     const params = new URLSearchParams();
+    // Always stamp tab=browse — an empty query string here would otherwise
+    // resolve to bare /films, which flips a signed-in user back to For You.
+    params.set("tab", "browse");
     if (q) params.set("q", q);
     if (sort !== "added") params.set("sort", sort);
     if (p !== 1) params.set("page", String(p));
-    const s = params.toString();
-    return s ? `/films?${s}` : "/films";
+    return `/films?${params.toString()}`;
   }
 
   return (
