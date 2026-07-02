@@ -30,6 +30,9 @@
 //   activity_kind enum: gazing_attending — added by mig 0200
 //   notification_kind enum: film_request_fulfilled — added by mig 0170
 //   notification_kind enum: gazing_rsvp — added by mig 0200
+//   fyp_impressions: entire table — added by mig 0206
+//   fyp_not_interested: entire table — added by mig 0207
+//   record_fyp_impressions: RPC function — added by mig 0206
 //
 // Workflow when regen is needed on the other machine:
 //   1. Run `npm run gen:types` to get fresh output.

@@ -6,7 +6,8 @@ Four files with strict separation:
 
 - `affinity.ts` — builds the user's taste vector from their own signals + coven-borrowed signals + lane preferences. Exports `AffinityVector`, `SIGNAL_WEIGHTS`, `FACET_MULTIPLIERS`, `AFFINITY_CAP`, `DECAY_HALF_LIFE_YEARS`.
 - `score.ts` — pure scoring logic. Takes `ScoreContext` (affinity vector + candidate films + supporting context), returns `ScoredFilm[]` sorted by score. No DB calls.
-- `forYou.ts` — orchestrator. Calls `getUserAffinity`, detects cold-start, fetches candidate pool + tags + context in parallel, calls `scoreFilms`, slices by cursor.
+- `shelves.ts` — pure shelf assembly — omen, placement, diversity guard; consumed only by `getForYouShelves`. No DB calls.
+- `forYou.ts` — orchestrator. Calls `getUserAffinity`, detects cold-start, fetches candidate pool + tags + context in parallel, calls `scoreFilms`, then `buildShelves`/`starterShelf` to assemble the Discover For You tab. Exports `getForYouShelves` (the flat `getForYou` rank-offset feed was deleted on the FYP Discover Shelves branch — `for-you/` route no longer exists, `/for-you` permanently redirects to `/films`).
 - `forYou.ts` is the only file consumers should import.
 
 ## v3 design decisions
@@ -41,6 +42,19 @@ Tuning levers in `score.ts`:
 
 If the FYP feed feels stale or repetitive, tune `AFFINITY_CAP` up. If it feels too predictable, tune `DECAY_HALF_LIFE_YEARS` down. If rare/niche films dominate, check the IDF bounds.
 
-## Cursor shape
+Impression fatigue (v3.5), in `score.ts`:
+- `FATIGUE_FREE_IMPRESSIONS` (3) — impressions before fatigue starts damping a film's score
+- `FATIGUE_K` (0.15) — decay rate applied to excess impressions beyond the free allowance
+- `FATIGUE_FLOOR` (0.35) — minimum multiplier; a great match sinks but never fully vanishes
 
-Rank-offset cursor: a stringified integer (`"20"` = skip first 20 items). Different from the activity feed's `created_at` timestamp cursor — do not mix them.
+Feed feels sticky (same films keep resurfacing) → raise `FATIGUE_K`. Good films disappear too fast after a few skips → raise `FATIGUE_FLOOR`.
+
+## Feedback tables (v3.5)
+
+Two tables feed scoring, added on the FYP Discover Shelves branch:
+- `fyp_impressions` (mig 0206) — raw per-film impression counts, written via the `record_fyp_impressions` RPC; read back into `ScoreContext.impressionsByFilm` for fatigue damping (see above).
+- `fyp_not_interested` (mig 0207) — explicit dismissals; hard-excludes the film via `ScoreContext.notInterestedFilmIds` AND feeds `getUserAversion` at `SIGNAL_WEIGHTS.not_interested = -1.5`, so a dismissal also suppresses score on similar-tagged films, not just the dismissed one.
+
+## Cursor shape (v3, historical)
+
+v3's flat feed used a rank-offset cursor: a stringified integer (`"20"` = skip first 20 items), distinct from the activity feed's `created_at` timestamp cursor. **v3.5 removed this entirely** — `getForYouShelves` has no pagination; shelves are fully materialized in one call (≤ ~60 films total across all shelves).

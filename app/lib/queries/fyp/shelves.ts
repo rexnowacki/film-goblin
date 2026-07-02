@@ -13,7 +13,7 @@ export interface Shelf {
 /** Per-film metadata the shelf assembler needs beyond ScoredFilm. */
 export interface ShelfFilmMeta {
   director: string;
-  addedAt: string;                 // films.added_at ISO
+  addedAt: string;                 // ISO string from films.first_seen_at, aliased as added_at at the query boundary (see forYou.ts)
   primarySubgenre: string | null;  // primary subgenre tag name, if tagged
 }
 
