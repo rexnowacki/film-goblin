@@ -71,6 +71,10 @@ export interface ScoreContext {
    *  scoreOneFilm subtracts λ × aversion-mass from the raw positive score.
    *  Empty vector when user has no thumbs-down ratings. */
   aversion: AffinityVector;
+  /** Films the user explicitly dismissed ("not interested"). Hard-excluded. */
+  notInterestedFilmIds?: Set<string>;
+  /** Raw impression counts per film for fatigue damping. */
+  impressionsByFilm?: Map<string, number>;
 }
 
 // Tags at film_tags.position 1-4 are the editorial visible capsule per the
@@ -94,6 +98,17 @@ const LENGTH_PENALTY_GAMMA = 0.5;
  * match but doesn't completely dominate moderate positive signals.
  */
 const AVERSION_LAMBDA = 0.8;
+
+/**
+ * Impression fatigue (v3.5). The first FATIGUE_FREE_IMPRESSIONS impressions
+ * cost nothing; beyond that the score is multiplied by
+ * max(FATIGUE_FLOOR, 1 / (1 + FATIGUE_K × excess)). A great match sinks
+ * with repeated ignoring but never vanishes.
+ * Feed feels sticky → raise FATIGUE_K. Good films vanish → raise FATIGUE_FLOOR.
+ */
+export const FATIGUE_FREE_IMPRESSIONS = 3;
+export const FATIGUE_K = 0.15;
+export const FATIGUE_FLOOR = 0.35;
 
 /**
  * Maps a FilmTagRow to the facet multiplier it contributes to the affinity
@@ -194,6 +209,13 @@ export function scoreOneFilm(
     covenRating != null && covenRating >= 70 ? covenRating / 100 : 0;
   total += covenContrib;
 
+  // v3.5 impression fatigue — applied last, as a multiplier on the whole score.
+  const impressions = ctx.impressionsByFilm?.get(film.id) ?? 0;
+  const excess = Math.max(0, impressions - FATIGUE_FREE_IMPRESSIONS);
+  if (excess > 0 && total > 0) {
+    total *= Math.max(FATIGUE_FLOOR, 1 / (1 + FATIGUE_K * excess));
+  }
+
   // Pick the strongest contributor for the "why" caption.
   let topReason: ScoredFilm["topReason"];
   const directorMatch = ctx.ownDirectors.has(film.director);
@@ -248,6 +270,7 @@ export function scoreFilms(
   for (const f of films) {
     if (ctx.userWatchedFilmIds.has(f.id)) continue;
     if (ctx.userDislikedFilmIds.has(f.id)) continue;
+    if (ctx.notInterestedFilmIds?.has(f.id)) continue;
 
     const { score, topReason } = scoreOneFilm(f, affinity, ctx);
 

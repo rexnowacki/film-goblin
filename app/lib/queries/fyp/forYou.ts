@@ -3,6 +3,7 @@ import type { Database } from "@/lib/supabase/types";
 import { getUserAffinity, getUserAversion } from "./affinity";
 import { scoreFilms, starterPackScored, type ScoredFilm } from "./score";
 import type { FilmTagRow, TagFacet } from "@/lib/queries/film-tags";
+import { buildShelves, dailySeed, mulberry32, pickOmen, starterShelf, type Shelf, type ShelfFilmMeta } from "./shelves";
 // Note (v3): the calibration helper (calibration.ts) is preserved for future
 // use but no longer wired into the display path. v3 drops the calibrated
 // percentage in favor of rank-percentile bands — see attachMatchBands in
@@ -19,43 +20,28 @@ export interface FilmLite {
   year: number;
   director: string;
   artwork_url: string | null;
+  added_at: string;
 }
 
-export interface ForYouPage {
-  items: ScoredFilm[];
+export interface ForYouShelvesResult {
+  omen: ScoredFilm | null;
+  shelves: Shelf[];
   filmsById: Map<string, FilmLite>;
-  nextCursor: string | null;
-  done: boolean;
+  scoredById: Map<string, ScoredFilm>;
 }
 
 /**
- * Orchestrates the FYP ranked feed for a user.
- *
- * Cold-start branch: if getUserAffinity returns an empty byTag map (no lanes,
- * no own signals, no coven bonds), skip scoring entirely and return the
- * editorial starter pack ordered alphabetically.
- *
- * Score path otherwise: fetches the candidate pool (all available films) +
- * their full tag set (all positions, including hidden FYP tail) + supporting
- * context (watched exclusion set, disliked exclusion set, coven ratings, lane
- * names, directors the user has watched) in parallel, builds ScoreContext,
- * calls scoreFilms, then slices by cursor + limit.
- *
- * Cursor is a stringified rank offset (e.g. "20" means "items starting at
- * rank 20"). This is NOT a created_at cursor like the activity feed.
+ * v3.5 orchestrator: same score pipeline as getForYou, plus impressions +
+ * dismissals context, then shelf assembly. No pagination — shelves are
+ * fully materialized (≤ ~60 films).
  */
-export async function getForYou(
+export async function getForYouShelves(
   client: Client,
   userId: string,
-  opts: { cursor?: string; limit?: number } = {},
-): Promise<ForYouPage> {
-  const limit = opts.limit ?? 20;
-  const offset = opts.cursor ? Number(opts.cursor) : 0;
+): Promise<ForYouShelvesResult> {
+  const now = new Date();
+  const seed = dailySeed(userId, now);
 
-  // ── Cold-start detection ─────────────────────────────────────────────────
-  // getUserAffinity composes own + coven-borrowed + lanes. If the resulting
-  // vector is empty, the user has no signals at all → editorial starter path.
-  // Fetch aversion in parallel — empty vector for users with no dislikes.
   const [affinity, aversion] = await Promise.all([
     getUserAffinity(client, userId),
     getUserAversion(client, userId),
@@ -63,42 +49,34 @@ export async function getForYou(
   const hasAnySignal = Object.keys(affinity.byTag).length > 0;
 
   if (!hasAnySignal) {
-    // Editorial starter pack: skip scoring, return curated list alphabetically.
-    // Exclude films the user has already watched — even cold-start users may
-    // have logged watches without rating (recommended = null) which doesn't
-    // contribute affinity signal but still means "they've seen it."
-    const [startersRes, watchedRes] = await Promise.all([
+    // Cold start: seeded omen from the starter pack + one alphabetical shelf.
+    const [startersRes, watchedRes, dismissedRes] = await Promise.all([
       client
         .from("films")
-        .select("id, title, year, director, artwork_url")
+        .select("id, title, year, director, artwork_url, added_at:first_seen_at")
         .eq("editorial_starter", true)
         .eq("available", true)
         .order("title"),
-      client
-        .from("watched")
-        .select("film_id")
-        .eq("user_id", userId),
+      client.from("watched").select("film_id").eq("user_id", userId),
+      client.from("fyp_not_interested").select("film_id").eq("user_id", userId),
     ]);
-
-    const watchedIds = new Set((watchedRes.data ?? []).map((w) => w.film_id));
-    const starterList = ((startersRes.data ?? []) as FilmLite[]).filter(
-      (f) => !watchedIds.has(f.id),
-    );
+    const excluded = new Set([
+      ...(watchedRes.data ?? []).map((w) => w.film_id),
+      ...(dismissedRes.data ?? []).map((d) => d.film_id),
+    ]);
+    const starterList = ((startersRes.data ?? []) as FilmLite[]).filter((f) => !excluded.has(f.id));
     const filmsById = new Map(starterList.map((f) => [f.id, f]));
-    const allItems = starterPackScored(starterList.map((s) => s.id));
-    const slice = allItems.slice(offset, offset + limit);
-
+    const scored = starterPackScored(starterList.map((s) => s.id));
+    const omen = pickOmen(scored, mulberry32(seed));
+    const rest = scored.filter((s) => s.filmId !== omen?.filmId).map((s) => s.filmId);
     return {
-      items: slice,
+      omen,
+      shelves: rest.length >= 3 ? [starterShelf(rest)] : [],
       filmsById,
-      nextCursor: offset + limit < allItems.length ? String(offset + limit) : null,
-      done: offset + limit >= allItems.length,
+      scoredById: new Map(scored.map((s) => [s.filmId, s])),
     };
   }
 
-  // ── Score path ───────────────────────────────────────────────────────────
-  // Fetch all supporting data in parallel to minimise round-trip count.
-  // Six concurrent queries; tags follow as a 7th after we know the film ids.
   const [
     candidateFilms,
     watchedRows,
@@ -106,45 +84,20 @@ export async function getForYou(
     lanesProfile,
     covenRatings,
     ownWatchDirectors,
+    impressionRows,
+    dismissedRows,
   ] = await Promise.all([
-    // 1. All available films — the candidate pool.
     client
       .from("films")
-      .select("id, title, year, director, artwork_url")
+      .select("id, title, year, director, artwork_url, added_at:first_seen_at")
       .eq("available", true),
-
-    // 2. All films the user has watched (exclusion set).
-    client
-      .from("watched")
-      .select("film_id")
-      .eq("user_id", userId),
-
-    // 3. Films the user explicitly disliked (recommended = false) — hard exclude.
-    client
-      .from("watched")
-      .select("film_id")
-      .eq("user_id", userId)
-      .eq("recommended", false),
-
-    // 4. User's lane_tag_ids for later name resolution.
-    client
-      .from("profiles")
-      .select("lane_tag_ids")
-      .eq("id", userId)
-      .maybeSingle(),
-
-    // 5. Coven ratings view for the tiebreaker bonus signal.
-    client
-      .from("films_with_stats")
-      .select("id, coven_rating_pct")
-      .eq("available", true),
-
-    // 6. Directors the user has watched — separate query so we don't miss
-    //    films that were later set available=false. Defensive per the plan.
-    client
-      .from("watched")
-      .select("film:films!inner(director)")
-      .eq("user_id", userId),
+    client.from("watched").select("film_id").eq("user_id", userId),
+    client.from("watched").select("film_id").eq("user_id", userId).eq("recommended", false),
+    client.from("profiles").select("lane_tag_ids").eq("id", userId).maybeSingle(),
+    client.from("films_with_stats").select("id, coven_rating_pct").eq("available", true),
+    client.from("watched").select("film:films!inner(director)").eq("user_id", userId),
+    client.from("fyp_impressions").select("film_id, impressions").eq("user_id", userId),
+    client.from("fyp_not_interested").select("film_id").eq("user_id", userId),
   ]);
 
   const filmsList = (candidateFilms.data ?? []) as FilmLite[];
@@ -212,54 +165,53 @@ export async function getForYou(
     idfByTag.set(name, Math.max(IDF_FLOOR, Math.min(IDF_CEIL, raw)));
   }
 
-  // ── Build ScoreContext ───────────────────────────────────────────────────
+  const covenRatingByFilm = new Map(
+    (covenRatings.data ?? [])
+      .filter((r): r is { id: string; coven_rating_pct: number } =>
+        r.id != null && r.coven_rating_pct != null)
+      .map((r) => [r.id, r.coven_rating_pct]),
+  );
+
   const ctx = {
-    userWatchedFilmIds: new Set(
-      (watchedRows.data ?? []).map((w) => w.film_id),
-    ),
-    userDislikedFilmIds: new Set(
-      (dislikedRows.data ?? []).map((w) => w.film_id),
-    ),
-    covenRatingByFilm: new Map(
-      (covenRatings.data ?? [])
-        .filter(
-          (r): r is { id: string; coven_rating_pct: number } =>
-            r.id != null && r.coven_rating_pct != null,
-        )
-        .map((r) => [r.id, r.coven_rating_pct]),
-    ),
+    userWatchedFilmIds: new Set((watchedRows.data ?? []).map((w) => w.film_id)),
+    userDislikedFilmIds: new Set((dislikedRows.data ?? []).map((w) => w.film_id)),
+    covenRatingByFilm,
     ownDirectors: new Set(
       (ownWatchDirectors.data ?? [])
-        .map(
-          (r) =>
-            (r as unknown as { film: { director: string } }).film.director,
-        )
+        .map((r) => (r as unknown as { film: { director: string } }).film.director)
         .filter(Boolean),
     ),
     lanesByTag,
     idfByTag,
     aversion,
+    notInterestedFilmIds: new Set((dismissedRows.data ?? []).map((d) => d.film_id)),
+    impressionsByFilm: new Map(
+      (impressionRows.data ?? []).map((r) => [r.film_id, r.impressions]),
+    ),
   };
 
-  // ── Score candidates ─────────────────────────────────────────────────────
   const scored = scoreFilms(
-    filmsList.map((f) => ({
-      id: f.id,
-      director: f.director,
-      tags: tagsByFilmId.get(f.id) ?? [],
-    })),
+    filmsList.map((f) => ({ id: f.id, director: f.director, tags: tagsByFilmId.get(f.id) ?? [] })),
     affinity,
     ctx,
   );
 
-  // v3: matchBand is already populated by scoreFilms (via attachMatchBands).
-  // matchPercent/matchVerbal stay null in v3 — see header note on calibration.
-  const slice = scored.slice(offset, offset + limit);
+  const metaByFilm = new Map<string, ShelfFilmMeta>(
+    filmsList.map((f) => {
+      const primary = (tagsByFilmId.get(f.id) ?? []).find(
+        (t) => t.type === "subgenre" && t.is_primary,
+      );
+      return [f.id, {
+        director: f.director,
+        addedAt: f.added_at,
+        primarySubgenre: primary?.name ?? null,
+      }];
+    }),
+  );
 
-  return {
-    items: slice,
-    filmsById,
-    nextCursor: offset + limit < scored.length ? String(offset + limit) : null,
-    done: offset + limit >= scored.length,
-  };
+  const { omen, shelves } = buildShelves({
+    scored, metaByFilm, affinity, covenRatingByFilm, seed, now,
+  });
+
+  return { omen, shelves, filmsById, scoredById: new Map(scored.map((s) => [s.filmId, s])) };
 }

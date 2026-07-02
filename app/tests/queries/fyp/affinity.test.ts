@@ -36,6 +36,7 @@ interface TableData {
   activity?: Array<{ payload: Record<string, unknown>; created_at?: string | null }>;
   activity_reactions?: Array<unknown>;
   film_tags?: Array<unknown>;
+  fyp_not_interested?: Array<{ film_id: string; created_at?: string | null }>;
 }
 
 /**
@@ -90,6 +91,8 @@ function makeAffinityClient(perTable: TableData) {
         return eqChain({ data: perTable.activity ?? [], error: null });
       if (table === "activity_reactions")
         return eqChain({ data: perTable.activity_reactions ?? [], error: null });
+      if (table === "fyp_not_interested")
+        return eqChain({ data: perTable.fyp_not_interested ?? [], error: null });
       if (table === "film_tags") {
         // film_tags chain: .select().in() → Promise
         return chain({ data: perTable.film_tags ?? [], error: null });
@@ -389,6 +392,35 @@ describe("getUserAversion", () => {
     });
     const result = await getUserAversion(client, "user-1");
     expect(result.byTag["folk horror"]).toBe(AFFINITY_CAP);
+  });
+
+  it("dismissed films' tags add aversion at the not_interested weight", async () => {
+    const nowIso = new Date().toISOString();
+    const client = makeAffinityClient({
+      watched: [],
+      fyp_not_interested: [{ film_id: "f1", created_at: nowIso }],
+      film_tags: [filmTag("f1", "gore", "subgenre", true)],
+    });
+    const v = await getUserAversion(client, "u1");
+    const expected = Math.abs(SIGNAL_WEIGHTS.not_interested) * FACET_MULTIPLIERS.subgenre_primary;
+    expect(v.byTag["gore"]).toBeCloseTo(expected, 5);
+  });
+
+  it("stacks with watch_disliked on the same tag", async () => {
+    const nowIso = new Date().toISOString();
+    const client = makeAffinityClient({
+      watched: [{ film_id: "f1", recommended: false, created_at: nowIso }],
+      fyp_not_interested: [{ film_id: "f2", created_at: nowIso }],
+      film_tags: [
+        filmTag("f1", "gore", "subgenre", true),
+        filmTag("f2", "gore", "subgenre", true),
+      ],
+    });
+    const v = await getUserAversion(client, "u1");
+    const expected =
+      (Math.abs(SIGNAL_WEIGHTS.watch_disliked) + Math.abs(SIGNAL_WEIGHTS.not_interested)) *
+      FACET_MULTIPLIERS.subgenre_primary;
+    expect(v.byTag["gore"]).toBeCloseTo(expected, 5);
   });
 });
 

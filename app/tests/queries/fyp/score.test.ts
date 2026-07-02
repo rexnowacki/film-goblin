@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { scoreFilms, starterPackScored } from "@/lib/queries/fyp/score";
+import { scoreFilms, scoreOneFilm, starterPackScored, FATIGUE_FREE_IMPRESSIONS, FATIGUE_K, FATIGUE_FLOOR } from "@/lib/queries/fyp/score";
 import type { FilmInput, ScoreContext } from "@/lib/queries/fyp/score";
 import type { AffinityVector } from "@/lib/queries/fyp/affinity";
+import type { FilmTagRow } from "@/lib/queries/film-tags";
 
 // ---------------------------------------------------------------------------
 // Test fixture helpers
@@ -561,5 +562,60 @@ describe("scoreFilms — aversion", () => {
     expect(result).toHaveLength(1);
     const expected = 4 / Math.sqrt(2) - 0.8 * (3 / Math.sqrt(2));
     expect(result[0].score).toBeCloseTo(expected);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// v3.5 dismissal exclusion + impression fatigue
+// ---------------------------------------------------------------------------
+
+function baseCtx(over: Partial<ScoreContext> = {}): ScoreContext {
+  return {
+    userWatchedFilmIds: new Set<string>(),
+    userDislikedFilmIds: new Set<string>(),
+    covenRatingByFilm: new Map<string, number>(),
+    ownDirectors: new Set<string>(),
+    lanesByTag: new Set<string>(),
+    idfByTag: new Map<string, number>(),
+    aversion: { byTag: {} },
+    ...over,
+  };
+}
+
+const tag = (name: string): FilmTagRow =>
+  ({ id: "t-" + name, name, type: "subgenre", position: 1, is_primary: true } as const);
+
+const filmInput = (id: string): FilmInput => ({ id, director: "D", tags: [tag("folk-horror")] });
+
+const affinity: AffinityVector = { byTag: { "folk-horror": 10 } };
+
+describe("v3.5 dismissal exclusion", () => {
+  it("excludes not-interested films from scoreFilms output", () => {
+    const out = scoreFilms([filmInput("f1"), filmInput("f2")], affinity,
+      baseCtx({ notInterestedFilmIds: new Set(["f1"]) }));
+    expect(out.map(s => s.filmId)).toEqual(["f2"]);
+  });
+});
+
+describe("v3.5 impression fatigue", () => {
+  it("first FATIGUE_FREE_IMPRESSIONS impressions cost nothing", () => {
+    const fresh = scoreOneFilm(filmInput("f1"), affinity, baseCtx()).score;
+    const shown = scoreOneFilm(filmInput("f1"), affinity,
+      baseCtx({ impressionsByFilm: new Map([["f1", FATIGUE_FREE_IMPRESSIONS]]) })).score;
+    expect(shown).toBe(fresh);
+  });
+
+  it("damps score beyond the free threshold", () => {
+    const fresh = scoreOneFilm(filmInput("f1"), affinity, baseCtx()).score;
+    const shown = scoreOneFilm(filmInput("f1"), affinity,
+      baseCtx({ impressionsByFilm: new Map([["f1", FATIGUE_FREE_IMPRESSIONS + 4]]) })).score;
+    expect(shown).toBeCloseTo(fresh * (1 / (1 + FATIGUE_K * 4)), 10);
+  });
+
+  it("never damps below FATIGUE_FLOOR", () => {
+    const fresh = scoreOneFilm(filmInput("f1"), affinity, baseCtx()).score;
+    const buried = scoreOneFilm(filmInput("f1"), affinity,
+      baseCtx({ impressionsByFilm: new Map([["f1", 500]]) })).score;
+    expect(buried).toBeCloseTo(fresh * FATIGUE_FLOOR, 10);
   });
 });

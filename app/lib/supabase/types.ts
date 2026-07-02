@@ -30,6 +30,9 @@
 //   activity_kind enum: gazing_attending — added by mig 0200
 //   notification_kind enum: film_request_fulfilled — added by mig 0170
 //   notification_kind enum: gazing_rsvp — added by mig 0200
+//   fyp_impressions: entire table — added by mig 0206
+//   fyp_not_interested: entire table — added by mig 0207
+//   record_fyp_impressions: RPC function — added by mig 0206
 //
 // Workflow when regen is needed on the other machine:
 //   1. Run `npm run gen:types` to get fresh output.
@@ -560,6 +563,48 @@ export type Database = {
           trailer_verified?: boolean
           trailer_youtube_id?: string | null
           year?: number
+        }
+        Relationships: []
+      }
+      fyp_impressions: {
+        Row: {
+          user_id: string
+          film_id: string
+          impressions: number
+          first_shown_at: string
+          last_shown_at: string
+        }
+        Insert: {
+          user_id: string
+          film_id: string
+          impressions?: number
+          first_shown_at?: string
+          last_shown_at?: string
+        }
+        Update: {
+          user_id?: string
+          film_id?: string
+          impressions?: number
+          first_shown_at?: string
+          last_shown_at?: string
+        }
+        Relationships: []
+      }
+      fyp_not_interested: {
+        Row: {
+          user_id: string
+          film_id: string
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          film_id: string
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          film_id?: string
+          created_at?: string
         }
         Relationships: []
       }
@@ -1751,6 +1796,10 @@ export type Database = {
       get_other_watchers_for_film: {
         Args: { p_user_id: string; p_film_id: string }
         Returns: { id: string; username: string; avatar_url: string | null }[]
+      }
+      record_fyp_impressions: {
+        Args: { p_film_ids: string[] }
+        Returns: undefined
       }
     }
     Enums: {
