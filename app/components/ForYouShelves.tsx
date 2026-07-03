@@ -109,6 +109,9 @@ export default function ForYouShelves({
             film={omenFilm}
             scored={omen}
             dismissed={dismissed.has(omen.filmId)}
+            onWatchlist={watchlistSet.has(omen.filmId)}
+            inLibrary={librarySet.has(omen.filmId)}
+            sharerUsername={sharerUsername}
             onDismiss={onDismiss}
             onUndo={onUndo}
           />
