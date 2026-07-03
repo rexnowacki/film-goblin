@@ -3,6 +3,7 @@
 import Link from "next/link";
 import FilmPoster from "./FilmPoster";
 import MatchPill from "./MatchPill";
+import PosterQuickAdd from "./PosterQuickAdd";
 import type { Shelf } from "@/lib/queries/fyp/shelves";
 import type { ScoredFilm } from "@/lib/queries/fyp/score";
 import type { FilmLite } from "@/lib/queries/fyp/forYou";
@@ -15,10 +16,14 @@ interface Props {
   onDismiss: (filmId: string) => void;
   onUndo: (filmId: string) => void;
   registerCard: (el: HTMLElement | null, filmId: string) => void;
+  watchlistIds: Set<string>;
+  libraryIds: Set<string>;
+  sharerUsername: string | null;
 }
 
 export default function ShelfCarousel({
   shelf, filmsById, scoredById, dismissed, onDismiss, onUndo, registerCard,
+  watchlistIds, libraryIds, sharerUsername,
 }: Props) {
   const visible = shelf.filmIds.filter(id => filmsById.has(id));
   if (visible.length === 0) return null;
@@ -52,10 +57,17 @@ export default function ShelfCarousel({
             <div key={filmId} ref={el => registerCard(el, filmId)} data-film-id={filmId}
               style={{ flex: "0 0 140px", scrollSnapAlign: "start", position: "relative" }}>
               <Link prefetch={false} href={`/film/${filmId}`} style={{ textDecoration: "none", color: "inherit" }}>
-                <div style={{ position: "relative" }}>
+                <PosterQuickAdd
+                  filmId={filmId}
+                  initialOnWatchlist={watchlistIds.has(filmId)}
+                  initialInLibrary={libraryIds.has(filmId)}
+                  filmTitle={film.title}
+                  filmYear={film.year}
+                  sharerUsername={sharerUsername}
+                >
                   <FilmPoster film={film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
                   {scored && <MatchPill band={scored.matchBand} covenFavorite={scored.covenFavorite} />}
-                </div>
+                </PosterQuickAdd>
                 <div className="head" style={{ fontSize: 14, lineHeight: 1.1, marginTop: 8 }}>{film.title}</div>
                 <div className="caps" style={{ fontSize: 9, color: "var(--muted)", marginTop: 3 }}>{film.year}</div>
               </Link>
@@ -64,10 +76,11 @@ export default function ShelfCarousel({
                 aria-label={`Not interested in ${film.title}`}
                 onClick={e => { e.preventDefault(); onDismiss(filmId); }}
                 style={{
-                  position: "absolute", top: 4, right: 4, width: 22, height: 22,
+                  position: "absolute", top: 4, left: 4, width: 22, height: 22,
                   background: "rgba(10,10,10,0.75)", color: "var(--bone)",
                   border: "1px solid var(--muted)", cursor: "pointer",
                   fontSize: 11, lineHeight: 1, display: "grid", placeItems: "center",
+                  zIndex: 2,
                 }}
               >
                 ✕

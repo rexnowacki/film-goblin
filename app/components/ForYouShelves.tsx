@@ -17,11 +17,18 @@ interface Props {
   shelves: Shelf[];
   filmsEntries: Array<[string, FilmLite]>;
   scoredEntries: Array<[string, ScoredFilm]>;
+  watchlistIds: string[];
+  libraryIds: string[];
+  sharerUsername: string | null;
 }
 
-export default function ForYouShelves({ omen, shelves, filmsEntries, scoredEntries }: Props) {
+export default function ForYouShelves({
+  omen, shelves, filmsEntries, scoredEntries, watchlistIds, libraryIds, sharerUsername,
+}: Props) {
   const filmsById = useMemo(() => new Map(filmsEntries), [filmsEntries]);
   const scoredById = useMemo(() => new Map(scoredEntries), [scoredEntries]);
+  const watchlistSet = useMemo(() => new Set(watchlistIds), [watchlistIds]);
+  const librarySet = useMemo(() => new Set(libraryIds), [libraryIds]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
@@ -117,6 +124,9 @@ export default function ForYouShelves({ omen, shelves, filmsEntries, scoredEntri
           onDismiss={onDismiss}
           onUndo={onUndo}
           registerCard={registerCard}
+          watchlistIds={watchlistSet}
+          libraryIds={librarySet}
+          sharerUsername={sharerUsername}
         />
       ))}
     </>
