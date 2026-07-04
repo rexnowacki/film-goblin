@@ -42,7 +42,7 @@ export default function ShareFilmButton({ filmId, title, year, sharerUsername }:
   }
 
   return (
-    <button type="button" className="btn btn-sm" onClick={share}>
+    <button type="button" className="btn btn-outline btn-lg" onClick={share}>
       ✦ Share
     </button>
   );
