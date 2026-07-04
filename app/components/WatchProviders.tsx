@@ -62,13 +62,15 @@ function ProviderPill({ provider }: { provider: FilmWatchProvider }) {
   );
 }
 
-function ProviderGroup({ label, providers }: { label: string; providers: FilmWatchProvider[] }) {
+function ProviderGroup({ label, providers }: { label: string | null; providers: FilmWatchProvider[] }) {
   if (providers.length === 0) return null;
   return (
     <div>
-      <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginBottom: 8 }}>
-        {label}
-      </div>
+      {label && (
+        <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginBottom: 8 }}>
+          {label}
+        </div>
+      )}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {providers.map((provider) => (
           <ProviderPill key={`${provider.category}:${provider.provider_id}`} provider={provider} />
@@ -92,10 +94,12 @@ export default function WatchProviders({ providers }: { providers: FilmWatchProv
         Streaming On
       </div>
       <div style={{ display: "grid", gap: 16 }}>
+        {/* With a single group the label would just echo the "Streaming On"
+            eyebrow above — omit it. */}
         {(["flatrate", "free", "ads"] as const).map((category) => (
           <ProviderGroup
             key={category}
-            label={CATEGORY_LABELS[category]}
+            label={Object.keys(providersByCategory).length > 1 ? CATEGORY_LABELS[category] : null}
             providers={providersByCategory[category] ?? []}
           />
         ))}

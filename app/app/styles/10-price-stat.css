@@ -72,6 +72,21 @@
   color: var(--muted);
   margin-top: 8px;
 }
+/* Full-width stepped sparkline strip under both columns. Subordinate to the
+   stat split above — do not grow this into a labeled chart (the old inline
+   SVG chart was deliberately replaced by the split block). */
+.price-stat-spark {
+  grid-column: 1 / -1;
+  border-top: 1px solid #222;
+  padding-top: 18px;
+  margin-top: 6px;
+}
+.price-stat-spark svg {
+  display: block;
+  width: 100%;
+  height: 44px;
+  opacity: 0.8;
+}
 @media (max-width: 720px) {
   .price-stat-block {
     grid-template-columns: 1fr;

@@ -97,7 +97,7 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers, topCov
   }
 
   if (!open) {
-    return <button className="btn btn-lg" onClick={() => setOpen(true)}>✦ Recommend To A Coven Member</button>;
+    return <button className="btn btn-outline btn-lg" onClick={() => setOpen(true)}>✦ Recommend To A Coven Member</button>;
   }
 
   const title = (

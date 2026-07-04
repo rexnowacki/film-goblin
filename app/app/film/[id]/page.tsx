@@ -26,6 +26,7 @@ import ShowtimesSheet from "@/components/ShowtimesSheet";
 import TrailerButton from "@/components/TrailerButton";
 import SharerWatchPin from "@/components/SharerWatchPin";
 import FilmCTABanner from "@/components/FilmCTABanner";
+import FilmDescription from "@/components/FilmDescription";
 import FilmCastStrip from "@/components/FilmCastStrip";
 import { compactCount } from "@/lib/format";
 import { getFilmTags } from "@/lib/queries/film-tags";
@@ -92,6 +93,10 @@ export default async function FilmDetailPage({
     getFilmTags(supabase, id),
     fromUsername ? getSharerWatchForFilm(fromUsername, id) : Promise.resolve(null),
   ]);
+  // Latest capture = current price (history is oldest→newest; PriceStatBlock
+  // relies on the same ordering).
+  const currentPrice = history.length > 0 ? Number(history[history.length - 1].price_usd) : null;
+
   const [covenMembers, onList, owned, watchCount, topCovenMemberIds, myProfile, covenWatchers, otherWatchersResult] = user
     ? await Promise.all([
         getMyCovenMembers(supabase, user.id),
@@ -156,11 +161,7 @@ export default async function FilmDetailPage({
                 <SharerWatchPin watch={sharerWatch} />
               </div>
             )}
-            {film.description && (
-              <p style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontStyle: "italic", lineHeight: 1.4, margin: "0 0 28px", maxWidth: 640 }}>
-                &ldquo;{film.description}&rdquo;
-              </p>
-            )}
+            {film.description && <FilmDescription text={film.description} />}
             <div style={{ marginBottom: 28 }}>
               <FilmTagsRow visible={filmTags.visible} director={film.director} />
             </div>
@@ -199,7 +200,9 @@ export default async function FilmDetailPage({
               )}
               {film.itunes_url && (
                 <a href={film.itunes_url} target="_blank" rel="noreferrer" className="btn btn-lg">
-                  Buy on Apple TV →
+                  {currentPrice != null
+                    ? `Buy on Apple TV · $${currentPrice.toFixed(2)} →`
+                    : "Buy on Apple TV →"}
                 </a>
               )}
             </div>
@@ -238,29 +241,36 @@ export default async function FilmDetailPage({
         </div>
       </section>
 
-      {/* Verdict band — CovenScore + watchers, side-by-side, separate section. */}
-      {(((film.coven_rating_count ?? 0) > 0) || (user && (covenWatchers.length > 0 || otherWatchersResult.totalCount > 0))) && (
-        <section style={{ background: "var(--void-2)", color: "var(--bone)", borderBottom: "3px solid var(--void)", padding: "40px 0" }}>
-          <div className="container-wide stackable" style={{ "--stack-template": "1fr 1fr", "--stack-gap": "40px", alignItems: "start" } as React.CSSProperties}>
-            {(film.coven_rating_count ?? 0) > 0 ? (
-              <div>
-                <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 12 }}>The Verdict</div>
-                <CovenScore pct={film.coven_rating_pct ?? null} count={film.coven_rating_count ?? 0} />
-              </div>
-            ) : <div />}
-            {user && (covenWatchers.length > 0 || otherWatchersResult.totalCount > 0) ? (
-              <div>
-                <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 12 }}>Who&rsquo;s Watched</div>
-                <FilmWatchersStrip
-                  covenWatchers={covenWatchers}
-                  otherWatchers={otherWatchersResult.users}
-                  otherCount={otherWatchersResult.totalCount}
-                />
-              </div>
-            ) : <div />}
-          </div>
-        </section>
-      )}
+      {/* Verdict band — CovenScore + watchers, side-by-side, separate section.
+          Collapses to one column when only one of the two has content, so a
+          signed-out visitor never sees a half-empty room. */}
+      {(() => {
+        const hasVerdict = (film.coven_rating_count ?? 0) > 0;
+        const hasWatchers = Boolean(user) && (covenWatchers.length > 0 || otherWatchersResult.totalCount > 0);
+        if (!hasVerdict && !hasWatchers) return null;
+        return (
+          <section style={{ background: "var(--void-2)", color: "var(--bone)", borderBottom: "3px solid var(--void)", padding: "40px 0" }}>
+            <div className="container-wide stackable" style={{ "--stack-template": hasVerdict && hasWatchers ? "1fr 1fr" : "1fr", "--stack-gap": "40px", alignItems: "start" } as React.CSSProperties}>
+              {hasVerdict && (
+                <div>
+                  <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 12 }}>The Verdict</div>
+                  <CovenScore pct={film.coven_rating_pct ?? null} count={film.coven_rating_count ?? 0} />
+                </div>
+              )}
+              {hasWatchers && (
+                <div>
+                  <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 12 }}>Who&rsquo;s Watched</div>
+                  <FilmWatchersStrip
+                    covenWatchers={covenWatchers}
+                    otherWatchers={otherWatchersResult.users}
+                    otherCount={otherWatchersResult.totalCount}
+                  />
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      })()}
 
       <section style={{ background: "var(--bone)", color: "var(--void)", padding: "48px 0", borderBottom: "3px solid var(--void)" }} className="grain-light">
         <div className="container-wide">
@@ -278,15 +288,12 @@ export default async function FilmDetailPage({
         </div>
       </section>
 
-      <section style={{ background: "var(--void)", color: "var(--bone)", padding: "48px 0" }}>
-        <div className="container-wide">
-          <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 14 }}>Editorial Reviews</div>
-          {reviews.length === 0 ? (
-            <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>
-              No reviews yet.
-            </div>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+      {/* Hidden entirely when empty — a "No reviews yet." room serves no one. */}
+      {reviews.length > 0 && (
+        <section style={{ background: "var(--void)", color: "var(--bone)", padding: "48px 0" }}>
+          <div className="container-wide">
+            <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 14 }}>Editorial Reviews</div>
+            <div className="stackable" style={{ "--stack-template": "1fr 1fr", "--stack-gap": "24px", display: "grid" } as React.CSSProperties}>
               {reviews.map(r => (
                 <article key={r.id} style={{ background: "var(--void-2)", border: "1px solid #333", padding: 22 }}>
                   <h3 className="head" style={{ fontSize: 24, marginBottom: 8 }}>{r.title}</h3>
@@ -294,9 +301,9 @@ export default async function FilmDetailPage({
                 </article>
               ))}
             </div>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
