@@ -75,3 +75,21 @@ no migrations.
 
 App-only change. No migrations, no deploy-order concern. Normal PR → merge → deploy
 from repo root.
+
+## Amendment (2026-07-03, post-ship)
+
+Owner reviewed the shipped UI: the corner dismiss ✕ "looks bad." Decision 1 is
+superseded — the corner ✕ is removed entirely from both surfaces, and "Not
+interested" folds into the quick-add menus instead:
+
+- `PosterQuickAdd` gains an optional `onNotInterested?: (() => void) | null`
+  prop (Browse passes nothing — unaffected). When set, a "✕ Not Interested"
+  pill renders in the desktop hover menu and a "✕ Not interested" row in the
+  mobile bottom sheet, both closing their surface before invoking the callback.
+- `ShelfCarousel` and `DailyOmenHero` drop their corner ✕ buttons and pass
+  `onNotInterested={() => onDismiss(filmId)}`.
+- The dismissed-state "Hidden — undo" tiles are unchanged.
+- The `.poster-quick-add .match-pill { right: 44px }` rule stays (the ⋯ button
+  still owns the top-right corner).
+
+Dismissal is now two taps instead of one — accepted trade for a cleaner poster.
