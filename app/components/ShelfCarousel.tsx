@@ -64,6 +64,7 @@ export default function ShelfCarousel({
                   filmTitle={film.title}
                   filmYear={film.year}
                   sharerUsername={sharerUsername}
+                  onNotInterested={() => onDismiss(filmId)}
                 >
                   <FilmPoster film={film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
                   {scored && <MatchPill band={scored.matchBand} covenFavorite={scored.covenFavorite} />}
@@ -71,20 +72,6 @@ export default function ShelfCarousel({
                 <div className="head" style={{ fontSize: 14, lineHeight: 1.1, marginTop: 8 }}>{film.title}</div>
                 <div className="caps" style={{ fontSize: 9, color: "var(--muted)", marginTop: 3 }}>{film.year}</div>
               </Link>
-              <button
-                type="button"
-                aria-label={`Not interested in ${film.title}`}
-                onClick={e => { e.preventDefault(); onDismiss(filmId); }}
-                style={{
-                  position: "absolute", top: 4, left: 4, width: 22, height: 22,
-                  background: "rgba(10,10,10,0.75)", color: "var(--bone)",
-                  border: "1px solid var(--muted)", cursor: "pointer",
-                  fontSize: 11, lineHeight: 1, display: "grid", placeItems: "center",
-                  zIndex: 2,
-                }}
-              >
-                ✕
-              </button>
             </div>
           );
         })}

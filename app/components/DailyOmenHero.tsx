@@ -49,6 +49,7 @@ export default function DailyOmenHero({ film, scored, dismissed, onWatchlist, in
         filmTitle={film.title}
         filmYear={film.year}
         sharerUsername={sharerUsername}
+        onNotInterested={() => onDismiss(film.id)}
       >
         <FilmPoster film={film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
         <MatchPill band={scored.matchBand} covenFavorite={scored.covenFavorite} />
@@ -65,20 +66,6 @@ export default function DailyOmenHero({ film, scored, dismissed, onWatchlist, in
           The goblin consulted the entrails. Today they point here.
         </div>
       </div>
-      <button
-        type="button"
-        aria-label={`Not interested in ${film.title}`}
-        onClick={e => { e.preventDefault(); onDismiss(film.id); }}
-        style={{
-          position: "absolute", top: 8, left: 8, width: 26, height: 26,
-          background: "rgba(10,10,10,0.75)", color: "var(--bone)",
-          border: "1px solid var(--muted)", cursor: "pointer",
-          fontSize: 13, lineHeight: 1, display: "grid", placeItems: "center",
-          zIndex: 2,
-        }}
-      >
-        ✕
-      </button>
     </Link>
   );
 }

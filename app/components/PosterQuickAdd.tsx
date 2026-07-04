@@ -22,6 +22,9 @@ interface Props {
   filmTitle?: string;
   filmYear?: number;
   sharerUsername?: string | null;
+  /** When set, adds a "Not interested" action to the desktop menu and mobile
+   *  sheet (used on For You surfaces to dismiss a recommendation). */
+  onNotInterested?: (() => void) | null;
   children: ReactNode; // the FilmPoster (or wrapping element) the menu sits inside
 }
 
@@ -50,6 +53,7 @@ export default function PosterQuickAdd({
   filmTitle,
   filmYear,
   sharerUsername = null,
+  onNotInterested = null,
   children,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -169,6 +173,15 @@ export default function PosterQuickAdd({
           >
             {inLibrary ? "✓ In Library" : "+ Library"}
           </button>
+          {onNotInterested && (
+            <button
+              type="button"
+              className="poster-quick-add__pill"
+              onClick={(e) => { stopAndPrevent(e); setOpen(false); onNotInterested(); }}
+            >
+              ✕ Not Interested
+            </button>
+          )}
         </div>
       )}
 
@@ -228,6 +241,15 @@ export default function PosterQuickAdd({
               onClick={clickShare}
             >
               ✦ Share film
+            </button>
+          )}
+          {onNotInterested && (
+            <button
+              type="button"
+              className="poster-action-row"
+              onClick={(e) => { stopAndPrevent(e); setSheetOpen(false); onNotInterested(); }}
+            >
+              ✕ Not interested
             </button>
           )}
         </div>
