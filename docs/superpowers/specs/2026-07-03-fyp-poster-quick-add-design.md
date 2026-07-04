@@ -93,3 +93,13 @@ interested" folds into the quick-add menus instead:
   still owns the top-right corner).
 
 Dismissal is now two taps instead of one — accepted trade for a cleaner poster.
+
+## Amendment 2 (2026-07-03, PR #172)
+
+Decision 3's premise is superseded: the FYP pool now DOES exclude watchlisted and
+grimoire films (`ScoreContext.userSavedFilmIds`, applied in both the scored feed
+and the cold-start starter pack) — the owner ruled that already-claimed films
+shouldn't be recommended. The honest-✓ plumbing from decision 3 stays: it is
+still correct for mid-session adds (a film quick-added from a shelf keeps its ✓
+until the next render), just rarely exercised now. Saves continue to feed the
+affinity vector (`watchlist_added` +0.75, `library_added` +1.5).
