@@ -63,14 +63,16 @@ export async function listFilmSeries(): Promise<FilmSeriesSummary[]> {
 }
 
 async function resolveSeriesId(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  c: { from: (t: string) => any },
   fields: FilmFormFields,
 ): Promise<{ ok: true; id: string | null } | { ok: false; error: string }> {
   if (fields.series_id === "__new__") {
     const name = fields.series_new_name.trim();
     if (!name) return { ok: false, error: "New series name is required." };
-    const { data, error } = await c
+    // film_series has no authenticated write policy (mig 0177) — inserts
+    // must go through the service role, unlike films (mig 0118 admin policy).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const svc = serviceRoleClient() as unknown as { from: (t: string) => any };
+    const { data, error } = await svc
       .from("film_series")
       .insert({ name })
       .select("id")
@@ -187,7 +189,7 @@ export async function adminCreateFilm(
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const c = supabase as unknown as { from: (t: string) => any };
-  const seriesRes = await resolveSeriesId(c, fields);
+  const seriesRes = await resolveSeriesId(fields);
   if (!seriesRes.ok) return seriesRes;
   const trailer = await lookupTrailerForFilm({
     tmdb_id: fields.tmdb_id,
@@ -291,9 +293,7 @@ export async function adminUpdateFilm(id: string, fields: FilmFormFields): Promi
   const err = validateForm(fields);
   if (err) return { ok: false, error: err };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const c = supabase as unknown as { from: (t: string) => any };
-  const seriesRes = await resolveSeriesId(c, fields);
+  const seriesRes = await resolveSeriesId(fields);
   if (!seriesRes.ok) return seriesRes;
   const { data: previous, error: previousError } = await supabase
     .from("films")
