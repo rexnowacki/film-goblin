@@ -54,13 +54,22 @@ export default async function FilmsPage({
 
 async function ForYouSection({ userId }: { userId: string }) {
   const supabase = await createClient();
-  const { omen, shelves, filmsById, scoredById } = await getForYouShelves(supabase, userId);
+  const [shelvesResult, watchlistRes, libraryRes, profileRes] = await Promise.all([
+    getForYouShelves(supabase, userId),
+    supabase.from("watchlists").select("film_id").eq("user_id", userId),
+    supabase.from("library").select("film_id").eq("user_id", userId),
+    supabase.from("profiles").select("username").eq("id", userId).maybeSingle(),
+  ]);
+  const { omen, shelves, filmsById, scoredById } = shelvesResult;
   return (
     <ForYouShelves
       omen={omen}
       shelves={shelves}
       filmsEntries={Array.from(filmsById.entries())}
       scoredEntries={Array.from(scoredById.entries())}
+      watchlistIds={(watchlistRes.data ?? []).map((r) => r.film_id)}
+      libraryIds={(libraryRes.data ?? []).map((r) => r.film_id)}
+      sharerUsername={profileRes.data?.username ?? null}
     />
   );
 }

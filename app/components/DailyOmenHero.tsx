@@ -3,6 +3,7 @@
 import Link from "next/link";
 import FilmPoster from "./FilmPoster";
 import MatchPill from "./MatchPill";
+import PosterQuickAdd from "./PosterQuickAdd";
 import type { ScoredFilm } from "@/lib/queries/fyp/score";
 import type { FilmLite } from "@/lib/queries/fyp/forYou";
 
@@ -10,11 +11,14 @@ interface Props {
   film: FilmLite;
   scored: ScoredFilm;
   dismissed: boolean;
+  onWatchlist: boolean;
+  inLibrary: boolean;
+  sharerUsername: string | null;
   onDismiss: (filmId: string) => void;
   onUndo: (filmId: string) => void;
 }
 
-export default function DailyOmenHero({ film, scored, dismissed, onDismiss, onUndo }: Props) {
+export default function DailyOmenHero({ film, scored, dismissed, onWatchlist, inLibrary, sharerUsername, onDismiss, onUndo }: Props) {
   if (dismissed) {
     return (
       <div style={{
@@ -38,10 +42,17 @@ export default function DailyOmenHero({ film, scored, dismissed, onDismiss, onUn
       border: "2px solid var(--accent)", padding: 16, marginBottom: 28,
       position: "relative",
     } as React.CSSProperties}>
-      <div style={{ position: "relative" }}>
+      <PosterQuickAdd
+        filmId={film.id}
+        initialOnWatchlist={onWatchlist}
+        initialInLibrary={inLibrary}
+        filmTitle={film.title}
+        filmYear={film.year}
+        sharerUsername={sharerUsername}
+      >
         <FilmPoster film={film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
         <MatchPill band={scored.matchBand} covenFavorite={scored.covenFavorite} />
-      </div>
+      </PosterQuickAdd>
       <div>
         <div className="caps" style={{ fontSize: 10, color: "var(--accent)", letterSpacing: "0.1em" }}>
           Daily Omen
@@ -59,10 +70,11 @@ export default function DailyOmenHero({ film, scored, dismissed, onDismiss, onUn
         aria-label={`Not interested in ${film.title}`}
         onClick={e => { e.preventDefault(); onDismiss(film.id); }}
         style={{
-          position: "absolute", top: 8, right: 8, width: 26, height: 26,
+          position: "absolute", top: 8, left: 8, width: 26, height: 26,
           background: "rgba(10,10,10,0.75)", color: "var(--bone)",
           border: "1px solid var(--muted)", cursor: "pointer",
           fontSize: 13, lineHeight: 1, display: "grid", placeItems: "center",
+          zIndex: 2,
         }}
       >
         ✕
