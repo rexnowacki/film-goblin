@@ -50,7 +50,7 @@ export async function getForYouShelves(
 
   if (!hasAnySignal) {
     // Cold start: seeded omen from the starter pack + one alphabetical shelf.
-    const [startersRes, watchedRes, dismissedRes] = await Promise.all([
+    const [startersRes, watchedRes, dismissedRes, watchlistRes, libraryRes] = await Promise.all([
       client
         .from("films")
         .select("id, title, year, director, artwork_url, added_at:first_seen_at")
@@ -59,10 +59,14 @@ export async function getForYouShelves(
         .order("title"),
       client.from("watched").select("film_id").eq("user_id", userId),
       client.from("fyp_not_interested").select("film_id").eq("user_id", userId),
+      client.from("watchlists").select("film_id").eq("user_id", userId),
+      client.from("library").select("film_id").eq("user_id", userId),
     ]);
     const excluded = new Set([
       ...(watchedRes.data ?? []).map((w) => w.film_id),
       ...(dismissedRes.data ?? []).map((d) => d.film_id),
+      ...(watchlistRes.data ?? []).map((w) => w.film_id),
+      ...(libraryRes.data ?? []).map((l) => l.film_id),
     ]);
     const starterList = ((startersRes.data ?? []) as FilmLite[]).filter((f) => !excluded.has(f.id));
     const filmsById = new Map(starterList.map((f) => [f.id, f]));
@@ -86,6 +90,8 @@ export async function getForYouShelves(
     ownWatchDirectors,
     impressionRows,
     dismissedRows,
+    watchlistRows,
+    libraryRows,
   ] = await Promise.all([
     client
       .from("films")
@@ -98,6 +104,8 @@ export async function getForYouShelves(
     client.from("watched").select("film:films!inner(director)").eq("user_id", userId),
     client.from("fyp_impressions").select("film_id, impressions").eq("user_id", userId),
     client.from("fyp_not_interested").select("film_id").eq("user_id", userId),
+    client.from("watchlists").select("film_id").eq("user_id", userId),
+    client.from("library").select("film_id").eq("user_id", userId),
   ]);
 
   const filmsList = (candidateFilms.data ?? []) as FilmLite[];
@@ -185,6 +193,10 @@ export async function getForYouShelves(
     idfByTag,
     aversion,
     notInterestedFilmIds: new Set((dismissedRows.data ?? []).map((d) => d.film_id)),
+    userSavedFilmIds: new Set([
+      ...(watchlistRows.data ?? []).map((w) => w.film_id),
+      ...(libraryRows.data ?? []).map((l) => l.film_id),
+    ]),
     impressionsByFilm: new Map(
       (impressionRows.data ?? []).map((r) => [r.film_id, r.impressions]),
     ),

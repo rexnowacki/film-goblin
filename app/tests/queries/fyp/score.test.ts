@@ -80,6 +80,17 @@ describe("scoreFilms", () => {
     expect(result).toHaveLength(0);
   });
 
+  it("excludes saved films (watchlist or grimoire) but scores the rest", () => {
+    const films: FilmInput[] = [
+      { id: "f1", director: "x", tags: [TAG("folk horror", "subgenre", true)] },
+      { id: "f2", director: "x", tags: [TAG("folk horror", "subgenre", true)] },
+    ];
+    const ctx: ScoreContext = { ...EMPTY_CTX, userSavedFilmIds: new Set(["f1"]) };
+    const result = scoreFilms(films, { byTag: { "folk horror": 5 } }, ctx);
+    expect(result).toHaveLength(1);
+    expect(result[0].filmId).toBe("f2");
+  });
+
   // ── 3. topReason: tag ─────────────────────────────────────────────────────
 
   it("attributes top reason to the tag with the highest raw affinity (no μ at scoring)", () => {

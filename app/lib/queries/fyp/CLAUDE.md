@@ -58,3 +58,7 @@ Two tables feed scoring, added on the FYP Discover Shelves branch:
 ## Cursor shape (v3, historical)
 
 v3's flat feed used a rank-offset cursor: a stringified integer (`"20"` = skip first 20 items), distinct from the activity feed's `created_at` timestamp cursor. **v3.5 removed this entirely** — `getForYouShelves` has no pagination; shelves are fully materialized in one call (≤ ~60 films total across all shelves).
+
+## Candidate exclusions (2026-07-03)
+
+`scoreFilms` hard-excludes, in order: watched (`userWatchedFilmIds`), disliked (`userDislikedFilmIds`), dismissed (`notInterestedFilmIds`), and **saved** (`userSavedFilmIds` = watchlist ∪ library — the user already claimed these, don't recommend them). The cold-start starter-pack branch applies the same four exclusions. Saves still feed the affinity vector (`watchlist_added` +0.75, `library_added` +1.5) — they shape taste, they just aren't candidates.
