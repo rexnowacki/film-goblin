@@ -73,6 +73,10 @@ export interface ScoreContext {
   aversion: AffinityVector;
   /** Films the user explicitly dismissed ("not interested"). Hard-excluded. */
   notInterestedFilmIds?: Set<string>;
+  /** Films already on the user's watchlist or in their grimoire. Hard-excluded
+   *  as candidates — the user has already claimed them — but the saves still
+   *  feed the affinity vector (SIGNAL_WEIGHTS.watchlist_added / library_added). */
+  userSavedFilmIds?: Set<string>;
   /** Raw impression counts per film for fatigue damping. */
   impressionsByFilm?: Map<string, number>;
 }
@@ -271,6 +275,7 @@ export function scoreFilms(
     if (ctx.userWatchedFilmIds.has(f.id)) continue;
     if (ctx.userDislikedFilmIds.has(f.id)) continue;
     if (ctx.notInterestedFilmIds?.has(f.id)) continue;
+    if (ctx.userSavedFilmIds?.has(f.id)) continue;
 
     const { score, topReason } = scoreOneFilm(f, affinity, ctx);
 
