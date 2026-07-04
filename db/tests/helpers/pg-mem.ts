@@ -118,6 +118,8 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
       .filter(stmt => !/CREATE\s+(OR\s+REPLACE\s+)?VIEW\b/i.test(stmt))
       .filter(stmt => !/DROP\s+VIEW\b/i.test(stmt))
       .filter(stmt => !/CREATE\s+TRIGGER\b/i.test(stmt))
+      // pg-mem throws on unknown extensions; pg_net is Supabase infra.
+      .filter(stmt => !/CREATE\s+EXTENSION\s+IF\s+NOT\s+EXISTS\s+pg_net\b/i.test(stmt))
       // pg-mem chokes on `DROP TRIGGER … ON tablename`; the smoke doesn't run
       // triggers anyway, so dropping is a no-op.
       .filter(stmt => !/DROP\s+TRIGGER\b/i.test(stmt))
