@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const url = `https://freshfromthepit.com/film/${film.id}`;
 
   const ogImageUrl = `https://freshfromthepit.com/api/og/film/${film.id}`;
-  const ogImages = [{ url: ogImageUrl, width: 1200, height: 630, alt: film.title }];
+  const ogImages = [{ url: ogImageUrl, width: 1000, height: 1500, alt: film.title }];
   const twitterImages = [ogImageUrl];
 
   return {
