@@ -24,7 +24,7 @@ ALTER TABLE feed_events ENABLE ROW LEVEL SECURITY;
 
 -- The feed is the storefront: anon reads it too. Writes are service-role only
 -- (cron jobs + admin server actions) — no client-role write policies exist.
-GRANT SELECT, INSERT, UPDATE, DELETE ON feed_events TO anon, authenticated;
+GRANT SELECT ON feed_events TO anon, authenticated;
 
 CREATE POLICY feed_events_read ON feed_events
   FOR SELECT TO anon, authenticated USING (true);

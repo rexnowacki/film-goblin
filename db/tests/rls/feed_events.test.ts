@@ -66,8 +66,7 @@ describe("RLS: feed_events", () => {
 
     await beginAs(db.client, null, "anon");
     try {
-      const r = await db.client.query(`DELETE FROM feed_events`);
-      expect(r.rowCount).toBe(0); // RLS: silently affects 0 rows
+      await expect(db.client.query(`DELETE FROM feed_events`)).rejects.toThrow();
     } finally { await rollback(db.client); }
   });
 });
