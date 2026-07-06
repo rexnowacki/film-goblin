@@ -38,6 +38,11 @@ export function catalogThresholds(count: number): number[] {
 
 const MEMBER_STEP = 5;
 
+export function latestMemberThreshold(count: number, step = MEMBER_STEP): number | null {
+  if (count < step) return null;
+  return count - (count % step);
+}
+
 export async function runDailyFeedEvents(
   client: PgClient,
   now: Date = new Date(),
@@ -78,10 +83,13 @@ export async function runDailyFeedEvents(
 
   // --- milestone: monthly coven watch total (1st of the month, for last month) ---
   if (now.getUTCDate() === 1) {
+    const thisMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const prevMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
     const monthly = await client.query(
       `SELECT count(*) AS c FROM watched
-       WHERE watched_at >= date_trunc('month', now() - interval '1 month')
-         AND watched_at <  date_trunc('month', now())`,
+       WHERE watched_at >= $1
+         AND watched_at <  $2`,
+      [prevMonthStart.toISOString(), thisMonthStart.toISOString()],
     );
     const n = Number(monthly.rows[0].c);
     if (n > 0) {
@@ -93,12 +101,13 @@ export async function runDailyFeedEvents(
     }
   }
 
-  // --- milestone: every 5th member ---
+  // --- milestone: every 5th member (self-heals missed crossings via dedup) ---
   const members = Number((await client.query(`SELECT count(*) AS c FROM profiles`)).rows[0].c);
-  if (members > 0 && members % MEMBER_STEP === 0) {
+  const t = latestMemberThreshold(members);
+  if (t !== null) {
     bump(await emitFeedEvent(client, {
       type: "milestone", filmId: null,
-      vars: { n: members, milestone_kind: "member" },
+      vars: { n: t, milestone_kind: "member" },
     }));
   }
 
