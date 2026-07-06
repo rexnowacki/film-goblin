@@ -1,9 +1,10 @@
 // Write path for feed_events. Two flavors of the same emission:
 //  - emitFeedEvent(pg)   — cron jobs (maintenance route hands jobs a pg.Client)
 //  - emitFeedEventSvc(s) — server actions (service-role supabase client)
-// Both enforce: 7-day (film_id, event_type) dedup; milestone dedup by payload
-// kind+n; variant rotation vs. the previous event of the same type;
-// all_time_low deletes a same-day price_drop for the same film.
+// Both enforce the 7-day (film_id, event_type) dedup and variant rotation vs.
+// the previous event of the same type. ONLY the pg flavor handles milestone
+// payload-dedup and the all_time_low same-day price_drop deletion — the Svc
+// flavor must not be used for milestone/all_time_low kinds.
 
 import type { Client as PgClient } from "pg";
 import type { SupabaseClient } from "@supabase/supabase-js";

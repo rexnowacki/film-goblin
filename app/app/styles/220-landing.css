@@ -25,15 +25,6 @@
   padding-bottom: 2px;
 }
 
-.landing-pct {
-  background: var(--highlight);
-  color: var(--void);
-  font-family: var(--font-ui);
-  font-weight: 900;
-  font-size: 11px;
-  padding: 1px 5px;
-}
-
 .landing-rites {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

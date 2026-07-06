@@ -32,7 +32,7 @@ function Sentence({ row }: { row: LandingFeedRow }) {
 function Thumb({ film }: { film: LandingFilm | null }) {
   if (!film) return <span style={{ width: 30, flexShrink: 0 }} />;
   return (
-    <Link href={`/film/${film.id}`} style={{ marginLeft: "auto", flexShrink: 0 }}>
+    <Link href={`/film/${film.id}`} prefetch={false} style={{ marginLeft: "auto", flexShrink: 0 }}>
       {film.artwork_url ? (
         <Image
           src={film.artwork_url}
