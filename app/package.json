@@ -24,13 +24,15 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-easy-crop": "^5.5.7",
-    "resend": "^4.1.2"
+    "resend": "^4.1.2",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/node": "^20.17.10",
     "@types/pg": "^8.11.10",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "@types/web-push": "^3.6.4",
     "dotenv": "^16.4.7",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
