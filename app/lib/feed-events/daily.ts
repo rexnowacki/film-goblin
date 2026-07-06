@@ -134,14 +134,14 @@ export async function runDailyFeedEvents(
     }));
   }
 
-  // --- last_showing: film's final active future Loft showtime is today (UTC) ---
+  // --- last_showing: film's final active Loft showtime is within the next 24h ---
   const lastShows = await client.query(
     `SELECT f.id AS film_id, f.title
      FROM films f
      JOIN theater_showtimes ts ON ts.film_id = f.id
      WHERE ts.is_active AND ts.starts_at >= now()
      GROUP BY f.id, f.title
-     HAVING max(ts.starts_at) < (date_trunc('day', now()) + interval '1 day')`,
+     HAVING max(ts.starts_at) < now() + interval '24 hours'`,
   );
   for (const r of lastShows.rows) {
     bump(await emitFeedEvent(client, {
