@@ -4,6 +4,7 @@ import { getEnrichedActivity } from "@/lib/queries/activity";
 import { getWatchlistPriceDropFilms } from "@/lib/queries/ledger";
 import type { GoblinPickFilm } from "@/lib/queries/goblin-pick";
 import { getRitualMessages } from "@/lib/queries/ritual";
+import { getRecentSystemEvents } from "@/lib/feed-events/query";
 import LedgerPanel from "@/components/LedgerPanel";
 import GoblinRecommends from "@/components/GoblinRecommends";
 import GoblinRecommendsMobile from "@/components/GoblinRecommendsMobile";
@@ -53,10 +54,14 @@ export default async function HomePage({
   const initialCursor = initialPage.nextCursor;
   const initialDone = initialPage.done;
 
-  const [priceDropFilms, ritualPick] = await Promise.all([
+  const [priceDropFilms, ritualPick, systemEvents] = await Promise.all([
     user ? getWatchlistPriceDropFilms(supabase, user.id, 5) : Promise.resolve([]),
     getActiveRitualPick(),
+    getRecentSystemEvents(supabase, 12),
   ]);
+  // Date-seeded so composeFeed's ratio-cap/no-stacking selection is stable
+  // for the whole day rather than reshuffling on every server render.
+  const dateSeed = new Date().toISOString().slice(0, 10);
 
   const [ritualMessages, viewer, staffRow] = await Promise.all([
     user && ritualPick ? getRitualMessages(supabase, ritualPick.pick_id) : Promise.resolve([]),
@@ -144,6 +149,8 @@ export default async function HomePage({
             initialCursor={initialCursor}
             initialDone={initialDone}
             filters={{ actorId: actorId ?? undefined, filmId: filmId ?? undefined }}
+            systemEvents={actorId || filmId ? undefined : systemEvents}
+            dateSeed={dateSeed}
           >
             <GoblinRecommendsMobile film={goblinPick} ritual={ritual} />
           </FeedTabs>

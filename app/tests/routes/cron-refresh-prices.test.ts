@@ -5,6 +5,7 @@ const connectMock = vi.fn();
 const endMock = vi.fn();
 const clientCtor = vi.fn(() => ({ connect: connectMock, end: endMock }));
 const runOnceMock = vi.fn();
+const runPriceFeedScanMock = vi.fn();
 
 vi.mock("pg", () => ({
   default: { Client: clientCtor },
@@ -13,6 +14,10 @@ vi.mock("pg", () => ({
 
 vi.mock("film-goblin-worker", () => ({
   runOnce: runOnceMock,
+}));
+
+vi.mock("@/lib/feed-events/price-scan", () => ({
+  runPriceFeedScan: runPriceFeedScanMock,
 }));
 
 // Import AFTER the mocks are registered.
@@ -37,6 +42,7 @@ describe("GET /api/cron/refresh-prices", () => {
     endMock.mockReset().mockResolvedValue(undefined);
     clientCtor.mockClear();
     runOnceMock.mockReset();
+    runPriceFeedScanMock.mockReset().mockResolvedValue({ scanned: 0, emitted: 0 });
   });
 
   afterEach(() => {
@@ -88,6 +94,8 @@ describe("GET /api/cron/refresh-prices", () => {
     const body = await res.json();
     expect(body.ok).toBe(true);
     expect(body.digest.films_refreshed).toBe(3);
+    expect(body.feedScan).toEqual({ scanned: 0, emitted: 0 });
+    expect(runPriceFeedScanMock).toHaveBeenCalledTimes(1);
     expect(endMock).toHaveBeenCalledTimes(1);
   });
 
@@ -118,6 +126,31 @@ describe("GET /api/cron/refresh-prices", () => {
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toBe("job failed");
+    expect(endMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns 200 even when runPriceFeedScan fails, with error in feedScan field", async () => {
+    runOnceMock.mockResolvedValue({
+      render: () => "films_refreshed=3 price_changes=1",
+      snapshot: () => ({
+        films_refreshed: 3,
+        price_changes: 1,
+        alerts_fired: 0,
+        parse_failures: 0,
+        unavailable_marked: 0,
+        parse_failure_ids: [],
+        stopped_reason: "complete",
+      }),
+    });
+    runPriceFeedScanMock.mockRejectedValue(new Error("scan boom"));
+
+    const res = await GET(makeRequest("Bearer test-secret"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+    expect(body.digest).toBeDefined();
+    expect(body.digest.films_refreshed).toBe(3);
+    expect(body.feedScan).toEqual({ error: "scan boom" });
     expect(endMock).toHaveBeenCalledTimes(1);
   });
 });

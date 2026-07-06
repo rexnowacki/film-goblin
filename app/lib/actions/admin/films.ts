@@ -17,6 +17,7 @@ import { promoteTmdbTwin } from "@/lib/admin/promote-tmdb-twin";
 import { backfillTmdbTrailers, lookupTrailerForFilm, trailerPayload } from "@/lib/trailers/tmdb-enrichment";
 import { backfillTmdbCast, lookupCastForFilm, replaceFilmCast } from "@/lib/cast/tmdb-enrichment";
 import { runStreamingAvailabilityRefresh } from "@/lib/streaming-availability/refresh";
+import { emitFeedEventSvc } from "@/lib/feed-events/emit";
 
 export type { ITunesSearchHit } from "@/lib/search/itunes-hit";
 
@@ -259,6 +260,16 @@ export async function adminCreateFilm(
     .select("id")
     .single();
   if (error) return { ok: false, error: error.message };
+
+  try {
+    await emitFeedEventSvc(serviceRoleClient(), {
+      type: "new_film",
+      filmId: data.id,
+      vars: { title: payload.title, year: payload.year },
+    });
+  } catch (err) {
+    console.warn("feed event new_film failed:", err instanceof Error ? err.message : err);
+  }
 
   if (cast && cast.cast.length > 0) {
     await replaceFilmCast(serviceRoleClient(), data.id, cast.cast);

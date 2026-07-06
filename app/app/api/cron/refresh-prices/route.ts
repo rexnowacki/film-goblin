@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import pg from "pg";
 import * as Sentry from "@sentry/node";
 import { runOnce } from "film-goblin-worker";
+import { runPriceFeedScan } from "@/lib/feed-events/price-scan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,7 +41,17 @@ export async function GET(request: Request): Promise<NextResponse> {
     await client.connect();
     const digest = await runOnce(client, { maxFilms, maxRuntimeMs, staleHours });
     console.log(digest.render());
-    return NextResponse.json({ ok: true, digest: digest.snapshot() });
+
+    let feedScan: { scanned: number; emitted: number; skipped?: string } | { error: string };
+    try {
+      feedScan = await runPriceFeedScan(client);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("price feed scan failed:", msg);
+      Sentry.captureException(err);
+      feedScan = { error: msg };
+    }
+    return NextResponse.json({ ok: true, digest: digest.snapshot(), feedScan });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("cron refresh-prices failed:", message);

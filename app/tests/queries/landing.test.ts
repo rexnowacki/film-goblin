@@ -4,13 +4,12 @@ import { getLandingFeed } from "@/lib/queries/landing";
 const NOW = Date.now();
 const iso = (msAgo: number) => new Date(NOW - msAgo).toISOString();
 const MIN = 60_000;
-const DAY = 86_400_000;
 
 function makeClient(opts: {
   activityRows?: Array<Record<string, unknown>>;
   profiles?: Array<Record<string, unknown>>;
   films?: Array<Record<string, unknown>>;
-  alertRows?: Array<Record<string, unknown>>;
+  systemEvents?: Array<Record<string, unknown>>;
 } = {}) {
   const fromCalls: string[] = [];
   const activityChain: any = {
@@ -27,10 +26,10 @@ function makeClient(opts: {
     select: vi.fn().mockReturnThis(),
     in: vi.fn().mockResolvedValue({ data: opts.films ?? [], error: null }),
   };
-  const alertsChain: any = {
+  const feedEventsChain: any = {
     select: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockResolvedValue({ data: opts.alertRows ?? [], error: null }),
+    limit: vi.fn().mockResolvedValue({ data: opts.systemEvents ?? [], error: null }),
   };
   const client = {
     from: vi.fn((table: string) => {
@@ -38,7 +37,7 @@ function makeClient(opts: {
       if (table === "activity") return activityChain;
       if (table === "profiles") return profilesChain;
       if (table === "films") return filmsChain;
-      if (table === "price_alerts") return alertsChain;
+      if (table === "feed_events") return feedEventsChain;
       throw new Error(`unexpected table ${table}`);
     }),
   } as any;
@@ -106,61 +105,76 @@ describe("getLandingFeed — row shaping", () => {
   });
 });
 
-describe("getLandingFeed — price drop splice", () => {
-  it("splices a fresh price alert into timestamp order with computed pctOff", async () => {
+describe("getLandingFeed — system event composition", () => {
+  it("weaves a recent system event into the composed output", async () => {
     const { client } = makeClient({
       activityRows: [
         { id: "a1", kind: "watch_logged", payload: { film_id: "f1" }, created_at: iso(1 * MIN), actor_user_id: "u1" },
-        { id: "a2", kind: "watch_logged", payload: { film_id: "f1" }, created_at: iso(60 * MIN), actor_user_id: "u1" },
       ],
       profiles: [actor],
-      films: [film, { id: "f2", title: "Suspiria", artwork_url: null }],
-      alertRows: [{ id: "pa1", film_id: "f2", old_price_usd: 9.99, new_price_usd: 4.99, created_at: iso(30 * MIN) }],
+      films: [film],
+      systemEvents: [{
+        id: "s1",
+        event_type: "price_drop",
+        film_id: "f2",
+        payload: {},
+        copy: "🩸 The blood price falls. **Suspiria** is now $4.99.",
+        priority: 90,
+        created_at: iso(30 * MIN),
+        film: { id: "f2", title: "Suspiria", artwork_url: null },
+      }],
     });
     const rows = await getLandingFeed(client);
-    expect(rows.map(r => r.kind)).toEqual(["watch_logged", "price_drop", "watch_logged"]);
-    const drop = rows[1] as Extract<(typeof rows)[number], { kind: "price_drop" }>;
-    expect(drop.newPriceUsd).toBeCloseTo(4.99);
-    expect(drop.pctOff).toBe(50);
-    expect(drop.film.title).toBe("Suspiria");
+    expect(rows.map(r => r.kind)).toEqual(expect.arrayContaining(["watch_logged", "system"]));
+    const sysRow = rows.find(r => r.kind === "system") as Extract<(typeof rows)[number], { kind: "system" }>;
+    expect(sysRow.copy).toContain("Suspiria");
+    expect(sysRow.film?.title).toBe("Suspiria");
   });
 
-  it("ignores price alerts older than 14 days", async () => {
+  it("renders a system event with no film as film: null", async () => {
     const { client } = makeClient({
-      activityRows: [{ id: "a1", kind: "watch_logged", payload: { film_id: "f1" }, created_at: iso(MIN), actor_user_id: "u1" }],
+      activityRows: [
+        { id: "a1", kind: "watch_logged", payload: { film_id: "f1" }, created_at: iso(1 * MIN), actor_user_id: "u1" },
+      ],
       profiles: [actor],
       films: [film],
-      alertRows: [{ id: "pa1", film_id: "f1", old_price_usd: 9.99, new_price_usd: 4.99, created_at: iso(15 * DAY) }],
+      systemEvents: [{
+        id: "s1",
+        event_type: "milestone",
+        film_id: null,
+        payload: {},
+        copy: "🎉 The pit now holds 100 films.",
+        priority: 50,
+        created_at: iso(5 * MIN),
+        film: null,
+      }],
     });
     const rows = await getLandingFeed(client);
-    expect(rows.map(r => r.kind)).toEqual(["watch_logged"]);
+    const sysRow = rows.find(r => r.kind === "system") as Extract<(typeof rows)[number], { kind: "system" }>;
+    expect(sysRow.film).toBeNull();
   });
 
-  it("ignores alerts where the price did not actually drop", async () => {
+  it("shows system events even with zero user activity", async () => {
     const { client } = makeClient({
-      activityRows: [{ id: "a1", kind: "watch_logged", payload: { film_id: "f1" }, created_at: iso(MIN), actor_user_id: "u1" }],
-      profiles: [actor],
-      films: [film],
-      alertRows: [{ id: "pa1", film_id: "f1", old_price_usd: 4.99, new_price_usd: 4.99, created_at: iso(MIN) }],
+      systemEvents: [{
+        id: "s1",
+        event_type: "new_film",
+        film_id: "f1",
+        payload: {},
+        copy: "🕯️ Summoned to the pit: **Possession**.",
+        priority: 70,
+        created_at: iso(MIN),
+        film: { id: "f1", title: "Possession", artwork_url: null },
+      }],
     });
     const rows = await getLandingFeed(client);
-    expect(rows.map(r => r.kind)).toEqual(["watch_logged"]);
-  });
-
-  it("ignores alerts with a zero old price", async () => {
-    const { client } = makeClient({
-      activityRows: [{ id: "a1", kind: "watch_logged", payload: { film_id: "f1" }, created_at: iso(MIN), actor_user_id: "u1" }],
-      profiles: [actor],
-      films: [film],
-      alertRows: [{ id: "pa1", film_id: "f1", old_price_usd: 0, new_price_usd: 4.99, created_at: iso(MIN) }],
-    });
-    const rows = await getLandingFeed(client);
-    expect(rows.map(r => r.kind)).toEqual(["watch_logged"]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].kind).toBe("system");
   });
 });
 
 describe("getLandingFeed — empty states", () => {
-  it("returns [] and skips profile/film fetches when there is no activity and no alert", async () => {
+  it("returns [] and skips profile/film fetches when there is no activity and no system events", async () => {
     const { client, fromCalls } = makeClient();
     const rows = await getLandingFeed(client);
     expect(rows).toEqual([]);

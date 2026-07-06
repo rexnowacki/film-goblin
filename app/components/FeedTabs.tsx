@@ -3,10 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import FeedRow from "./activity/FeedRow";
+import SystemEventRow from "./activity/SystemEventRow";
 import FeedCardSkeleton from "./skeletons/FeedCardSkeleton";
 import type { EnrichedActivity, FeedItem } from "@/lib/queries/activity";
 import { groupFeed } from "@/lib/queries/group-activity";
 import { loadMoreFeed } from "@/lib/actions/feed-load-more";
+import { composeFeed } from "@/lib/feed-events/compose";
+import type { SystemFeedEvent } from "@/lib/feed-events/types";
 
 type Tab = "all" | "coven" | "recs";
 
@@ -30,9 +33,12 @@ const TAB_SCOPES: Record<Tab, "site" | "coven"> = {
   recs: "coven",
 };
 
-function feedItemMatches(item: FeedItem, matcher: (k: EnrichedActivity["kind"]) => boolean): boolean {
-  if (item.type === "single") return matcher(item.activity.kind);
-  return matcher(item.group.kind);
+// System rows are shown only on the "all" tab — they have no actor/kind to
+// scope by "coven"/"recs", so any non-"all" tab excludes them outright.
+function feedItemMatches(item: FeedItem, tab: Tab, matcher: (k: EnrichedActivity["kind"]) => boolean): boolean {
+  if (item.type === "system") return tab === "all";
+  if (item.type === "group") return matcher(item.group.kind);
+  return matcher(item.activity.kind);
 }
 
 interface Props {
@@ -40,10 +46,16 @@ interface Props {
   initialCursor: string | null;
   initialDone: boolean;
   filters: { actorId?: string; filmId?: string };
+  // System feed events + the date seed composeFeed was seeded with on the
+  // server, so client-side re-composition (as more user items page in)
+  // stays deterministic within the day. Empty/undefined disables system
+  // rows entirely (e.g. filtered actor/film views never pass these).
+  systemEvents?: SystemFeedEvent[];
+  dateSeed?: string;
   children?: ReactNode;
 }
 
-export default function FeedTabs({ initialItems, initialCursor, initialDone, filters, children }: Props) {
+export default function FeedTabs({ initialItems, initialCursor, initialDone, filters, systemEvents, dateSeed, children }: Props) {
   const router = useRouter();
   const params = useSearchParams();
   const rawTab = params.get("tab");
@@ -134,9 +146,32 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
   }
 
   const grouped = useMemo(() => groupFeed(items), [items]);
+  // Weave system events into the grouped user feed. Recomputed as `grouped`
+  // grows via loadMore, but always seeded from the same server-provided
+  // dateSeed so the ratio-cap/no-stacking result stays stable within a day.
+  //
+  // FeedItem's variants don't carry `created_at` as a real property (it's
+  // nested under `.activity`/`.group`/`.event`), and composeFeed's generic
+  // constraint `U extends { created_at?: string }` triggers TS's "weak
+  // type" check against a union with no shared property names. Wrapping
+  // each item with an explicit `created_at` sidesteps that.
+  const composed = useMemo<FeedItem[]>(() => {
+    if (!systemEvents || systemEvents.length === 0) return grouped;
+    const seed = dateSeed ?? new Date().toISOString().slice(0, 10);
+    const wrapped = grouped.map(item => ({
+      item,
+      created_at: item.type === "group" ? item.group.latestAt : item.type === "single" ? item.activity.created_at : item.event.created_at,
+    }));
+    return composeFeed(
+      wrapped,
+      systemEvents,
+      seed,
+      (w) => w.created_at,
+    ).map(c => c.type === "system" ? { type: "system" as const, event: c.event } : c.item.item);
+  }, [grouped, systemEvents, dateSeed]);
   const filtered = useMemo(
-    () => grouped.filter(i => feedItemMatches(i, MATCHERS[tab])),
-    [grouped, tab],
+    () => composed.filter(i => feedItemMatches(i, tab, MATCHERS[tab])),
+    [composed, tab],
   );
   const showFeedInsert = tab === "all" && !filters.actorId && !filters.filmId;
   const emptyCopy = tab === "all"
@@ -165,12 +200,16 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
             {emptyCopy}
           </div>
         ) : (
-          filtered.map(item => (
-            <FeedRow
-              key={item.type === "group" ? item.group.key : item.activity.id}
-              item={item}
-            />
-          ))
+          filtered.map(item =>
+            item.type === "system" ? (
+              <SystemEventRow key={item.event.id} event={item.event} />
+            ) : (
+              <FeedRow
+                key={item.type === "group" ? item.group.key : item.activity.id}
+                item={item}
+              />
+            )
+          )
         )}
       </div>
 

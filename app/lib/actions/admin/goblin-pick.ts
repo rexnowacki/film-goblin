@@ -4,6 +4,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
+import { emitFeedEventSvc } from "@/lib/feed-events/emit";
 import type { Database } from "@/lib/supabase/types";
 
 type Result = { ok: true } | { ok: false; error: string };
@@ -31,6 +32,25 @@ export async function scheduleGoblinPick(
   });
 
   if (error) return { ok: false, error: error.message };
+
+  try {
+    const svc = serviceRoleClient();
+    const { data: film } = await svc
+      .from("films")
+      .select("title, year")
+      .eq("id", filmId)
+      .maybeSingle();
+    if (film) {
+      await emitFeedEventSvc(svc, {
+        type: "goblin_pick",
+        filmId,
+        vars: { title: film.title, year: film.year, one_line: whisperText.trim() || undefined },
+      });
+    }
+  } catch (err) {
+    console.warn("feed event goblin_pick failed:", err instanceof Error ? err.message : err);
+  }
+
   revalidateTag("goblin-pick");
   revalidatePath("/home");
   revalidatePath("/admin/goblin-pick");

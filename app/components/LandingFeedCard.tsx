@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Avatar from "./Avatar";
 import { relativeTime } from "./activity/relativeTime";
+import { renderCopyText } from "./activity/SystemEventRow";
 import type { LandingFeedRow, LandingFilm } from "@/lib/queries/landing";
 
 // Pre-login landing page feed card. Static server-rendered snapshot of real
@@ -23,14 +24,15 @@ function Sentence({ row }: { row: LandingFeedRow }) {
       return <><b>{row.actor.username}</b> is stalking <Title film={row.film} /></>;
     case "library_added":
       return <><b>{row.actor.username}</b> now owns <Title film={row.film} /></>;
-    case "price_drop":
-      return <><span className="landing-pct">−{row.pctOff}%</span> <Title film={row.film} /> fell to <b>${row.newPriceUsd.toFixed(2)}</b></>;
+    case "system":
+      return <>{renderCopyText(row.copy)}</>;
   }
 }
 
-function Thumb({ film }: { film: LandingFilm }) {
+function Thumb({ film }: { film: LandingFilm | null }) {
+  if (!film) return <span style={{ width: 30, flexShrink: 0 }} />;
   return (
-    <Link href={`/film/${film.id}`} style={{ marginLeft: "auto", flexShrink: 0 }}>
+    <Link href={`/film/${film.id}`} prefetch={false} style={{ marginLeft: "auto", flexShrink: 0 }}>
       {film.artwork_url ? (
         <Image
           src={film.artwork_url}
@@ -55,7 +57,7 @@ export default function LandingFeedCard({ rows }: { rows: LandingFeedRow[] }) {
       </div>
       {rows.map(row => (
         <div key={row.id} className="landing-feed-row">
-          {row.kind === "price_drop" ? (
+          {row.kind === "system" ? (
             <span style={{ width: 26, flexShrink: 0 }} />
           ) : (
             <Avatar name={row.actor.display_name || row.actor.username} url={row.actor.avatar_url} size={26} />
