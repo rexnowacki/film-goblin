@@ -41,7 +41,16 @@ export async function GET(request: Request): Promise<NextResponse> {
     await client.connect();
     const digest = await runOnce(client, { maxFilms, maxRuntimeMs, staleHours });
     console.log(digest.render());
-    const feedScan = await runPriceFeedScan(client);
+
+    let feedScan: { scanned: number; emitted: number; skipped?: string } | { error: string };
+    try {
+      feedScan = await runPriceFeedScan(client);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("price feed scan failed:", msg);
+      Sentry.captureException(err);
+      feedScan = { error: msg };
+    }
     return NextResponse.json({ ok: true, digest: digest.snapshot(), feedScan });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

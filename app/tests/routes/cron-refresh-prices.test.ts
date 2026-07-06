@@ -128,4 +128,29 @@ describe("GET /api/cron/refresh-prices", () => {
     expect(body.error).toBe("job failed");
     expect(endMock).toHaveBeenCalledTimes(1);
   });
+
+  it("returns 200 even when runPriceFeedScan fails, with error in feedScan field", async () => {
+    runOnceMock.mockResolvedValue({
+      render: () => "films_refreshed=3 price_changes=1",
+      snapshot: () => ({
+        films_refreshed: 3,
+        price_changes: 1,
+        alerts_fired: 0,
+        parse_failures: 0,
+        unavailable_marked: 0,
+        parse_failure_ids: [],
+        stopped_reason: "complete",
+      }),
+    });
+    runPriceFeedScanMock.mockRejectedValue(new Error("scan boom"));
+
+    const res = await GET(makeRequest("Bearer test-secret"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+    expect(body.digest).toBeDefined();
+    expect(body.digest.films_refreshed).toBe(3);
+    expect(body.feedScan).toEqual({ error: "scan boom" });
+    expect(endMock).toHaveBeenCalledTimes(1);
+  });
 });
