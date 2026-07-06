@@ -4,6 +4,7 @@ import { getReactionsForActivities, type ReactionSummary } from "./activity-reac
 import { getCommentSummariesForActivities, type CommentSummary } from "./activity-comments";
 import { groupFeed } from "./group-activity";
 import { getGazingRostersForTokens, EMPTY_ROSTER, type GazingRoster } from "./gazing-roster";
+import type { SystemFeedEvent } from "@/lib/feed-events/types";
 
 type Client = SupabaseClient<Database>;
 
@@ -57,7 +58,8 @@ export type EnrichedActivity = (
 
 export type FeedItem =
   | { type: "single"; activity: EnrichedActivity }
-  | { type: "group"; group: ActivityGroup };
+  | { type: "group"; group: ActivityGroup }
+  | { type: "system"; event: SystemFeedEvent };
 
 export interface ActivityGroup {
   // Stable composite key for React. Anchored on the OLDEST event in the run

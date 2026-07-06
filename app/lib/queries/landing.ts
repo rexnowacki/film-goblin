@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
+import { getRecentSystemEvents } from "@/lib/feed-events/query";
+import { composeFeed } from "@/lib/feed-events/compose";
 
 type Client = SupabaseClient<Database>;
 
@@ -13,8 +15,6 @@ const LANDING_KINDS = [
   "library_added",
 ] as const;
 type LandingKind = (typeof LANDING_KINDS)[number];
-
-const PRICE_DROP_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 
 export interface LandingActor {
   username: string;
@@ -44,56 +44,38 @@ export type LandingFeedRow =
       recipient: { username: string };
     }
   | {
-      kind: "price_drop";
+      kind: "system";
       id: string;
       created_at: string;
-      film: LandingFilm;
-      newPriceUsd: number;
-      pctOff: number;
+      copy: string;
+      film: LandingFilm | null;
     };
 
 /**
  * Public landing-page feed: latest film-centric activity with real usernames,
- * plus the most recent site-wide price drop (≤14 days old) spliced in by
- * timestamp. Service-role only — called through the cached wrapper in
+ * composed with recent system feed events (price drops, new films, etc. —
+ * see lib/feed-events) via the same date-seeded composeFeed used on /home.
+ * Service-role only — called through the cached wrapper in
  * lib/supabase/cached.ts. Over-fetches 3× limit to survive dropped rows.
  */
 export async function getLandingFeed(client: Client, limit = 5): Promise<LandingFeedRow[]> {
-  const [activityRes, alertRes] = await Promise.all([
+  const [activityRes, systemEvents] = await Promise.all([
     client
       .from("activity")
       .select("id, kind, payload, created_at, actor_user_id")
       .in("kind", [...LANDING_KINDS])
       .order("created_at", { ascending: false })
       .limit(limit * 3),
-    client
-      .from("price_alerts")
-      .select("id, film_id, old_price_usd, new_price_usd, created_at")
-      .order("created_at", { ascending: false })
-      .limit(1),
+    getRecentSystemEvents(client, limit * 3),
   ]);
   if (activityRes.error) throw activityRes.error;
-  if (alertRes.error) throw alertRes.error;
   const raw = activityRes.data ?? [];
-
-  const alertRow = (alertRes.data ?? [])[0] ?? null;
-  const oldPrice = alertRow ? Number(alertRow.old_price_usd) : 0;
-  const newPrice = alertRow ? Number(alertRow.new_price_usd) : 0;
-  const alert =
-    alertRow &&
-    Date.now() - new Date(alertRow.created_at).getTime() <= PRICE_DROP_MAX_AGE_MS &&
-    oldPrice > newPrice
-      ? alertRow
-      : null;
 
   const actorIds = [...new Set(raw.map(r => r.actor_user_id))];
   const payloadOf = (r: { payload: unknown }) =>
     (r.payload ?? {}) as { film_id?: string; to_user_id?: string };
   const filmIds = [
-    ...new Set([
-      ...raw.map(r => payloadOf(r).film_id).filter((v): v is string => Boolean(v)),
-      ...(alert ? [alert.film_id] : []),
-    ]),
+    ...new Set(raw.map(r => payloadOf(r).film_id).filter((v): v is string => Boolean(v))),
   ];
   const recipientIds = [
     ...new Set(
@@ -103,7 +85,7 @@ export async function getLandingFeed(client: Client, limit = 5): Promise<Landing
         .filter((v): v is string => Boolean(v)),
     ),
   ];
-  if (actorIds.length === 0 && filmIds.length === 0) return [];
+  if (actorIds.length === 0 && filmIds.length === 0 && systemEvents.length === 0) return [];
 
   const allProfileIds = [...new Set([...actorIds, ...recipientIds])];
   const [profilesRes, filmsRes] = await Promise.all([
@@ -168,22 +150,16 @@ export async function getLandingFeed(client: Client, limit = 5): Promise<Landing
     }
   }
 
-  if (alert) {
-    const filmRow = filmMap.get(alert.film_id);
-    if (filmRow) {
-      out.push({
-        kind: "price_drop",
-        id: alert.id,
-        created_at: alert.created_at,
-        film: { id: filmRow.id, title: filmRow.title, artwork_url: filmRow.artwork_url },
-        newPriceUsd: newPrice,
-        pctOff: oldPrice > 0 ? Math.round((1 - newPrice / oldPrice) * 100) : 0,
-      });
-    }
-  }
-
   out.sort((a, b) =>
     a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : a.id < b.id ? 1 : -1,
   );
-  return out.slice(0, limit);
+
+  const dateSeed = new Date().toISOString().slice(0, 10);
+  const composed = composeFeed(out, systemEvents, dateSeed, (row) => row.created_at);
+  const merged: LandingFeedRow[] = composed.map(c =>
+    c.type === "system"
+      ? { kind: "system", id: c.event.id, created_at: c.event.created_at, copy: c.event.copy, film: c.event.film }
+      : c.item,
+  );
+  return merged.slice(0, limit);
 }
