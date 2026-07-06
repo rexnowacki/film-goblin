@@ -34,16 +34,16 @@ export async function runPriceFeedScan(
     // Latest new price per film in the window, with the immediately-prior price.
     const { rows } = await client.query(
       `WITH ranked AS (
-         SELECT ph.film_id, ph.price_usd, ph.created_at,
-                LAG(ph.price_usd) OVER (PARTITION BY ph.film_id ORDER BY ph.created_at) AS prev_price,
-                ROW_NUMBER() OVER (PARTITION BY ph.film_id ORDER BY ph.created_at DESC) AS rn
+         SELECT ph.film_id, ph.price_usd, ph.captured_at,
+                LAG(ph.price_usd) OVER (PARTITION BY ph.film_id ORDER BY ph.captured_at) AS prev_price,
+                ROW_NUMBER() OVER (PARTITION BY ph.film_id ORDER BY ph.captured_at DESC) AS rn
          FROM price_history ph
        )
        SELECT r.film_id, r.price_usd, r.prev_price, f.title
        FROM ranked r
        JOIN films f ON f.id = r.film_id
        WHERE r.rn = 1
-         AND r.created_at > now() - ($1 || ' hours')::interval
+         AND r.captured_at > now() - ($1 || ' hours')::interval
          AND r.prev_price IS NOT NULL
          AND r.price_usd <> r.prev_price`,
       [String(sinceHours)],
@@ -58,12 +58,12 @@ export async function runPriceFeedScan(
       const stats = await client.query(
         `SELECT
            min(price_usd) FILTER (WHERE rn > 1)                                   AS hist_min,
-           EXTRACT(EPOCH FROM (max(created_at) - min(created_at))) / 86400        AS span_days,
+           EXTRACT(EPOCH FROM (max(captured_at) - min(captured_at))) / 86400      AS span_days,
            percentile_cont(0.5) WITHIN GROUP (ORDER BY price_usd)
-             FILTER (WHERE rn > 1 AND created_at > now() - interval '180 days')   AS median_180
+             FILTER (WHERE rn > 1 AND captured_at > now() - interval '180 days')  AS median_180
          FROM (
-           SELECT price_usd, created_at,
-                  ROW_NUMBER() OVER (ORDER BY created_at DESC) AS rn
+           SELECT price_usd, captured_at,
+                  ROW_NUMBER() OVER (ORDER BY captured_at DESC) AS rn
            FROM price_history WHERE film_id = $1
          ) t`,
         [filmId],
@@ -73,9 +73,9 @@ export async function runPriceFeedScan(
 
       const above = await client.query(
         `SELECT count(*) AS c FROM (
-           SELECT price_usd, ROW_NUMBER() OVER (ORDER BY created_at DESC) AS rn
+           SELECT price_usd, ROW_NUMBER() OVER (ORDER BY captured_at DESC) AS rn
            FROM price_history
-           WHERE film_id = $1 AND created_at > now() - interval '7 days'
+           WHERE film_id = $1 AND captured_at > now() - interval '7 days'
          ) t WHERE rn > 1 AND price_usd >= $2`,
         [filmId, median],
       );
