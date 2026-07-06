@@ -1,5 +1,8 @@
 import type pg from "pg";
 import { lookupTmdbWatchProviders, resolveTmdbIdByTitleYear, type TmdbWatchProvider } from "@/lib/search/tmdb";
+import { emitFeedEvent } from "@/lib/feed-events/emit";
+
+const FREE_CATEGORIES = ["flatrate", "free", "ads"] as const;
 
 export interface StreamingAvailabilityRefreshOptions {
   maxFilms?: number;
@@ -162,6 +165,18 @@ export async function runStreamingAvailabilityRefresh(
       continue;
     }
 
+    let beforeFree = new Set<string>();
+    try {
+      const prev = await client.query(
+        `SELECT DISTINCT provider_name FROM film_watch_providers
+         WHERE film_id = $1 AND region = $2 AND category = ANY($3)`,
+        [film.id, region, FREE_CATEGORIES as unknown as string[]],
+      );
+      beforeFree = new Set(prev.rows.map((r: { provider_name: string }) => r.provider_name));
+    } catch (err) {
+      console.warn(`free-provider snapshot failed for film ${film.id}:`, err);
+    }
+
     try {
       const saved = await replaceProviders(client, {
         filmId: film.id,
@@ -170,6 +185,30 @@ export async function runStreamingAvailabilityRefresh(
       });
       result.refreshed += 1;
       result.providersSaved += saved;
+
+      try {
+        const afterFree = new Set(
+          lookup.providers
+            .filter(p => (FREE_CATEGORIES as readonly string[]).includes(p.category))
+            .map(p => p.provider_name),
+        );
+        const gained = [...afterFree].filter(n => !beforeFree.has(n));
+        if (gained.length > 0) {
+          await emitFeedEvent(client as unknown as pg.Client, {
+            type: "now_free",
+            filmId: film.id,
+            vars: { title: film.title, service: gained[0] },
+          });
+        } else if (beforeFree.size > 0 && afterFree.size === 0) {
+          await emitFeedEvent(client as unknown as pg.Client, {
+            type: "left_free",
+            filmId: film.id,
+            vars: { title: film.title, service: [...beforeFree][0] },
+          });
+        }
+      } catch (err) {
+        console.warn(`free-provider feed event failed for film ${film.id}:`, err);
+      }
     } catch (err) {
       result.failed += 1;
       console.warn(`streaming availability write failed for film ${film.id}:`, err);
