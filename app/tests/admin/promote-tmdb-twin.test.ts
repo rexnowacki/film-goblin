@@ -1,4 +1,36 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
+
+// promoteTmdbTwin's feed-event emission (now_on_apple) calls serviceRoleClient()
+// directly rather than reusing the injected films client — see
+// app/lib/admin/promote-tmdb-twin.ts. The production call site in
+// app/lib/actions/admin/films.ts passes a user-scoped createClient() (not
+// service-role) as the injected client, so the emission legitimately needs its
+// own service-role client rather than reusing the injected one. Mock it here
+// so the test never makes a live network write against feed_events.
+function makeFeedEventsStubClient() {
+  return {
+    from: (table: string) => {
+      if (table !== "feed_events") throw new Error(`unexpected table ${table}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handler: any = {
+        select: () => handler,
+        eq: () => handler,
+        gt: () => handler,
+        order: () => handler,
+        limit: () => handler,
+        maybeSingle: async () => ({ data: null, error: null }),
+        insert: async () => ({ data: null, error: null }),
+        then: (resolve: (v: unknown) => void) => resolve({ data: [], error: null }),
+      };
+      return handler;
+    },
+  };
+}
+
+vi.mock("@/lib/supabase/service-role", () => ({
+  serviceRoleClient: vi.fn(() => makeFeedEventsStubClient()),
+}));
+
 import { promoteTmdbTwin, type ItunesGraft } from "@/lib/admin/promote-tmdb-twin";
 
 interface FilmRow {
