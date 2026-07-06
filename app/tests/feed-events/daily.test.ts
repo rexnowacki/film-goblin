@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { pickAnniversary, catalogThresholds, latestMemberThreshold, type AnniversaryCandidate } from "@/lib/feed-events/daily";
+import { pickFullMoonFilm, type FullMoonCandidate } from "@/lib/feed-events/daily";
 
 const c = (id: string, year: number, wl: number): AnniversaryCandidate =>
   ({ film_id: id, title: id, release_year: year, watchlist_count: wl });
@@ -37,5 +38,17 @@ describe("latestMemberThreshold", () => {
   });
   it("returns null below the first threshold", () => {
     expect(latestMemberThreshold(4)).toBe(null);
+  });
+});
+
+const fm = (id: string, prior: number, wl: number): FullMoonCandidate =>
+  ({ film_id: id, title: id, prior_appearances: prior, watchlist_count: wl });
+
+describe("pickFullMoonFilm", () => {
+  it("prefers fewest prior full-moon appearances, then highest watchlist count, then id", () => {
+    expect(pickFullMoonFilm([fm("a", 1, 9), fm("b", 0, 1)])?.film_id).toBe("b");
+    expect(pickFullMoonFilm([fm("a", 0, 1), fm("b", 0, 5)])?.film_id).toBe("b");
+    expect(pickFullMoonFilm([fm("b", 0, 5), fm("a", 0, 5)])?.film_id).toBe("a");
+    expect(pickFullMoonFilm([])).toBe(null);
   });
 });
