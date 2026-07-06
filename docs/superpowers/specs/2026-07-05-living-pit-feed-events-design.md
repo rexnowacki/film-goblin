@@ -111,3 +111,7 @@ Pure function: `compose(userItems, systemEvents, dateSeed) → FeedItem[]`, unit
 ## Out of scope (v1)
 
 `now_free`/`left_free` (needs provider snapshot/diff), `ritual_open`/`badge_earned` (needs rituals), `death_day` (needs person death dates), per-user personalized feeds, emoji configuration, any migration of existing `activity` rows.
+
+## Amendment (2026-07-06): FROM THE PIT tag replaces emoji-led styling
+
+Owner veto on the emoji-led presentation ("not feeling the party hat"). System rows now share the exact user-row anatomy (avatar slot | text + footer | 40×60 poster): the goblin sigil ⛧ occupies the avatar slot, and a small-caps accent-colored **FROM THE PIT** tag sits in the footer beside the relative timestamp (inline `FROM THE PIT · <time>` on the landing card's caps line). All leading emoji removed from the copy templates — the tag now does the identity job. Stored copy remains frozen; rows written before this amendment are groomed at render time by `stripLeadingEmoji` in `copy.ts`.
