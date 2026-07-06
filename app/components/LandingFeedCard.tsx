@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Avatar from "./Avatar";
 import { relativeTime } from "./activity/relativeTime";
-import { renderCopyText } from "./activity/SystemEventRow";
+import { renderCopyText, PitSigil } from "./activity/SystemEventRow";
 import type { LandingFeedRow, LandingFilm } from "@/lib/queries/landing";
 
 // Pre-login landing page feed card. Static server-rendered snapshot of real
@@ -58,13 +58,21 @@ export default function LandingFeedCard({ rows }: { rows: LandingFeedRow[] }) {
       {rows.map(row => (
         <div key={row.id} className="landing-feed-row">
           {row.kind === "system" ? (
-            <span style={{ width: 26, flexShrink: 0 }} />
+            <PitSigil size={26} />
           ) : (
             <Avatar name={row.actor.display_name || row.actor.username} url={row.actor.avatar_url} size={26} />
           )}
           <div style={{ fontFamily: "var(--font-ui)", fontSize: 13, lineHeight: 1.35 }}>
             <Sentence row={row} />
-            <div className="caps" style={{ fontSize: 8, color: "var(--muted)", marginTop: 3 }}>{relativeTime(row.created_at)}</div>
+            <div className="caps" style={{ fontSize: 8, color: "var(--muted)", marginTop: 3 }}>
+              {row.kind === "system" ? (
+                <>
+                  <span style={{ color: "var(--accent)" }}>From the Pit</span>
+                  {" · "}
+                </>
+              ) : null}
+              {relativeTime(row.created_at)}
+            </div>
           </div>
           <Thumb film={row.film} />
         </div>
