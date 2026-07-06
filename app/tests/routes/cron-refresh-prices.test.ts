@@ -5,6 +5,7 @@ const connectMock = vi.fn();
 const endMock = vi.fn();
 const clientCtor = vi.fn(() => ({ connect: connectMock, end: endMock }));
 const runOnceMock = vi.fn();
+const runPriceFeedScanMock = vi.fn();
 
 vi.mock("pg", () => ({
   default: { Client: clientCtor },
@@ -13,6 +14,10 @@ vi.mock("pg", () => ({
 
 vi.mock("film-goblin-worker", () => ({
   runOnce: runOnceMock,
+}));
+
+vi.mock("@/lib/feed-events/price-scan", () => ({
+  runPriceFeedScan: runPriceFeedScanMock,
 }));
 
 // Import AFTER the mocks are registered.
@@ -37,6 +42,7 @@ describe("GET /api/cron/refresh-prices", () => {
     endMock.mockReset().mockResolvedValue(undefined);
     clientCtor.mockClear();
     runOnceMock.mockReset();
+    runPriceFeedScanMock.mockReset().mockResolvedValue({ scanned: 0, emitted: 0 });
   });
 
   afterEach(() => {
@@ -88,6 +94,8 @@ describe("GET /api/cron/refresh-prices", () => {
     const body = await res.json();
     expect(body.ok).toBe(true);
     expect(body.digest.films_refreshed).toBe(3);
+    expect(body.feedScan).toEqual({ scanned: 0, emitted: 0 });
+    expect(runPriceFeedScanMock).toHaveBeenCalledTimes(1);
     expect(endMock).toHaveBeenCalledTimes(1);
   });
 

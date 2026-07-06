@@ -12,6 +12,8 @@ import { acquireCronLock } from "@/lib/theaters/lock";
 import { runTheaterAlerts } from "@/lib/theaters/scrape-theaters";
 import { runLoftShowtimes } from "@/lib/theaters/showtimes/scrape-loft-showtimes";
 import { recordCronRun } from "@/lib/cron/record-run";
+import { runPriceFeedScan } from "@/lib/feed-events/price-scan";
+import { runDailyFeedEvents } from "@/lib/feed-events/daily";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,6 +81,10 @@ export async function GET(request: Request): Promise<NextResponse> {
       console.log(digest.render());
       return digest.snapshot();
     });
+
+    jobs.priceFeedScan = await recordedJob("price-feed-scan", () => runPriceFeedScan(client));
+
+    jobs.dailyFeedEvents = await recordedJob("daily-feed-events", () => runDailyFeedEvents(client));
 
     jobs.rateReminders = await recordedJob("send-rate-reminders", () => runRateReminders(client));
 
