@@ -79,3 +79,61 @@ describe("EVENT_PRIORITY", () => {
     expect(EVENT_PRIORITY.milestone).toBeGreaterThan(EVENT_PRIORITY.anniversary);
   });
 });
+
+describe("v2 templates", () => {
+  it("now_free / left_free name the service", () => {
+    expect(renderCopy("now_free", { title: "Hokum", service: "Tubi" }, 0)).toBe(
+      "**Hokum** is free on Tubi. No tithe required. Go."
+    );
+    expect(renderCopy("left_free", { title: "Hokum", service: "Tubi" }, 0)).toBe(
+      "**Hokum** has left Tubi. The free ride is over — the goblin still tracks the price."
+    );
+  });
+
+  it("now_on_apple crosses over", () => {
+    expect(renderCopy("now_on_apple", { title: "Obsession" }, 0)).toBe(
+      "The theatrical veil lifts. **Obsession** crosses over — now on Apple TV."
+    );
+  });
+
+  it("theater events name the theater", () => {
+    expect(renderCopy("now_at_theater", { title: "Suspiria", theater: "The Loft" }, 0)).toBe(
+      "**Suspiria** haunts The Loft this week. The big screen is the proper altar."
+    );
+    expect(renderCopy("last_showing", { title: "Suspiria", theater: "The Loft" }, 0)).toBe(
+      "Tonight is the last showing of **Suspiria** at The Loft. Then: the small screen, and regret."
+    );
+  });
+
+  it("verdict, moon, communion", () => {
+    expect(renderCopy("verdict_anointed", { title: "The Wailing" }, 0)).toBe(
+      "The coven has spoken. **The Wailing** is Anointed."
+    );
+    expect(renderCopy("full_moon", { title: "Ginger Snaps" }, 0)).toBe(
+      "The moon is full. The pit suggests **Ginger Snaps**. Lock the doors either way."
+    );
+    expect(renderCopy("monthly_communion", { title: "Nosferatu", n: 4 }, 0)).toBe(
+      "The coven gathered around **Nosferatu** this month — 4 watchings."
+    );
+  });
+
+  it("new_film summon variant overrides rotation", () => {
+    expect(renderCopy("new_film", { title: "Backrooms", year: 2026, summoned: true }, 0)).toBe(
+      "The summons was answered. **Backrooms** claws its way into the pit."
+    );
+    expect(renderCopy("new_film", { title: "Backrooms", year: 2026, summoned: true }, 1)).toBe(
+      "The summons was answered. **Backrooms** claws its way into the pit."
+    );
+  });
+
+  it("v2 priorities are exact", () => {
+    expect(EVENT_PRIORITY.left_free).toBe(88);
+    expect(EVENT_PRIORITY.now_free).toBe(85);
+    expect(EVENT_PRIORITY.now_on_apple).toBe(82);
+    expect(EVENT_PRIORITY.last_showing).toBe(78);
+    expect(EVENT_PRIORITY.verdict_anointed).toBe(75);
+    expect(EVENT_PRIORITY.now_at_theater).toBe(65);
+    expect(EVENT_PRIORITY.full_moon).toBe(45);
+    expect(EVENT_PRIORITY.monthly_communion).toBe(40);
+  });
+});

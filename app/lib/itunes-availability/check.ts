@@ -3,6 +3,7 @@ import type { Database } from "@/lib/supabase/types";
 import { scoreMatch, type FilmInput, type ItunesCandidate } from "./score";
 import { searchItunesMovies } from "./itunes-search";
 import { searchAppleTv } from "@/lib/search/apple-tv";
+import { emitFeedEventSvc } from "@/lib/feed-events/emit";
 
 const AUTO_PROMOTE_THRESHOLD = 0.85;
 const QUEUE_THRESHOLD = 0.45;
@@ -210,8 +211,21 @@ async function autoPromote(
     .from("films")
     .update(patch as never)
     .eq("id", film.id)
-    .is("itunes_id", null);
+    .is("itunes_id", null)
+    .select("id");
   if (upd.error) throw upd.error;
+
+  if (upd.data && upd.data.length > 0) {
+    try {
+      await emitFeedEventSvc(client, {
+        type: "now_on_apple",
+        filmId: film.id,
+        vars: { title: film.title },
+      });
+    } catch (err) {
+      console.warn("feed event now_on_apple failed:", err instanceof Error ? err.message : err);
+    }
+  }
 }
 
 async function queueCandidate(

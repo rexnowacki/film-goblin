@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
+import { emitFeedEventSvc } from "@/lib/feed-events/emit";
 
 export async function adminConfirmItunesCandidate(
   candidateId: string,
@@ -23,7 +24,7 @@ export async function adminConfirmItunesCandidate(
 
   const film = await sr
     .from("films")
-    .select("artwork_url")
+    .select("title, artwork_url")
     .eq("id", cand.data.film_id)
     .single();
   if (film.error) return { ok: false, error: film.error.message };
@@ -44,6 +45,16 @@ export async function adminConfirmItunesCandidate(
     .eq("id", cand.data.film_id)
     .is("itunes_id", null);
   if (upd.error) return { ok: false, error: upd.error.message };
+
+  try {
+    await emitFeedEventSvc(sr, {
+      type: "now_on_apple",
+      filmId: cand.data.film_id,
+      vars: { title: film.data.title },
+    });
+  } catch (err) {
+    console.warn("feed event now_on_apple failed:", err instanceof Error ? err.message : err);
+  }
 
   const mark = await sr
     .from("itunes_candidates")

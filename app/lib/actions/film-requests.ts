@@ -359,6 +359,7 @@ export async function fulfillFilmRequest(requestId: string): Promise<
     series_id: null,
     series_new_name: "",
     series_order: null,
+    summoned: true,
   });
 
   if (!createResult.ok) return createResult;

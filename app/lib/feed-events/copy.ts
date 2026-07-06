@@ -4,7 +4,9 @@
 
 export type FeedEventType =
   | "price_drop" | "all_time_low" | "price_rise" | "new_film"
-  | "anniversary" | "goblin_pick" | "milestone";
+  | "anniversary" | "goblin_pick" | "milestone"
+  | "left_free" | "now_free" | "now_on_apple" | "last_showing"
+  | "verdict_anointed" | "now_at_theater" | "full_moon" | "monthly_communion";
 
 export const EVENT_PRIORITY: Record<FeedEventType, number> = {
   all_time_low: 100,
@@ -14,6 +16,14 @@ export const EVENT_PRIORITY: Record<FeedEventType, number> = {
   price_rise: 60,
   milestone: 50,
   anniversary: 10,
+  left_free: 88,
+  now_free: 85,
+  now_on_apple: 82,
+  last_showing: 78,
+  verdict_anointed: 75,
+  now_at_theater: 65,
+  full_moon: 45,
+  monthly_communion: 40,
 };
 
 export interface CopyVars {
@@ -25,6 +35,9 @@ export interface CopyVars {
   age?: number;
   one_line?: string;
   milestone_kind?: "catalog" | "monthly" | "member";
+  service?: string;
+  theater?: string;
+  summoned?: boolean;
 }
 
 function usd(v: number | undefined): string {
@@ -59,6 +72,37 @@ const TEMPLATES: Record<Exclude<FeedEventType, "milestone">, Template[]> = {
   goblin_pick: [
     v => `The goblin's counsel this week: **${v.title}** (${v.year}). ${v.one_line ?? ""}`.trim(),
   ],
+  left_free: [
+    v => `**${v.title}** has left ${v.service}. The free ride is over — the goblin still tracks the price.`,
+    v => `${v.service} took **${v.title}** back. The goblin mourns. The goblin also watches the price.`,
+  ],
+  now_free: [
+    v => `**${v.title}** is free on ${v.service}. No tithe required. Go.`,
+    v => `${v.service} offers **${v.title}** for nothing. Suspicious. Take it anyway.`,
+  ],
+  now_on_apple: [
+    v => `The theatrical veil lifts. **${v.title}** crosses over — now on Apple TV.`,
+    v => `The wait ends. **${v.title}** is on Apple TV. The pit tracks its price from tonight.`,
+  ],
+  last_showing: [
+    v => `Tonight is the last showing of **${v.title}** at ${v.theater}. Then: the small screen, and regret.`,
+    v => `Final night for **${v.title}** at ${v.theater}. The projector forgets; the goblin does not.`,
+  ],
+  verdict_anointed: [
+    v => `The coven has spoken. **${v.title}** is Anointed.`,
+    v => `Ninety percent of the coven cannot be wrong. **${v.title}** ascends.`,
+  ],
+  now_at_theater: [
+    v => `**${v.title}** haunts ${v.theater} this week. The big screen is the proper altar.`,
+    v => `${v.theater} summons **${v.title}**. Attend.`,
+  ],
+  full_moon: [
+    v => `The moon is full. The pit suggests **${v.title}**. Lock the doors either way.`,
+    v => `Full moon tonight. **${v.title}** knows what that means.`,
+  ],
+  monthly_communion: [
+    v => `The coven gathered around **${v.title}** this month — ${v.n} watchings.`,
+  ],
 };
 
 const MILESTONE_TEMPLATES: Record<NonNullable<CopyVars["milestone_kind"]>, Template> = {
@@ -84,6 +128,9 @@ export function variantCount(type: FeedEventType, _vars?: CopyVars): number {
 }
 
 export function renderCopy(type: FeedEventType, vars: CopyVars, variant: number): string {
+  if (type === "new_film" && vars.summoned) {
+    return `The summons was answered. **${vars.title}** claws its way into the pit.`;
+  }
   if (type === "milestone") {
     const kind = vars.milestone_kind ?? "catalog";
     return MILESTONE_TEMPLATES[kind](vars);

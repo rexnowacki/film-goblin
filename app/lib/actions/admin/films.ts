@@ -43,6 +43,8 @@ export interface FilmFormFields {
   series_id: string | null;
   series_new_name: string;
   series_order: number | null;
+  // Set when this create fulfills a user-submitted film request ("summoned").
+  summoned?: boolean;
 }
 
 export interface FilmSeriesSummary {
@@ -265,7 +267,7 @@ export async function adminCreateFilm(
     await emitFeedEventSvc(serviceRoleClient(), {
       type: "new_film",
       filmId: data.id,
-      vars: { title: payload.title, year: payload.year },
+      vars: { title: payload.title, year: payload.year, ...(fields.summoned ? { summoned: true } : {}) },
     });
   } catch (err) {
     console.warn("feed event new_film failed:", err instanceof Error ? err.message : err);

@@ -69,4 +69,21 @@ describe("RLS: feed_events", () => {
       await expect(db.client.query(`DELETE FROM feed_events`)).rejects.toThrow();
     } finally { await rollback(db.client); }
   });
+
+  it("accepts every v2 event_type value (mig 0210)", async () => {
+    const v2 = [
+      "left_free", "now_free", "now_on_apple", "last_showing",
+      "verdict_anointed", "now_at_theater", "full_moon", "monthly_communion",
+    ];
+    await beginAs(db.client, null, "service_role");
+    for (const t of v2) {
+      await db.client.query(
+        `INSERT INTO feed_events (event_type, copy, priority) VALUES ($1::feed_event_type, 'x', 1)`,
+        [t],
+      );
+    }
+    const r = await db.client.query(`SELECT count(*) AS c FROM feed_events`);
+    expect(Number(r.rows[0].c)).toBe(v2.length);
+    await commit(db.client);
+  });
 });

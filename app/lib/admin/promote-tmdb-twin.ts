@@ -1,3 +1,6 @@
+import { emitFeedEventSvc } from "@/lib/feed-events/emit";
+import { serviceRoleClient } from "@/lib/supabase/service-role";
+
 export interface ItunesGraft {
   itunes_id: number;
   itunes_url: string;
@@ -26,7 +29,7 @@ export async function promoteTmdbTwin(
 
   const { data: twin, error } = await c
     .from("films")
-    .select("id, artwork_url")
+    .select("id, title, artwork_url")
     .eq("tmdb_id", tmdbId)
     .is("itunes_id", null)
     .limit(1)
@@ -51,6 +54,16 @@ export async function promoteTmdbTwin(
     .eq("id", twin.id)
     .is("itunes_id", null);
   if (updateError) throw updateError;
+
+  try {
+    await emitFeedEventSvc(serviceRoleClient(), {
+      type: "now_on_apple",
+      filmId: twin.id,
+      vars: { title: twin.title },
+    });
+  } catch (err) {
+    console.warn("feed event now_on_apple failed:", err instanceof Error ? err.message : err);
+  }
 
   return twin.id;
 }

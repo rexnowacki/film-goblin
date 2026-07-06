@@ -4,6 +4,7 @@
 
 import type { Client as PgClient } from "pg";
 import { emitFeedEvent } from "./emit";
+import { isFullMoonUTCDate } from "./moon";
 
 export interface AnniversaryCandidate {
   film_id: string;
@@ -41,6 +42,28 @@ const MEMBER_STEP = 5;
 export function latestMemberThreshold(count: number, step = MEMBER_STEP): number | null {
   if (count < step) return null;
   return count - (count % step);
+}
+
+export interface FullMoonCandidate {
+  film_id: string;
+  title: string;
+  prior_appearances: number;
+  watchlist_count: number;
+}
+
+// Owner decision 2026-07-06: prefer werewolves; fall back to the creature
+// trio until more werewolf films are tagged. Rotate: fewest prior full_moon
+// appearances first so the small pool doesn't repeat one favorite.
+const FULL_MOON_PRIMARY_TAGS = ["werewolves"];
+const FULL_MOON_FALLBACK_TAGS = ["vampires", "zombies", "kaiju"];
+
+export function pickFullMoonFilm(candidates: FullMoonCandidate[]): FullMoonCandidate | null {
+  if (candidates.length === 0) return null;
+  return [...candidates].sort((a, b) =>
+    a.prior_appearances - b.prior_appearances
+    || b.watchlist_count - a.watchlist_count
+    || a.film_id.localeCompare(b.film_id),
+  )[0];
 }
 
 export async function runDailyFeedEvents(
@@ -109,6 +132,108 @@ export async function runDailyFeedEvents(
       type: "milestone", filmId: null,
       vars: { n: t, milestone_kind: "member" },
     }));
+  }
+
+  // --- last_showing: film's final active Loft showtime is within the next 24h ---
+  const lastShows = await client.query(
+    `SELECT f.id AS film_id, f.title
+     FROM films f
+     JOIN theater_showtimes ts ON ts.film_id = f.id
+     WHERE ts.is_active AND ts.starts_at >= now()
+     GROUP BY f.id, f.title
+     HAVING max(ts.starts_at) < now() + interval '24 hours'`,
+  );
+  for (const r of lastShows.rows) {
+    bump(await emitFeedEvent(client, {
+      type: "last_showing",
+      filmId: r.film_id,
+      vars: { title: r.title, theater: "The Loft" },
+    }));
+  }
+
+  // --- verdict_anointed: coven verdict crosses the top tier (once ever) ---
+  const anointed = await client.query(
+    `SELECT fws.id AS film_id, fws.title
+     FROM films_with_stats fws
+     WHERE fws.coven_rating_pct >= 90 AND fws.coven_rating_count >= 5
+       AND NOT EXISTS (
+         SELECT 1 FROM feed_events fe
+         WHERE fe.film_id = fws.id AND fe.event_type = 'verdict_anointed'
+       )`,
+  );
+  for (const r of anointed.rows) {
+    bump(await emitFeedEvent(client, {
+      type: "verdict_anointed",
+      filmId: r.film_id,
+      vars: { title: r.title },
+    }));
+  }
+
+  // --- full_moon: one film, on full-moon days, max one event per window ---
+  if (isFullMoonUTCDate(now)) {
+    const recentMoon = await client.query(
+      `SELECT 1 FROM feed_events
+       WHERE event_type = 'full_moon' AND created_at > now() - interval '3 days'
+       LIMIT 1`,
+    );
+    if (!recentMoon.rowCount) {
+      const poolFor = async (tags: string[]) => client.query(
+        `SELECT f.id AS film_id, f.title,
+                (SELECT count(*) FROM feed_events fe
+                 WHERE fe.film_id = f.id AND fe.event_type = 'full_moon')::int AS prior_appearances,
+                (SELECT count(*) FROM watchlists w WHERE w.film_id = f.id)::int AS watchlist_count
+         FROM films f
+         WHERE EXISTS (
+           SELECT 1 FROM film_tags ft JOIN tags t ON t.id = ft.tag_id
+           WHERE ft.film_id = f.id AND t.type = 'subject' AND t.name = ANY($1)
+         )`,
+        [tags],
+      );
+      let pool = await poolFor(FULL_MOON_PRIMARY_TAGS);
+      if (pool.rowCount === 0) pool = await poolFor(FULL_MOON_FALLBACK_TAGS);
+      const picked = pickFullMoonFilm(pool.rows);
+      if (picked) {
+        bump(await emitFeedEvent(client, {
+          type: "full_moon",
+          filmId: picked.film_id,
+          vars: { title: picked.title },
+        }));
+      }
+    }
+  }
+
+  // --- monthly_communion: most-watched film of last month (1st of month) ---
+  if (now.getUTCDate() === 1) {
+    const commThisMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const commPrevMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+    const month = commPrevMonthStart.toISOString().slice(0, 7);
+    const dup = await client.query(
+      `SELECT 1 FROM feed_events
+       WHERE event_type = 'monthly_communion' AND payload ->> 'month' = $1
+       LIMIT 1`,
+      [month],
+    );
+    if (!dup.rowCount) {
+      const top = await client.query(
+        `SELECT f.id AS film_id, f.title, count(*)::int AS n
+         FROM watched w JOIN films f ON f.id = w.film_id
+         WHERE w.watched_at >= $1 AND w.watched_at < $2
+         GROUP BY f.id, f.title
+         HAVING count(*) >= 2
+         ORDER BY n DESC, f.id
+         LIMIT 1`,
+        [commPrevMonthStart.toISOString(), commThisMonthStart.toISOString()],
+      );
+      const t = top.rows[0];
+      if (t) {
+        bump(await emitFeedEvent(client, {
+          type: "monthly_communion",
+          filmId: t.film_id,
+          vars: { title: t.title, n: Number(t.n) },
+          payloadExtra: { month },
+        }));
+      }
+    }
   }
 
   return { emitted };
