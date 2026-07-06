@@ -12,6 +12,8 @@ import LanePicker from "@/components/settings/LanePicker";
 import ThemePicker from "@/components/settings/ThemePicker";
 import DeleteAccountSection from "./DeleteAccountSection";
 import InviteLinkSection from "@/components/settings/InviteLinkSection";
+import PushToggle from "@/components/settings/PushToggle";
+import SettingsSection from "@/components/settings/SettingsSection";
 import { THEME_COOKIE, readTheme } from "@/lib/theme";
 import SignOutSection from "./components/SignOutSection";
 
@@ -20,6 +22,7 @@ const SETTINGS_NAV = [
   { href: "#profile", label: "Profile" },
   { href: "#privacy", label: "Privacy" },
   { href: "#notifications", label: "Alerts" },
+  { href: "#push", label: "Push" },
   { href: "#email-notifications", label: "Email" },
   { href: "#account", label: "Account" },
   { href: "#appearance", label: "Theme" },
@@ -111,6 +114,14 @@ export default async function SettingsPage() {
               initialAuthEmail={user.email ?? null}
               initialHasPasswordIdentity={hasPasswordIdentity}
             />
+            <SettingsSection
+              id="push"
+              eyebrow="Push"
+              title="Push notifications"
+              description="Get coven news, recommendations, gazing RSVPs, and price drops on this device."
+            >
+              <PushToggle />
+            </SettingsSection>
             <ThemePicker current={currentTheme} />
             <LanePicker
               initialLaneIds={initialLaneIds}
