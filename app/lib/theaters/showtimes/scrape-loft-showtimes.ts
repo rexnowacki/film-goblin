@@ -6,6 +6,7 @@ import { withinWindow } from "./filter-window";
 import { upsertShowtimes } from "./upsert-showtimes";
 import { matchShowtimes } from "./match-showtimes";
 import type { ResolvedShowtime, ShowtimesRunSummary } from "./types";
+import { emitFeedEventSvc } from "@/lib/feed-events/emit";
 
 type Client = SupabaseClient<Database>;
 
@@ -49,6 +50,30 @@ export async function runLoftShowtimes(
 
   const upserted = await upsertShowtimes(client, "loft-cinema", resolved, now);
   const matched = await matchShowtimes(client, upserted.showtimeIds);
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const c = client as unknown as { from: (t: string) => any };
+    const { data: showing } = await c
+      .from("theater_showtimes")
+      .select("film_id, film:films(id, title)")
+      .eq("is_active", true)
+      .gte("starts_at", new Date().toISOString())
+      .not("film_id", "is", null);
+    const seen = new Set<string>();
+    for (const row of showing ?? []) {
+      const film = Array.isArray(row.film) ? row.film[0] : row.film;
+      if (!film || seen.has(film.id)) continue;
+      seen.add(film.id);
+      await emitFeedEventSvc(client, {
+        type: "now_at_theater",
+        filmId: film.id,
+        vars: { title: film.title, theater: "The Loft" },
+      });
+    }
+  } catch (err) {
+    console.warn("now_at_theater feed events failed:", err instanceof Error ? err.message : err);
+  }
 
   return {
     scraped: scraped.length,
