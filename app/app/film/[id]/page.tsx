@@ -28,6 +28,7 @@ import SharerWatchPin from "@/components/SharerWatchPin";
 import FilmCTABanner from "@/components/FilmCTABanner";
 import FilmDescription from "@/components/FilmDescription";
 import FilmCastStrip from "@/components/FilmCastStrip";
+import FilmPriceSticker from "@/components/FilmPriceSticker";
 import { compactCount } from "@/lib/format";
 import { getFilmTags } from "@/lib/queries/film-tags";
 import { getFilmCast } from "@/lib/queries/film-cast";
@@ -166,6 +167,13 @@ export default async function FilmDetailPage({
               <FilmTagsRow visible={filmTags.visible} director={film.director} />
             </div>
 
+            {/* Price sticker — text-column placement, never on the poster (settled: PR #51). */}
+            {film.itunes_url && currentPrice != null && (
+              <div style={{ margin: "4px 0 28px" }}>
+                <FilmPriceSticker price={currentPrice} history={history} />
+              </div>
+            )}
+
             {/* Primary action cluster — save/own/log + recommend + share + buy. */}
             <div className="hero-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {user && (
@@ -200,9 +208,7 @@ export default async function FilmDetailPage({
               )}
               {film.itunes_url && (
                 <a href={film.itunes_url} target="_blank" rel="noreferrer" className="btn btn-lg">
-                  {currentPrice != null
-                    ? `Buy on Apple TV · $${currentPrice.toFixed(2)} →`
-                    : "Buy on Apple TV →"}
+                  Buy on Apple TV →
                 </a>
               )}
             </div>
