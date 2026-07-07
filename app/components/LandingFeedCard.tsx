@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Avatar from "./Avatar";
 import { relativeTime } from "./activity/relativeTime";
-import { renderCopyText, PitSigil } from "./activity/SystemEventRow";
+import { renderCopyText, PitSigil } from "./activity/systemEventParts";
 import type { LandingFeedRow, LandingFilm } from "@/lib/queries/landing";
 
 // Pre-login landing page feed card. Static server-rendered snapshot of real

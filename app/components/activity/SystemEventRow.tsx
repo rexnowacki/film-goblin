@@ -2,45 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
 import type { SystemFeedEvent } from "@/lib/feed-events/types";
-import { stripLeadingEmoji } from "@/lib/feed-events/copy";
 import { relativeTime } from "./relativeTime";
-
-// copy contains **bold** markers from the templates — render them as <strong>.
-// Exported so LandingFeedCard can reuse it for its own "system" row kind
-// rather than re-implementing the same bold-splitting regex.
-export function renderCopyText(copy: string): ReactNode[] {
-  return stripLeadingEmoji(copy).split(/(\*\*[^*]+\*\*)/g).map((seg, i) =>
-    seg.startsWith("**") && seg.endsWith("**")
-      ? <strong key={i}>{seg.slice(2, -2)}</strong>
-      : <span key={i}>{seg}</span>
-  );
-}
-
-// The goblin's sigil occupies the avatar slot so system rows share the exact
-// anatomy of user rows (see ActivityWatchlistAdded): avatar | text+footer | poster.
-export function PitSigil({ size }: { size: number }) {
-  return (
-    <span
-      aria-hidden="true"
-      style={{
-        width: size,
-        height: size,
-        flexShrink: 0,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        border: "1px solid #2a2a2a",
-        color: "var(--muted)",
-        fontSize: size * 0.5,
-        lineHeight: 1,
-      }}
-    >
-      ⛧
-    </span>
-  );
-}
+import { renderCopyText, PitSigil } from "./systemEventParts";
 
 export default function SystemEventRow({ event }: { event: SystemFeedEvent }) {
   return (
