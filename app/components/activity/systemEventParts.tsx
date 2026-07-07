@@ -17,24 +17,23 @@ export function renderCopyText(copy: string): ReactNode[] {
 
 // The goblin's sigil occupies the avatar slot so system rows share the exact
 // anatomy of user rows (see ActivityWatchlistAdded): avatar | text+footer | poster.
+// Wax-seal medallion — its own irregular edge, deliberately not cropped into
+// a circle like Avatar.tsx: the wavy border reads as "seal, not person."
 export function PitSigil({ size }: { size: number }) {
   return (
-    <span
+    <img
+      src="/pit-sigil.png"
+      alt=""
       aria-hidden="true"
+      width={size}
+      height={size}
       style={{
         width: size,
         height: size,
+        objectFit: "contain",
         flexShrink: 0,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        border: "1px solid #2a2a2a",
-        color: "var(--muted)",
-        fontSize: size * 0.5,
-        lineHeight: 1,
+        display: "inline-block",
       }}
-    >
-      ⛧
-    </span>
+    />
   );
 }
