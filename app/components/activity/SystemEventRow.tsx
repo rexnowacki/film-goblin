@@ -15,7 +15,7 @@ export default function SystemEventRow({ event }: { event: SystemFeedEvent }) {
       <PitSigil size={36} />
       <div style={{ flex: 1 }}>
         <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, lineHeight: 1.4, color: "var(--bone)" }}>
-          {renderCopyText(event.copy)}
+          {renderCopyText(event.copy, event.film?.id)}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
           <span className="caps" style={{ fontSize: 9, letterSpacing: "0.14em", color: "var(--accent)" }}>

@@ -25,7 +25,7 @@ function Sentence({ row }: { row: LandingFeedRow }) {
     case "library_added":
       return <><b>{row.actor.username}</b> now owns <Title film={row.film} /></>;
     case "system":
-      return <>{renderCopyText(row.copy)}</>;
+      return <>{renderCopyText(row.copy, row.film?.id)}</>;
   }
 }
 

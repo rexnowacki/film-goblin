@@ -4,15 +4,35 @@
 // "use client" SystemEventRow made them client references and crashed the
 // landing page whenever a system row appeared (digest 2199110839).
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { stripLeadingEmoji } from "@/lib/feed-events/copy";
 
-// copy contains **bold** markers from the templates — render them as <strong>.
-export function renderCopyText(copy: string): ReactNode[] {
-  return stripLeadingEmoji(copy).split(/(\*\*[^*]+\*\*)/g).map((seg, i) =>
-    seg.startsWith("**") && seg.endsWith("**")
-      ? <strong key={i}>{seg.slice(2, -2)}</strong>
-      : <span key={i}>{seg}</span>
-  );
+// copy contains **bold** markers from the templates, always wrapping the
+// film title (see lib/feed-events/copy.ts TEMPLATES — the only `**...**`
+// segment in any template is `${v.title}`). When a filmId is available,
+// render that segment as the same accent/italic film link user-activity
+// rows use (see ActivityWatchlistAdded); otherwise fall back to <strong>
+// (defensive — no template currently bolds anything without an attached
+// film, but milestone events genuinely have none).
+export function renderCopyText(copy: string, filmId?: string | null): ReactNode[] {
+  return stripLeadingEmoji(copy).split(/(\*\*[^*]+\*\*)/g).map((seg, i) => {
+    if (!(seg.startsWith("**") && seg.endsWith("**"))) {
+      return <span key={i}>{seg}</span>;
+    }
+    const title = seg.slice(2, -2);
+    return filmId ? (
+      <Link
+        key={i}
+        prefetch={false}
+        href={`/film/${filmId}`}
+        style={{ color: "var(--accent)", fontStyle: "italic" }}
+      >
+        {title}
+      </Link>
+    ) : (
+      <strong key={i}>{title}</strong>
+    );
+  });
 }
 
 // The goblin's sigil occupies the avatar slot so system rows share the exact
