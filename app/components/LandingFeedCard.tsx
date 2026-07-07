@@ -58,7 +58,7 @@ export default function LandingFeedCard({ rows }: { rows: LandingFeedRow[] }) {
       {rows.map(row => (
         <div key={row.id} className="landing-feed-row">
           {row.kind === "system" ? (
-            <PitSigil size={32} />
+            <PitSigil size={26} />
           ) : (
             <Avatar name={row.actor.display_name || row.actor.username} url={row.actor.avatar_url} size={26} />
           )}

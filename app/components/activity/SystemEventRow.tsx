@@ -12,7 +12,7 @@ export default function SystemEventRow({ event }: { event: SystemFeedEvent }) {
       data-system-event={event.event_type}
       style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid #2a2a2a" }}
     >
-      <PitSigil size={42} />
+      <PitSigil size={36} />
       <div style={{ flex: 1 }}>
         <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, lineHeight: 1.4, color: "var(--bone)" }}>
           {renderCopyText(event.copy)}

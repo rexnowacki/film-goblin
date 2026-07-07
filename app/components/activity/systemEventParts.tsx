@@ -17,23 +17,31 @@ export function renderCopyText(copy: string): ReactNode[] {
 
 // The goblin's sigil occupies the avatar slot so system rows share the exact
 // anatomy of user rows (see ActivityWatchlistAdded): avatar | text+footer | poster.
-// Wax-seal medallion — its own irregular edge, deliberately not cropped into
-// a circle like Avatar.tsx: the wavy border reads as "seal, not person."
+// SVG "FG" badge — same circular/void-border language as Avatar.tsx's
+// initials fallback, so it reads as a sibling of user avatars, not a photo.
 export function PitSigil({ size }: { size: number }) {
   return (
-    <img
-      src="/pit-sigil.png"
-      alt=""
-      aria-hidden="true"
+    <svg
       width={size}
       height={size}
-      style={{
-        width: size,
-        height: size,
-        objectFit: "contain",
-        flexShrink: 0,
-        display: "inline-block",
-      }}
-    />
+      viewBox="0 0 40 40"
+      aria-hidden="true"
+      style={{ flexShrink: 0, display: "inline-block" }}
+    >
+      <circle cx="20" cy="20" r="18" fill="var(--accent)" stroke="var(--void)" strokeWidth="2" />
+      <text
+        x="20"
+        y="21"
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontFamily="var(--font-ui)"
+        fontWeight={900}
+        fontSize="14"
+        letterSpacing="0.02em"
+        fill="var(--bone)"
+      >
+        FG
+      </text>
+    </svg>
   );
 }
