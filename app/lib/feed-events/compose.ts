@@ -87,24 +87,43 @@ export function composeFeed<U extends { created_at?: string }>(
   ];
   tagged.sort((a, b) => b.recencyKey.localeCompare(a.recencyKey) || b.tie - a.tie);
 
-  // Rule 2: no two consecutive system events of the same event_type.
-  // Greedy rebuild: walk the recency-sorted list and, at each step, take the
-  // next-most-recent item that wouldn't stack on the previous system
-  // event's type. If every remaining item conflicts (only that one type is
-  // left), take the most-recent one anyway — stacking is unavoidable there.
+  // Rule 2 (stride cap, 2026-07-07 amendment): interleave, don't clump. A
+  // cron run can emit several different-type system events seconds apart —
+  // all newer than the last real user action when activity is quiet — so
+  // recency-only merging stacked the whole burst above every user row.
+  // Two guards, checked in priority order at each step:
+  //   (a) hard: if the previous pick was ANY system event and a user item
+  //       remains anywhere in the pool, the next pick MUST be a user item —
+  //       even one older than the queued system events — so a burst can
+  //       never sit adjacent to itself while there's something to break it
+  //       up with.
+  //   (b) soft (unchanged from v1): among system candidates, skip one that
+  //       repeats the previous system event's exact type if a different
+  //       type is available.
+  // Once every user item has been placed, (a) no longer applies and any
+  // remaining system events surface in recency order — stacking at that
+  // point is unavoidable and acceptable (there is nothing left to spread
+  // them across).
   const remaining = [...tagged];
   const result: Array<ComposedItem<U>> = [];
+  let lastWasSystem = false;
   let lastSystemType: SystemFeedEvent["event_type"] | null = null;
   while (remaining.length > 0) {
+    const forceUser = lastWasSystem && remaining.some(r => r.entry.type === "user");
     let pick = 0;
     for (let i = 0; i < remaining.length; i++) {
       const cand = remaining[i];
-      if (cand.entry.type === "system" && cand.entry.event.event_type === lastSystemType) continue;
+      if (forceUser) {
+        if (cand.entry.type !== "user") continue;
+      } else if (cand.entry.type === "system" && cand.entry.event.event_type === lastSystemType) {
+        continue;
+      }
       pick = i;
       break;
     }
     const [next] = remaining.splice(pick, 1);
     result.push(next.entry);
+    lastWasSystem = next.entry.type === "system";
     lastSystemType = next.entry.type === "system" ? next.entry.event.event_type : null;
   }
 
