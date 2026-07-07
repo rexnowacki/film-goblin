@@ -70,4 +70,45 @@ describe("composeFeed", () => {
     const run2 = composeFeed(users, systems, "2026-07-05", getCreatedAt).map(o => o.type === "user" ? o.item.id : o.event.id);
     expect(run1).toEqual(run2);
   });
+
+  it("spreads a same-burst clump of system events across older user activity (stride cap)", () => {
+    // A cron burst: 3 different-type system events, all fired seconds apart
+    // and all newer than any real user activity — the exact shape of a
+    // real cron run landing while user activity is stale.
+    const users = [usr("u1", at(1)), usr("u2", at(0))];
+    const systems = [
+      sys("s1", "now_free", 85, "2026-07-06T23:27:10Z"),
+      sys("s2", "now_at_theater", 65, "2026-07-06T23:26:58Z"),
+      sys("s3", "price_rise", 60, "2026-07-06T23:26:53Z"),
+    ];
+    const out = composeFeed(users, systems, "2026-07-06", getCreatedAt);
+    for (let i = 1; i < out.length; i++) {
+      if (out[i - 1].type === "system" && out[i].type === "system") {
+        throw new Error(`consecutive system rows at ${i - 1}-${i} with a user item still available to break them up`);
+      }
+    }
+    expect(out.filter(o => o.type === "user")).toHaveLength(2);
+  });
+
+  it("falls back to allowing consecutive system events only once every user item is placed", () => {
+    // 2:1 cap fully maxed (2 users -> 4 systems survive): with only 2 user
+    // items to separate 4 system items, one adjacent system pair is
+    // mathematically unavoidable — it must land only after both user items
+    // have already been placed, never before.
+    const users = [usr("u1", at(2)), usr("u2", at(1))];
+    const systems = [
+      sys("s1", "now_free", 85, at(10)),
+      sys("s2", "now_at_theater", 65, at(9)),
+      sys("s3", "price_rise", 60, at(8)),
+      sys("s4", "left_free", 88, at(7)),
+    ];
+    const out = composeFeed(users, systems, "2026-07-05", getCreatedAt);
+    expect(out.filter(o => o.type === "system")).toHaveLength(4);
+    const lastUserIndex = out.map(o => o.type).lastIndexOf("user");
+    for (let i = 1; i <= lastUserIndex; i++) {
+      if (out[i - 1].type === "system" && out[i].type === "system") {
+        throw new Error(`consecutive system rows at ${i - 1}-${i} before every user item was placed`);
+      }
+    }
+  });
 });
