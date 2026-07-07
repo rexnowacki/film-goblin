@@ -11,7 +11,7 @@ interface Props {
 }
 
 // Die-cut vinyl price sticker — same visual family as the OG share card
-// (app/api/og/film/[id]/route.tsx), scaled down for the hero column.
+// (app/app/api/og/film/[id]/route.tsx), scaled down for the hero column.
 // Informational only: the Buy button stays the sole CTA.
 export default function FilmPriceSticker({ price, history }: Props) {
   const beat = pickPriceBeat(price, history);
