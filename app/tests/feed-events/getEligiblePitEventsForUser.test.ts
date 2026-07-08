@@ -1,0 +1,76 @@
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
+import { getEligiblePitEventsForUser, PIT_DAILY_CAP } from "../../lib/feed-events/pitSelection";
+import { createTestUser, deleteTestUser, adminClient, type TestUser } from "../helpers/users";
+import { signedInClient } from "../helpers/supabase";
+
+const hasEnv = !!process.env.TEST_SUPABASE_SERVICE_ROLE_KEY && !!process.env.TEST_SUPABASE_URL;
+
+let userA: TestUser;
+let filmId: string;
+let watchlistedFilmId: string;
+
+beforeAll(async () => {
+  if (!hasEnv) return;
+  userA = await createTestUser();
+  const admin = adminClient();
+  const f1 = await admin.from("films").insert({ itunes_id: 820000 + Math.floor(Math.random() * 100000), title: "T1", director: "D", year: 2024 }).select("id").single();
+  const f2 = await admin.from("films").insert({ itunes_id: 830000 + Math.floor(Math.random() * 100000), title: "T2", director: "D", year: 2024 }).select("id").single();
+  if (f1.error || !f1.data || f2.error || !f2.data) throw f1.error ?? f2.error;
+  filmId = f1.data.id;
+  watchlistedFilmId = f2.data.id;
+});
+
+afterAll(async () => {
+  if (!hasEnv) return;
+  const admin = adminClient();
+  await admin.from("feed_events").delete().in("film_id", [filmId, watchlistedFilmId]);
+  await admin.from("films").delete().in("id", [filmId, watchlistedFilmId]);
+  if (userA?.id) await deleteTestUser(userA.id);
+});
+
+beforeEach(async () => {
+  if (!hasEnv) return;
+  const admin = adminClient();
+  await admin.from("pit_impressions").delete().eq("user_id", userA.id);
+  await admin.from("watchlists").delete().eq("user_id", userA.id);
+  await admin.from("feed_events").delete().in("film_id", [filmId, watchlistedFilmId]);
+});
+
+describe.skipIf(!hasEnv)("getEligiblePitEventsForUser", () => {
+  it("excludes an already-impressed event permanently", async () => {
+    const admin = adminClient();
+    const ins = await admin.from("feed_events").insert({ event_type: "price_drop", film_id: filmId, copy: "x", priority: 90 }).select("id").single();
+    if (ins.error || !ins.data) throw ins.error;
+    await admin.from("pit_impressions").insert({ user_id: userA.id, event_id: ins.data.id });
+
+    const c = await signedInClient(userA.email, userA.password);
+    const out = await getEligiblePitEventsForUser(c as any, userA.id, 10);
+    expect(out.find(e => e.id === ins.data!.id)).toBeUndefined();
+  });
+
+  it("returns [] once the daily cap is reached", async () => {
+    const admin = adminClient();
+    for (let i = 0; i < PIT_DAILY_CAP; i++) {
+      const ins = await admin.from("feed_events").insert({ event_type: "price_drop", film_id: filmId, copy: `x${i}`, priority: 90 }).select("id").single();
+      if (ins.error || !ins.data) throw ins.error;
+      await admin.from("pit_impressions").insert({ user_id: userA.id, event_id: ins.data.id });
+    }
+    const ins2 = await admin.from("feed_events").insert({ event_type: "price_drop", film_id: filmId, copy: "fresh", priority: 90 }).select("id").single();
+    if (ins2.error || !ins2.data) throw ins2.error;
+
+    const c = await signedInClient(userA.email, userA.password);
+    const out = await getEligiblePitEventsForUser(c as any, userA.id, 10);
+    expect(out).toEqual([]);
+  });
+
+  it("a watchlist match is returned ahead of a higher-priority non-match", async () => {
+    const admin = adminClient();
+    await admin.from("watchlists").insert({ user_id: userA.id, film_id: watchlistedFilmId, max_price_usd: 9.99 });
+    await admin.from("feed_events").insert({ event_type: "price_drop", film_id: filmId, copy: "high priority, not watchlisted", priority: 90 });
+    await admin.from("feed_events").insert({ event_type: "milestone", film_id: watchlistedFilmId, copy: "low priority, watchlisted", priority: 10 });
+
+    const c = await signedInClient(userA.email, userA.password);
+    const out = await getEligiblePitEventsForUser(c as any, userA.id, 10);
+    expect(out[0].film_id).toBe(watchlistedFilmId);
+  });
+});
