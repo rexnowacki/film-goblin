@@ -47,12 +47,16 @@ export function getPitKicker(event: SystemFeedEvent, tier: PitTier): string {
   return "LEDGER ECHO";
 }
 
+function rawVars(event: SystemFeedEvent): Record<string, unknown> {
+  const raw = (event.payload as { vars?: unknown }).vars;
+  return raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+}
+
 // payload is `Record<string, unknown>` (JSON from the DB) — this is the
 // only place that reaches into payload.vars, with runtime type guards
 // since nothing enforces the shape at the type level.
 export function getPitPriceVars(event: SystemFeedEvent): { price: number | null; oldPrice: number | null } {
-  const raw = (event.payload as { vars?: unknown }).vars;
-  const vars = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const vars = rawVars(event);
   const price = typeof vars.price === "number" ? vars.price : null;
   const oldPrice = typeof vars.old_price === "number" ? vars.old_price : null;
   return { price, oldPrice };
@@ -61,11 +65,6 @@ export function getPitPriceVars(event: SystemFeedEvent): { price: number | null;
 export interface PitBadge {
   label: string;
   filled?: boolean;
-}
-
-function rawVars(event: SystemFeedEvent): Record<string, unknown> {
-  const raw = (event.payload as { vars?: unknown }).vars;
-  return raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
 }
 
 // Source/FREE/price badges for standard-tier rows (spec §"Standard row").
