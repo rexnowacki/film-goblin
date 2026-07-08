@@ -34,6 +34,30 @@ describe("renderCopy", () => {
       "The goblin's counsel this week: **Possession** (1981). Do not watch with a spouse."
     );
   });
+
+  it("price_drop variant 2 leads with a goblin action, not a feeling", () => {
+    expect(renderCopy("price_drop", { title: "Suspiria", price: 4.99 }, 2)).toBe(
+      "The goblin marked **Suspiria**'s fall to $4.99. Now you know too."
+    );
+  });
+
+  it("all_time_low variant 1 leads with a goblin action, not a feeling", () => {
+    expect(renderCopy("all_time_low", { title: "Suspiria", price: 4.99 }, 1)).toBe(
+      "**Suspiria** drops its guard to $4.99. The goblin strikes."
+    );
+  });
+
+  it("new_film variant 0 leads with a goblin action, not a feeling", () => {
+    expect(renderCopy("new_film", { title: "Raw", year: 2016 }, 0)).toBe(
+      "The goblin dragged **Raw** (2016) into the pit by the collar."
+    );
+  });
+
+  it("left_free variant 1 leads with a goblin action, not a feeling", () => {
+    expect(renderCopy("left_free", { title: "Raw", service: "AMC+" }, 1)).toBe(
+      "The goblin let **Raw** slip back to AMC+'s vault. Still watching the price."
+    );
+  });
 });
 
 describe("stripLeadingEmoji", () => {

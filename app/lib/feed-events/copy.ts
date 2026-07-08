@@ -46,22 +46,26 @@ function usd(v: number | undefined): string {
 
 type Template = (v: CopyVars) => string;
 
+// Voice rule: goblin ACTION verb first, then the concrete fact — never a
+// goblin FEELING. "The goblin gnawed off the price tag. X is free." is
+// good; "The goblin mourns. X was taken back." is bad (states a feeling,
+// not an action). Apply this to any new template added below.
 const TEMPLATES: Record<Exclude<FeedEventType, "milestone">, Template[]> = {
   price_drop: [
     v => `The blood price falls. **${v.title}** is now ${usd(v.price)} — down from ${usd(v.old_price)}.`,
     v => `Apple blinked. **${v.title}** drops to ${usd(v.price)}.`,
-    v => `**${v.title}** just fell to ${usd(v.price)}. The goblin noticed. Now you have too.`,
+    v => `The goblin marked **${v.title}**'s fall to ${usd(v.price)}. Now you know too.`,
   ],
   all_time_low: [
     v => `ALL-TIME LOW: **${v.title}** at ${usd(v.price)}. The moon is right. The price is finally right too.`,
-    v => `**${v.title}** hits ${usd(v.price)} — the lowest the goblin has ever seen. Strike.`,
+    v => `**${v.title}** drops its guard to ${usd(v.price)}. The goblin strikes.`,
   ],
   price_rise: [
     v => `The window closes. **${v.title}** climbs back to ${usd(v.price)}. You were warned.`,
     v => `**${v.title}** rises to ${usd(v.price)}. The patient will be rewarded. Eventually.`,
   ],
   new_film: [
-    v => `Summoned to the pit: **${v.title}** (${v.year}). The goblin has been waiting for this one.`,
+    v => `The goblin dragged **${v.title}** (${v.year}) into the pit by the collar.`,
     v => `Fresh from the pit: **${v.title}** (${v.year}) joins the hoard.`,
   ],
   anniversary: [
@@ -74,7 +78,7 @@ const TEMPLATES: Record<Exclude<FeedEventType, "milestone">, Template[]> = {
   ],
   left_free: [
     v => `**${v.title}** has left ${v.service}. The free ride is over — the goblin still tracks the price.`,
-    v => `${v.service} took **${v.title}** back. The goblin mourns. The goblin also watches the price.`,
+    v => `The goblin let **${v.title}** slip back to ${v.service}'s vault. Still watching the price.`,
   ],
   now_free: [
     v => `**${v.title}** is free on ${v.service}. No tithe required. Go.`,
