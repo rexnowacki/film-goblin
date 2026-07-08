@@ -63,6 +63,47 @@ describe.skipIf(!hasEnv)("getEligiblePitEventsForUser", () => {
     expect(out).toEqual([]);
   });
 
+  it("permanently excludes a backdated impression without counting it toward today's cap", async () => {
+    const admin = adminClient();
+
+    // Backdated (2 days ago) impression on its own event.
+    const oldIns = await admin.from("feed_events").insert({ event_type: "price_drop", film_id: filmId, copy: "old", priority: 90 }).select("id").single();
+    if (oldIns.error || !oldIns.data) throw oldIns.error;
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString();
+    const oldImp = await admin.from("pit_impressions").insert({ user_id: userA.id, event_id: oldIns.data.id, shown_at: twoDaysAgo });
+    if (oldImp.error) throw oldImp.error;
+
+    // The backdated event must never resurface, regardless of cap state.
+    const c = await signedInClient(userA.email, userA.password);
+    const outBeforeFreshImpressions = await getEligiblePitEventsForUser(c as any, userA.id, 10);
+    expect(outBeforeFreshImpressions.find(e => e.id === oldIns.data!.id)).toBeUndefined();
+
+    // Now add exactly PIT_DAILY_CAP - 1 fresh (today-dated) impressions on
+    // other events. This count is deliberately ONE SHORT of the cap: if the
+    // 2-day-old impression wrongly counted toward today's budget, the
+    // effective today-count would read PIT_DAILY_CAP (backdated + these) and
+    // the function would already return [] -- a false "cap reached". If the
+    // backdated impression correctly does NOT count toward today, the real
+    // today-count is only PIT_DAILY_CAP - 1, still under the cap, and a
+    // fresh, never-impressed candidate must still be admitted. Using exactly
+    // PIT_DAILY_CAP fresh impressions here (as a naive version of this test
+    // might) would return [] under BOTH the correct and the buggy
+    // implementation, failing to distinguish them -- PIT_DAILY_CAP - 1 is
+    // the tight boundary that actually proves the day-scoping is correct.
+    for (let i = 0; i < PIT_DAILY_CAP - 1; i++) {
+      const ins = await admin.from("feed_events").insert({ event_type: "price_drop", film_id: filmId, copy: `fresh${i}`, priority: 90 }).select("id").single();
+      if (ins.error || !ins.data) throw ins.error;
+      const imp = await admin.from("pit_impressions").insert({ user_id: userA.id, event_id: ins.data.id });
+      if (imp.error) throw imp.error;
+    }
+    const freshCandidate = await admin.from("feed_events").insert({ event_type: "price_drop", film_id: filmId, copy: "should-still-be-eligible", priority: 90 }).select("id").single();
+    if (freshCandidate.error || !freshCandidate.data) throw freshCandidate.error;
+
+    const outWithBudgetRemaining = await getEligiblePitEventsForUser(c as any, userA.id, 10);
+    expect(outWithBudgetRemaining.find(e => e.id === freshCandidate.data!.id)).toBeDefined();
+    expect(outWithBudgetRemaining.find(e => e.id === oldIns.data!.id)).toBeUndefined();
+  });
+
   it("a watchlist match is returned ahead of a higher-priority non-match", async () => {
     const admin = adminClient();
     await admin.from("watchlists").insert({ user_id: userA.id, film_id: watchlistedFilmId, max_price_usd: 9.99 });
