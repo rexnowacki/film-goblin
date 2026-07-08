@@ -15,6 +15,7 @@ import { getServerUser } from "@/lib/supabase/cached";
 import { createClient } from "@/lib/supabase/server";
 import { getPendingAnnouncement, type PendingAnnouncement } from "@/lib/queries/announcements";
 import AnnouncementOverlay from "@/components/AnnouncementOverlay";
+import PurchasePrompt from "@/components/PurchasePrompt";
 import { THEME_COOKIE, readTheme } from "@/lib/theme";
 
 const rubikWetPaint = Rubik_Wet_Paint({
@@ -142,6 +143,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ToastProvider>
           {children}
           {pending && <AnnouncementOverlay announcement={pending} />}
+          {user && <PurchasePrompt />}
         </ToastProvider>
       </body>
     </html>
