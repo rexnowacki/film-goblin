@@ -87,4 +87,27 @@ describe("enforcePitPositionRules", () => {
     const out = enforcePitPositionRules(items);
     expect(ids(out)).toEqual(["s0"]); // only the first survives -- first-screen cap AND min-gap both violated for s1/s2
   });
+
+  it("does not let a dropped item's removal shift a later Pit item into the displayed first screen", () => {
+    // Regression: the first-screen window must be measured against the
+    // item's position in the OUTPUT (displayed) array, not its index in
+    // the raw input. Here s1 sits at input index 3 (inside the window) and
+    // gets dropped by the first-screen cap. That drop shifts every later
+    // item left by one in the display -- s2, originally at input index 6
+    // (just outside the window, pre-fix incorrectly treated as safe),
+    // lands at displayed position 5 once s1 is gone, which IS still inside
+    // the first-screen window. s2 must therefore also be dropped, or two
+    // Pit items would appear in the first 6 displayed rows.
+    const items = [
+      sysItem("s0"),                 // displayed pos 0 -- kept
+      userItem("u_a"), userItem("u_b"),
+      sysItem("s1"),                 // input idx 3, inside window -- dropped (2nd Pit item in first screen)
+      userItem("u_c"), userItem("u_d"),
+      sysItem("s2"),                 // input idx 6 (outside pre-fix), but displayed pos 5 once s1 is gone
+    ];
+    const out = enforcePitPositionRules(items);
+    const kept = ids(out);
+    expect(kept.filter(id => id.startsWith("s"))).toEqual(["s0"]); // only s0 survives as a Pit item
+    expect(kept).toEqual(["s0", "u_a", "u_b", "u_c", "u_d"]);
+  });
 });
