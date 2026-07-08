@@ -40,6 +40,24 @@ describe("resolvePitTiers", () => {
     expect(out.get("b")).toBe("full");
   });
 
+  it("demotes a full candidate at the tightest gap that must still be demoted", () => {
+    // b's counter value when reached is (number of user items) + 1. The
+    // boundary test above uses PIT_FULL_CARD_WINDOW (8) user items, giving
+    // b a counter of 9 — comfortably kept, but not the tightest possible
+    // edge. The true edge is PIT_FULL_CARD_WINDOW - 2 (6) user items,
+    // giving b a counter of 7 (7 < 8 -> demoted) — one less user item than
+    // this would give a counter of 8 (kept, per the test above). Together
+    // the two tests bracket the exact index where the comparison flips.
+    const items = [
+      sysItem("a", "all_time_low"),
+      ...Array.from({ length: PIT_FULL_CARD_WINDOW - 2 }, (_, i) => userItem(`u${i}`)),
+      sysItem("b", "all_time_low"),
+    ];
+    const out = resolvePitTiers(items);
+    expect(out.get("a")).toBe("full");
+    expect(out.get("b")).toBe("standard");
+  });
+
   it("counts user items toward the window gap, not just system items", () => {
     const items = [
       sysItem("a", "all_time_low"),
