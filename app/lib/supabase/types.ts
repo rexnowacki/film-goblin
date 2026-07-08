@@ -34,6 +34,7 @@
 //   fyp_not_interested: entire table — added by mig 0207
 //   record_fyp_impressions: RPC function — added by mig 0206
 //   library:       price_paid_usd (NUMERIC(6,2) | null) — added by mig 0211
+//   pit_impressions: entire table — added by mig 0212
 //
 // Workflow when regen is needed on the other machine:
 //   1. Run `npm run gen:types` to get fresh output.
@@ -1295,6 +1296,24 @@ export type Database = {
           slug?: string
           street_address?: string | null
           timezone?: string
+        }
+        Relationships: []
+      }
+      pit_impressions: {
+        Row: {
+          user_id: string
+          event_id: string
+          shown_at: string
+        }
+        Insert: {
+          user_id: string
+          event_id: string
+          shown_at?: string
+        }
+        Update: {
+          user_id?: string
+          event_id?: string
+          shown_at?: string
         }
         Relationships: []
       }
