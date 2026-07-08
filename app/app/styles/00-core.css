@@ -21,6 +21,19 @@
   --muted: #8a8578;
   --muted-dark: #6b6558;
 
+  /* FROM THE PIT — fixed brand identity, deliberately NOT theme-switched
+     (unlike --accent). The Pit is the product's own voice, distinct from
+     whatever accent theme the viewer has picked. */
+  --pit-magenta: #f00070;
+  --pit-magenta-bright: #ff1a7e;
+  --pit-plum-bg: #17091f;
+  --pit-plum-line: #2a0f38;
+  --pit-plum-wash-start: rgba(58, 15, 74, 0.30);
+  --pit-plum-wash-end: rgba(58, 15, 74, 0.10);
+  --pit-whisper-tint: rgba(58, 15, 74, 0.14);
+  --pit-cream: #f0d8bc;
+  --pit-cream-dim: #9c8b78;
+
   /* Accent is driven by tweak */
   --accent: var(--pink);
   --accent-deep: var(--pink-deep);

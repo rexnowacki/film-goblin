@@ -1,0 +1,68 @@
+/* ============================================================
+   FROM THE PIT — three-tier system-event treatment
+   (spec 2026-07-07-pit-tier-system-design.md)
+   ============================================================ */
+
+.pit-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.pit-kicker {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pit-magenta-bright);
+}
+
+.pit-copy {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.pit-whisper {
+  border-left: 2px solid var(--pit-magenta);
+  background: var(--pit-whisper-tint);
+  padding: 8px 12px;
+}
+.pit-whisper .pit-copy {
+  color: var(--pit-cream-dim);
+}
+
+.pit-standard {
+  border-radius: 16px;
+  background: linear-gradient(90deg, var(--pit-plum-wash-start), var(--pit-plum-wash-end));
+  padding: 12px;
+}
+.pit-standard .pit-copy {
+  color: var(--pit-cream);
+}
+
+.pit-full {
+  border-radius: 16px;
+  background: var(--pit-plum-bg);
+  border: 1px solid var(--pit-plum-line);
+  padding: 12px;
+}
+.pit-full .pit-copy {
+  color: var(--pit-cream);
+}
+
+.pit-price-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--pit-cream);
+  margin-top: 6px;
+}
+.pit-price-chip .pit-price-old {
+  color: var(--pit-cream-dim);
+  text-decoration: line-through;
+}
