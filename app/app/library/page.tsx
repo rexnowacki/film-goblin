@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
-import { getLibrary } from "@/lib/queries/library";
+import { getLibrary, getLibrarySavings } from "@/lib/queries/library";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FilmPoster from "@/components/FilmPoster";
@@ -14,9 +14,10 @@ export default async function LibraryPage() {
   if (!user) redirect("/auth/signin?next=/library");
   const supabase = await createClient();
 
-  const [rows, myProfile] = await Promise.all([
+  const [rows, myProfile, savings] = await Promise.all([
     getLibrary(supabase, user.id),
     getMyProfile(supabase),
+    getLibrarySavings(supabase, user.id),
   ]);
 
   return (
@@ -34,6 +35,22 @@ export default async function LibraryPage() {
 
       <section style={{ padding: "24px 0 60px" }}>
         <div className="container-wide">
+          {savings.claimedCount > 0 && (
+            <div style={{ display: "flex", gap: 24, flexWrap: "wrap", margin: "0 0 20px", fontFamily: "var(--font-ui)" }}>
+              <div>
+                <div className="caps" style={{ fontSize: 10, color: "var(--muted)" }}>Claimed</div>
+                <div style={{ fontSize: 22, fontWeight: 800 }}>{savings.claimedCount}</div>
+              </div>
+              <div>
+                <div className="caps" style={{ fontSize: 10, color: "var(--muted)" }}>Tithed to Apple</div>
+                <div style={{ fontSize: 22, fontWeight: 800 }}>${savings.totalPaid.toFixed(2)}</div>
+              </div>
+              <div>
+                <div className="caps" style={{ fontSize: 10, color: "var(--muted)" }}>Kept from the fire</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--accent)" }}>${savings.totalSaved.toFixed(2)}</div>
+              </div>
+            </div>
+          )}
           {rows.length === 0 ? (
             <div style={{ textAlign: "center", padding: 60, fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--muted)" }}>
               Empty stacks. Mark films as owned from any film&rsquo;s page.
