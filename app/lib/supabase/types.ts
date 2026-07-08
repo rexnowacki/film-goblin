@@ -33,6 +33,7 @@
 //   fyp_impressions: entire table — added by mig 0206
 //   fyp_not_interested: entire table — added by mig 0207
 //   record_fyp_impressions: RPC function — added by mig 0206
+//   record_pit_impressions: RPC function — added by mig 0212
 //   library:       price_paid_usd (NUMERIC(6,2) | null) — added by mig 0211
 //   pit_impressions: entire table — added by mig 0212
 //
@@ -1822,6 +1823,10 @@ export type Database = {
       }
       record_fyp_impressions: {
         Args: { p_film_ids: string[] }
+        Returns: undefined
+      }
+      record_pit_impressions: {
+        Args: { p_event_ids: string[] }
         Returns: undefined
       }
     }
