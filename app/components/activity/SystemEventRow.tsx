@@ -33,7 +33,6 @@ export default function SystemEventRow({ event, tier }: { event: SystemFeedEvent
       data-system-event={event.event_type}
       data-pit-tier={tier}
       className={`pit-row pit-${tier}`}
-      style={{ borderBottom: tier === "whisper" ? undefined : "1px solid #2a2a2a", padding: tier === "whisper" ? undefined : "12px 0" }}
     >
       {tier !== "whisper" && <PitSeal size={40} />}
       <div style={{ flex: 1 }}>

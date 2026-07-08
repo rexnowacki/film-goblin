@@ -1,12 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { resolvePitTiers, PIT_FULL_CARD_WINDOW } from "../../lib/feed-events/pitCadence";
+import { getPitKicker } from "../../lib/feed-events/tier";
 import type { SystemFeedEvent } from "../../lib/feed-events/types";
 import type { ComposedItem } from "../../lib/feed-events/compose";
 import type { FeedEventType } from "../../lib/feed-events/copy";
 
+function makeEvent(id: string, type: FeedEventType): SystemFeedEvent {
+  return { id, event_type: type, film_id: null, payload: {}, copy: "x", priority: 0, created_at: "2026-07-07T00:00:00Z", film: null };
+}
 function sysItem(id: string, type: FeedEventType): ComposedItem<{ id: string }> {
-  const event: SystemFeedEvent = { id, event_type: type, film_id: null, payload: {}, copy: "x", priority: 0, created_at: "2026-07-07T00:00:00Z", film: null };
-  return { type: "system", event };
+  return { type: "system", event: makeEvent(id, type) };
 }
 function userItem(id: string): ComposedItem<{ id: string }> {
   return { type: "user", item: { id } };
@@ -85,5 +88,23 @@ describe("resolvePitTiers", () => {
 
   it("returns an empty map for an empty feed", () => {
     expect(resolvePitTiers([]).size).toBe(0);
+  });
+
+  it("end-to-end: a demoted full card's resolved tier renders the LEDGER ECHO kicker", () => {
+    // Chains resolvePitTiers's output directly into getPitKicker, the way
+    // SystemEventRow/LandingFeedCard actually do — tier.test.ts proves
+    // getPitKicker(event, "standard") === "LEDGER ECHO" in isolation, and
+    // the tests above prove demotion happens, but nothing previously
+    // threaded one into the other.
+    const bEvent = makeEvent("b", "all_time_low");
+    const items = [
+      sysItem("a", "all_time_low"),
+      ...Array.from({ length: 3 }, (_, i) => userItem(`u${i}`)),
+      { type: "system" as const, event: bEvent },
+    ];
+    const out = resolvePitTiers(items);
+    const resolvedTier = out.get("b")!;
+    expect(resolvedTier).toBe("standard");
+    expect(getPitKicker(bEvent, resolvedTier)).toBe("LEDGER ECHO");
   });
 });

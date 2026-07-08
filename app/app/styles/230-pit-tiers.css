@@ -28,6 +28,7 @@
   border-left: 2px solid var(--pit-magenta);
   background: var(--pit-whisper-tint);
   padding: 8px 12px;
+  margin: 8px 0;
 }
 .pit-whisper .pit-copy {
   color: var(--pit-cream-dim);
@@ -37,6 +38,7 @@
   border-radius: 16px;
   background: linear-gradient(90deg, var(--pit-plum-wash-start), var(--pit-plum-wash-end));
   padding: 12px;
+  margin: 8px 0;
 }
 .pit-standard .pit-copy {
   color: var(--pit-cream);
@@ -47,6 +49,7 @@
   background: var(--pit-plum-bg);
   border: 1px solid var(--pit-plum-line);
   padding: 12px;
+  margin: 8px 0;
 }
 .pit-full .pit-copy {
   color: var(--pit-cream);
@@ -65,4 +68,21 @@
 .pit-price-chip .pit-price-old {
   color: var(--pit-cream-dim);
   text-decoration: line-through;
+}
+
+/* landing-feed-row's flat dashed divider + vertical-only padding (from
+   220-landing.css) reads as a contradiction against these rounded/bordered
+   cards — a straight rule cutting through a pill, and squared-off insets
+   fighting the card's own padding. Compound selectors win on specificity
+   over the plain single-class rules regardless of import order; each
+   restates its own tier's full padding since a shorthand `padding`
+   declaration replaces the whole property, not just the axes given. */
+.landing-feed-row.pit-whisper {
+  border-bottom: none;
+  padding: 8px 12px;
+}
+.landing-feed-row.pit-standard,
+.landing-feed-row.pit-full {
+  border-bottom: none;
+  padding: 12px;
 }
