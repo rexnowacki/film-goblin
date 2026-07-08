@@ -9,6 +9,8 @@ import type { EnrichedActivity, FeedItem } from "@/lib/queries/activity";
 import { groupFeed } from "@/lib/queries/group-activity";
 import { loadMoreFeed } from "@/lib/actions/feed-load-more";
 import { composeFeed } from "@/lib/feed-events/compose";
+import { resolvePitTiers } from "@/lib/feed-events/pitCadence";
+import type { PitTier } from "@/lib/feed-events/tier";
 import type { SystemFeedEvent } from "@/lib/feed-events/types";
 
 type Tab = "all" | "coven" | "recs";
@@ -155,20 +157,28 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
   // constraint `U extends { created_at?: string }` triggers TS's "weak
   // type" check against a union with no shared property names. Wrapping
   // each item with an explicit `created_at` sidesteps that.
-  const composed = useMemo<FeedItem[]>(() => {
-    if (!systemEvents || systemEvents.length === 0) return grouped;
+  // Raw composeFeed output, kept separate from `composed` below: it's the
+  // ComposedItem<U> shape resolvePitTiers needs (user/system discriminant),
+  // whereas `composed` immediately collapses back to FeedItem shape
+  // (single/group/system) for the rest of the component. Tiers must be
+  // resolved from THIS array, not the collapsed one.
+  const composedRaw = useMemo(() => {
+    if (!systemEvents || systemEvents.length === 0) return null;
     const seed = dateSeed ?? new Date().toISOString().slice(0, 10);
     const wrapped = grouped.map(item => ({
       item,
       created_at: item.type === "group" ? item.group.latestAt : item.type === "single" ? item.activity.created_at : item.event.created_at,
     }));
-    return composeFeed(
-      wrapped,
-      systemEvents,
-      seed,
-      (w) => w.created_at,
-    ).map(c => c.type === "system" ? { type: "system" as const, event: c.event } : c.item.item);
+    return composeFeed(wrapped, systemEvents, seed, (w) => w.created_at);
   }, [grouped, systemEvents, dateSeed]);
+  const composed = useMemo<FeedItem[]>(() => {
+    if (!composedRaw) return grouped;
+    return composedRaw.map(c => c.type === "system" ? { type: "system" as const, event: c.event } : c.item.item);
+  }, [composedRaw, grouped]);
+  const pitTiers = useMemo(
+    () => composedRaw ? resolvePitTiers(composedRaw) : new Map<string, PitTier>(),
+    [composedRaw],
+  );
   const filtered = useMemo(
     () => composed.filter(i => feedItemMatches(i, tab, MATCHERS[tab])),
     [composed, tab],
@@ -202,7 +212,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
         ) : (
           filtered.map(item =>
             item.type === "system" ? (
-              <SystemEventRow key={item.event.id} event={item.event} />
+              <SystemEventRow key={item.event.id} event={item.event} tier={pitTiers.get(item.event.id) ?? "whisper"} />
             ) : (
               <FeedRow
                 key={item.type === "group" ? item.group.key : item.activity.id}

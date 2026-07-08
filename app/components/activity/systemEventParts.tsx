@@ -35,33 +35,19 @@ export function renderCopyText(copy: string, filmId?: string | null): ReactNode[
   });
 }
 
-// The goblin's sigil occupies the avatar slot so system rows share the exact
-// anatomy of user rows (see ActivityWatchlistAdded): avatar | text+footer | poster.
-// SVG "FG" badge — same circular/void-border language as Avatar.tsx's
-// initials fallback, so it reads as a sibling of user avatars, not a photo.
-export function PitSigil({ size }: { size: number }) {
+// Wax-seal avatar for standard/full tier Pit rows (spec 2026-07-07).
+// Flat 40 everywhere on /home; LandingFeedCard uses its own smaller size
+// via the same component. Whisper tier renders no avatar at all — callers
+// simply omit PitSeal rather than calling it with a tiny size.
+export function PitSeal({ size }: { size: number }) {
   return (
-    <svg
+    <img
+      src="/pit-seal.png"
+      alt=""
+      aria-hidden="true"
       width={size}
       height={size}
-      viewBox="0 0 40 40"
-      aria-hidden="true"
-      style={{ flexShrink: 0, display: "inline-block" }}
-    >
-      <circle cx="20" cy="20" r="18" fill="var(--accent)" stroke="var(--void)" strokeWidth="2" />
-      <text
-        x="20"
-        y="21"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontFamily="var(--font-ui)"
-        fontWeight={900}
-        fontSize="14"
-        letterSpacing="0.02em"
-        fill="var(--bone)"
-      >
-        FG
-      </text>
-    </svg>
+      style={{ width: size, height: size, objectFit: "contain", flexShrink: 0, display: "inline-block" }}
+    />
   );
 }
