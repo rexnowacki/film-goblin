@@ -62,3 +62,82 @@ export async function removeFromLibrary(filmId: string) {
   revalidatePath("/library");
   revalidatePath(`/film/${filmId}`);
 }
+
+/**
+ * The Claiming (spec 2026-07-07-buy-claim-loop): confirm a purchase from the
+ * return-prompt. Fresh insert stores price_paid_usd and deletes any watchlist
+ * row (owning supersedes wanting — same semantics as _addToLibrary; the
+ * library_added activity comes from the DB insert trigger, mig 0134, so the
+ * fill-price UPDATE path correctly emits nothing). An existing row only has a
+ * NULL price filled — never overwritten.
+ */
+export async function _confirmPurchase(
+  client: Client,
+  filmId: string,
+  pricePaid: number | null,
+): Promise<{ alreadyOwnedWithPrice: boolean; peak: number | null }> {
+  const user = await requireAuthUser(client);
+  if (pricePaid != null && !(Number.isFinite(pricePaid) && pricePaid > 0 && pricePaid < 1000)) {
+    throw new Error("invalid price");
+  }
+
+  let alreadyOwnedWithPrice = false;
+
+  const { error: insertErr } = await client
+    .from("library")
+    .insert({ user_id: user.id, film_id: filmId, price_paid_usd: pricePaid });
+
+  if (insertErr && insertErr.code !== "23505") throw insertErr;
+
+  if (insertErr) {
+    // Already owned — fill a NULL price only.
+    const { data: row, error: selErr } = await client
+      .from("library")
+      .select("price_paid_usd")
+      .eq("user_id", user.id)
+      .eq("film_id", filmId)
+      .single();
+    if (selErr) throw selErr;
+    if (row.price_paid_usd != null) {
+      alreadyOwnedWithPrice = true;
+    } else if (pricePaid != null) {
+      const { error: updErr } = await client
+        .from("library")
+        .update({ price_paid_usd: pricePaid })
+        .eq("user_id", user.id)
+        .eq("film_id", filmId);
+      if (updErr) throw updErr;
+    }
+  } else {
+    // Fresh insert — owning supersedes wanting.
+    await client
+      .from("watchlists")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("film_id", filmId);
+  }
+
+  const { data: peakRow, error: peakErr } = await client
+    .from("price_history")
+    .select("price_usd")
+    .eq("film_id", filmId)
+    .order("price_usd", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (peakErr) throw peakErr;
+
+  return { alreadyOwnedWithPrice, peak: peakRow ? Number(peakRow.price_usd) : null };
+}
+
+export async function confirmPurchase(filmId: string, pricePaid: number | null) {
+  const supabase = await createClient();
+  const result = await _confirmPurchase(supabase, filmId, pricePaid);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    await createTheaterNotificationsForUserFilm(serviceRoleClient(), user.id, filmId);
+  }
+  revalidatePath("/library");
+  revalidatePath("/watchlist");
+  revalidatePath(`/film/${filmId}`);
+  return result;
+}

@@ -33,6 +33,7 @@
 //   fyp_impressions: entire table — added by mig 0206
 //   fyp_not_interested: entire table — added by mig 0207
 //   record_fyp_impressions: RPC function — added by mig 0206
+//   library:       price_paid_usd (NUMERIC(6,2) | null) — added by mig 0211
 //
 // Workflow when regen is needed on the other machine:
 //   1. Run `npm run gen:types` to get fresh output.
@@ -855,16 +856,19 @@ export type Database = {
         Row: {
           created_at: string
           film_id: string
+          price_paid_usd: number | null
           user_id: string
         }
         Insert: {
           created_at?: string
           film_id: string
+          price_paid_usd?: number | null
           user_id: string
         }
         Update: {
           created_at?: string
           film_id?: string
+          price_paid_usd?: number | null
           user_id?: string
         }
         Relationships: [
