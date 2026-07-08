@@ -1,13 +1,20 @@
 "use client";
 
+import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { SystemFeedEvent } from "@/lib/feed-events/types";
 import { relativeTime } from "./relativeTime";
 import { renderCopyText, PitSeal } from "./systemEventParts";
 import { getPitKicker, getPitPriceVars, getPitBadges, type PitTier } from "@/lib/feed-events/tier";
+import { recordPitImpressions } from "@/lib/actions/feed-events";
 
 export default function SystemEventRow({ event, tier }: { event: SystemFeedEvent; tier: PitTier }) {
+  useEffect(() => {
+    recordPitImpressions([event.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event.id]);
+
   const kicker = getPitKicker(event, tier);
   const { price, oldPrice } = getPitPriceVars(event);
   const badges = tier === "standard" ? getPitBadges(event) : [];

@@ -10,6 +10,7 @@ import { groupFeed } from "@/lib/queries/group-activity";
 import { loadMoreFeed } from "@/lib/actions/feed-load-more";
 import { composeFeed } from "@/lib/feed-events/compose";
 import { resolvePitTiers } from "@/lib/feed-events/pitCadence";
+import { enforcePitPositionRules } from "@/lib/feed-events/pitPosition";
 import type { PitTier } from "@/lib/feed-events/tier";
 import type { SystemFeedEvent } from "@/lib/feed-events/types";
 
@@ -171,13 +172,20 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
     }));
     return composeFeed(wrapped, systemEvents, seed, (w) => w.created_at);
   }, [grouped, systemEvents, dateSeed]);
-  const composed = useMemo<FeedItem[]>(() => {
-    if (!composedRaw) return grouped;
-    return composedRaw.map(c => c.type === "system" ? { type: "system" as const, event: c.event } : c.item.item);
-  }, [composedRaw, grouped]);
-  const pitTiers = useMemo(
-    () => composedRaw ? resolvePitTiers(composedRaw) : new Map<string, PitTier>(),
+  // Position rules (first-screen cap, min-gap) run on composeFeed's raw
+  // output, before tier resolution -- a dropped item shouldn't consume
+  // resolvePitTiers' full-card sliding-window budget either.
+  const composedFiltered = useMemo(
+    () => composedRaw ? enforcePitPositionRules(composedRaw) : null,
     [composedRaw],
+  );
+  const composed = useMemo<FeedItem[]>(() => {
+    if (!composedFiltered) return grouped;
+    return composedFiltered.map(c => c.type === "system" ? { type: "system" as const, event: c.event } : c.item.item);
+  }, [composedFiltered, grouped]);
+  const pitTiers = useMemo(
+    () => composedFiltered ? resolvePitTiers(composedFiltered) : new Map<string, PitTier>(),
+    [composedFiltered],
   );
   const filtered = useMemo(
     () => composed.filter(i => feedItemMatches(i, tab, MATCHERS[tab])),

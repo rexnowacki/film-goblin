@@ -5,6 +5,7 @@ import { getWatchlistPriceDropFilms } from "@/lib/queries/ledger";
 import type { GoblinPickFilm } from "@/lib/queries/goblin-pick";
 import { getRitualMessages } from "@/lib/queries/ritual";
 import { getRecentSystemEvents } from "@/lib/feed-events/query";
+import { getEligiblePitEventsForUser } from "@/lib/feed-events/pitSelection";
 import LedgerPanel from "@/components/LedgerPanel";
 import GoblinRecommends from "@/components/GoblinRecommends";
 import GoblinRecommendsMobile from "@/components/GoblinRecommendsMobile";
@@ -57,7 +58,7 @@ export default async function HomePage({
   const [priceDropFilms, ritualPick, systemEvents] = await Promise.all([
     user ? getWatchlistPriceDropFilms(supabase, user.id, 5) : Promise.resolve([]),
     getActiveRitualPick(),
-    getRecentSystemEvents(supabase, 12),
+    user ? getEligiblePitEventsForUser(supabase, user.id, 12) : getRecentSystemEvents(supabase, 12),
   ]);
   // Date-seeded so composeFeed's ratio-cap/no-stacking selection is stable
   // for the whole day rather than reshuffling on every server render.
