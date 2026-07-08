@@ -10,6 +10,7 @@ import PosterDropBadge from "@/components/PosterDropBadge";
 import PosterMobileActions from "@/components/PosterMobileActions";
 import WatchlistSortChips from "./WatchlistSortChips";
 import WatchlistSearch from "@/components/WatchlistSearch";
+import BuyOnAppleLink from "@/components/BuyOnAppleLink";
 
 const VALID_SORTS: readonly WatchlistSort[] = ["drop", "recency", "price-low", "alphabetical"] as const;
 
@@ -114,15 +115,17 @@ export default async function WatchlistPage({
                         </div>
                       </Link>
                       {r.film.itunes_url && (
-                        <a
+                        <BuyOnAppleLink
+                          filmId={r.film.id}
+                          title={r.film.title}
+                          price={r.film.latest_price}
                           href={r.film.itunes_url}
-                          target="_blank"
-                          rel="noreferrer"
+                          signedIn
                           className="caps"
                           style={{ display: "inline-block", fontSize: 10, color: "var(--accent)", marginTop: 4, textDecoration: "none" }}
                         >
                           Apple TV{r.film.latest_price != null ? ` · $${r.film.latest_price.toFixed(2)}` : ""} →
-                        </a>
+                        </BuyOnAppleLink>
                       )}
                     </div>
                   );

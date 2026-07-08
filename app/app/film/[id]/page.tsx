@@ -29,6 +29,7 @@ import FilmCTABanner from "@/components/FilmCTABanner";
 import FilmDescription from "@/components/FilmDescription";
 import FilmCastStrip from "@/components/FilmCastStrip";
 import FilmPriceSticker from "@/components/FilmPriceSticker";
+import BuyOnAppleLink from "@/components/BuyOnAppleLink";
 import { compactCount } from "@/lib/format";
 import { getFilmTags } from "@/lib/queries/film-tags";
 import { getFilmCast } from "@/lib/queries/film-cast";
@@ -207,9 +208,16 @@ export default async function FilmDetailPage({
                 />
               )}
               {film.itunes_url && (
-                <a href={film.itunes_url} target="_blank" rel="noreferrer" className="btn btn-lg">
+                <BuyOnAppleLink
+                  filmId={film.id}
+                  title={film.title}
+                  price={currentPrice}
+                  href={film.itunes_url}
+                  signedIn={Boolean(user)}
+                  className="btn btn-lg"
+                >
                   Buy on Apple TV →
-                </a>
+                </BuyOnAppleLink>
               )}
             </div>
 
