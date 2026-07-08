@@ -2,7 +2,9 @@ import Link from "next/link";
 import Image from "next/image";
 import Avatar from "./Avatar";
 import { relativeTime } from "./activity/relativeTime";
-import { renderCopyText, PitSigil } from "./activity/systemEventParts";
+import { renderCopyText, PitSeal } from "./activity/systemEventParts";
+import { getPitKicker, getPitPriceVars, type PitTier } from "@/lib/feed-events/tier";
+import { resolvePitTiers } from "@/lib/feed-events/pitCadence";
 import type { LandingFeedRow, LandingFilm } from "@/lib/queries/landing";
 
 // Pre-login landing page feed card. Static server-rendered snapshot of real
@@ -25,7 +27,7 @@ function Sentence({ row }: { row: LandingFeedRow }) {
     case "library_added":
       return <><b>{row.actor.username}</b> now owns <Title film={row.film} /></>;
     case "system":
-      return <>{renderCopyText(row.copy, row.film?.id)}</>;
+      return <>{renderCopyText(row.event.copy, row.event.film?.id)}</>;
   }
 }
 
@@ -49,34 +51,55 @@ function Thumb({ film }: { film: LandingFilm | null }) {
 }
 
 export default function LandingFeedCard({ rows }: { rows: LandingFeedRow[] }) {
+  const pitTiers = resolvePitTiers(
+    rows.map(row => row.kind === "system" ? { type: "system" as const, event: row.event } : { type: "user" as const, item: row }),
+  );
+
   return (
     <div className="landing-feed-card">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
         <span className="caps" style={{ fontSize: 11, color: "var(--highlight)" }}><span aria-hidden="true">⛧</span> The Feed</span>
         <span className="caps" style={{ fontSize: 9, color: "var(--muted)" }}>live · unhallowed hours</span>
       </div>
-      {rows.map(row => (
-        <div key={row.id} className="landing-feed-row">
-          {row.kind === "system" ? (
-            <PitSigil size={26} />
-          ) : (
-            <Avatar name={row.actor.display_name || row.actor.username} url={row.actor.avatar_url} size={26} />
-          )}
-          <div style={{ fontFamily: "var(--font-ui)", fontSize: 13, lineHeight: 1.35 }}>
-            <Sentence row={row} />
-            <div className="caps" style={{ fontSize: 8, color: "var(--muted)", marginTop: 3 }}>
-              {row.kind === "system" ? (
-                <>
-                  <span style={{ color: "var(--accent)" }}>From the Pit</span>
-                  {" · "}
-                </>
-              ) : null}
-              {relativeTime(row.created_at)}
+      {rows.map(row => {
+        if (row.kind !== "system") {
+          return (
+            <div key={row.id} className="landing-feed-row">
+              <Avatar name={row.actor.display_name || row.actor.username} url={row.actor.avatar_url} size={26} />
+              <div style={{ fontFamily: "var(--font-ui)", fontSize: 13, lineHeight: 1.35 }}>
+                <Sentence row={row} />
+                <div className="caps" style={{ fontSize: 8, color: "var(--muted)", marginTop: 3 }}>
+                  {relativeTime(row.created_at)}
+                </div>
+              </div>
+              <Thumb film={row.film} />
             </div>
+          );
+        }
+        const tier: PitTier = pitTiers.get(row.event.id) ?? "whisper";
+        const kicker = getPitKicker(row.event, tier);
+        const { price, oldPrice } = getPitPriceVars(row.event);
+        return (
+          <div key={row.id} className={`landing-feed-row pit-${tier}`}>
+            {tier !== "whisper" && <PitSeal size={32} />}
+            <div style={{ fontFamily: "var(--font-ui)", fontSize: 13, lineHeight: 1.35, flex: 1 }}>
+              <div className="pit-kicker" style={{ fontSize: 8 }}>FROM THE PIT · {kicker}</div>
+              <div style={{ marginTop: 2 }}>
+                <Sentence row={row} />
+                {tier === "full" && price != null && oldPrice != null && (
+                  <span style={{ marginLeft: 6, color: "var(--pit-cream-dim)" }}>
+                    (${price.toFixed(2)}, was ${oldPrice.toFixed(2)})
+                  </span>
+                )}
+              </div>
+              <div className="caps" style={{ fontSize: 8, color: "var(--muted)", marginTop: 3 }}>
+                {relativeTime(row.created_at)}
+              </div>
+            </div>
+            <Thumb film={row.event.film} />
           </div>
-          <Thumb film={row.film} />
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

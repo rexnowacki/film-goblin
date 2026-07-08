@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { getRecentSystemEvents } from "@/lib/feed-events/query";
 import { composeFeed } from "@/lib/feed-events/compose";
+import type { SystemFeedEvent } from "@/lib/feed-events/types";
 
 type Client = SupabaseClient<Database>;
 
@@ -47,8 +48,7 @@ export type LandingFeedRow =
       kind: "system";
       id: string;
       created_at: string;
-      copy: string;
-      film: LandingFilm | null;
+      event: SystemFeedEvent;
     };
 
 /**
@@ -158,7 +158,7 @@ export async function getLandingFeed(client: Client, limit = 5): Promise<Landing
   const composed = composeFeed(out, systemEvents, dateSeed, (row) => row.created_at);
   const merged: LandingFeedRow[] = composed.map(c =>
     c.type === "system"
-      ? { kind: "system", id: c.event.id, created_at: c.event.created_at, copy: c.event.copy, film: c.event.film }
+      ? { kind: "system", id: c.event.id, created_at: c.event.created_at, event: c.event }
       : c.item,
   );
   return merged.slice(0, limit);

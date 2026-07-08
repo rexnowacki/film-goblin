@@ -127,8 +127,8 @@ describe("getLandingFeed — system event composition", () => {
     const rows = await getLandingFeed(client);
     expect(rows.map(r => r.kind)).toEqual(expect.arrayContaining(["watch_logged", "system"]));
     const sysRow = rows.find(r => r.kind === "system") as Extract<(typeof rows)[number], { kind: "system" }>;
-    expect(sysRow.copy).toContain("Suspiria");
-    expect(sysRow.film?.title).toBe("Suspiria");
+    expect(sysRow.event.copy).toContain("Suspiria");
+    expect(sysRow.event.film?.title).toBe("Suspiria");
   });
 
   it("renders a system event with no film as film: null", async () => {
@@ -151,7 +151,7 @@ describe("getLandingFeed — system event composition", () => {
     });
     const rows = await getLandingFeed(client);
     const sysRow = rows.find(r => r.kind === "system") as Extract<(typeof rows)[number], { kind: "system" }>;
-    expect(sysRow.film).toBeNull();
+    expect(sysRow.event.film).toBeNull();
   });
 
   it("shows system events even with zero user activity", async () => {
