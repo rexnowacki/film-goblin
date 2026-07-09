@@ -89,6 +89,11 @@ jobs:
           TEST_SUPABASE_SERVICE_ROLE_KEY: ${{ steps.supabase.outputs.service_role_key }}
         run: npm test
         working-directory: app
+      - name: Print local database logs after app-test failure
+        if: failure()
+        run: |
+          CONTAINER=$(docker ps --format '{{.Names}}' | grep supabase_db)
+          docker logs "$CONTAINER" 2>&1 | tail -500
       - env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ steps.supabase.outputs.url }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.supabase.outputs.anon_key }}
