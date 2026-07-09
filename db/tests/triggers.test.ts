@@ -34,6 +34,22 @@ describe("trigger: auth.users → profiles bootstrap", () => {
       expect(handles.some((h: string) => /^alice\d+$/.test(h))).toBe(true);
     } finally { await rollback(db.client); }
   });
+
+  it("truncates email-derived usernames while reserving space for collision suffixes", async () => {
+    await beginAs(db.client, null, "service_role");
+    try {
+      const a = randomUUID(), b = randomUUID();
+      const localPart = "a".repeat(40);
+      await db.client.query(`INSERT INTO auth.users (id, email) VALUES ($1, $2)`, [a, `${localPart}@test.example`]);
+      await db.client.query(`INSERT INTO auth.users (id, email) VALUES ($1, $2)`, [b, `${localPart}@other.example`]);
+      const r = await db.client.query<{ username: string }>(
+        `SELECT username FROM profiles WHERE id IN ($1, $2) ORDER BY username`, [a, b]
+      );
+
+      expect(r.rows.map(row => row.username)).toEqual(["a".repeat(23) + "1", "a".repeat(24)]);
+      expect(r.rows.every(row => row.username.length <= 24)).toBe(true);
+    } finally { await rollback(db.client); }
+  });
 });
 
 describe("trigger: coven_requests accept → coven_members + activity", () => {
