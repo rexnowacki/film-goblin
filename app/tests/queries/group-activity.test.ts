@@ -59,7 +59,7 @@ function rec(opts: { id: string; actorId: string; minutesAgo: number }): Enriche
   };
 }
 
-function watchLog(opts: { id: string; actorId: string; minutesAgo: number }): EnrichedActivity {
+function watchLog(opts: { id: string; actorId: string; minutesAgo: number; commentCount?: number }): EnrichedActivity {
   const created = new Date(Date.now() - opts.minutesAgo * 60 * 1000).toISOString();
   return {
     id: opts.id,
@@ -71,7 +71,7 @@ function watchLog(opts: { id: string; actorId: string; minutesAgo: number }): En
       avatar_url: null,
     },
     reactions: { count: 0, likedByMe: false },
-    comments: { count: 0, items: [] },
+    comments: { count: opts.commentCount ?? 0, items: [] },
     kind: "watch_logged",
     film: {
       id: `film_${opts.id}`,
@@ -271,5 +271,22 @@ describe("groupFeed: watch_logged", () => {
     }
     expect(out[1].type).toBe("single");
     if (out[1].type === "single") expect(out[1].activity.id).toBe("2");
+  });
+
+  it("keeps a commented watch standalone while grouping nearby uncommented watches", () => {
+    const items: EnrichedActivity[] = [
+      watchLog({ id: "newest", actorId: "u1", minutesAgo: 0 }),
+      watchLog({ id: "commented", actorId: "u1", minutesAgo: 5, commentCount: 1 }),
+      watchLog({ id: "oldest", actorId: "u1", minutesAgo: 10 }),
+    ];
+
+    const out = groupFeed(items);
+
+    expect(out).toHaveLength(2);
+    expect(out[0].type).toBe("group");
+    if (out[0].type === "group") {
+      expect(out[0].group.items.map(item => item.id)).toEqual(["newest", "oldest"]);
+    }
+    expect(out[1]).toMatchObject({ type: "single", activity: { id: "commented" } });
   });
 });

@@ -8,6 +8,10 @@ function isGroupableKind(kind: EnrichedActivity["kind"]): boolean {
   return kind === "watchlist_added" || kind === "watch_logged";
 }
 
+function hasComments(activity: EnrichedActivity): boolean {
+  return activity.comments.count > 0;
+}
+
 /**
  * Single-pass O(N) grouping over a newest-first array of EnrichedActivity.
  * Folds runs of same-actor + same-kind events that fit within the 30-min
@@ -26,7 +30,9 @@ export function groupFeed(items: EnrichedActivity[]): FeedItem[] {
   let i = 0;
   while (i < items.length) {
     const head = items[i];
-    if (!isGroupableKind(head.kind)) {
+    // A comment is attached to one activity row, not to the aggregate card.
+    // Keep that row visible so its conversation is discoverable in the feed.
+    if (!isGroupableKind(head.kind) || hasComments(head)) {
       out.push({ type: "single", activity: head });
       i++;
       continue;
@@ -37,6 +43,14 @@ export function groupFeed(items: EnrichedActivity[]): FeedItem[] {
     while (j < items.length) {
       const candidate = items[j];
       if (candidate.actor.id !== head.actor.id) break;
+      if (hasComments(candidate)) {
+        // Treat comments like the existing bridgeable interruptions: this
+        // activity remains a standalone row, while adjacent uncommented
+        // same-kind activity can still form a useful aggregate.
+        skipped.push(candidate);
+        j++;
+        continue;
+      }
       if (candidate.kind !== head.kind) {
         // Bridge over same-actor different-kind interruptions; emit them after.
         skipped.push(candidate);
