@@ -14,6 +14,7 @@ import { runLoftShowtimes } from "@/lib/theaters/showtimes/scrape-loft-showtimes
 import { recordCronRun } from "@/lib/cron/record-run";
 import { runPriceFeedScan } from "@/lib/feed-events/price-scan";
 import { runDailyFeedEvents } from "@/lib/feed-events/daily";
+import { runProductEventCleanup } from "@/lib/cron/product-event-cleanup";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -131,6 +132,11 @@ export async function GET(request: Request): Promise<NextResponse> {
       );
       return { ipRowsDeleted: ip.rowCount ?? 0, userRowsDeleted: user.rowCount ?? 0 };
     });
+
+    jobs.productEventCleanup = await recordedJob(
+      "product-event-cleanup",
+      () => runProductEventCleanup(client),
+    );
 
     jobs.sendNotifications = await recordedJob("send-notifications", async () => {
       const resendKey = process.env.RESEND_API_KEY;

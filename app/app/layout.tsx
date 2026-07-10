@@ -17,6 +17,7 @@ import { getPendingAnnouncement, type PendingAnnouncement } from "@/lib/queries/
 import AnnouncementOverlay from "@/components/AnnouncementOverlay";
 import PurchasePrompt from "@/components/PurchasePrompt";
 import { THEME_COOKIE, readTheme } from "@/lib/theme";
+import ProductEventSession from "@/components/ProductEventSession";
 
 const rubikWetPaint = Rubik_Wet_Paint({
   weight: "400",
@@ -144,6 +145,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {children}
           {pending && <AnnouncementOverlay announcement={pending} />}
           {user && <PurchasePrompt />}
+          {user && <ProductEventSession />}
         </ToastProvider>
       </body>
     </html>

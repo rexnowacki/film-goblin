@@ -49,6 +49,22 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
     returns: DataType.integer,
     implementation: (s: string | null) => (s == null ? null : s.length),
   });
+  mem.public.registerFunction({
+    name: "octet_length",
+    args: [DataType.text],
+    returns: DataType.integer,
+    implementation: (s: string | null) => (s == null ? null : Buffer.byteLength(s, "utf8")),
+  });
+  mem.public.registerFunction({
+    name: "jsonb_typeof",
+    args: [DataType.jsonb],
+    returns: DataType.text,
+    implementation: (value: unknown) => {
+      if (value === null) return "null";
+      if (Array.isArray(value)) return "array";
+      return typeof value === "object" ? "object" : typeof value;
+    },
+  });
   const { Client: PgMemClient } = mem.adapters.createPg();
   const client = new PgMemClient() as unknown as Client;
   await client.connect();
@@ -97,15 +113,20 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
     // here; real Postgres behavior is covered by input-constraints.test.ts.
     if (f === "0205_input_check_constraints.sql") continue;
     const raw = readFileSync(join(DB_MIGRATIONS, f), "utf8");
+    // 0215 deliberately co-locates the table and its RPC. Preserve the DDL
+    // for the smoke while removing the real-Postgres-only function body.
+    const smokeRaw = f === "0215_product_events.sql"
+      ? raw.replace(/CREATE\s+OR\s+REPLACE\s+FUNCTION\s+record_product_events[\s\S]*$/i, "")
+      : raw;
     // pg-mem can't parse `LANGUAGE plpgsql SECURITY DEFINER` functions. Skip
     // any migration file that defines one — the smoke only asserts table
     // presence, so trigger files don't need to execute. Match the full phrase
     // so prose comments like "-- (SECURITY DEFINER)" don't trigger the skip.
-    if (/LANGUAGE\s+(?:plpgsql|sql)\s+SECURITY\s+DEFINER/i.test(raw)) continue;
+    if (/LANGUAGE\s+(?:plpgsql|sql)\s+SECURITY\s+DEFINER/i.test(smokeRaw)) continue;
     // Strip plpgsql function bodies before splitting on ';' — dollar-quoted
     // bodies contain embedded semicolons that break the statement splitter.
     // pg-mem doesn't support LANGUAGE plpgsql at all (no interpreter registered).
-    const withoutFunctions = raw.replace(
+    const withoutFunctions = smokeRaw.replace(
       /CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s[\s\S]*?\$\$\s*LANGUAGE\s+plpgsql[^;]*;/gi,
       ""
     );

@@ -47,6 +47,11 @@ export async function makeTestDb(): Promise<TestDb> {
   await client.query(`GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;`);
   await client.query(`GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;`);
 
+  // Mig 0215 is RPC-only for writes. The broad authenticated DML grant above
+  // models the Supabase default but would erase this feature's narrower grant.
+  await client.query(`REVOKE ALL ON TABLE product_events FROM anon, authenticated;`);
+  await client.query(`GRANT SELECT ON TABLE product_events TO authenticated;`);
+
   // The broad test grants above mirror Supabase defaults for most tables, but
   // mig 0203 intentionally narrows profiles to column-level privileges. Reapply
   // those grants after the broad setup so RLS tests exercise the real contract.
