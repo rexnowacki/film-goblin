@@ -9,11 +9,18 @@ import { renderCopyText, PitSeal } from "./systemEventParts";
 import { getPitKicker, getPitPriceVars, getPitBadges, type PitTier } from "@/lib/feed-events/tier";
 import { recordPitImpressions } from "@/lib/actions/feed-events";
 
-export default function SystemEventRow({ event, tier }: { event: SystemFeedEvent; tier: PitTier }) {
+export default function SystemEventRow({
+  event,
+  tier,
+  recordImpression = true,
+}: {
+  event: SystemFeedEvent;
+  tier: PitTier;
+  recordImpression?: boolean;
+}) {
   useEffect(() => {
-    recordPitImpressions([event.id]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [event.id]);
+    if (recordImpression) void recordPitImpressions([event.id]);
+  }, [event.id, recordImpression]);
 
   const kicker = getPitKicker(event, tier);
   const { price, oldPrice } = getPitPriceVars(event);
