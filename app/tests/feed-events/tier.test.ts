@@ -38,6 +38,19 @@ describe("getPitTier", () => {
     );
     expect(fullTypes).toEqual(["all_time_low"]);
   });
+
+  it("promotes a digest from a naturally-whisper type to standard", () => {
+    const digest = ev("price_rise", {
+      digest: true,
+      memberIds: ["a", "b"],
+      memberFilms: [],
+      memberCount: 2,
+      digestKey: "digest:price_rise:2026-07-10:a,b",
+    });
+    expect(getPitTier(digest)).toBe("standard");
+    expect(getPitKicker(digest, "standard")).toBe("GATHERED OMEN");
+    expect(getPitTier(ev("price_rise"))).toBe("whisper");
+  });
 });
 
 describe("getPitKicker", () => {

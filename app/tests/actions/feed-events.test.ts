@@ -58,4 +58,17 @@ describe.skipIf(!hasEnv)("actions/recordPitImpressions", () => {
     const { data } = await admin.from("pit_impressions").select("*").eq("user_id", userA.id).eq("event_id", eventId);
     expect(data).toHaveLength(1);
   });
+
+  it("threads an optional digest key to the RPC", async () => {
+    const c = await signedInClient(userA.email, userA.password);
+    await _recordPitImpressions(c as any, [eventId], "digest:price_drop:2026-07-10:a,b");
+
+    const { data } = await adminClient()
+      .from("pit_impressions")
+      .select("digest_key")
+      .eq("user_id", userA.id)
+      .eq("event_id", eventId)
+      .single();
+    expect(data?.digest_key).toBe("digest:price_drop:2026-07-10:a,b");
+  });
 });

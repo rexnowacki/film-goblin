@@ -70,6 +70,46 @@
   text-decoration: line-through;
 }
 
+.pit-digest-films {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+.pit-digest-film {
+  display: block;
+  width: 32px;
+  height: 48px;
+  border: 1px solid var(--pit-cream-dim);
+  overflow: hidden;
+}
+.pit-digest-film img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pit-digest-film-fallback {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--void-3, #1a1a1a);
+}
+.pit-digest-films .chip {
+  color: var(--pit-cream-dim);
+}
+.pit-digest-see-all {
+  display: inline-block;
+  margin-top: 9px;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pit-magenta-bright);
+}
+
 /* landing-feed-row's flat dashed divider + vertical-only padding (from
    220-landing.css) reads as a contradiction against these rounded/bordered
    cards — a straight rule cutting through a pill, and squared-off insets

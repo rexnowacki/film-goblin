@@ -9,6 +9,7 @@ import type { SystemFeedEvent } from "./types";
 import { getRecentSystemEvents } from "./query";
 import { getWatchlistedFilmIds } from "@/lib/queries/watchlists";
 import { filterPitByAge } from "./pitAge";
+import { bundlePitDigests } from "./pitDigest";
 
 type Client = SupabaseClient<Database>;
 
@@ -44,7 +45,7 @@ export async function getEligiblePitEventsForUser(
 ): Promise<SystemFeedEvent[]> {
   const { data: impressed, error: impErr } = await client
     .from("pit_impressions")
-    .select("event_id, shown_at")
+    .select("event_id, shown_at, digest_key")
     .eq("user_id", userId);
   if (impErr) throw impErr;
 
@@ -55,7 +56,7 @@ export async function getEligiblePitEventsForUser(
   const todayCount = new Set(
     (impressed ?? [])
       .filter(r => new Date(r.shown_at) >= dayStart)
-      .map(r => r.event_id),
+      .map(r => r.digest_key ?? r.event_id),
   ).size;
 
   if (todayCount >= PIT_DAILY_CAP) return [];
@@ -66,9 +67,11 @@ export async function getEligiblePitEventsForUser(
   if (candidates.length === 0) return [];
 
   const watchlistFilmIds = await getWatchlistedFilmIds(client, userId);
-  const fresh = filterPitByAge(candidates, watchlistFilmIds, new Date());
+  const now = new Date();
+  const fresh = filterPitByAge(candidates, watchlistFilmIds, now);
   if (fresh.length === 0) return [];
-  const ranked = rankPitCandidatesByWatchlist(fresh, watchlistFilmIds);
+  const bundled = bundlePitDigests(fresh, watchlistFilmIds, now);
+  const ranked = rankPitCandidatesByWatchlist(bundled, watchlistFilmIds);
 
   return ranked.slice(0, PIT_DAILY_CAP - todayCount);
 }
