@@ -39,6 +39,29 @@ describe("RLS: pit_impressions + record_pit_impressions RPC", () => {
     expect(rows[0].n).toBe(1);
   });
 
+  it("persists a shared digest key while the legacy one-argument RPC call remains NULL", async () => {
+    const admin = db.client;
+    await beginAs(admin, null, "service_role");
+    const { rows: extraRows } = await admin.query(
+      `INSERT INTO feed_events (event_type, film_id, copy, priority) VALUES ('now_free', $1, 'another', 85) RETURNING id`,
+      [fx.filmId],
+    );
+    await commit(admin);
+
+    await beginAs(db.client, fx.userA.id, "authenticated");
+    await db.client.query(`SELECT record_pit_impressions($1::uuid[], $2::text)`, [[eventId], "digest:now_free:2026-07-10:a,b"]);
+    await db.client.query(`SELECT record_pit_impressions($1::uuid[])`, [[extraRows[0].id]]);
+    const { rows } = await db.client.query(
+      `SELECT event_id, digest_key FROM pit_impressions ORDER BY event_id`,
+    );
+    await commit(db.client);
+
+    expect(rows).toEqual(expect.arrayContaining([
+      { event_id: eventId, digest_key: "digest:now_free:2026-07-10:a,b" },
+      { event_id: extraRows[0].id, digest_key: null },
+    ]));
+  });
+
   it("users cannot see each other's impressions", async () => {
     await beginAs(db.client, fx.userA.id, "authenticated");
     await db.client.query(`SELECT record_pit_impressions($1::uuid[])`, [[eventId]]);

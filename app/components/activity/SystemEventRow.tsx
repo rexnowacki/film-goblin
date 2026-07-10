@@ -7,6 +7,7 @@ import type { SystemFeedEvent } from "@/lib/feed-events/types";
 import { relativeTime } from "./relativeTime";
 import { renderCopyText, PitSeal } from "./systemEventParts";
 import { getPitKicker, getPitPriceVars, getPitBadges, type PitTier } from "@/lib/feed-events/tier";
+import { getPitDigestPayload } from "@/lib/feed-events/pitDigest";
 import { recordPitImpressions } from "@/lib/actions/feed-events";
 
 export default function SystemEventRow({
@@ -18,8 +19,15 @@ export default function SystemEventRow({
   tier: PitTier;
   recordImpression?: boolean;
 }) {
+  const digest = getPitDigestPayload(event);
+
   useEffect(() => {
-    if (recordImpression) void recordPitImpressions([event.id]);
+    if (!recordImpression) return;
+    if (digest) {
+      void recordPitImpressions(digest.memberIds, digest.digestKey);
+    } else {
+      void recordPitImpressions([event.id]);
+    }
   }, [event.id, recordImpression]);
 
   const kicker = getPitKicker(event, tier);
@@ -54,6 +62,29 @@ export default function SystemEventRow({
         <div className="pit-copy" style={{ marginTop: 2 }}>
           {renderCopyText(event.copy, event.film?.id)}
         </div>
+        {digest && (
+          <>
+            {digest.memberFilms.length > 0 && (
+              <div className="pit-digest-films" aria-label={`${digest.memberCount} films in this omen`}>
+                {digest.memberFilms.map((film) => (
+                  <Link key={film.id} prefetch={false} href={`/film/${film.id}`} className="pit-digest-film">
+                    {film.artwork_url ? (
+                      <Image src={film.artwork_url} alt={film.title} width={32} height={48} />
+                    ) : (
+                      <span className="pit-digest-film-fallback" aria-label={film.title} />
+                    )}
+                  </Link>
+                ))}
+                {digest.memberCount > digest.memberFilms.length && (
+                  <span className="chip">+{digest.memberCount - digest.memberFilms.length} more</span>
+                )}
+              </div>
+            )}
+            <Link prefetch={false} href="/home?tab=pit" className="pit-digest-see-all">
+              See all <span aria-hidden="true">→</span>
+            </Link>
+          </>
+        )}
         {tier === "full" && price != null && oldPrice != null && (
           <div className="pit-price-chip">
             <span>${price.toFixed(2)}</span>

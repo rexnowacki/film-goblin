@@ -63,6 +63,50 @@ describe.skipIf(!hasEnv)("getEligiblePitEventsForUser", () => {
     expect(out).toEqual([]);
   });
 
+  it("counts shared digest-member impressions as one daily slot, but a distinct batch as another, while excluding every member", async () => {
+    const admin = adminClient();
+    const memberIds: string[] = [];
+    for (let i = 0; i < 2; i++) {
+      const ins = await admin.from("feed_events")
+        .insert({ event_type: "now_free", film_id: filmId, copy: `digest member ${i}`, priority: 85 })
+        .select("id")
+        .single();
+      if (ins.error || !ins.data) throw ins.error;
+      memberIds.push(ins.data.id);
+      const impression = await admin.from("pit_impressions").insert({
+        user_id: userA.id,
+        event_id: ins.data.id,
+        digest_key: "digest:now_free:2026-07-10:first",
+      });
+      if (impression.error) throw impression.error;
+    }
+
+    const overflow = await admin.from("feed_events")
+      .insert({ event_type: "price_drop", film_id: filmId, copy: "overflow member", priority: 90 })
+      .select("id")
+      .single();
+    if (overflow.error || !overflow.data) throw overflow.error;
+    const overflowImpression = await admin.from("pit_impressions").insert({
+      user_id: userA.id,
+      event_id: overflow.data.id,
+      digest_key: "digest:price_drop:2026-07-10:second",
+    });
+    if (overflowImpression.error) throw overflowImpression.error;
+
+    const fresh = await admin.from("feed_events")
+      .insert({ event_type: "new_film", film_id: filmId, copy: "one slot remains", priority: 70 })
+      .select("id")
+      .single();
+    if (fresh.error || !fresh.data) throw fresh.error;
+
+    const c = await signedInClient(userA.email, userA.password);
+    const out = await getEligiblePitEventsForUser(c as any, userA.id, 12);
+    expect(out.find((event) => event.id === fresh.data!.id)).toBeDefined();
+    for (const id of [...memberIds, overflow.data.id]) {
+      expect(out.find((event) => event.id === id)).toBeUndefined();
+    }
+  });
+
   it("permanently excludes a backdated impression without counting it toward today's cap", async () => {
     const admin = adminClient();
 

@@ -33,9 +33,11 @@
 //   fyp_impressions: entire table — added by mig 0206
 //   fyp_not_interested: entire table — added by mig 0207
 //   record_fyp_impressions: RPC function — added by mig 0206
-//   record_pit_impressions: RPC function — added by mig 0212
+//   record_pit_impressions: RPC function — added by mig 0212, digest_key
+//                           optional argument added by mig 0214
 //   library:       price_paid_usd (NUMERIC(6,2) | null) — added by mig 0211
-//   pit_impressions: entire table — added by mig 0212
+//   pit_impressions: entire table — added by mig 0212; digest_key (TEXT | null)
+//                    added by mig 0214
 //
 // Workflow when regen is needed on the other machine:
 //   1. Run `npm run gen:types` to get fresh output.
@@ -1302,16 +1304,19 @@ export type Database = {
       }
       pit_impressions: {
         Row: {
+          digest_key: string | null
           user_id: string
           event_id: string
           shown_at: string
         }
         Insert: {
+          digest_key?: string | null
           user_id: string
           event_id: string
           shown_at?: string
         }
         Update: {
+          digest_key?: string | null
           user_id?: string
           event_id?: string
           shown_at?: string
@@ -1826,7 +1831,7 @@ export type Database = {
         Returns: undefined
       }
       record_pit_impressions: {
-        Args: { p_event_ids: string[] }
+        Args: { p_event_ids: string[]; p_digest_key?: string | null }
         Returns: undefined
       }
     }

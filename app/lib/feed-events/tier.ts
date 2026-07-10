@@ -4,6 +4,7 @@
 // requires seeing neighboring items) lives in pitCadence.ts, not here.
 import type { FeedEventType } from "./copy";
 import type { SystemFeedEvent } from "./types";
+import { isPitDigest } from "./pitDigest";
 
 export type PitTier = "whisper" | "standard" | "full";
 
@@ -34,6 +35,7 @@ export const PIT_TYPE_CONFIG: Record<FeedEventType, PitTypeConfig> = {
 };
 
 export function getPitTier(event: SystemFeedEvent): PitTier {
+  if (isPitDigest(event)) return "standard";
   return PIT_TYPE_CONFIG[event.event_type].tier;
 }
 
@@ -43,6 +45,9 @@ export function getPitTier(event: SystemFeedEvent): PitTier {
 // (full) and "WHISPER" (whisper tier) so it can't be mistaken for either.
 export function getPitKicker(event: SystemFeedEvent, tier: PitTier): string {
   const natural = PIT_TYPE_CONFIG[event.event_type];
+  // A digest sourced from a whisper type is deliberately promoted to standard;
+  // it is not a cadence demotion and must never read as "LEDGER ECHO".
+  if (isPitDigest(event)) return natural.tier === "whisper" ? "GATHERED OMEN" : natural.kicker;
   if (tier === natural.tier) return natural.kicker;
   return "LEDGER ECHO";
 }
