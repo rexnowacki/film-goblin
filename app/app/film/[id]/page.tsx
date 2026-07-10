@@ -19,6 +19,7 @@ import FilmActions from "@/components/FilmActions";
 import dynamic from "next/dynamic";
 const RecommendModal = dynamic(() => import("@/components/RecommendModal"));
 import PriceStatBlock from "@/components/PriceStatBlock";
+import FilmPriceLedger from "@/components/FilmPriceLedger";
 import CovenScore from "@/components/CovenScore";
 import FilmTagsRow from "@/components/FilmTagsRow";
 import ShareFilmButton from "@/components/ShareFilmButton";
@@ -293,7 +294,10 @@ export default async function FilmDetailPage({
             What it <em style={{ color: "var(--accent)", fontStyle: "italic" }}>has been worth</em>.
           </h3>
           {history.length > 0 ? (
-            <PriceStatBlock history={history} />
+            <>
+              <PriceStatBlock history={history} />
+              <FilmPriceLedger history={history} />
+            </>
           ) : (
             <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>
               No price history yet. Check back after the first worker run.
