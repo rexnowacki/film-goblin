@@ -1,18 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 
 export default function BackButton({ fallback = "/films" }: { fallback?: string }) {
   const router = useRouter();
-  const [canGoBack, setCanGoBack] = useState(false);
-
-  useEffect(() => {
-    setCanGoBack(window.history.length > 1);
-  }, []);
-
-  if (!canGoBack) return null;
-
   return (
     <button
       type="button"

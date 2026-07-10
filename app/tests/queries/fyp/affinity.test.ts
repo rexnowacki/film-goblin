@@ -884,6 +884,10 @@ describe("getUserAffinity", () => {
     // lanes: 1.5
     // total: 13.2
     expect(result.byTag["tag-x"]).toBeCloseTo(13.2);
+    expect(
+      (hybridClient.from as ReturnType<typeof vi.fn>).mock.calls
+        .filter(([table]) => table === "watched"),
+    ).toHaveLength(2);
   });
 
   it("floor at 0 applied at compose time (defensive: manually zeroed value stays ≥ 0)", async () => {

@@ -51,7 +51,8 @@ export default function PushToggle() {
       const reg = await navigator.serviceWorker.register("/sw.js");
       const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
       if (!key) throw new Error("push is not configured");
-      const sub = await reg.pushManager.subscribe({
+      const existing = await reg.pushManager.getSubscription();
+      const sub = existing ?? await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(key) as BufferSource,
       });
@@ -63,7 +64,10 @@ export default function PushToggle() {
         { endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth } },
         navigator.userAgent,
       );
-      if (!res.ok) throw new Error(res.error ?? "subscribe failed");
+      if (!res.ok) {
+        if (!existing) await sub.unsubscribe();
+        throw new Error(res.error ?? "subscribe failed");
+      }
       setState("on");
     } catch (err) {
       setError(err instanceof Error ? err.message : "could not enable push");
@@ -79,8 +83,8 @@ export default function PushToggle() {
       const sub = reg ? await reg.pushManager.getSubscription() : null;
       if (sub) {
         const endpoint = sub.endpoint;
-        await sub.unsubscribe();
         await unsubscribeFromPush(endpoint);
+        await sub.unsubscribe();
       }
       setState("off");
     } catch (err) {
