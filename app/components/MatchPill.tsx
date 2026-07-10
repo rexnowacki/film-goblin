@@ -14,7 +14,7 @@ const BAND_COPY: Record<MatchBand, { label: string; cls: string }> = {
 };
 
 /**
- * Match-band pill on each /for-you poster.
+ * Match-band pill on the Daily Omen poster.
  *
  * Per math review (sub-project #37): replaces the calibrated-percentage
  * display from #36. A "94%" pill implies probability we cannot validate

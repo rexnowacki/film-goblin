@@ -122,7 +122,6 @@ export default function ForYouShelves({
           key={shelf.id}
           shelf={shelf}
           filmsById={filmsById}
-          scoredById={scoredById}
           dismissed={dismissed}
           onDismiss={onDismiss}
           onUndo={onUndo}
