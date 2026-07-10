@@ -4,7 +4,8 @@ import { getEnrichedActivity } from "@/lib/queries/activity";
 import { getWatchlistPriceDropFilms } from "@/lib/queries/ledger";
 import type { GoblinPickFilm } from "@/lib/queries/goblin-pick";
 import { getRitualMessages } from "@/lib/queries/ritual";
-import { getRecentSystemEvents } from "@/lib/feed-events/query";
+import { getPitArchiveEvents, getRecentSystemEvents } from "@/lib/feed-events/query";
+import { PIT_ARCHIVE_PAGE_SIZE } from "@/lib/feed-events/pitArchive";
 import { getEligiblePitEventsForUser } from "@/lib/feed-events/pitSelection";
 import LedgerPanel from "@/components/LedgerPanel";
 import GoblinRecommends from "@/components/GoblinRecommends";
@@ -16,18 +17,20 @@ import FeedSearch from "@/components/FeedSearch";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PAGE_SIZE = 20;
-type FeedTab = "all" | "coven" | "recs";
+type FeedTab = "all" | "coven" | "recs" | "pit";
 
-const VALID_TABS = new Set<FeedTab>(["all", "coven", "recs"]);
+const VALID_TABS = new Set<FeedTab>(["all", "coven", "recs", "pit"]);
 
 const TAB_KINDS: Partial<Record<FeedTab, string[]>> = {
   recs: ["recommendation_sent"],
+  pit: [],
 };
 
 const TAB_SCOPE: Record<FeedTab, "site" | "coven"> = {
   all: "site",
   coven: "coven",
   recs: "coven",
+  pit: "site",
 };
 
 export default async function HomePage({
@@ -42,7 +45,7 @@ export default async function HomePage({
   const user = await getServerUser();
   const supabase = await createClient();
 
-  const initialPage = user
+  const initialPage = user && tabParam !== "pit"
     ? await getEnrichedActivity(supabase, user.id, {
         limit: PAGE_SIZE,
         actorId: actorId ?? undefined,
@@ -55,10 +58,16 @@ export default async function HomePage({
   const initialCursor = initialPage.nextCursor;
   const initialDone = initialPage.done;
 
+  const pitArchive = user && tabParam === "pit"
+    ? await getPitArchiveEvents(supabase, { limit: PIT_ARCHIVE_PAGE_SIZE })
+    : undefined;
+
   const [priceDropFilms, ritualPick, systemEvents] = await Promise.all([
     user ? getWatchlistPriceDropFilms(supabase, user.id, 5) : Promise.resolve([]),
     getActiveRitualPick(),
-    user ? getEligiblePitEventsForUser(supabase, user.id, 12) : getRecentSystemEvents(supabase, 12),
+    tabParam === "pit"
+      ? Promise.resolve([])
+      : user ? getEligiblePitEventsForUser(supabase, user.id, 12) : getRecentSystemEvents(supabase, 12),
   ]);
   // Date-seeded so composeFeed's ratio-cap/no-stacking selection is stable
   // for the whole day rather than reshuffling on every server render.
@@ -152,6 +161,7 @@ export default async function HomePage({
             filters={{ actorId: actorId ?? undefined, filmId: filmId ?? undefined }}
             systemEvents={actorId || filmId ? undefined : systemEvents}
             dateSeed={dateSeed}
+            pitArchive={pitArchive}
           >
             <GoblinRecommendsMobile film={goblinPick} ritual={ritual} />
           </FeedTabs>

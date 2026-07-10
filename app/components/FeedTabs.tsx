@@ -11,15 +11,18 @@ import { loadMoreFeed } from "@/lib/actions/feed-load-more";
 import { composeFeed } from "@/lib/feed-events/compose";
 import { resolvePitTiers } from "@/lib/feed-events/pitCadence";
 import { enforcePitPositionRules } from "@/lib/feed-events/pitPosition";
+import { PIT_ARCHIVE_PAGE_SIZE } from "@/lib/feed-events/pitArchive";
 import type { PitTier } from "@/lib/feed-events/tier";
 import type { SystemFeedEvent } from "@/lib/feed-events/types";
+import PitArchiveTab from "./PitArchiveTab";
 
-type Tab = "all" | "coven" | "recs";
+type Tab = "all" | "coven" | "recs" | "pit";
 
 const MATCHERS: Record<Tab, (k: EnrichedActivity["kind"]) => boolean> = {
   all: () => true,
   coven: () => true,
   recs: (k) => k === "recommendation_sent",
+  pit: () => false,
 };
 
 // Mirrors TAB_KINDS in home/page.tsx — passed to loadMoreFeed so pagination
@@ -28,12 +31,14 @@ const TAB_KINDS: Record<Tab, string[]> = {
   all: [],
   coven: [],
   recs: ["recommendation_sent"],
+  pit: [],
 };
 
 const TAB_SCOPES: Record<Tab, "site" | "coven"> = {
   all: "site",
   coven: "coven",
   recs: "coven",
+  pit: "site",
 };
 
 // System rows are shown only on the "all" tab — they have no actor/kind to
@@ -55,14 +60,15 @@ interface Props {
   // rows entirely (e.g. filtered actor/film views never pass these).
   systemEvents?: SystemFeedEvent[];
   dateSeed?: string;
+  pitArchive?: SystemFeedEvent[];
   children?: ReactNode;
 }
 
-export default function FeedTabs({ initialItems, initialCursor, initialDone, filters, systemEvents, dateSeed, children }: Props) {
+export default function FeedTabs({ initialItems, initialCursor, initialDone, filters, systemEvents, dateSeed, pitArchive, children }: Props) {
   const router = useRouter();
   const params = useSearchParams();
   const rawTab = params.get("tab");
-  const urlTab: Tab = rawTab === "coven" || rawTab === "recs" ? rawTab : "all";
+  const urlTab: Tab = rawTab === "coven" || rawTab === "recs" || rawTab === "pit" ? rawTab : "all";
   const [tab, setTab] = useState<Tab>(urlTab);
 
   const [items, setItems] = useState<EnrichedActivity[]>(initialItems);
@@ -201,7 +207,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
-        {(["all", "coven", "recs"] as Tab[]).map(t => (
+        {(["all", "coven", "recs", "pit"] as Tab[]).map(t => (
           <button key={t} onClick={() => pickTab(t)} className="caps" style={{
             background: tab === t ? "var(--accent)" : "transparent",
             color: tab === t ? "var(--accent-ink)" : "var(--muted)",
@@ -211,6 +217,13 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
           }}>{t}</button>
         ))}
       </div>
+      {tab === "pit" ? (
+        <PitArchiveTab
+          initialEvents={pitArchive ?? []}
+          initialCursor={pitArchive?.at(-1)?.created_at ?? null}
+          initialDone={pitArchive ? pitArchive.length < PIT_ARCHIVE_PAGE_SIZE : true}
+        />
+      ) : <>
       <div style={{ display: "grid", gap: 0 }}>
         {showFeedInsert && children}
         {filtered.length === 0 ? (
@@ -275,6 +288,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
           — you've reached the back of the grimoire —
         </div>
       )}
+      </>}
     </div>
   );
 }
