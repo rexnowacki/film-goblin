@@ -43,6 +43,9 @@ export function notificationTarget(n: EnrichedNotification): string {
       const token = (n.payload as { token?: string }).token;
       return token ? `/gazing/${token}` : "/home";
     }
+    case "gazing_reminder_24h":
+    case "gazing_reminder_2h":
+    case "gazing_aftermath": { const token=(n.payload as {token?:string}).token; return token?`/gazing/${token}?src=notification&event=${n.kind}`:"/home"; }
     case "goblin_summon": {
       const pickId = (n.payload as { pick_id?: number }).pick_id;
       const messageId = (n.payload as { message_id?: string }).message_id;
@@ -100,6 +103,9 @@ export function notificationRichCopy(n: EnrichedNotification): React.ReactNode {
     }
     case "gazing_rsvp":
       return <><strong>{actorName}</strong> is in for your gazing of <em>{title}</em>.</>;
+    case "gazing_reminder_24h": return <>Your gazing of <em>{title}</em> begins within 24 hours.</>;
+    case "gazing_reminder_2h": return <>Your gazing of <em>{title}</em> begins within two hours.</>;
+    case "gazing_aftermath": return <>Did the gazing of <em>{title}</em> happen? Confirm attendance and leave a verdict.</>;
     case "goblin_summon": {
       const snippet = richSnippet((n.payload as { body?: string }).body, 80);
       return <><strong>{actorName}</strong> mentioned you in ritual chat{snippet ? <>: &ldquo;{snippet}&rdquo;</> : "."}</>;
@@ -138,5 +144,8 @@ export function notificationToastText(n: EnrichedNotification): string {
       return "A film request was fulfilled";
     case "gazing_rsvp":
       return `${actorName} is in for your gazing of ${title}`;
+    case "gazing_reminder_24h": return `Your gazing of ${title} begins within 24 hours`;
+    case "gazing_reminder_2h": return `Your gazing of ${title} begins within two hours`;
+    case "gazing_aftermath": return `Close the loop on your gazing of ${title}`;
   }
 }

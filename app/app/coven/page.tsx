@@ -118,7 +118,7 @@ export default async function CovenPage({
                       @{inv.from.username}
                     </div>
                   </div>
-                  <CovenInviteActions requestId={inv.id} />
+                  <CovenInviteActions requestId={inv.id} username={inv.from.username} />
                 </div>
               ))}
             </div>

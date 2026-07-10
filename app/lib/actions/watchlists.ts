@@ -124,3 +124,4 @@ export async function removeFromWatchlist(filmId: string) {
   revalidatePath("/watchlist");
   revalidatePath(`/film/${filmId}`);
 }
+export async function setWatchlistMaxPrice(filmId:string,maxPriceUsd:number){if(!Number.isFinite(maxPriceUsd)||maxPriceUsd<0||maxPriceUsd>999.99)throw new Error("Enter a valid Apple TV price");const supabase=await createClient();const user=await requireAuthUser(supabase);const{error}=await supabase.from("watchlists").update({max_price_usd:maxPriceUsd}).eq("user_id",user.id).eq("film_id",filmId);if(error)throw error;revalidatePath("/watchlist");revalidatePath(`/film/${filmId}`);}

@@ -26,6 +26,7 @@
 //   gazing_invites: entire table — added by mig 0197
 //   gazing_invites: broadcast (boolean) — added by mig 0199
 //   gazing_attendees: entire table — added by mig 0201
+//   gazing loop columns + gazing_invitees — added by mig 0219
 //   activity_kind enum: gazing_invited — added by mig 0198
 //   activity_kind enum: gazing_attending — added by mig 0200
 //   notification_kind enum: film_request_fulfilled — added by mig 0170
@@ -688,18 +689,21 @@ export type Database = {
       }
       gazing_attendees: {
         Row: {
+          attended_at: string | null
           created_at: string
           id: string
           invite_id: string
           user_id: string
         }
         Insert: {
+          attended_at?: string | null
           created_at?: string
           id?: string
           invite_id: string
           user_id: string
         }
         Update: {
+          attended_at?: string | null
           created_at?: string
           id?: string
           invite_id?: string
@@ -717,7 +721,10 @@ export type Database = {
       }
       gazing_invites: {
         Row: {
+          aftermath_sent_at: string | null
           broadcast: boolean
+          closed_at: string | null
+          closed_by: string | null
           created_at: string
           created_by: string
           film_id: string | null
@@ -727,12 +734,21 @@ export type Database = {
           poster_url: string | null
           showtime_id: string | null
           starts_at: string
-          theater_name: string
-          tickets_url: string
+          status: "scheduled" | "happened" | "cancelled"
+          theater_name: string | null
+          tickets_url: string | null
           token: string
+          venue_kind: "theater" | "home"
+          location_note: string | null
+          reminder_24h_sent_at: string | null
+          reminder_2h_sent_at: string | null
+          timezone_label: string
         }
         Insert: {
+          aftermath_sent_at?: string | null
           broadcast?: boolean
+          closed_at?: string | null
+          closed_by?: string | null
           created_at?: string
           created_by: string
           film_id?: string | null
@@ -742,12 +758,21 @@ export type Database = {
           poster_url?: string | null
           showtime_id?: string | null
           starts_at: string
-          theater_name: string
-          tickets_url: string
+          status?: "scheduled" | "happened" | "cancelled"
+          theater_name?: string | null
+          tickets_url?: string | null
           token: string
+          venue_kind?: "theater" | "home"
+          location_note?: string | null
+          reminder_24h_sent_at?: string | null
+          reminder_2h_sent_at?: string | null
+          timezone_label?: string
         }
         Update: {
+          aftermath_sent_at?: string | null
           broadcast?: boolean
+          closed_at?: string | null
+          closed_by?: string | null
           created_at?: string
           created_by?: string
           film_id?: string | null
@@ -757,9 +782,15 @@ export type Database = {
           poster_url?: string | null
           showtime_id?: string | null
           starts_at?: string
-          theater_name?: string
-          tickets_url?: string
+          status?: "scheduled" | "happened" | "cancelled"
+          theater_name?: string | null
+          tickets_url?: string | null
           token?: string
+          venue_kind?: "theater" | "home"
+          location_note?: string | null
+          reminder_24h_sent_at?: string | null
+          reminder_2h_sent_at?: string | null
+          timezone_label?: string
         }
         Relationships: [
           {
@@ -777,6 +808,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      gazing_invitees: {
+        Row: { invite_id: string; user_id: string; created_at: string }
+        Insert: { invite_id: string; user_id: string; created_at?: string }
+        Update: { invite_id?: string; user_id?: string; created_at?: string }
+        Relationships: []
       }
       itunes_candidates: {
         Row: {
@@ -1939,6 +1976,9 @@ export type Database = {
         | "theater_showing_match"
         | "goblin_summon"
         | "gazing_rsvp"
+        | "gazing_reminder_24h"
+        | "gazing_reminder_2h"
+        | "gazing_aftermath"
       review_status: "draft" | "published"
       staff_role: "reviewer" | "admin"
     }

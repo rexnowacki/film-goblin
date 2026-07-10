@@ -10,6 +10,9 @@ export const PUSH_KINDS: ReadonlySet<string> = new Set([
   "reply_on_comment",
   "gazing_rsvp",
   "price_drop",
+  "gazing_reminder_24h",
+  "gazing_reminder_2h",
+  "gazing_aftermath",
 ]);
 
 export interface PushPayloadInput {
@@ -85,6 +88,13 @@ export function buildPushPayload(input: PushPayloadInput): PushPayload | null {
         url: str("token") ? `/gazing/${str("token")}` : "/home",
         tag: `gazing_rsvp:${str("invite_id") ?? "x"}`,
       };
+    case "gazing_reminder_24h":
+    case "gazing_reminder_2h":
+    case "gazing_aftermath": {
+      const token=str("token");const inviteId=str("invite_id")??"x";
+      const aftermath=kind==="gazing_aftermath";
+      return {title:aftermath?"The gazing awaits its verdict":kind==="gazing_reminder_2h"?"The gazing begins in two hours":"The gazing begins tomorrow",body:aftermath?`Did ${film} happen? Close the loop with your verdict.`:`${film} is waiting for the coven.`,url:token?`/gazing/${token}?src=push&event=${kind}`:"/home",tag:`${kind}:${inviteId}`};
+    }
     case "price_drop":
       return {
         title: `${film} — the price fell`,
