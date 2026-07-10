@@ -60,13 +60,12 @@ async function ForYouSection({ userId }: { userId: string }) {
     supabase.from("library").select("film_id").eq("user_id", userId),
     supabase.from("profiles").select("username").eq("id", userId).maybeSingle(),
   ]);
-  const { omen, shelves, filmsById, scoredById } = shelvesResult;
+  const { omen, shelves, filmsById } = shelvesResult;
   return (
     <ForYouShelves
       omen={omen}
       shelves={shelves}
       filmsEntries={Array.from(filmsById.entries())}
-      scoredEntries={Array.from(scoredById.entries())}
       watchlistIds={(watchlistRes.data ?? []).map((r) => r.film_id)}
       libraryIds={(libraryRes.data ?? []).map((r) => r.film_id)}
       sharerUsername={profileRes.data?.username ?? null}
