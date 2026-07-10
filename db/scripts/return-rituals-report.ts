@@ -24,17 +24,21 @@ async function main() {
       return;
     }
 
-    const [active, sessions, events] = await Promise.all([
-      client.query<CountRow>("SELECT count(DISTINCT user_id) AS count FROM product_events WHERE occurred_at >= now() - interval '7 days'"),
-      client.query<CountRow>("SELECT count(DISTINCT (user_id, session_id)) AS count FROM product_events WHERE occurred_at >= now() - interval '7 days'"),
-      client.query<EventCountRow>(`
-        SELECT event_name, count(*) AS events, count(DISTINCT user_id) AS users
-        FROM product_events
-        WHERE occurred_at >= now() - interval '7 days'
-        GROUP BY event_name
-        ORDER BY event_name
-      `),
-    ]);
+    // A pg.Client is a single connection; keep queries sequential. Concurrent
+    // client.query calls are deprecated and will be rejected by pg 9.
+    const active = await client.query<CountRow>(
+      "SELECT count(DISTINCT user_id) AS count FROM product_events WHERE occurred_at >= now() - interval '7 days'",
+    );
+    const sessions = await client.query<CountRow>(
+      "SELECT count(DISTINCT (user_id, session_id)) AS count FROM product_events WHERE occurred_at >= now() - interval '7 days'",
+    );
+    const events = await client.query<EventCountRow>(`
+      SELECT event_name, count(*) AS events, count(DISTINCT user_id) AS users
+      FROM product_events
+      WHERE occurred_at >= now() - interval '7 days'
+      GROUP BY event_name
+      ORDER BY event_name
+    `);
 
     const meaningfulNames = new Set([
       "return_contract_acted", "taste_twin_request_sent", "gazing_created",
