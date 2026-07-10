@@ -8,6 +8,7 @@ import type { Database } from "@/lib/supabase/types";
 import type { SystemFeedEvent } from "./types";
 import { getRecentSystemEvents } from "./query";
 import { getWatchlistedFilmIds } from "@/lib/queries/watchlists";
+import { filterPitByAge } from "./pitAge";
 
 type Client = SupabaseClient<Database>;
 
@@ -65,7 +66,9 @@ export async function getEligiblePitEventsForUser(
   if (candidates.length === 0) return [];
 
   const watchlistFilmIds = await getWatchlistedFilmIds(client, userId);
-  const ranked = rankPitCandidatesByWatchlist(candidates, watchlistFilmIds);
+  const fresh = filterPitByAge(candidates, watchlistFilmIds, new Date());
+  if (fresh.length === 0) return [];
+  const ranked = rankPitCandidatesByWatchlist(fresh, watchlistFilmIds);
 
   return ranked.slice(0, PIT_DAILY_CAP - todayCount);
 }

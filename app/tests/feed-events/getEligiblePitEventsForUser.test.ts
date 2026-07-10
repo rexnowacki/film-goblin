@@ -114,4 +114,39 @@ describe.skipIf(!hasEnv)("getEligiblePitEventsForUser", () => {
     const out = await getEligiblePitEventsForUser(c as any, userA.id, 10);
     expect(out[0].film_id).toBe(watchlistedFilmId);
   });
+
+  it("does not return a stale (>48h) unseen event even if its film is watchlisted", async () => {
+    const admin = adminClient();
+    await admin.from("watchlists").insert({ user_id: userA.id, film_id: watchlistedFilmId, max_price_usd: 9.99 });
+    const staleAt = new Date(Date.now() - 72 * 3600 * 1000).toISOString();
+    const ins = await admin.from("feed_events").insert({ event_type: "price_drop", film_id: watchlistedFilmId, copy: "stale", priority: 90, created_at: staleAt }).select("id").single();
+    if (ins.error || !ins.data) throw ins.error;
+
+    const c = await signedInClient(userA.email, userA.password);
+    const out = await getEligiblePitEventsForUser(c as any, userA.id, 12);
+    expect(out.find(e => e.id === ins.data!.id)).toBeUndefined();
+  });
+
+  it("returns a 24-48h event whose film is watchlisted", async () => {
+    const admin = adminClient();
+    await admin.from("watchlists").insert({ user_id: userA.id, film_id: watchlistedFilmId, max_price_usd: 9.99 });
+    const agingAt = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
+    const ins = await admin.from("feed_events").insert({ event_type: "price_drop", film_id: watchlistedFilmId, copy: "aging watchlisted", priority: 90, created_at: agingAt }).select("id").single();
+    if (ins.error || !ins.data) throw ins.error;
+
+    const c = await signedInClient(userA.email, userA.password);
+    const out = await getEligiblePitEventsForUser(c as any, userA.id, 12);
+    expect(out.find(e => e.id === ins.data!.id)).toBeDefined();
+  });
+
+  it("does not return a 24-48h event whose film is NOT watchlisted", async () => {
+    const admin = adminClient();
+    const agingAt = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
+    const ins = await admin.from("feed_events").insert({ event_type: "price_drop", film_id: filmId, copy: "aging not watchlisted", priority: 90, created_at: agingAt }).select("id").single();
+    if (ins.error || !ins.data) throw ins.error;
+
+    const c = await signedInClient(userA.email, userA.password);
+    const out = await getEligiblePitEventsForUser(c as any, userA.id, 12);
+    expect(out.find(e => e.id === ins.data!.id)).toBeUndefined();
+  });
 });
