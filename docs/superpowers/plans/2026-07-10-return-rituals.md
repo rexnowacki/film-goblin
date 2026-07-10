@@ -723,6 +723,26 @@ export async function _confirmAttendance(client: Client, token: string): Promise
 
 ## Final definition of done
 
+**Implementation closeout (2026-07-10):** All four phases shipped in separately green PRs:
+#203/#204 (Phase 1), #206 (Phase 2), #207 (Phase 3), and #208 (`0a26a3b`, Phase 4).
+Migrations 0215–0219 were applied before their consuming app deploys. The final production deploy
+is `dpl_8Q9Nz4ryWntj8PA9aLxfNXLKc6rY` (READY). Public smoke returned `/` 200 and the expected
+signed-out 307 auth redirects for `/home` and `/coven`; an unknown gazing token rendered the safe
+not-found surface. The trailing-seven-day report returned 2 active users, 4 sessions, 16 contract
+views, 4 contract actions, and `available` for deferrals, taste-twin suppressions, and gazing
+invitees. This proves schema/report availability, not Phase 3/4 conversion.
+
+Phase 4 verification: CI app/DB/worker green; 674 app tests passed with 100 environment-gated
+skips; app typecheck/build, DB smoke/typecheck, and focused real-Postgres gazing RLS/trigger tests
+(10/10) passed. The final app build also passed on Vercel. The owner-directed “complete all
+remaining phases” instruction remains the recorded override for the seven-day/20-view sequencing
+gates; it does not waive the four-week outcome gate.
+
+**Open evidence:** Browser control was unavailable, so the Task 19 authenticated two-account and
+mobile visual smoke is not claimed. It remains in root `CLAUDE.md` with an exact runbook. The
+four-week/10-active-user outcome evaluation also remains open by design; the present two-user
+sample is too small for honest rates.
+
 - All four phases have separately green PR/CI/deploy evidence or an explicit owner-approved
   stop decision recorded after an evidence gate.
 - Signed-in sessions, contract views/actions, taste suggestions/requests/suppressions, gazing
