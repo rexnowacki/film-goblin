@@ -65,11 +65,21 @@ export async function emitFeedEvent(
     if (dup.rowCount) return "deduped";
   }
 
-  const prev = await client.query(
-    `SELECT (payload ->> 'variant')::int AS variant FROM feed_events
-     WHERE event_type = $1 ORDER BY created_at DESC LIMIT 1`,
-    [spec.type],
-  );
+  // Milestone variants rotate per kind — a prior 'member' row's variant must
+  // not constrain the next 'catalog' row's pick.
+  const prev = spec.type === "milestone"
+    ? await client.query(
+        `SELECT (payload ->> 'variant')::int AS variant FROM feed_events
+         WHERE event_type = 'milestone'
+           AND payload -> 'vars' ->> 'milestone_kind' = $1
+         ORDER BY created_at DESC LIMIT 1`,
+        [spec.vars.milestone_kind ?? "catalog"],
+      )
+    : await client.query(
+        `SELECT (payload ->> 'variant')::int AS variant FROM feed_events
+         WHERE event_type = $1 ORDER BY created_at DESC LIMIT 1`,
+        [spec.type],
+      );
   const row = buildRow(spec, prev.rows[0]?.variant ?? null);
 
   if (spec.type === "all_time_low" && spec.filmId) {

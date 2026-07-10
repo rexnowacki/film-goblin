@@ -53,6 +53,40 @@ describe("renderCopy", () => {
     );
   });
 
+  it("feral variants (2026-07-10) lead with a goblin action", () => {
+    expect(renderCopy("price_drop", { title: "Suspiria", price: 4.99, old_price: 14.99 }, 3)).toBe(
+      "The goblin dragged **Suspiria** back from the void at $4.99. It was $14.99."
+    );
+    expect(renderCopy("all_time_low", { title: "Suspiria", price: 4.99 }, 2)).toBe(
+      "The goblin waited years in the dark for this. **Suspiria**: $4.99. All-time low."
+    );
+    expect(renderCopy("now_free", { title: "Hokum", service: "Tubi" }, 2)).toBe(
+      "The goblin pried the lock off Tubi's vault. **Hokum** costs nothing tonight."
+    );
+    expect(renderCopy("new_film", { title: "Raw", year: 2016 }, 2)).toBe(
+      "The goblin sank its claws into **Raw** (2016) and hauled it down into the pit."
+    );
+    expect(renderCopy("new_film", { title: "Raw", year: 2016 }, 3)).toBe(
+      "The goblin returned from the surface with **Raw** (2016) clenched in its teeth."
+    );
+    expect(renderCopy("anniversary", { title: "Suspiria", year: 1977, age: 49 }, 3)).toBe(
+      "The goblin unearthed **Suspiria**'s bones. 49 years old today. Still warm."
+    );
+    expect(renderCopy("verdict_anointed", { title: "The Wailing" }, 2)).toBe(
+      "The goblin carried **The Wailing** up from the pit on its shoulders. Anointed by the coven."
+    );
+    expect(renderCopy("milestone", { n: 300, milestone_kind: "catalog" }, 1)).toBe(
+      "The goblin counted the hoard on its fingers, then its toes, then borrowed yours. 300 films."
+    );
+  });
+
+  it("milestone variant counts are per kind", () => {
+    expect(variantCount("milestone", { milestone_kind: "catalog" })).toBe(2);
+    expect(variantCount("milestone", { milestone_kind: "monthly" })).toBe(1);
+    expect(variantCount("milestone", { milestone_kind: "member" })).toBe(1);
+    expect(variantCount("milestone")).toBe(2); // defaults to catalog
+  });
+
   it("left_free variant 1 leads with a goblin action, not a feeling", () => {
     expect(renderCopy("left_free", { title: "Raw", service: "AMC+" }, 1)).toBe(
       "The goblin let **Raw** slip back to AMC+'s vault. Still watching the price."
