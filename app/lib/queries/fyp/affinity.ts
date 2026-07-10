@@ -375,13 +375,14 @@ export function cosineSimilarity(a: AffinityVector, b: AffinityVector): number {
 export async function getCovenBorrowedAffinity(
   client: Client,
   userId: string,
+  ownVector?: Promise<AffinityVector>,
 ): Promise<AffinityVector> {
   const ranked = await getRankedCovenfolk(client, userId);
   if (ranked.length === 0) return { byTag: {} };
+  const ownVec = await (ownVector ?? getUserOwnAffinity(client, userId));
 
   // Need the user's own vector to compute cosine similarity. Cold-start
   // (empty own vector) → fall back to interaction-score weighting.
-  const ownVec = await getUserOwnAffinity(client, userId);
   const ownEmpty = Object.keys(ownVec.byTag).length === 0;
 
   // Pre-fetch all mates' vectors in serial (parallel would also work; serial
@@ -445,9 +446,10 @@ export async function getUserAffinity(
   client: Client,
   userId: string,
 ): Promise<AffinityVector> {
+  const ownPromise = getUserOwnAffinity(client, userId);
   const [own, coven, lanes] = await Promise.all([
-    getUserOwnAffinity(client, userId),
-    getCovenBorrowedAffinity(client, userId),
+    ownPromise,
+    getCovenBorrowedAffinity(client, userId, ownPromise),
     getLaneAffinity(client, userId),
   ]);
 

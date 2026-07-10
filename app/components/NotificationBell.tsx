@@ -93,6 +93,8 @@ export default function NotificationBell({ userId, unreadCount, items }: Props) 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const optimisticItemsRef = useRef(optimisticItems);
   const toastedMessageIdsRef = useRef<Set<string>>(new Set());
+  const markAllReadSucceededRef = useRef(false);
+  const openRef = useRef(false);
 
   useEffect(() => {
     optimisticItemsRef.current = optimisticItems;
@@ -218,23 +220,38 @@ export default function NotificationBell({ userId, unreadCount, items }: Props) 
   async function onClick() {
     if (open) return;
     setOpen(true);
+    openRef.current = true;
+    markAllReadSucceededRef.current = optimisticUnread === 0;
     if (optimisticUnread > 0) {
-      try { await markAllRead(); } catch { /* swallow — server-side error handled by action */ }
+      try {
+        await markAllRead();
+        markAllReadSucceededRef.current = true;
+        if (!openRef.current) setOptimisticUnread(0);
+      } catch {
+        // Preserve the badge so the failure is not presented as success.
+      }
     }
   }
 
   function onClose() {
     setOpen(false);
-    // Zero the badge immediately on close so the bell unmounts snappily
-    // regardless of whether the post-markAllRead revalidate has completed.
-    setOptimisticUnread(0);
+    openRef.current = false;
+    if (markAllReadSucceededRef.current) setOptimisticUnread(0);
   }
 
   async function onClear() {
+    const previousItems = optimisticItems;
+    const previousUnread = optimisticUnread;
     setOptimisticItems([]);
     setOptimisticUnread(0);
     setOpen(false);
-    try { await clearAllNotifications(); } catch { /* swallow — server-side error handled by action */ }
+    openRef.current = false;
+    try {
+      await clearAllNotifications();
+    } catch {
+      setOptimisticItems(previousItems);
+      setOptimisticUnread(previousUnread);
+    }
   }
 
   return (

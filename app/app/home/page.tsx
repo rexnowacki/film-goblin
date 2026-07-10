@@ -47,8 +47,7 @@ export default async function HomePage({
   const user = await getServerUser();
   const supabase = await createClient();
 
-  const [initialPage, returnContract] = await Promise.all([
-    user && tabParam !== "pit"
+  const initialPagePromise = user && tabParam !== "pit"
     ? getEnrichedActivity(supabase, user.id, {
         limit: PAGE_SIZE,
         actorId: actorId ?? undefined,
@@ -56,47 +55,58 @@ export default async function HomePage({
         kinds: TAB_KINDS[tabParam],
         scope: TAB_SCOPE[tabParam],
       })
-    : Promise.resolve({ items: [], nextCursor: null, done: true }),
-    user ? getReturnContract(supabase, user.id, new Date()) : Promise.resolve(null),
-  ]);
+    : Promise.resolve({ items: [], nextCursor: null, done: true });
+  const returnContractPromise = user
+    ? getReturnContract(supabase, user.id, new Date())
+    : Promise.resolve(null);
+  const pitArchivePromise = user && tabParam === "pit"
+    ? getPitArchiveEvents(supabase, { limit: PIT_ARCHIVE_PAGE_SIZE })
+    : Promise.resolve(undefined);
+  const priceDropFilmsPromise = user
+    ? getWatchlistPriceDropFilms(supabase, user.id, 5)
+    : Promise.resolve([]);
+  const ritualPickPromise = getActiveRitualPick();
+  const ritualMessagesPromise = ritualPickPromise.then(ritualPick =>
+    user && ritualPick ? getRitualMessages(supabase, ritualPick.pick_id) : [],
+  );
+  const systemEventsPromise = tabParam === "pit"
+    ? Promise.resolve([])
+    : user ? getEligiblePitEventsForUser(supabase, user.id, 12) : getRecentSystemEvents(supabase, 12);
+  const viewerPromise = user
+    ? supabase.from("profiles")
+        .select("id, username, avatar_url, display_name")
+        .eq("id", user.id)
+        .maybeSingle()
+        .then(({ data }) => data)
+    : Promise.resolve(null);
+  const staffRowPromise = user
+    ? supabase.from("staff")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle()
+        .then(({ data }) => data)
+    : Promise.resolve(null);
+
+  const [initialPage, returnContract, pitArchive, priceDropFilms, ritualPick, systemEvents, ritualMessages, viewer, staffRow] =
+    await Promise.all([
+      initialPagePromise,
+      returnContractPromise,
+      pitArchivePromise,
+      priceDropFilmsPromise,
+      ritualPickPromise,
+      systemEventsPromise,
+      ritualMessagesPromise,
+      viewerPromise,
+      staffRowPromise,
+    ]);
   const initialItems = initialPage.items;
   const initialCursor = initialPage.nextCursor;
   const initialDone = initialPage.done;
 
-  const pitArchive = user && tabParam === "pit"
-    ? await getPitArchiveEvents(supabase, { limit: PIT_ARCHIVE_PAGE_SIZE })
-    : undefined;
-
-  const [priceDropFilms, ritualPick, systemEvents] = await Promise.all([
-    user ? getWatchlistPriceDropFilms(supabase, user.id, 5) : Promise.resolve([]),
-    getActiveRitualPick(),
-    tabParam === "pit"
-      ? Promise.resolve([])
-      : user ? getEligiblePitEventsForUser(supabase, user.id, 12) : getRecentSystemEvents(supabase, 12),
-  ]);
   // Date-seeded so composeFeed's ratio-cap/no-stacking selection is stable
   // for the whole day rather than reshuffling on every server render.
   const dateSeed = new Date().toISOString().slice(0, 10);
 
-  const [ritualMessages, viewer, staffRow] = await Promise.all([
-    user && ritualPick ? getRitualMessages(supabase, ritualPick.pick_id) : Promise.resolve([]),
-    user
-      ? supabase
-          .from("profiles")
-          .select("id, username, avatar_url, display_name")
-          .eq("id", user.id)
-          .maybeSingle()
-          .then(({ data }) => data)
-      : Promise.resolve(null),
-    user
-      ? supabase
-          .from("staff")
-          .select("role")
-          .eq("user_id", user.id)
-          .maybeSingle()
-          .then(({ data }) => data)
-      : Promise.resolve(null),
-  ]);
   const goblinPick: GoblinPickFilm | null = ritualPick
     ? { ...ritualPick.film, whisper_text: ritualPick.whisper_text }
     : null;
