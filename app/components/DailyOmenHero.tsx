@@ -2,14 +2,11 @@
 
 import Link from "next/link";
 import FilmPoster from "./FilmPoster";
-import MatchPill from "./MatchPill";
 import PosterQuickAdd from "./PosterQuickAdd";
-import type { ScoredFilm } from "@/lib/queries/fyp/score";
 import type { FilmLite } from "@/lib/queries/fyp/forYou";
 
 interface Props {
   film: FilmLite;
-  scored: ScoredFilm;
   dismissed: boolean;
   onWatchlist: boolean;
   inLibrary: boolean;
@@ -18,7 +15,7 @@ interface Props {
   onUndo: (filmId: string) => void;
 }
 
-export default function DailyOmenHero({ film, scored, dismissed, onWatchlist, inLibrary, sharerUsername, onDismiss, onUndo }: Props) {
+export default function DailyOmenHero({ film, dismissed, onWatchlist, inLibrary, sharerUsername, onDismiss, onUndo }: Props) {
   if (dismissed) {
     return (
       <div style={{
@@ -52,7 +49,6 @@ export default function DailyOmenHero({ film, scored, dismissed, onWatchlist, in
         onNotInterested={() => onDismiss(film.id)}
       >
         <FilmPoster film={film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
-        <MatchPill band={scored.matchBand} covenFavorite={scored.covenFavorite} />
       </PosterQuickAdd>
       <div>
         <div className="caps" style={{ fontSize: 10, color: "var(--accent)", letterSpacing: "0.1em" }}>

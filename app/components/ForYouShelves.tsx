@@ -16,17 +16,15 @@ interface Props {
   omen: ScoredFilm | null;
   shelves: Shelf[];
   filmsEntries: Array<[string, FilmLite]>;
-  scoredEntries: Array<[string, ScoredFilm]>;
   watchlistIds: string[];
   libraryIds: string[];
   sharerUsername: string | null;
 }
 
 export default function ForYouShelves({
-  omen, shelves, filmsEntries, scoredEntries, watchlistIds, libraryIds, sharerUsername,
+  omen, shelves, filmsEntries, watchlistIds, libraryIds, sharerUsername,
 }: Props) {
   const filmsById = useMemo(() => new Map(filmsEntries), [filmsEntries]);
-  const scoredById = useMemo(() => new Map(scoredEntries), [scoredEntries]);
   const watchlistSet = useMemo(() => new Set(watchlistIds), [watchlistIds]);
   const librarySet = useMemo(() => new Set(libraryIds), [libraryIds]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
@@ -107,7 +105,6 @@ export default function ForYouShelves({
         <div ref={el => registerCard(el as HTMLElement | null, omen.filmId)} data-film-id={omen.filmId}>
           <DailyOmenHero
             film={omenFilm}
-            scored={omen}
             dismissed={dismissed.has(omen.filmId)}
             onWatchlist={watchlistSet.has(omen.filmId)}
             inLibrary={librarySet.has(omen.filmId)}
