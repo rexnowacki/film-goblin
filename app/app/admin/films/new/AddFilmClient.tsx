@@ -28,7 +28,7 @@ const BLANK: FilmFormFields = {
   series_order: null,
 };
 
-export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } = {}) {
+export default function AddFilmClient({ onSuccess, variant = "page" }: { onSuccess?: () => void; variant?: "modal" | "page" } = {}) {
   const searchParams = useSearchParams();
   const requestId = searchParams.get("request_id");
 
@@ -101,7 +101,7 @@ export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } 
   }
 
   return (
-    <div style={{ display: "grid", gap: 28 }}>
+    <div className={`add-film-flow add-film-flow--${variant}`}>
       {requestId && requestTitle && (
         <div style={{
           background: "#1a1500", border: "1px solid #3a2a00", borderRadius: 6,
@@ -115,18 +115,18 @@ export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } 
 
       {!initial && (
         <>
-          <section>
-            <h2 className="head" style={{ fontSize: 22, marginBottom: 10 }}>Option 1 — Search Apple TV</h2>
+          <section className="add-film-source">
+            <h2>Search Apple TV</h2>
             <AppleTvSearchBox onPick={prefillFromHit} />
           </section>
 
-          <section>
-            <h2 className="head" style={{ fontSize: 22, marginBottom: 10 }}>Option 2 — Paste Apple TV URL or trackId</h2>
+          <section className="add-film-source">
+            <h2>Paste an Apple TV URL or ID</h2>
             <ITunesPasteBox onPick={prefillFromHit} />
           </section>
 
-          <section>
-            <h2 className="head" style={{ fontSize: 22, marginBottom: 10 }}>Option 3 — No Apple TV match? Search TMDB</h2>
+          <section className="add-film-source">
+            <h2>No Apple TV match? Search TMDB</h2>
             <TmdbSearchBox onPick={fields => { setInitial(fields); setFormKey(k => k + 1); }} />
             <div style={{ marginTop: 14 }}>
               <button type="button" className="btn btn-sm btn-outline" onClick={startManual}>
@@ -138,9 +138,9 @@ export default function AddFilmClient({ onSuccess }: { onSuccess?: () => void } 
       )}
 
       {initial && (
-        <section>
+        <section className="add-film-entry">
           {!requestId && (
-            <div style={{ marginBottom: 14 }}>
+            <div className="add-film-entry__restart">
               <button type="button" className="btn btn-sm btn-outline" onClick={() => setInitial(null)}>
                 ← Start over
               </button>

@@ -70,7 +70,7 @@ export default function FilmForm({ mode, filmId, initial, requestId, onSuccess, 
   }
 
   return (
-    <form onSubmit={onSubmit} style={{ maxWidth: 720 }}>
+    <form onSubmit={onSubmit} className="add-film-form" style={{ maxWidth: 720 }}>
       <label style={LABEL_STYLE}>
         <div className="caps" style={CAPS_STYLE}>Title *</div>
         <input style={INPUT_STYLE} value={fields.title} onChange={e => set("title", e.target.value)} required />
@@ -79,7 +79,7 @@ export default function FilmForm({ mode, filmId, initial, requestId, onSuccess, 
         <div className="caps" style={CAPS_STYLE}>Director *</div>
         <input style={INPUT_STYLE} value={fields.director} onChange={e => set("director", e.target.value)} required />
       </label>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+      <div className="add-film-form__pair" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
         <label>
           <div className="caps" style={CAPS_STYLE}>Year *</div>
           <input style={INPUT_STYLE} type="number" min={1900} max={new Date().getFullYear() + 5} value={fields.year || ""} onChange={e => set("year", Number(e.target.value))} required />
@@ -91,7 +91,15 @@ export default function FilmForm({ mode, filmId, initial, requestId, onSuccess, 
       </div>
       <label style={LABEL_STYLE}>
         <div className="caps" style={CAPS_STYLE}>Genre primary *</div>
-        <input style={INPUT_STYLE} value={fields.genre_primary} onChange={e => set("genre_primary", e.target.value)} required />
+        <input style={INPUT_STYLE} list="add-film-genres" value={fields.genre_primary} onChange={e => set("genre_primary", e.target.value)} required />
+        <datalist id="add-film-genres">
+          <option value="Horror" />
+          <option value="Thriller" />
+          <option value="Science Fiction" />
+          <option value="Fantasy" />
+          <option value="Drama" />
+          <option value="Comedy" />
+        </datalist>
       </label>
       <label style={LABEL_STYLE}>
         <div className="caps" style={CAPS_STYLE}>Description</div>
@@ -105,7 +113,7 @@ export default function FilmForm({ mode, filmId, initial, requestId, onSuccess, 
         <div className="caps" style={CAPS_STYLE}>Artwork URL</div>
         <input style={INPUT_STYLE} type="url" value={fields.artwork_url} onChange={e => set("artwork_url", e.target.value)} />
       </label>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 14, marginBottom: 14 }}>
+      <div className="add-film-form__pair add-film-form__pair--storefront" style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 14, marginBottom: 14 }}>
         <label>
           <div className="caps" style={CAPS_STYLE}>iTunes ID</div>
           <input style={INPUT_STYLE} type="number" value={fields.itunes_id ?? ""} onChange={e => set("itunes_id", e.target.value ? Number(e.target.value) : null)} />
@@ -193,7 +201,8 @@ export default function FilmForm({ mode, filmId, initial, requestId, onSuccess, 
 
       {err && <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: 13, marginBottom: 14 }}>{err}</div>}
 
-      <button type="submit" className="btn" disabled={saving}>
+      <div className="add-film-form__divider" aria-hidden="true"><span>✦</span></div>
+      <button type="submit" className="btn add-film-form__submit" disabled={saving}>
         {saving ? "Saving…" : mode === "create" ? "Create film" : "Save changes"}
       </button>
     </form>

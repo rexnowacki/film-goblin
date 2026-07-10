@@ -14,25 +14,30 @@ export default function AddFilmModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.85)", overflowY: "auto", padding: "40px 20px 80px", display: "flex", justifyContent: "center", alignItems: "flex-start" }}
+      className="add-film-backdrop"
       onMouseDown={onClose}
     >
       <div
-        style={{ background: "var(--void-2)", border: "2px solid var(--bone)", width: "100%", maxWidth: 760, padding: "28px 28px 36px" }}
+        className="add-film-modal grain"
         onMouseDown={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-film-title"
       >
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 28 }}>
-          <h2 className="h-display" style={{ margin: 0, fontSize: 30 }}>Add Film</h2>
+        <div className="add-film-modal__masthead">
+          <div className="add-film-modal__title-lockup">
+            <h2 id="add-film-title" className="add-film-modal__title">Add Film</h2>
+            <p>Feed the Pit.</p>
+          </div>
+          <img className="add-film-modal__oracle" src="/add-film-oracle.jpg" alt="A goblin peering into a crystal ball" />
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
-            style={{ background: "transparent", border: 0, cursor: "pointer", fontSize: 24, lineHeight: 1, color: "var(--muted)", padding: "0 4px" }}
-          >
-            ×
-          </button>
+            aria-label="Close Add Film"
+            className="add-film-modal__close"
+          ><span aria-hidden="true">×</span></button>
         </div>
-        <AddFilmClient onSuccess={onClose} />
+        <AddFilmClient onSuccess={onClose} variant="modal" />
       </div>
     </div>
   );
