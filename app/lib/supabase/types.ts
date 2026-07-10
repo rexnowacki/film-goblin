@@ -35,6 +35,8 @@
 //   record_fyp_impressions: RPC function — added by mig 0206
 //   record_pit_impressions: RPC function — added by mig 0212, digest_key
 //                           optional argument added by mig 0214
+//   product_events: entire table — added by mig 0215
+//   record_product_events: RPC function — added by mig 0215
 //   library:       price_paid_usd (NUMERIC(6,2) | null) — added by mig 0211
 //   pit_impressions: entire table — added by mig 0212; digest_key (TEXT | null)
 //                    added by mig 0214
@@ -610,6 +612,45 @@ export type Database = {
           user_id?: string
           film_id?: string
           created_at?: string
+        }
+        Relationships: []
+      }
+      product_events: {
+        Row: {
+          id: string
+          user_id: string
+          session_id: string
+          event_name: string
+          path: string | null
+          subject_type: string | null
+          subject_id: string | null
+          properties: Json
+          occurred_at: string
+          received_at: string
+        }
+        Insert: {
+          id: string
+          user_id: string
+          session_id: string
+          event_name: string
+          path?: string | null
+          subject_type?: string | null
+          subject_id?: string | null
+          properties?: Json
+          occurred_at: string
+          received_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          session_id?: string
+          event_name?: string
+          path?: string | null
+          subject_type?: string | null
+          subject_id?: string | null
+          properties?: Json
+          occurred_at?: string
+          received_at?: string
         }
         Relationships: []
       }
@@ -1833,6 +1874,10 @@ export type Database = {
       record_pit_impressions: {
         Args: { p_event_ids: string[]; p_digest_key?: string | null }
         Returns: undefined
+      }
+      record_product_events: {
+        Args: { events: Json }
+        Returns: number
       }
     }
     Enums: {
