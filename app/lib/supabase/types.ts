@@ -37,6 +37,7 @@
 //                           optional argument added by mig 0214
 //   product_events: entire table — added by mig 0215
 //   record_product_events: RPC function — added by mig 0215
+//   return_contract_deferrals: entire table — added by mig 0216
 //   library:       price_paid_usd (NUMERIC(6,2) | null) — added by mig 0211
 //   pit_impressions: entire table — added by mig 0212; digest_key (TEXT | null)
 //                    added by mig 0214
@@ -341,6 +342,30 @@ export type Database = {
           responded_at?: string | null
           status?: Database["public"]["Enums"]["coven_request_status"]
           to_user_id?: string
+        }
+        Relationships: []
+      }
+      return_contract_deferrals: {
+        Row: {
+          id: string
+          user_id: string
+          contract_key: string
+          deferred_until: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          contract_key: string
+          deferred_until: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          contract_key?: string
+          deferred_until?: string
+          created_at?: string
         }
         Relationships: []
       }

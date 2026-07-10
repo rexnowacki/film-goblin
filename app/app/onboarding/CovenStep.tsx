@@ -27,9 +27,12 @@ export default function CovenStep({ starters, onSubmit, onBack, submitting }: Pr
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <p className="caps" style={{ fontSize: 11, color: "var(--muted)", marginBottom: 2 }}>
-        Follow the goblins — they'll keep your feed alive
-      </p>
+      <div>
+        <p className="caps" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 8 }}>Choose who you want beside you</p>
+        <p style={{ fontFamily: "var(--font-serif)", color: "var(--muted)", fontSize: 14, margin: 0 }}>
+          Covenfolk can summon you to a gazing, recommend films directly, compare shared taste, and plan a watch with you.
+        </p>
+      </div>
       {starters.length === 0 ? (
         <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--muted)", fontSize: 14 }}>
           No starter accounts yet.

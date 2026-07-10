@@ -18,6 +18,8 @@ import PeopleSearch from "@/components/PeopleSearch";
 import SearchPersonRow from "@/components/SearchPersonRow";
 import InviteFriendButton from "@/components/InviteFriendButton";
 import Link from "next/link";
+import SocialPromise from "@/components/coven/SocialPromise";
+import CovenEmptyState from "@/components/coven/CovenEmptyState";
 
 export default async function CovenPage({
   searchParams,
@@ -72,6 +74,16 @@ export default async function CovenPage({
         </div>
       </section>
 
+      <section style={{ padding: "24px 0", borderBottom: "1px solid var(--muted)" }}>
+        <div className="container-wide"><SocialPromise /></div>
+      </section>
+
+      {members.length === 0 && (
+        <div className="container-wide" style={{ paddingTop: 28 }}>
+          <CovenEmptyState inviteCode={canInvite ? myInviteCode!.code : null} />
+        </div>
+      )}
+
       {invites.length > 0 && (
         <section style={{ padding: "24px 0", borderBottom: "3px solid var(--void)" }}>
           <div className="container-wide">
@@ -115,7 +127,7 @@ export default async function CovenPage({
             className="stackable"
             style={{ "--stack-template": "1fr 1fr", "--stack-gap": "32px", alignItems: "start" } as React.CSSProperties}
           >
-            <div>
+            <div id="find-people">
               <CovenChipRow members={ranked} />
             </div>
 
