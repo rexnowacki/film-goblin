@@ -87,6 +87,66 @@
   height: 44px;
   opacity: 0.8;
 }
+
+/* The ledger is deliberately quieter than the Price Scroll stat block above:
+   utility text, no extra panel, and only five recent changes until asked. */
+.price-ledger {
+  margin-top: 18px;
+  max-width: 680px;
+  color: var(--void);
+}
+.price-ledger-heading {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+.price-ledger-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.price-ledger-entry {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.price-ledger-entry time {
+  color: var(--void);
+  font-weight: 700;
+}
+.price-ledger-drop strong { color: var(--accent-deep); }
+.price-ledger-sale {
+  padding: 1px 5px;
+  font-size: 8px;
+  color: var(--accent-deep);
+}
+.price-ledger-toggle {
+  margin-top: 9px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.price-ledger-toggle:hover,
+.price-ledger-toggle:focus-visible { color: var(--accent-deep); }
 @media (max-width: 720px) {
   .price-stat-block {
     grid-template-columns: 1fr;
