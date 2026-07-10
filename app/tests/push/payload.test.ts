@@ -38,14 +38,14 @@ describe("buildPushPayload", () => {
     });
   });
 
-  it("coven invite accepted deep-links to the actor profile", () => {
+  it("coven invite accepted deep-links to the relationship-gated shared summary", () => {
     const p = buildPushPayload({
       kind: "coven_invite_accepted",
       payload: { coven_request_id: "cr-2" },
       actor,
       filmTitle: null,
     });
-    expect(p!.url).toBe("/p/moss.witch");
+    expect(p!.url).toBe("/coven/shared/moss.witch");
     expect(p!.body).toBe("Moss Witch accepted your summons.");
     expect(p!.tag).toBe("coven_invite_accepted:cr-2");
   });

@@ -15,7 +15,7 @@ export function notificationTarget(n: EnrichedNotification): string {
     case "coven_invite_pending":
       return "/coven#requests";
     case "coven_invite_accepted":
-      return n.actor ? `/p/${encodeURIComponent(n.actor.username)}` : "/coven";
+      return n.actor ? `/coven/shared/${encodeURIComponent(n.actor.username)}` : "/coven";
     case "recommendation_received":
     case "price_drop": {
       const filmId = (n.payload as { film_id?: string }).film_id;

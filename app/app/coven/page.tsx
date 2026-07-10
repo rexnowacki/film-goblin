@@ -20,6 +20,8 @@ import InviteFriendButton from "@/components/InviteFriendButton";
 import Link from "next/link";
 import SocialPromise from "@/components/coven/SocialPromise";
 import CovenEmptyState from "@/components/coven/CovenEmptyState";
+import TasteTwinStrip from "@/components/coven/TasteTwinStrip";
+import { getTasteTwinSuggestions } from "@/lib/queries/taste-twins";
 
 export default async function CovenPage({
   searchParams,
@@ -31,11 +33,12 @@ export default async function CovenPage({
   if (!user) redirect("/auth/signin?redirect=/coven");
   const supabase = await createClient();
 
-  const [invites, members, ranked, myInviteCode] = await Promise.all([
+  const [invites, members, ranked, myInviteCode, tasteTwins] = await Promise.all([
     getPendingInvites(supabase, user.id),
     getMyCovenMembers(supabase, user.id),
     getRankedCovenfolk(supabase, user.id),
     getMyInviteCode(user.id),
+    getTasteTwinSuggestions(supabase, user.id, 6).catch(error => { console.error("taste twins query failed", error); return []; }),
   ]);
   const canInvite =
     !!myInviteCode &&
@@ -83,6 +86,8 @@ export default async function CovenPage({
           <CovenEmptyState inviteCode={canInvite ? myInviteCode!.code : null} />
         </div>
       )}
+
+      {tasteTwins.length > 0 && <div className="container-wide" style={{ paddingTop: 28 }}><TasteTwinStrip suggestions={tasteTwins} /></div>}
 
       {invites.length > 0 && (
         <section style={{ padding: "24px 0", borderBottom: "3px solid var(--void)" }}>

@@ -58,7 +58,7 @@ export function buildPushPayload(input: PushPayloadInput): PushPayload | null {
       return {
         title: "Your coven grows",
         body: `${who} accepted your summons.`,
-        url: actor ? `/p/${encodeURIComponent(actor.username)}` : "/coven",
+        url: actor ? `/coven/shared/${encodeURIComponent(actor.username)}` : "/coven",
         tag: `coven_invite_accepted:${str("coven_request_id") ?? "x"}`,
       };
     case "recommendation_received":
