@@ -38,6 +38,7 @@
 //   product_events: entire table — added by mig 0215
 //   record_product_events: RPC function — added by mig 0215
 //   return_contract_deferrals: entire table — added by mig 0216
+//   taste_twin_suppressions: entire table — added by mig 0217
 //   library:       price_paid_usd (NUMERIC(6,2) | null) — added by mig 0211
 //   pit_impressions: entire table — added by mig 0212; digest_key (TEXT | null)
 //                    added by mig 0214
@@ -367,6 +368,12 @@ export type Database = {
           deferred_until?: string
           created_at?: string
         }
+        Relationships: []
+      }
+      taste_twin_suppressions: {
+        Row: { viewer_id: string; candidate_id: string; suppressed_until: string; created_at: string }
+        Insert: { viewer_id: string; candidate_id: string; suppressed_until: string; created_at?: string }
+        Update: { viewer_id?: string; candidate_id?: string; suppressed_until?: string; created_at?: string }
         Relationships: []
       }
       film_request_users: {

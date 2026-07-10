@@ -17,3 +17,16 @@
 .coven-empty p { color: var(--muted); font-family: var(--font-serif); max-width: 62ch; }
 .coven-empty__actions { display: flex; gap: 10px; flex-wrap: wrap; }
 @media (max-width: 720px) { .social-promise ul { grid-template-columns: 1fr 1fr; } }
+.taste-twin-strip { margin-bottom: 28px; }
+.taste-twin-strip > .eyebrow { color: var(--accent); }
+.taste-twin-strip h2 { margin: 8px 0 18px; font: 26px/1 var(--font-display); }
+.taste-twin-strip__rail { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.taste-twin-card { border: 1px solid var(--muted); padding: 16px; min-width: 0; }
+.taste-twin-card__person { display: flex; align-items: center; gap: 12px; }
+.taste-twin-card__person a { color: var(--bone); font: 16px var(--font-ui); text-decoration: none; }
+.taste-twin-card p { color: var(--muted); font: italic 13px var(--font-serif); }
+.taste-twin-card__actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.taste-twin-card__dismiss { border: 0; background: transparent; color: var(--muted); font: 10px var(--font-ui); text-transform: uppercase; cursor: pointer; }
+.taste-twin-card__success { display: grid; gap: 6px; color: var(--accent); font: 12px var(--font-ui); }
+.taste-twin-card__success a { color: var(--bone); }
+.shared-taste-traits { color: var(--accent); font: italic 20px var(--font-serif); }

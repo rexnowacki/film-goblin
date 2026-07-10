@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { resolveReturnContract } from "@/lib/return-contract/resolve";
 import type { ReturnContract, ReturnContractCandidate } from "@/lib/return-contract/types";
+import { getTasteTwinSuggestions } from "@/lib/queries/taste-twins";
 
 type Client = SupabaseClient<Database>;
 
@@ -11,13 +12,14 @@ export async function getReturnContract(
   now: Date,
 ): Promise<ReturnContract | null> {
   try {
-    const [requests, recommendations, attendeeRows, hostedRows, watchlistRows, deferrals] = await Promise.all([
+    const [requests, recommendations, attendeeRows, hostedRows, watchlistRows, deferrals, tasteTwins] = await Promise.all([
       client.from("coven_requests").select("id, from_user_id, created_at").eq("to_user_id", userId).eq("status", "pending").order("created_at", { ascending: false }).limit(5),
       client.from("recommendations").select("id, from_user_id, film_id, created_at").eq("to_user_id", userId).order("created_at", { ascending: false }).limit(5),
       client.from("gazing_attendees").select("invite_id, created_at").eq("user_id", userId).limit(10),
       client.from("gazing_invites").select("id, token, film_title, starts_at, created_at").eq("created_by", userId).gte("starts_at", now.toISOString()).order("starts_at").limit(5),
       client.from("watchlists").select("id, film_id, max_price_usd, created_at").eq("user_id", userId).not("max_price_usd", "is", null).limit(20),
       client.from("return_contract_deferrals").select("contract_key, deferred_until").eq("user_id", userId).gt("deferred_until", now.toISOString()),
+      getTasteTwinSuggestions(client, userId, 1),
     ]);
     const failures = [requests, recommendations, attendeeRows, hostedRows, watchlistRows, deferrals].filter(result => result.error);
     if (failures.length) throw failures[0].error;
@@ -72,6 +74,8 @@ export async function getReturnContract(
       if (!film?.id || !film.title || film.latest_price == null || item.max_price_usd == null || Number(film.latest_price) > Number(item.max_price_usd)) continue;
       push({ kind: "price_action", key: `price_action:${item.id}`, href: `/film/${film.id}?src=return_contract&contract_key=${encodeURIComponent(`price_action:${item.id}`)}`, title: `${film.title} reached your price.`, detail: `$${Number(film.latest_price).toFixed(2)} on Apple TV is within your $${Number(item.max_price_usd).toFixed(2)} limit.`, actionLabel: "Make the call", changedAt: item.created_at });
     }
+    const twin = tasteTwins[0];
+    if (twin) push({ kind: "taste_twin", key: `taste_twin:${twin.user.id}`, href: "/coven", title: `Your film trail crosses @${twin.user.username}.`, detail: twin.sharedTraits.length ? `You share ${twin.sharedTraits.map(t => t.name).join(" and ")}.` : twin.sharedFilm ? `You both saved ${twin.sharedFilm.title}.` : "They are connected through someone already in your coven.", actionLabel: "Meet your kindred", changedAt: now.toISOString() });
 
     const day = now.toISOString().slice(0, 10);
     push({ kind: "daily_omen", key: `daily_omen:${day}`, href: "/films?src=return_contract", title: "Today's Daily Omen is waiting.", detail: "One film has been drawn from your current taste signals.", actionLabel: "Reveal the omen", changedAt: `${day}T00:00:00.000Z`, deadline: new Date(`${day}T23:59:59.999Z`).toISOString() });
