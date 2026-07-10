@@ -91,6 +91,13 @@ instead of copying the conclusion blindly.
 table primary key. `record_product_events` inserts with `ON CONFLICT DO NOTHING`, closing the
 ambiguous-response retry race that the original server-generated-ID sketch left open.
 
+**Phase 1 implementation status (2026-07-10, commit `68a4cf3`):** Tasks 1–4 code is complete.
+Verified: 27 focused app tests, 619 full app tests (113 existing env-gated skips), app typecheck,
+production build, DB migration smoke/typecheck, and 6/6 focused real-Postgres RLS/RPC tests.
+The full local RLS command exhausts the container runtime when Vitest launches all 35 suites
+concurrently; full CI RLS remains required before merge. Migration apply, deploy, production
+smoke, baseline capture, and the seven-day Phase 2 gate remain open.
+
 ### Task 1: Define the event contract and pure validation layer
 
 **Files:**
