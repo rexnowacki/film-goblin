@@ -2,12 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
+import { createClient } from "@/lib/supabase/server";
 import { getServerUser } from "@/lib/supabase/cached";
 import { getGazingRoster } from "@/lib/queries/gazing-roster";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import Avatar from "@/components/Avatar";
 import GazingRsvpButton from "@/components/GazingRsvpButton";
+import { EMPTY_ROSTER } from "@/lib/queries/gazing-roster";
+import GazingSourceTracker from "@/components/gazing/GazingSourceTracker";
+import GazingCloseActions from "@/components/gazing/GazingCloseActions";
+import AttendanceConfirm from "@/components/gazing/AttendanceConfirm";
+import GazingAftermath from "@/components/gazing/GazingAftermath";
+import { getGazingAftermath } from "@/lib/queries/gazing-aftermath";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,10 +26,13 @@ interface GazingInvite {
   film_id: string | null;
   film_title: string;
   poster_url: string | null;
-  theater_name: string;
+  theater_name: string | null;
   starts_at: string;
   format_label: string | null;
-  tickets_url: string;
+  tickets_url: string | null;
+  venue_kind: "theater" | "home";
+  status: "scheduled" | "happened" | "cancelled";
+  timezone_label: string;
   inviter: string;
 }
 
@@ -30,7 +40,7 @@ async function loadInvite(token: string): Promise<GazingInvite | null> {
   const supabase = serviceRoleClient();
   const { data } = await supabase
     .from("gazing_invites")
-    .select("id, token, created_by, film_id, film_title, poster_url, theater_name, starts_at, format_label, tickets_url")
+    .select("id, token, created_by, film_id, film_title, poster_url, theater_name, starts_at, format_label, tickets_url, venue_kind, status, timezone_label")
     .eq("token", token)
     .maybeSingle();
   if (!data) return null;
@@ -64,7 +74,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   if (!invite) return { title: "Shared Gazing — Film Goblin" };
 
   const title = `A shared gazing: ${invite.film_title}`;
-  const description = `${invite.inviter} invites you to ${invite.film_title} at ${invite.theater_name}.`;
+  const description = invite.venue_kind === "theater" ? `${invite.inviter} invites you to ${invite.film_title} at ${invite.theater_name}.` : `${invite.inviter} invites you to a watch night for ${invite.film_title}.`;
   const ogImage = `https://freshfromthepit.com/api/og/gazing/${token}`;
 
   return {
@@ -85,26 +95,34 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   };
 }
 
-export default async function GazingPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function GazingPage({ params,searchParams }: { params: Promise<{ token: string }>;searchParams:Promise<{src?:string;event?:string}> }) {
   const { token } = await params;
   const invite = await loadInvite(token);
   if (!invite) notFound();
 
   const user = await getServerUser();
-  const roster = await getGazingRoster(
-    serviceRoleClient(),
+  const source=await searchParams;
+  const viewerClient = user ? await createClient() : null;
+  const { data: authorizedInvite } = viewerClient ? await viewerClient.from("gazing_invites").select("id, location_note").eq("id", invite.id).maybeSingle() : { data: null };
+  const rosterClient = invite.venue_kind === "home" ? viewerClient : serviceRoleClient();
+  const roster = rosterClient && (invite.venue_kind === "theater" || authorizedInvite) ? await getGazingRoster(
+    rosterClient,
     { id: invite.id, token: invite.token, created_by: invite.created_by },
     user?.id ?? null,
-  );
+  ) : EMPTY_ROSTER;
   const isHost = Boolean(user) && invite.created_by === user!.id;
+  const canConfirm=Boolean(user)&&Date.now()>=Date.parse(invite.starts_at)&&invite.status!=="cancelled"&&(isHost||roster.viewerIsIn);
+  const viewerAttendance=viewerClient&&user?await viewerClient.from("gazing_attendees").select("attended_at").eq("invite_id",invite.id).eq("user_id",user.id).maybeSingle():{data:null};
+  const aftermath=invite.status==="happened"&&viewerClient&&user&&authorizedInvite?await getGazingAftermath(viewerClient,invite.id,invite.film_id,user.id):null;
   const filmHref = invite.film_id ? `/film/${invite.film_id}` : "/films";
   const signupHref = `/auth/signup?redirect=${encodeURIComponent(`/gazing/${invite.token}`)}`;
   const watchlistHref = user ? filmHref : `/auth/signup?redirect=${encodeURIComponent(filmHref)}`;
 
-  const metaParts = [when(invite.starts_at), invite.theater_name, invite.format_label].filter(Boolean) as string[];
+  const metaParts = [when(invite.starts_at), invite.venue_kind === "home" ? "Home watch" : invite.theater_name, invite.format_label].filter(Boolean) as string[];
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
+      <GazingSourceTracker inviteId={invite.id} event={source.event??null} source={source.src??null}/>
       <TopNav current="films" showBack />
       <BottomNav current="films" />
 
@@ -145,19 +163,22 @@ export default async function GazingPage({ params }: { params: Promise<{ token: 
             <p style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontStyle: "italic", lineHeight: 1.4, margin: "0 0 28px", maxWidth: 640 }}>
               &ldquo;A fellow goblin invites you into the dark.&rdquo;
             </p>
+            {authorizedInvite?.location_note && <div className="gazing-private-note"><div className="eyebrow">For participants</div>{authorizedInvite.location_note}</div>}
 
             <div className="hero-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <GazingRsvpButton
                 token={invite.token}
+                inviteId={invite.id}
+                filmTitle={invite.film_title}
+                startsAt={invite.starts_at}
+                locationLabel={invite.theater_name??"Home watch"}
                 initialAttending={roster.viewerIsIn}
                 isHost={isHost}
                 canRsvp={Boolean(user)}
                 signupHref={signupHref}
                 size="lg"
               />
-              <a className="btn btn-lg" href={invite.tickets_url} target="_blank" rel="noreferrer">
-                Get tickets →
-              </a>
+              {invite.venue_kind === "theater" && invite.tickets_url && <a className="btn btn-lg" href={invite.tickets_url} target="_blank" rel="noreferrer">Get tickets →</a>}
               <Link className="btn-outline btn-lg" href={watchlistHref}>
                 Add to watchlist
               </Link>
@@ -180,6 +201,12 @@ export default async function GazingPage({ params }: { params: Promise<{ token: 
                   {roster.count} {roster.count === 1 ? "goblin is" : "goblins are"} in
                 </span>
               </div>
+            )}
+            {isHost&&invite.status==="scheduled"&&<div style={{marginTop:22}}><GazingCloseActions token={invite.token} inviteId={invite.id} canHappen={Date.now()>=Date.parse(invite.starts_at)}/></div>}
+            {canConfirm&&<div style={{marginTop:18}}><AttendanceConfirm token={invite.token} inviteId={invite.id} filmId={invite.film_id} confirmed={Boolean(viewerAttendance.data?.attended_at)}/></div>}
+            {invite.status==="cancelled"&&<p className="gazing-cancelled">This gazing was cancelled. Its history remains, but no attendance or verdict is requested.</p>}
+            {aftermath && (
+              <GazingAftermath inviteId={invite.id} filmId={invite.film_id} filmTitle={invite.film_title} data={aftermath} isHost={isHost} viewerConfirmed={Boolean(viewerAttendance.data?.attended_at)}/>
             )}
           </div>
         </div>

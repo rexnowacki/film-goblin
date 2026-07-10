@@ -39,6 +39,7 @@ import FilmWatchersStrip from "@/components/FilmWatchersStrip";
 import WatchProviders from "@/components/WatchProviders";
 import { getFilmWatchProviders } from "@/lib/queries/streaming-availability";
 import { getActiveShowtimesForFilm } from "@/lib/queries/showtimes";
+import PlanWatchButton from "@/components/gazing/PlanWatchButton";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -194,6 +195,7 @@ export default async function FilmDetailPage({
                 covenMembers={covenMembers.map(m => ({ id: m.id, username: m.username, display_name: m.display_name, avatar_url: m.avatar_url }))}
                 topCovenMemberIds={topCovenMemberIds}
               />}
+              {user && <PlanWatchButton filmId={film.id} filmTitle={film.title} members={covenMembers.map(member=>({id:member.id,username:member.username,avatar_url:member.avatar_url}))} />}
               <ShareFilmButton
                 filmId={film.id}
                 title={film.title}

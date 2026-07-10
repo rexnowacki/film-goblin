@@ -12,16 +12,17 @@ export async function getReturnContract(
   now: Date,
 ): Promise<ReturnContract | null> {
   try {
-    const [requests, recommendations, attendeeRows, hostedRows, watchlistRows, deferrals, tasteTwins] = await Promise.all([
+    const [requests, recommendations, attendeeRows, hostedRows, hostedAftermath, watchlistRows, deferrals, tasteTwins] = await Promise.all([
       client.from("coven_requests").select("id, from_user_id, created_at").eq("to_user_id", userId).eq("status", "pending").order("created_at", { ascending: false }).limit(5),
       client.from("recommendations").select("id, from_user_id, film_id, created_at").eq("to_user_id", userId).order("created_at", { ascending: false }).limit(5),
       client.from("gazing_attendees").select("invite_id, created_at").eq("user_id", userId).limit(10),
-      client.from("gazing_invites").select("id, token, film_title, starts_at, created_at").eq("created_by", userId).gte("starts_at", now.toISOString()).order("starts_at").limit(5),
+      client.from("gazing_invites").select("id, token, film_title, starts_at, created_at").eq("created_by", userId).eq("status","scheduled").gte("starts_at", now.toISOString()).order("starts_at").limit(5),
+      client.from("gazing_invites").select("id,token,film_title,starts_at,created_at").eq("created_by",userId).eq("status","happened").order("starts_at",{ascending:false}).limit(3),
       client.from("watchlists").select("id, film_id, max_price_usd, created_at").eq("user_id", userId).not("max_price_usd", "is", null).limit(20),
       client.from("return_contract_deferrals").select("contract_key, deferred_until").eq("user_id", userId).gt("deferred_until", now.toISOString()),
       getTasteTwinSuggestions(client, userId, 1),
     ]);
-    const failures = [requests, recommendations, attendeeRows, hostedRows, watchlistRows, deferrals].filter(result => result.error);
+    const failures = [requests, recommendations, attendeeRows, hostedRows, hostedAftermath, watchlistRows, deferrals].filter(result => result.error);
     if (failures.length) throw failures[0].error;
 
     const attendeeInviteIds = (attendeeRows.data ?? []).map(row => row.invite_id);
@@ -34,7 +35,7 @@ export async function getReturnContract(
 
     const [attendingInvites, films, profiles] = await Promise.all([
       attendeeInviteIds.length
-        ? client.from("gazing_invites").select("id, token, film_title, starts_at, created_at").in("id", attendeeInviteIds).gte("starts_at", now.toISOString()).order("starts_at")
+        ? client.from("gazing_invites").select("id, token, film_title, starts_at, created_at").in("id", attendeeInviteIds).eq("status","scheduled").gte("starts_at", now.toISOString()).order("starts_at")
         : Promise.resolve({ data: [], error: null }),
       recFilmIds.length || priceFilmIds.length
         ? client.from("films_with_stats").select("id, title, latest_price").in("id", [...new Set([...recFilmIds, ...priceFilmIds])])
@@ -58,6 +59,7 @@ export async function getReturnContract(
       const key = `gazing_upcoming:${invite.id}`;
       push({ kind: "gazing_upcoming", key, href: `/gazing/${invite.token}`, title: `${invite.film_title} is approaching.`, detail: `Your gazing begins ${new Date(invite.starts_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}.`, actionLabel: "Open the gazing", changedAt: invite.created_at, deadline: invite.starts_at });
     }
+    for(const invite of hostedAftermath.data??[]){push({kind:"gazing_aftermath",key:`gazing_aftermath:${invite.id}`,href:`/gazing/${invite.token}`,title:`${invite.film_title} is waiting for its verdict.`,detail:"Confirm who was there and record what you thought.",actionLabel:"Close the loop",changedAt:invite.starts_at});}
     for (const request of requests.data ?? []) {
       const actor = profileById.get(request.from_user_id);
       if (!actor) continue;

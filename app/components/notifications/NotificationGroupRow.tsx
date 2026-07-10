@@ -45,6 +45,9 @@ function headerCopy(group: NotificationGroup): React.ReactNode {
       return <><strong>{group.count} film requests</strong> were fulfilled.</>;
     case "gazing_rsvp":
       return <><strong>{actorName}</strong> answered {group.count} gazing summons.</>;
+    case "gazing_reminder_24h": return <><strong>{group.count}</strong> gazing reminders are waiting.</>;
+    case "gazing_reminder_2h": return <><strong>{group.count}</strong> gazings begin within two hours.</>;
+    case "gazing_aftermath": return <><strong>{group.count}</strong> gazings await their aftermath.</>;
     case "goblin_summon":
       return <><strong>{actorName}</strong> summoned you {group.count} times in the weekly ritual watch thread.</>;
   }
@@ -56,7 +59,7 @@ function headerHref(group: NotificationGroup): string {
     case "coven_invite_pending":
       return "/coven#requests";
     case "coven_invite_accepted":
-      return group.actor ? `/p/${encodeURIComponent(group.actor.username)}` : "/coven";
+      return group.actor ? `/coven/shared/${encodeURIComponent(group.actor.username)}` : "/coven";
     case "recommendation_received":
     case "price_drop": {
       const filmId = (first.payload as { film_id?: string }).film_id;
@@ -88,6 +91,9 @@ function headerHref(group: NotificationGroup): string {
       const token = (first.payload as { token?: string }).token;
       return token ? `/gazing/${token}` : "/home";
     }
+    case "gazing_reminder_24h":
+    case "gazing_reminder_2h":
+    case "gazing_aftermath": {const token=(first.payload as {token?:string}).token;return token?`/gazing/${token}?src=notification&event=${group.kind}`:"/home";}
     case "goblin_summon": {
       const pickId = (first.payload as { pick_id?: number }).pick_id;
       return pickId ? `/ritual/${pickId}` : "/ritual";

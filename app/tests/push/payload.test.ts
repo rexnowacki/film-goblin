@@ -4,11 +4,14 @@ import { PUSH_KINDS, buildPushPayload } from "@/lib/push/payload";
 const actor = { username: "moss.witch", display_name: "Moss Witch" };
 
 describe("PUSH_KINDS", () => {
-  it("contains exactly the v1 allowlist", () => {
+  it("contains social, price, and gazing-loop kinds", () => {
     expect([...PUSH_KINDS].sort()).toEqual([
       "comment_on_activity",
       "coven_invite_accepted",
       "coven_invite_pending",
+      "gazing_aftermath",
+      "gazing_reminder_24h",
+      "gazing_reminder_2h",
       "gazing_rsvp",
       "price_drop",
       "recommendation_received",
@@ -18,6 +21,7 @@ describe("PUSH_KINDS", () => {
 });
 
 describe("buildPushPayload", () => {
+  it("deep-links gazing reminders with source attribution",()=>{const p=buildPushPayload({kind:"gazing_reminder_2h",payload:{invite_id:"i",token:"tok"},actor:null,filmTitle:"Alien"});expect(p?.url).toBe("/gazing/tok?src=push&event=gazing_reminder_2h");expect(p?.tag).toBe("gazing_reminder_2h:i");});
   it("returns null for non-allowlisted kinds", () => {
     expect(buildPushPayload({ kind: "rate_reminder", payload: {}, actor: null, filmTitle: null })).toBeNull();
     expect(buildPushPayload({ kind: "like_on_comment", payload: {}, actor, filmTitle: null })).toBeNull();

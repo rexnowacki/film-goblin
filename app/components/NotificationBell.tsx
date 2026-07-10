@@ -71,6 +71,9 @@ function toastCopy(row: NotificationRow, items: NotificationFeedItem[]): string 
       return "A film request was fulfilled";
     case "gazing_rsvp":
       return `${actor} is in for your gazing`;
+    case "gazing_reminder_24h": return "Your gazing begins within 24 hours";
+    case "gazing_reminder_2h": return "Your gazing begins within two hours";
+    case "gazing_aftermath": return "Your gazing awaits its aftermath";
   }
 }
 

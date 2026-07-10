@@ -46,7 +46,7 @@ export type EnrichedActivity = (
   | { kind: "list_film_added"; list: ListLite; film: FilmLite }
   | { kind: "coven_joined"; other: RecipientLite }
   | { kind: "user_joined" }
-  | { kind: "gazing_invited"; film: FilmLite; token: string; theaterName: string; startsAt: string; formatLabel: string | null; roster: GazingRoster }
+  | { kind: "gazing_invited"; film: FilmLite; inviteId: string; token: string; theaterName: string; startsAt: string; formatLabel: string | null; roster: GazingRoster }
   | { kind: "gazing_attending"; film: FilmLite; host: RecipientLite; token: string; theaterName: string; startsAt: string; formatLabel: string | null }
 ) & {
   id: string;
@@ -282,6 +282,7 @@ export async function getEnrichedActivity(
           ...base,
           kind: "gazing_invited",
           film,
+          inviteId: payload.invite_id ?? r.id,
           token: payload.token ?? "",
           theaterName: payload.theater_name ?? "",
           startsAt: payload.starts_at ?? "",

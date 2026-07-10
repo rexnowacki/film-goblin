@@ -8,7 +8,8 @@ let db: TestDb;
 beforeAll(async () => { db = await makeTestDb(); });
 afterAll(async () => { await db.close(); });
 
-async function makeInvite(client: TestDb["client"], hostId: string, filmId: string): Promise<string> {
+async function makeInvite(client: TestDb["client"], hostId: string, filmId: string, participantId?:string): Promise<string> {
+  if(participantId&&participantId!==hostId){const a=hostId<participantId?hostId:participantId;const b=hostId<participantId?participantId:hostId;await client.query("INSERT INTO coven_members(user_a_id,user_b_id) VALUES($1,$2) ON CONFLICT DO NOTHING",[a,b]);}
   const r = await client.query<{ id: string }>(
     `INSERT INTO gazing_invites
        (token, created_by, film_id, film_title, theater_name, starts_at, tickets_url, format_label, broadcast)
@@ -23,7 +24,7 @@ describe("gazing_attendees - RSVP triggers + RLS", () => {
   it("insert fans out a gazing_attending activity and a gazing_rsvp notification to the host", async () => {
     const fx = await seedFixtures(db.client);
     await beginAs(db.client, null, "service_role");
-    const inviteId = await makeInvite(db.client, fx.userA.id, fx.filmId);
+    const inviteId = await makeInvite(db.client, fx.userA.id, fx.filmId,fx.userB.id);
     await commit(db.client);
 
     await beginAs(db.client, fx.userB.id, "authenticated");
@@ -55,7 +56,7 @@ describe("gazing_attendees - RSVP triggers + RLS", () => {
   it("delete retracts the activity but leaves the host notification", async () => {
     const fx = await seedFixtures(db.client);
     await beginAs(db.client, null, "service_role");
-    const inviteId = await makeInvite(db.client, fx.userA.id, fx.filmId);
+    const inviteId = await makeInvite(db.client, fx.userA.id, fx.filmId,fx.userB.id);
     await commit(db.client);
 
     await beginAs(db.client, fx.userB.id, "authenticated");
@@ -91,7 +92,7 @@ describe("gazing_attendees - RSVP triggers + RLS", () => {
   it("a user cannot RSVP as someone else", async () => {
     const fx = await seedFixtures(db.client);
     await beginAs(db.client, null, "service_role");
-    const inviteId = await makeInvite(db.client, fx.userA.id, fx.filmId);
+    const inviteId = await makeInvite(db.client, fx.userA.id, fx.filmId,fx.userB.id);
     await commit(db.client);
 
     await beginAs(db.client, fx.userB.id, "authenticated");
@@ -104,7 +105,7 @@ describe("gazing_attendees - RSVP triggers + RLS", () => {
   it("blocks duplicate RSVPs", async () => {
     const fx = await seedFixtures(db.client);
     await beginAs(db.client, null, "service_role");
-    const inviteId = await makeInvite(db.client, fx.userA.id, fx.filmId);
+    const inviteId = await makeInvite(db.client, fx.userA.id, fx.filmId,fx.userB.id);
     await db.client.query(`INSERT INTO gazing_attendees (invite_id, user_id) VALUES ($1, $2)`, [inviteId, fx.userB.id]);
     await expect(
       db.client.query(`INSERT INTO gazing_attendees (invite_id, user_id) VALUES ($1, $2)`, [inviteId, fx.userB.id]),

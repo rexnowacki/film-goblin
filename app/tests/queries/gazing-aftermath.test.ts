@@ -1,0 +1,2 @@
+import{describe,expect,it}from"vitest";import{assembleGazingAftermath}from"@/lib/queries/gazing-aftermath";
+describe("assembleGazingAftermath",()=>{it("includes only independently confirmed profiles and preserves viewer verdict",()=>{expect(assembleGazingAftermath(["a"],[{id:"a",username:"A",avatar_url:null},{id:"b",username:"B",avatar_url:null}],true)).toEqual({confirmed:[{id:"a",username:"A",avatar_url:null}],viewerVerdict:true});});});

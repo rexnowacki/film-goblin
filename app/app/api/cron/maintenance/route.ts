@@ -15,6 +15,7 @@ import { recordCronRun } from "@/lib/cron/record-run";
 import { runPriceFeedScan } from "@/lib/feed-events/price-scan";
 import { runDailyFeedEvents } from "@/lib/feed-events/daily";
 import { runProductEventCleanup } from "@/lib/cron/product-event-cleanup";
+import { runGazingReminders } from "@/lib/cron/gazing-reminders";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -137,6 +138,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       "product-event-cleanup",
       () => runProductEventCleanup(client),
     );
+    jobs.gazingReminders = await recordedJob("gazing-reminders",()=>runGazingReminders(client,now));
 
     jobs.sendNotifications = await recordedJob("send-notifications", async () => {
       const resendKey = process.env.RESEND_API_KEY;

@@ -7,6 +7,8 @@ import { useToast } from "./ToastProvider";
 import BottomSheet from "./BottomSheet";
 import Avatar from "./Avatar";
 import { filterCovenMembers } from "./recommend-modal-search";
+import ContinuationPrompt from "./continuations/ContinuationPrompt";
+import { trackProductEvent } from "@/lib/product-events/browser";
 
 interface CovenMember {
   id: string;
@@ -87,6 +89,7 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers, topCov
       setError(null);
       try {
         await recommendFilm(filmId, selectedUserId, note);
+        if(params?.get("continuation_source"))trackProductEvent({event_name:"continuation_prompt_acted",properties:{source_action:params.get("continuation_source")!,continuation_kind:"recommend"}});
         setSent(true);
         toast("Recommendation sent");
       } catch (e: unknown) {
@@ -119,6 +122,7 @@ export default function RecommendModal({ filmId, filmTitle, covenMembers, topCov
       ) : sent ? (
         <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", padding: "12px 0" }}>
           Sent. They&rsquo;ll see it in their feed.
+          <ContinuationPrompt source="recommendation_sent" filmId={filmId}/>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", height: "70dvh", padding: "8px 0 0" }}>
