@@ -55,10 +55,12 @@ const TEMPLATES: Record<Exclude<FeedEventType, "milestone">, Template[]> = {
     v => `The blood price falls. **${v.title}** is now ${usd(v.price)} — down from ${usd(v.old_price)}.`,
     v => `Apple blinked. **${v.title}** drops to ${usd(v.price)}.`,
     v => `The goblin marked **${v.title}**'s fall to ${usd(v.price)}. Now you know too.`,
+    v => `The goblin dragged **${v.title}** back from the void at ${usd(v.price)}. It was ${usd(v.old_price)}.`,
   ],
   all_time_low: [
     v => `ALL-TIME LOW: **${v.title}** at ${usd(v.price)}. The moon is right. The price is finally right too.`,
     v => `**${v.title}** drops its guard to ${usd(v.price)}. The goblin strikes.`,
+    v => `The goblin waited years in the dark for this. **${v.title}**: ${usd(v.price)}. All-time low.`,
   ],
   price_rise: [
     v => `The window closes. **${v.title}** climbs back to ${usd(v.price)}. You were warned.`,
@@ -67,11 +69,14 @@ const TEMPLATES: Record<Exclude<FeedEventType, "milestone">, Template[]> = {
   new_film: [
     v => `The goblin dragged **${v.title}** (${v.year}) into the pit by the collar.`,
     v => `Fresh from the pit: **${v.title}** (${v.year}) joins the hoard.`,
+    v => `The goblin sank its claws into **${v.title}** (${v.year}) and hauled it down into the pit.`,
+    v => `The goblin returned from the surface with **${v.title}** (${v.year}) clenched in its teeth.`,
   ],
   anniversary: [
     v => `**${v.title}** turns ${v.age} today. It has not mellowed.`,
     v => `On this night in ${v.year}, **${v.title}** was released. Burn something.`,
     v => `${v.age} years of **${v.title}**. The mothers do not age.`,
+    v => `The goblin unearthed **${v.title}**'s bones. ${v.age} years old today. Still warm.`,
   ],
   goblin_pick: [
     v => `The goblin's counsel this week: **${v.title}** (${v.year}). ${v.one_line ?? ""}`.trim(),
@@ -83,6 +88,7 @@ const TEMPLATES: Record<Exclude<FeedEventType, "milestone">, Template[]> = {
   now_free: [
     v => `**${v.title}** is free on ${v.service}. No tithe required. Go.`,
     v => `${v.service} offers **${v.title}** for nothing. Suspicious. Take it anyway.`,
+    v => `The goblin pried the lock off ${v.service}'s vault. **${v.title}** costs nothing tonight.`,
   ],
   now_on_apple: [
     v => `The theatrical veil lifts. **${v.title}** crosses over — now on Apple TV.`,
@@ -95,6 +101,7 @@ const TEMPLATES: Record<Exclude<FeedEventType, "milestone">, Template[]> = {
   verdict_anointed: [
     v => `The coven has spoken. **${v.title}** is Anointed.`,
     v => `Ninety percent of the coven cannot be wrong. **${v.title}** ascends.`,
+    v => `The goblin carried **${v.title}** up from the pit on its shoulders. Anointed by the coven.`,
   ],
   now_at_theater: [
     v => `**${v.title}** haunts ${v.theater} this week. The big screen is the proper altar.`,
@@ -109,13 +116,18 @@ const TEMPLATES: Record<Exclude<FeedEventType, "milestone">, Template[]> = {
   ],
 };
 
-const MILESTONE_TEMPLATES: Record<NonNullable<CopyVars["milestone_kind"]>, Template> = {
-  catalog: v => `The pit now holds ${v.n} films. The hoard grows.`,
-  monthly: v => {
-    const base = `The coven watched ${v.n} films together this month.`;
-    return v.n === 13 || v.n === 66 || v.n === 666 ? `${base} Appropriate.` : base;
-  },
-  member: v => `Coven member ${v.n} has signed the book. Welcome.`,
+const MILESTONE_TEMPLATES: Record<NonNullable<CopyVars["milestone_kind"]>, Template[]> = {
+  catalog: [
+    v => `The pit now holds ${v.n} films. The hoard grows.`,
+    v => `The goblin counted the hoard on its fingers, then its toes, then borrowed yours. ${v.n} films.`,
+  ],
+  monthly: [
+    v => {
+      const base = `The coven watched ${v.n} films together this month.`;
+      return v.n === 13 || v.n === 66 || v.n === 666 ? `${base} Appropriate.` : base;
+    },
+  ],
+  member: [v => `Coven member ${v.n} has signed the book. Welcome.`],
 };
 
 /**
@@ -127,8 +139,11 @@ export function stripLeadingEmoji(copy: string): string {
   return copy.replace(/^[\p{Extended_Pictographic}\u{FE0F}\u{200D}]+\s*/u, "");
 }
 
-export function variantCount(type: FeedEventType, _vars?: CopyVars): number {
-  return type === "milestone" ? 1 : TEMPLATES[type].length;
+export function variantCount(type: FeedEventType, vars?: CopyVars): number {
+  if (type === "milestone") {
+    return MILESTONE_TEMPLATES[vars?.milestone_kind ?? "catalog"].length;
+  }
+  return TEMPLATES[type].length;
 }
 
 export function renderCopy(type: FeedEventType, vars: CopyVars, variant: number): string {
@@ -137,7 +152,9 @@ export function renderCopy(type: FeedEventType, vars: CopyVars, variant: number)
   }
   if (type === "milestone") {
     const kind = vars.milestone_kind ?? "catalog";
-    return MILESTONE_TEMPLATES[kind](vars);
+    const list = MILESTONE_TEMPLATES[kind];
+    const idx = Math.min(Math.max(variant, 0), list.length - 1);
+    return list[idx](vars);
   }
   const list = TEMPLATES[type];
   const idx = Math.min(Math.max(variant, 0), list.length - 1);
