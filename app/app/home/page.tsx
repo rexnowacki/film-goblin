@@ -14,6 +14,8 @@ import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import FeedTabs from "@/components/FeedTabs";
 import FeedSearch from "@/components/FeedSearch";
+import NextInThePit from "@/components/return-contract/NextInThePit";
+import { getReturnContract } from "@/lib/queries/return-contract";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PAGE_SIZE = 20;
@@ -45,15 +47,18 @@ export default async function HomePage({
   const user = await getServerUser();
   const supabase = await createClient();
 
-  const initialPage = user && tabParam !== "pit"
-    ? await getEnrichedActivity(supabase, user.id, {
+  const [initialPage, returnContract] = await Promise.all([
+    user && tabParam !== "pit"
+    ? getEnrichedActivity(supabase, user.id, {
         limit: PAGE_SIZE,
         actorId: actorId ?? undefined,
         filmId: filmId ?? undefined,
         kinds: TAB_KINDS[tabParam],
         scope: TAB_SCOPE[tabParam],
       })
-    : { items: [], nextCursor: null, done: true };
+    : Promise.resolve({ items: [], nextCursor: null, done: true }),
+    user ? getReturnContract(supabase, user.id, new Date()) : Promise.resolve(null),
+  ]);
   const initialItems = initialPage.items;
   const initialCursor = initialPage.nextCursor;
   const initialDone = initialPage.done;
@@ -153,6 +158,7 @@ export default async function HomePage({
           )}
         </aside>
         <main>
+          {returnContract && <NextInThePit contract={returnContract} />}
           {user && <FeedSearch active={active} />}
           <FeedTabs
             initialItems={initialItems}

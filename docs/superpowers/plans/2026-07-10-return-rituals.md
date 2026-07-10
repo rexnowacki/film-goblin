@@ -245,6 +245,11 @@ views/actions. Missing future tables must render `not available yet`, not fail P
 
 ## Phase 2 — Visible social promise and return contract
 
+**Owner gate override (2026-07-10):** The owner explicitly directed Codex to “complete all the
+remaining phases” after Phase 1 recorded its first production sessions. This overrides the
+seven-day baseline wait and the 20-view phase gates for sequencing only. The report must still
+collect and publish those counts; no conversion threshold is represented as met.
+
 ### Task 5: Add deferrals and the pure return-contract domain
 
 **Files:**
