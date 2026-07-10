@@ -2,16 +2,13 @@
 
 import Link from "next/link";
 import FilmPoster from "./FilmPoster";
-import MatchPill from "./MatchPill";
 import PosterQuickAdd from "./PosterQuickAdd";
 import type { Shelf } from "@/lib/queries/fyp/shelves";
-import type { ScoredFilm } from "@/lib/queries/fyp/score";
 import type { FilmLite } from "@/lib/queries/fyp/forYou";
 
 interface Props {
   shelf: Shelf;
   filmsById: Map<string, FilmLite>;
-  scoredById: Map<string, ScoredFilm>;
   dismissed: Set<string>;
   onDismiss: (filmId: string) => void;
   onUndo: (filmId: string) => void;
@@ -22,7 +19,7 @@ interface Props {
 }
 
 export default function ShelfCarousel({
-  shelf, filmsById, scoredById, dismissed, onDismiss, onUndo, registerCard,
+  shelf, filmsById, dismissed, onDismiss, onUndo, registerCard,
   watchlistIds, libraryIds, sharerUsername,
 }: Props) {
   const visible = shelf.filmIds.filter(id => filmsById.has(id));
@@ -52,7 +49,6 @@ export default function ShelfCarousel({
               </div>
             );
           }
-          const scored = scoredById.get(filmId);
           return (
             <div key={filmId} ref={el => registerCard(el, filmId)} data-film-id={filmId}
               style={{ flex: "0 0 140px", scrollSnapAlign: "start", position: "relative" }}>
@@ -67,7 +63,6 @@ export default function ShelfCarousel({
                   onNotInterested={() => onDismiss(filmId)}
                 >
                   <FilmPoster film={film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
-                  {scored && <MatchPill band={scored.matchBand} covenFavorite={scored.covenFavorite} />}
                 </PosterQuickAdd>
                 <div className="head" style={{ fontSize: 14, lineHeight: 1.1, marginTop: 8 }}>{film.title}</div>
                 <div className="caps" style={{ fontSize: 9, color: "var(--muted)", marginTop: 3 }}>{film.year}</div>
