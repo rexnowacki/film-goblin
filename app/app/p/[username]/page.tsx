@@ -18,6 +18,7 @@ import ProfileCollectionTabs, {
   type ProfileReview,
 } from "@/components/profile/ProfileCollectionTabs";
 import { formatProfileJoinedDate, formatProfileStat } from "@/lib/profile-page";
+import ProfileCovenRoster from "@/components/profile/ProfileCovenRoster";
 import Link from "next/link";
 
 export default async function PublicProfilePage({
@@ -165,21 +166,7 @@ export default async function PublicProfilePage({
         </section>
 
         <section className="profile-section">
-          <div className="profile-section__topline">
-            <div className="eyebrow">{isOwner ? "Your Coven" : "Their Coven"}</div>
-          </div>
-          {bundle.coven.length === 0 ? (
-            <div className="profile-collection-empty">No coven has gathered yet.</div>
-          ) : (
-            <div className="profile-coven-row">
-              {bundle.coven.map(m => (
-                <Link key={m.id} prefetch={false} href={`/p/${encodeURIComponent(m.username)}`} className="profile-coven-member">
-                  <Avatar name={m.username} color="var(--accent)" size={56} url={m.avatar_url} />
-                  <span>@{m.username}</span>
-                </Link>
-              ))}
-            </div>
-          )}
+          <ProfileCovenRoster members={bundle.coven} isOwner={isOwner} />
         </section>
 
         <ProfileCollectionTabs
