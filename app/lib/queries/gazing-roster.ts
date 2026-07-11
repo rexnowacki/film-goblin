@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/types";
+import type { GazingStatus } from "../gazing/types";
 
 type Client = SupabaseClient<Database>;
 
@@ -15,6 +16,10 @@ export interface GazingRoster {
   avatars: AttendeeLite[];
   viewerIsIn: boolean;
   viewerIsHost: boolean;
+}
+
+export interface GazingRosterWithStatus extends GazingRoster {
+  status: Exclude<GazingStatus, "cancelled">;
 }
 
 interface InviteRef {
@@ -85,16 +90,29 @@ export async function getGazingRostersForTokens(
   client: Client,
   tokens: string[],
   viewerId: string | null,
-): Promise<Map<string, GazingRoster>> {
+): Promise<Map<string, GazingRosterWithStatus>> {
   const unique = Array.from(new Set(tokens));
   if (unique.length === 0) return new Map();
 
   const { data: inviteRows, error } = await client
     .from("gazing_invites")
-    .select("id, token, created_by")
-    .in("token", unique);
+    .select("id, token, created_by, status")
+    .in("token", unique)
+    .neq("status", "cancelled");
   if (error) throw error;
-  return fetchRosters(client, (inviteRows ?? []) as InviteRef[], viewerId);
+  const activeInvites = (inviteRows ?? []).filter(
+    (invite): invite is typeof invite & { status: Exclude<GazingStatus, "cancelled"> } =>
+      invite.status !== "cancelled",
+  );
+  const rosters = await fetchRosters(client, activeInvites, viewerId);
+  const out = new Map<string, GazingRosterWithStatus>();
+  for (const invite of activeInvites) {
+    out.set(invite.token, {
+      ...(rosters.get(invite.token) ?? EMPTY_ROSTER),
+      status: invite.status,
+    });
+  }
+  return out;
 }
 
 export async function getGazingRoster(client: Client, invite: InviteRef, viewerId: string | null): Promise<GazingRoster> {

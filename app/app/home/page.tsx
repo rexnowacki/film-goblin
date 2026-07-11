@@ -44,6 +44,10 @@ export default async function HomePage({
   const actorId = sp.actor && UUID_RE.test(sp.actor) ? sp.actor : null;
   const filmId = sp.film && UUID_RE.test(sp.film) ? sp.film : null;
   const tabParam = VALID_TABS.has(sp.tab as FeedTab) ? (sp.tab as FeedTab) : "all";
+  // One instant owns both queue deadlines and UTC-day progress so a request
+  // crossing midnight cannot resolve one day and persist under another.
+  const now = new Date();
+  const dateSeed = now.toISOString().slice(0, 10);
   const user = await getServerUser();
   const supabase = await createClient();
 
@@ -57,7 +61,7 @@ export default async function HomePage({
       })
     : Promise.resolve({ items: [], nextCursor: null, done: true });
   const returnContractsPromise = user
-    ? getReturnContracts(supabase, user.id, new Date())
+    ? getReturnContracts(supabase, user.id, now)
     : Promise.resolve([]);
   const pitArchivePromise = user && tabParam === "pit"
     ? getPitArchiveEvents(supabase, { limit: PIT_ARCHIVE_PAGE_SIZE })
@@ -102,10 +106,6 @@ export default async function HomePage({
   const initialItems = initialPage.items;
   const initialCursor = initialPage.nextCursor;
   const initialDone = initialPage.done;
-
-  // Date-seeded so composeFeed's ratio-cap/no-stacking selection is stable
-  // for the whole day rather than reshuffling on every server render.
-  const dateSeed = new Date().toISOString().slice(0, 10);
 
   const goblinPick: GoblinPickFilm | null = ritualPick
     ? { ...ritualPick.film, whisper_text: ritualPick.whisper_text }
@@ -168,7 +168,9 @@ export default async function HomePage({
           )}
         </aside>
         <main>
-          {returnContracts.length > 0 && <NextInThePit contracts={returnContracts} />}
+          {returnContracts.length > 0 && user && (
+            <NextInThePit contracts={returnContracts} viewerId={user.id} utcDay={dateSeed} />
+          )}
           {user && <FeedSearch active={active} />}
           <FeedTabs
             initialItems={initialItems}

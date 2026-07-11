@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildRosterMap, type AttendeeLite } from "@/lib/queries/gazing-roster";
+import {
+  buildRosterMap,
+  getGazingRostersForTokens,
+  type AttendeeLite,
+} from "@/lib/queries/gazing-roster";
 
 const profiles = new Map<string, AttendeeLite>([
   ["u-b", { id: "u-b", username: "bex", display_name: null, avatar_url: null }],
@@ -42,5 +46,44 @@ describe("buildRosterMap", () => {
     const r = m.get("tok-1")!;
     expect(r.count).toBe(2);
     expect(r.avatars).toHaveLength(1);
+  });
+});
+
+describe("getGazingRostersForTokens", () => {
+  it("hydrates live status and omits cancelled gazings", async () => {
+    let excludeCancelled = false;
+    const inviteRows = [
+      { id: "inv-live", token: "tok-live", created_by: "u-host", status: "scheduled" as const },
+      { id: "inv-dead", token: "tok-dead", created_by: "u-host", status: "cancelled" as const },
+    ];
+    const inviteQuery: any = {
+      select: () => inviteQuery,
+      in: () => inviteQuery,
+      neq: (_column: string, value: string) => {
+        excludeCancelled = value === "cancelled";
+        return inviteQuery;
+      },
+      then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
+        Promise.resolve({
+          data: excludeCancelled ? inviteRows.filter(row => row.status !== "cancelled") : inviteRows,
+          error: null,
+        }).then(resolve, reject),
+    };
+    const attendeesQuery: any = {
+      select: () => attendeesQuery,
+      in: async () => ({ data: [], error: null }),
+    };
+    const client = {
+      from: (table: string) => {
+        if (table === "gazing_invites") return inviteQuery;
+        if (table === "gazing_attendees") return attendeesQuery;
+        throw new Error(`unexpected table ${table}`);
+      },
+    } as never;
+
+    const result = await getGazingRostersForTokens(client, ["tok-live", "tok-dead"], "viewer");
+
+    expect(result.get("tok-live")).toMatchObject({ status: "scheduled" });
+    expect(result.has("tok-dead")).toBe(false);
   });
 });

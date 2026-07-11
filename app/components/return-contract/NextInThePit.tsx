@@ -9,40 +9,119 @@ import {
   canDeferReturnContract,
   getSwipeDirection,
   moveReturnContractIndex,
-  reconcileReturnContractIndex,
   removeReturnContract,
   type ReturnContractBrowseDirection,
   type ReturnContractPoint,
 } from "@/lib/return-contract/queue";
+import {
+  firstUnreviewedReturnContractIndex,
+  isReturnContractQueueExhausted,
+  markReturnContractReviewed,
+  reconcileReturnContractProgress,
+  type ReturnContractProgressScope,
+  type ReturnContractProgressStorage,
+} from "@/lib/return-contract/progress";
 import type { ReturnContract } from "@/lib/return-contract/types";
 import ReturnContractTracker from "./ReturnContractTracker";
 
-export default function NextInThePit({ contracts }: { contracts: ReturnContract[] }) {
+interface Props {
+  contracts: ReturnContract[];
+  viewerId: string;
+  utcDay: string;
+}
+
+function browserProgressStorage(): ReturnContractProgressStorage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+export default function NextInThePit({ contracts, viewerId, utcDay }: Props) {
   const [items, setItems] = useState(contracts);
   const [index, setIndex] = useState(0);
+  const [progressReady, setProgressReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const swipeStart = useRef<ReturnContractPoint | null>(null);
   const itemsRef = useRef(items);
+  const indexRef = useRef(0);
+  const reviewedKeysRef = useRef(new Set<string>());
+  const progressScopeRef = useRef<ReturnContractProgressScope | null>(null);
   const titleId = useId();
   itemsRef.current = items;
 
   useEffect(() => {
-    setIndex(current => reconcileReturnContractIndex(itemsRef.current, current, contracts));
-    setItems(contracts);
-  }, [contracts]);
+    const scope = { userId: viewerId, utcDay };
+    const reviewed = reconcileReturnContractProgress(
+      browserProgressStorage(),
+      scope,
+      progressScopeRef.current,
+      reviewedKeysRef.current,
+    );
+    const keys = contracts.map(contract => contract.key);
+    const firstUnreviewed = firstUnreviewedReturnContractIndex(keys, reviewed);
+    progressScopeRef.current = scope;
+    reviewedKeysRef.current = reviewed;
 
-  if (items.length === 0) return null;
+    if (isReturnContractQueueExhausted(keys, reviewed)) {
+      itemsRef.current = [];
+      indexRef.current = 0;
+      setItems([]);
+      setIndex(0);
+      setProgressReady(true);
+      return;
+    }
+
+    const nextIndex = firstUnreviewed >= 0 ? firstUnreviewed : 0;
+    itemsRef.current = contracts;
+    indexRef.current = nextIndex;
+    setItems(contracts);
+    setIndex(nextIndex);
+    setProgressReady(true);
+  }, [contracts, utcDay, viewerId]);
+
+  if (!progressReady || items.length === 0) return null;
   const activeIndex = Math.min(index, items.length - 1);
+  indexRef.current = activeIndex;
   const contract = items[activeIndex];
   const copy = getReturnContractCopy(contract, new Date());
   const href = buildReturnContractHref(contract);
   const canDefer = canDeferReturnContract(contract, new Date());
 
+  const reviewActiveContract = (): boolean => {
+    const currentItems = itemsRef.current;
+    if (currentItems.length === 0) return false;
+    const currentIndex = Math.min(Math.max(indexRef.current, 0), currentItems.length - 1);
+    const activeKey = currentItems[currentIndex]?.key;
+    if (!activeKey) return false;
+
+    const reviewed = markReturnContractReviewed(
+      browserProgressStorage(),
+      viewerId,
+      utcDay,
+      activeKey,
+      reviewedKeysRef.current,
+    );
+    reviewedKeysRef.current = reviewed;
+    if (!isReturnContractQueueExhausted(currentItems.map(item => item.key), reviewed)) return false;
+
+    itemsRef.current = [];
+    indexRef.current = 0;
+    setItems([]);
+    setIndex(0);
+    return true;
+  };
+
   const browse = (direction: ReturnContractBrowseDirection) => {
-    if (pending || items.length < 2) return;
+    const currentItems = itemsRef.current;
+    if (pending || currentItems.length < 2) return;
     setError(null);
-    setIndex(current => moveReturnContractIndex(current, items.length, direction));
+    if (reviewActiveContract()) return;
+    const nextIndex = moveReturnContractIndex(indexRef.current, currentItems.length, direction);
+    indexRef.current = nextIndex;
+    setIndex(nextIndex);
   };
 
   const finishSwipe = (event: PointerEvent<HTMLDivElement>) => {
@@ -58,13 +137,23 @@ export default function NextInThePit({ contracts }: { contracts: ReturnContract[
     const previousItems = items;
     const previousIndex = activeIndex;
     const next = removeReturnContract(items, contract.key, activeIndex);
-    setItems(next.contracts);
-    setIndex(next.index);
+    const remainingReviewed = isReturnContractQueueExhausted(
+      next.contracts.map(item => item.key),
+      reviewedKeysRef.current,
+    );
+    const optimisticItems = remainingReviewed ? [] : next.contracts;
+    const optimisticIndex = remainingReviewed ? 0 : next.index;
+    itemsRef.current = optimisticItems;
+    indexRef.current = optimisticIndex;
+    setItems(optimisticItems);
+    setIndex(optimisticIndex);
     setError(null);
     startTransition(async () => {
       try {
         await deferReturnContract(contract.key, contract.deferUntil);
       } catch {
+        itemsRef.current = previousItems;
+        indexRef.current = previousIndex;
         setItems(previousItems);
         setIndex(previousIndex);
         setError("The pit would not let go. Try again.");
@@ -112,7 +201,14 @@ export default function NextInThePit({ contracts }: { contracts: ReturnContract[
         <p className="return-contract__change">{copy.nextChange}</p>
       </div>
       {error && <p className="return-contract__error" role="status">{error}</p>}
-      <Link prefetch={false} className="btn" href={href}>{copy.actionLabel} →</Link>
+      <Link
+        prefetch={false}
+        className="btn"
+        href={href}
+        onClick={() => { reviewActiveContract(); }}
+      >
+        {copy.actionLabel} →
+      </Link>
     </section>
   );
 }

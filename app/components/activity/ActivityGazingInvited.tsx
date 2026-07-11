@@ -23,18 +23,20 @@ export default function ActivityGazingInvited({ item }: { item: Item }) {
         </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, marginTop: 4, color: "var(--muted)", letterSpacing: "0.04em" }}>{meta}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-          <GazingRsvpButton
-            token={item.token}
-            inviteId={item.inviteId}
-            filmTitle={item.film.title}
-            startsAt={item.startsAt}
-            locationLabel={item.theaterName}
-            initialAttending={item.roster.viewerIsIn}
-            isHost={item.roster.viewerIsHost}
-            canRsvp
-            signupHref={`/gazing/${item.token}`}
-            size="sm"
-          />
+          {item.gazingStatus === "scheduled" && (
+            <GazingRsvpButton
+              token={item.token}
+              inviteId={item.inviteId}
+              filmTitle={item.film.title}
+              startsAt={item.startsAt}
+              locationLabel={item.theaterName}
+              initialAttending={item.roster.viewerIsIn}
+              isHost={item.roster.viewerIsHost}
+              canRsvp
+              signupHref={`/gazing/${item.token}`}
+              size="sm"
+            />
+          )}
           {item.roster.count > 0 && (
             <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
               {item.roster.avatars.map(a => (

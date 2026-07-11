@@ -166,18 +166,20 @@ export default async function GazingPage({ params,searchParams }: { params: Prom
             {authorizedInvite?.location_note && <div className="gazing-private-note"><div className="eyebrow">For participants</div>{authorizedInvite.location_note}</div>}
 
             <div className="hero-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <GazingRsvpButton
-                token={invite.token}
-                inviteId={invite.id}
-                filmTitle={invite.film_title}
-                startsAt={invite.starts_at}
-                locationLabel={invite.theater_name??"Home watch"}
-                initialAttending={roster.viewerIsIn}
-                isHost={isHost}
-                canRsvp={Boolean(user)}
-                signupHref={signupHref}
-                size="lg"
-              />
+              {invite.status === "scheduled" && (
+                <GazingRsvpButton
+                  token={invite.token}
+                  inviteId={invite.id}
+                  filmTitle={invite.film_title}
+                  startsAt={invite.starts_at}
+                  locationLabel={invite.theater_name??"Home watch"}
+                  initialAttending={roster.viewerIsIn}
+                  isHost={isHost}
+                  canRsvp={Boolean(user)}
+                  signupHref={signupHref}
+                  size="lg"
+                />
+              )}
               {invite.venue_kind === "theater" && invite.tickets_url && <a className="btn btn-lg" href={invite.tickets_url} target="_blank" rel="noreferrer">Get tickets →</a>}
               <Link className="btn-outline btn-lg" href={watchlistHref}>
                 Add to watchlist
