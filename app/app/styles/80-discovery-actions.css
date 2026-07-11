@@ -136,7 +136,17 @@
   z-index: 30;
 }
 @media (max-width: 720px) {
-  .bottom-nav { display: flex; justify-content: space-around; align-items: center; }
+  .bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    /* iOS 26 can repaint fixed controls at a stale visual-viewport position
+       during a fast direction change. Keep this small surface on its own
+       compositor layer so the bar stays attached to the viewport edge. */
+    transform: translate3d(0, 0, 0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
 }
 .bottom-nav__item {
