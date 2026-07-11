@@ -15,7 +15,7 @@ import BottomNav from "@/components/BottomNav";
 import FeedTabs from "@/components/FeedTabs";
 import FeedSearch from "@/components/FeedSearch";
 import NextInThePit from "@/components/return-contract/NextInThePit";
-import { getReturnContract } from "@/lib/queries/return-contract";
+import { getReturnContracts } from "@/lib/queries/return-contract";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PAGE_SIZE = 20;
@@ -56,9 +56,9 @@ export default async function HomePage({
         scope: TAB_SCOPE[tabParam],
       })
     : Promise.resolve({ items: [], nextCursor: null, done: true });
-  const returnContractPromise = user
-    ? getReturnContract(supabase, user.id, new Date())
-    : Promise.resolve(null);
+  const returnContractsPromise = user
+    ? getReturnContracts(supabase, user.id, new Date())
+    : Promise.resolve([]);
   const pitArchivePromise = user && tabParam === "pit"
     ? getPitArchiveEvents(supabase, { limit: PIT_ARCHIVE_PAGE_SIZE })
     : Promise.resolve(undefined);
@@ -87,10 +87,10 @@ export default async function HomePage({
         .then(({ data }) => data)
     : Promise.resolve(null);
 
-  const [initialPage, returnContract, pitArchive, priceDropFilms, ritualPick, systemEvents, ritualMessages, viewer, staffRow] =
+  const [initialPage, returnContracts, pitArchive, priceDropFilms, ritualPick, systemEvents, ritualMessages, viewer, staffRow] =
     await Promise.all([
       initialPagePromise,
-      returnContractPromise,
+      returnContractsPromise,
       pitArchivePromise,
       priceDropFilmsPromise,
       ritualPickPromise,
@@ -168,7 +168,7 @@ export default async function HomePage({
           )}
         </aside>
         <main>
-          {returnContract && <NextInThePit contract={returnContract} />}
+          {returnContracts.length > 0 && <NextInThePit contracts={returnContracts} />}
           {user && <FeedSearch active={active} />}
           <FeedTabs
             initialItems={initialItems}
