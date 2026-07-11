@@ -13,6 +13,11 @@ import RoleBadge from "@/components/RoleBadge";
 import ActivityRow from "@/components/activity/ActivityRow";
 import InviteBanner from "@/components/InviteBanner";
 import ShareProfileButton from "@/components/ShareProfileButton";
+import ProfileCollectionTabs, {
+  type ProfileFilm,
+  type ProfileReview,
+} from "@/components/profile/ProfileCollectionTabs";
+import { formatProfileJoinedDate, formatProfileStat } from "@/lib/profile-page";
 import Link from "next/link";
 
 export default async function PublicProfilePage({
@@ -37,43 +42,88 @@ export default async function PublicProfilePage({
     coven = await getCovenStateBetween(supabase, user.id, bundle.profile.id);
   }
 
-  const { data: ownActivity } = await supabase
-    .from("activity")
-    .select("id, kind, payload, created_at, actor_user_id")
-    .eq("actor_user_id", bundle.profile.id)
-    .order("created_at", { ascending: false })
-    .limit(10);
+  const isOwner = user?.id === bundle.profile.id;
+  const canViewWatched = Boolean(user && (isOwner || coven.state === "member"));
+  const filmFields = "id, title, director, year, artwork_url";
+  const [activityResult, watchlistResult, watchedResult, reviewsResult] = await Promise.all([
+    supabase
+      .from("activity")
+      .select("id, kind, payload, created_at, actor_user_id")
+      .eq("actor_user_id", bundle.profile.id)
+      .order("created_at", { ascending: false })
+      .limit(10),
+    isOwner
+      ? supabase
+          .from("watchlists")
+          .select(`film:films!inner(${filmFields})`, { count: "exact" })
+          .eq("user_id", bundle.profile.id)
+          .order("created_at", { ascending: false })
+          .limit(12)
+      : Promise.resolve({ data: [], count: null, error: null }),
+    canViewWatched
+      ? supabase
+          .from("watched")
+          .select(`film:films!inner(${filmFields})`, { count: "exact" })
+          .eq("user_id", bundle.profile.id)
+          .order("watched_at", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(24)
+      : Promise.resolve({ data: [], count: null, error: null }),
+    supabase
+      .from("reviews")
+      .select(`id, title, pullquote, film:films!inner(${filmFields})`, { count: "exact" })
+      .eq("author_user_id", bundle.profile.id)
+      .eq("status", "published")
+      .order("published_at", { ascending: false })
+      .limit(12),
+  ]);
+
+  const watchlistFilms = uniqueProfileFilms((watchlistResult.data ?? []).map(row => normalizeProfileFilm(row.film)));
+  const watchedFilms = uniqueProfileFilms((watchedResult.data ?? []).map(row => normalizeProfileFilm(row.film)));
+  const reviews: ProfileReview[] = (reviewsResult.data ?? []).flatMap(row => {
+    const film = normalizeProfileFilm(row.film);
+    return film ? [{ id: row.id, title: row.title, pullquote: row.pullquote, film }] : [];
+  });
+  const ownActivity = activityResult.data ?? [];
   const enrichedOwn = await enrichOwnActivity(supabase, ownActivity ?? [], bundle.profile, user?.id ?? null);
+  const displayName = bundle.profile.display_name ?? bundle.profile.username;
+  const stats = [
+    { label: "Watched", value: canViewWatched ? watchedResult.count ?? watchedFilms.length : null },
+    { label: "Watchlist", value: isOwner ? watchlistResult.count ?? watchlistFilms.length : null },
+    { label: "Reviews", value: reviewsResult.count ?? reviews.length },
+    { label: "Coven", value: bundle.coven.length },
+  ];
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
+    <div className="profile-page">
       {!user && isInvited && <InviteBanner inviterUsername={bundle.profile.username} />}
       <TopNav current="coven" />
       <BottomNav current="coven" />
 
-      <section style={{ background: "var(--void-2)", borderBottom: "3px solid var(--void)", padding: "48px 0" }}>
-        <div className="container-wide stackable" style={{ "--stack-template": "140px 1fr", "--stack-gap": "32px", alignItems: "center" } as React.CSSProperties}>
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <Avatar name={bundle.profile.display_name ?? bundle.profile.username} color="var(--accent)" size={140} url={bundle.profile.avatar_url} />
+      <section className="profile-hero">
+        <div className="profile-shell profile-hero__inner">
+          <div className="profile-avatar-ring">
+            <Avatar name={displayName} color="var(--accent)" size={158} url={bundle.profile.avatar_url} />
           </div>
-          <div>
-            <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 8 }}>Profile</div>
-            <h1 className="h-display" style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-              <span>{bundle.profile.display_name ?? bundle.profile.username}</span>
+          <div className="profile-identity">
+            <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 10 }}>Goblin profile</div>
+            <h1>
+              <span>{displayName}</span>
               <RoleBadge role={bundle.profile.role} size={28} />
             </h1>
-            <div className="caps" style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>@{bundle.profile.username}</div>
-            {bundle.profile.bio && <p style={{ fontFamily: "var(--font-serif)", fontSize: 18, fontStyle: "italic", marginTop: 20, maxWidth: 560 }}>{bundle.profile.bio}</p>}
+            <div className="profile-handle">@{bundle.profile.username}</div>
+            {bundle.profile.bio && <p className="profile-hero-bio">{bundle.profile.bio}</p>}
             {user && user.id !== bundle.profile.id && (
-              <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
+              <div className="profile-actions">
                 <CovenButton targetUserId={bundle.profile.id} targetUsername={bundle.profile.username} initialState={coven.state} initialRequestId={coven.requestId} />
               </div>
             )}
-            {user && user.id === bundle.profile.id && (
-              <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
+            {isOwner && (
+              <div className="profile-actions">
+                <Link prefetch={false} href="/settings#profile" className="btn-outline">Edit profile</Link>
                 <ShareProfileButton
                   username={bundle.profile.username}
-                  displayName={bundle.profile.display_name ?? bundle.profile.username}
+                  displayName={displayName}
                 />
               </div>
             )}
@@ -81,38 +131,102 @@ export default async function PublicProfilePage({
         </div>
       </section>
 
-      <section style={{ padding: "48px 0", borderBottom: "3px solid var(--void)" }}>
-        <div className="container-wide">
-          <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 10 }}>Their Coven</div>
+      <main className="profile-shell profile-main">
+        <div className="profile-stats" aria-label="Profile totals">
+          {stats.map(stat => (
+            <div className="profile-stat" key={stat.label}>
+              <strong>{formatProfileStat(stat.value)}</strong>
+              <span>{stat.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="profile-divider" aria-hidden="true"><span>✦</span></div>
+
+        <section className="profile-section">
+          <div className="profile-section__topline"><div className="eyebrow">Bio</div></div>
+          <div className="profile-bio-card">
+            {bundle.profile.bio || "No confession scratched into the ledger."}
+          </div>
+          <div className="profile-joined">⌖ {formatProfileJoinedDate(bundle.profile.created_at)}</div>
+        </section>
+
+        <section className="profile-section">
+          <div className="profile-section__topline">
+            <div className="eyebrow">Relics</div>
+          </div>
+          <div className="profile-relic-empty">
+            <div className="profile-relic-empty__seal" aria-hidden="true">◇</div>
+            <div>
+              <strong>No relics pried from the dark yet.</strong>
+              <span>When badges awaken, the trophies will gather here.</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="profile-section">
+          <div className="profile-section__topline">
+            <div className="eyebrow">{isOwner ? "Your Coven" : "Their Coven"}</div>
+          </div>
           {bundle.coven.length === 0 ? (
-            <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>No coven yet.</div>
+            <div className="profile-collection-empty">No coven has gathered yet.</div>
           ) : (
-            <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+            <div className="profile-coven-row">
               {bundle.coven.map(m => (
-                <Link key={m.id} href={`/p/${encodeURIComponent(m.username)}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "inherit", textDecoration: "none" }}>
+                <Link key={m.id} prefetch={false} href={`/p/${encodeURIComponent(m.username)}`} className="profile-coven-member">
                   <Avatar name={m.username} color="var(--accent)" size={56} url={m.avatar_url} />
-                  <div className="caps" style={{ fontSize: 10 }}>@{m.username}</div>
+                  <span>@{m.username}</span>
                 </Link>
               ))}
             </div>
           )}
-        </div>
-      </section>
+        </section>
 
-      <section style={{ padding: "48px 0" }}>
-        <div className="container-wide">
-          <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 10 }}>Recent Activity</div>
+        <ProfileCollectionTabs
+          watchlist={watchlistFilms}
+          watched={watchedFilms}
+          reviews={reviews}
+          lists={bundle.lists}
+          watchlistPrivate={!isOwner}
+          watchedPrivate={!canViewWatched}
+        />
+
+        <section className="profile-activity">
+          <div className="profile-section__topline"><div className="eyebrow">Recent Activity</div></div>
           {enrichedOwn.length === 0 ? (
-            <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>Nothing yet.</div>
+            <div className="profile-collection-empty">Nothing has stirred here yet.</div>
           ) : (
             <div style={{ display: "grid", gap: 0 }}>
               {enrichedOwn.map(item => <ActivityRow key={item.id} item={item} />)}
             </div>
           )}
-        </div>
-      </section>
+        </section>
+      </main>
     </div>
   );
+}
+
+function normalizeProfileFilm(raw: unknown): ProfileFilm | null {
+  const film = Array.isArray(raw) ? raw[0] : raw;
+  if (!film || typeof film !== "object") return null;
+  const value = film as Record<string, unknown>;
+  if (typeof value.id !== "string" || typeof value.title !== "string" || typeof value.year !== "number") return null;
+  return {
+    id: value.id,
+    title: value.title,
+    director: typeof value.director === "string" ? value.director : "",
+    year: value.year,
+    artwork_url: typeof value.artwork_url === "string" ? value.artwork_url : null,
+  };
+}
+
+function uniqueProfileFilms(films: Array<ProfileFilm | null>): ProfileFilm[] {
+  const seen = new Set<string>();
+  return films.filter((film): film is ProfileFilm => {
+    if (!film || seen.has(film.id)) return false;
+    seen.add(film.id);
+    return true;
+  }).slice(0, 12);
 }
 
 async function enrichOwnActivity(supabase: any, rows: any[], profile: any, viewerId: string | null) {
