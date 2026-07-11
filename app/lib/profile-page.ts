@@ -12,3 +12,9 @@ export function formatProfileStat(value: number | null): string {
   if (value == null) return "—";
   return new Intl.NumberFormat("en-US").format(value);
 }
+
+export const PROFILE_COVEN_INLINE_LIMIT = 8;
+
+export function getProfileCovenPreview<T>(members: T[]): T[] {
+  return members.slice(0, PROFILE_COVEN_INLINE_LIMIT);
+}
