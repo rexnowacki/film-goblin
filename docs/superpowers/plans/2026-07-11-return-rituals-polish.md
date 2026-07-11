@@ -51,6 +51,6 @@
 - [x] Run focused tests, full app tests, app typecheck/build.
 - [x] Run DB smoke/typecheck and real-Postgres RLS tests.
 - [x] Perform whole-branch adversarial review and address findings.
-- [ ] Update root current state/open threads and append the history row.
-- [ ] Open PR, wait for all CI jobs, squash-merge.
-- [ ] Apply mig 0220 to production, deploy current master from repo root, and smoke public/authenticated surfaces as available.
+- [x] Update root current state/open threads and append the history row.
+- [x] Open PR, wait for all CI jobs, squash-merge.
+- [x] Apply mig 0220 to production, deploy current master from repo root, and smoke public/authenticated surfaces as available.
