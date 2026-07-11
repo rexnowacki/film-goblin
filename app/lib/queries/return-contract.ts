@@ -1,16 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { resolveReturnContract } from "@/lib/return-contract/resolve";
+import { resolveReturnContracts } from "@/lib/return-contract/resolve";
 import type { ReturnContract, ReturnContractCandidate } from "@/lib/return-contract/types";
 import { getTasteTwinSuggestions } from "@/lib/queries/taste-twins";
 
 type Client = SupabaseClient<Database>;
 
-export async function getReturnContract(
+export async function getReturnContracts(
   client: Client,
   userId: string,
   now: Date,
-): Promise<ReturnContract | null> {
+): Promise<ReturnContract[]> {
   try {
     const [requests, recommendations, attendeeRows, hostedRows, hostedAftermath, watchlistRows, deferrals, tasteTwins] = await Promise.all([
       client.from("coven_requests").select("id, from_user_id, created_at").eq("to_user_id", userId).eq("status", "pending").order("created_at", { ascending: false }).limit(5),
@@ -81,9 +81,17 @@ export async function getReturnContract(
 
     const day = now.toISOString().slice(0, 10);
     push({ kind: "daily_omen", key: `daily_omen:${day}`, href: "/films?src=return_contract", title: "Today's Daily Omen is waiting.", detail: "One film has been drawn from your current taste signals.", actionLabel: "Reveal the omen", changedAt: `${day}T00:00:00.000Z`, deadline: new Date(`${day}T23:59:59.999Z`).toISOString() });
-    return resolveReturnContract(candidates, now);
+    return resolveReturnContracts(candidates, now);
   } catch (error) {
     console.error("return contract query failed", error);
-    return null;
+    return [];
   }
+}
+
+export async function getReturnContract(
+  client: Client,
+  userId: string,
+  now: Date,
+): Promise<ReturnContract | null> {
+  return (await getReturnContracts(client, userId, now))[0] ?? null;
 }
