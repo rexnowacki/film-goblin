@@ -3,7 +3,7 @@ import type { Database } from "../supabase/types";
 import { getReactionsForActivities, type ReactionSummary } from "./activity-reactions";
 import { getCommentSummariesForActivities, type CommentSummary } from "./activity-comments";
 import { groupFeed } from "./group-activity";
-import { getGazingRostersForTokens, EMPTY_ROSTER, type GazingRoster } from "./gazing-roster";
+import { getGazingRostersForTokens, type GazingRoster } from "./gazing-roster";
 import type { SystemFeedEvent } from "@/lib/feed-events/types";
 
 type Client = SupabaseClient<Database>;
@@ -46,8 +46,8 @@ export type EnrichedActivity = (
   | { kind: "list_film_added"; list: ListLite; film: FilmLite }
   | { kind: "coven_joined"; other: RecipientLite }
   | { kind: "user_joined" }
-  | { kind: "gazing_invited"; film: FilmLite; inviteId: string; token: string; theaterName: string; startsAt: string; formatLabel: string | null; roster: GazingRoster }
-  | { kind: "gazing_attending"; film: FilmLite; host: RecipientLite; token: string; theaterName: string; startsAt: string; formatLabel: string | null }
+  | { kind: "gazing_invited"; film: FilmLite; inviteId: string; token: string; theaterName: string; startsAt: string; formatLabel: string | null; gazingStatus: "scheduled" | "happened"; roster: GazingRoster }
+  | { kind: "gazing_attending"; film: FilmLite; host: RecipientLite; token: string; theaterName: string; startsAt: string; formatLabel: string | null; gazingStatus: "scheduled" | "happened" }
 ) & {
   id: string;
   created_at: string;
@@ -198,7 +198,7 @@ export async function getEnrichedActivity(
   const recipientIds = Array.from(new Set(raw.map(r => (r.payload as any)?.to_user_id).filter(Boolean)));
   const listIds = Array.from(new Set(raw.map(r => (r.payload as any)?.list_id).filter(Boolean)));
   const gazingTokens = raw
-    .filter(r => r.kind === "gazing_invited")
+    .filter(r => r.kind === "gazing_invited" || r.kind === "gazing_attending")
     .map(r => (r.payload as { token?: string }).token)
     .filter((token): token is string => Boolean(token));
   const watchLoggedFilmIds = Array.from(new Set(
@@ -236,6 +236,7 @@ export async function getEnrichedActivity(
     const film = payload?.film_id ? (filmMap.get(payload.film_id) as FilmLite | undefined) : undefined;
     const recipient = payload?.to_user_id ? (recipientMap.get(payload.to_user_id) as RecipientLite | undefined) : undefined;
     const list = payload?.list_id ? (listMap.get(payload.list_id) as ListLite | undefined) : undefined;
+    const gazing = payload?.token ? gazingRosters.get(payload.token) : undefined;
 
     const reactions = reactionsMap.get(r.id) ?? { count: 0, likedByMe: false };
     const comments = commentsMap.get(r.id) ?? { count: 0, items: [] };
@@ -278,7 +279,7 @@ export async function getEnrichedActivity(
         out.push({ ...base, kind: "user_joined" });
         break;
       case "gazing_invited":
-        if (film) out.push({
+        if (film && gazing) out.push({
           ...base,
           kind: "gazing_invited",
           film,
@@ -287,11 +288,12 @@ export async function getEnrichedActivity(
           theaterName: payload.theater_name ?? "",
           startsAt: payload.starts_at ?? "",
           formatLabel: payload.format_label ?? null,
-          roster: gazingRosters.get(payload.token) ?? EMPTY_ROSTER,
+          gazingStatus: gazing.status,
+          roster: gazing,
         });
         break;
       case "gazing_attending":
-        if (film && recipient) out.push({
+        if (film && recipient && gazing) out.push({
           ...base,
           kind: "gazing_attending",
           film,
@@ -300,6 +302,7 @@ export async function getEnrichedActivity(
           theaterName: payload.theater_name ?? "",
           startsAt: payload.starts_at ?? "",
           formatLabel: payload.format_label ?? null,
+          gazingStatus: gazing.status,
         });
         break;
     }

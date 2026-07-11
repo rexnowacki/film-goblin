@@ -45,14 +45,55 @@ export type NotificationFeedItem =
 const RECENT_DAYS = 14;
 const RECENT_LIMIT = 50;
 
+const ACTIVE_GAZING_NOTIFICATION_KINDS = new Set<NotificationKind>([
+  "gazing_reminder_24h",
+  "gazing_reminder_2h",
+  "gazing_aftermath",
+]);
+
+interface GazingNotificationRef {
+  kind: NotificationKind;
+  payload: unknown;
+}
+
+function gazingInviteId(row: GazingNotificationRef): string | null {
+  if (!ACTIVE_GAZING_NOTIFICATION_KINDS.has(row.kind)) return null;
+  const inviteId = (row.payload as { invite_id?: unknown } | null)?.invite_id;
+  return typeof inviteId === "string" && inviteId.length > 0 ? inviteId : null;
+}
+
+async function filterActiveGazingNotifications<T extends GazingNotificationRef>(
+  client: Client,
+  rows: T[],
+): Promise<T[]> {
+  const inviteIds = Array.from(new Set(rows.map(gazingInviteId).filter((id): id is string => Boolean(id))));
+  if (inviteIds.length === 0) {
+    return rows.filter(row => !ACTIVE_GAZING_NOTIFICATION_KINDS.has(row.kind));
+  }
+
+  const { data, error } = await client
+    .from("gazing_invites")
+    .select("id")
+    .in("id", inviteIds)
+    .neq("status", "cancelled");
+  if (error) throw error;
+  const activeInviteIds = new Set((data ?? []).map(invite => invite.id));
+
+  return rows.filter(row => {
+    if (!ACTIVE_GAZING_NOTIFICATION_KINDS.has(row.kind)) return true;
+    const inviteId = gazingInviteId(row);
+    return inviteId != null && activeInviteIds.has(inviteId);
+  });
+}
+
 export async function getUnreadNotificationCount(client: Client, userId: string): Promise<number> {
-  const { count, error } = await client
+  const { data, error } = await client
     .from("notifications")
-    .select("*", { count: "exact", head: true })
+    .select("kind, payload")
     .eq("user_id", userId)
     .is("read_at", null);
   if (error) throw error;
-  return count ?? 0;
+  return (await filterActiveGazingNotifications(client, data ?? [])).length;
 }
 
 export async function getRecentNotifications(client: Client, userId: string): Promise<NotificationFeedItem[]> {
@@ -65,7 +106,7 @@ export async function getRecentNotifications(client: Client, userId: string): Pr
     .order("created_at", { ascending: false })
     .limit(RECENT_LIMIT);
   if (error) throw error;
-  const rows = data ?? [];
+  const rows = await filterActiveGazingNotifications(client, data ?? []);
   if (rows.length === 0) return [];
 
   const actorIds = Array.from(new Set(rows.map(r => r.actor_user_id).filter((x): x is string => Boolean(x))));

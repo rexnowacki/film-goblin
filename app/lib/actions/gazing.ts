@@ -13,6 +13,7 @@ import { canConfirmAttendance, canTransitionGazing } from "@/lib/gazing/state";
 type Client = SupabaseClient<Database>;
 
 const SITE_ORIGIN = "https://freshfromthepit.com";
+const GAZINGS_INDEX_PATH = "/coven/gazings";
 
 interface ShowtimeSnapshot {
   id: string;
@@ -112,7 +113,9 @@ export async function _createGazingInvite(client: Client, showtimeId: string): P
 
 export async function createGazingInvite(showtimeId: string): Promise<CreateGazingResult> {
   const supabase = await createClient();
-  return _createGazingInvite(supabase, showtimeId);
+  const result = await _createGazingInvite(supabase, showtimeId);
+  revalidatePath(GAZINGS_INDEX_PATH);
+  return result;
 }
 
 export async function _summonCoven(client: Client, showtimeId: string): Promise<CreateGazingResult> {
@@ -125,6 +128,7 @@ export async function summonCoven(showtimeId: string): Promise<CreateGazingResul
   const supabase = await createClient();
   const result = await _summonCoven(supabase, showtimeId);
   revalidatePath("/home");
+  revalidatePath(GAZINGS_INDEX_PATH);
   return result;
 }
 
@@ -138,12 +142,22 @@ export async function _toggleGazingRsvp(client: Client, token: string): Promise<
   const svc = serviceRoleClient();
   const { data: invite, error: inviteErr } = await svc
     .from("gazing_invites")
-    .select("id, created_by")
+    .select("id, created_by, status")
     .eq("token", token)
     .maybeSingle();
   if (inviteErr) throw inviteErr;
   if (!invite) throw new Error("That gazing has expired");
+  if (invite.status !== "scheduled") throw new Error("Only scheduled gazings accept RSVP changes");
   if (invite.created_by === user.id) throw new Error("You're hosting this gazing");
+
+  // A private shared link is a bearer capability. Materialize that capability
+  // as an invitee before returning to the viewer-scoped client, whose attendee
+  // INSERT remains subject to the scheduled-status RLS guard in migration 0220.
+  const { error: claimErr } = await svc.from("gazing_invitees").upsert({
+    invite_id: invite.id,
+    user_id: user.id,
+  }, { onConflict: "invite_id,user_id", ignoreDuplicates: true });
+  if (claimErr) throw claimErr;
 
   const { data: existing, error: existErr } = await client
     .from("gazing_attendees")
@@ -154,8 +168,9 @@ export async function _toggleGazingRsvp(client: Client, token: string): Promise<
   if (existErr) throw existErr;
 
   if (existing) {
-    const { error } = await client.from("gazing_attendees").delete().eq("id", existing.id);
+    const { data: deleted, error } = await client.from("gazing_attendees").delete().eq("id", existing.id).select("id").maybeSingle();
     if (error) throw error;
+    if (!deleted) throw new Error("That gazing changed and no longer accepts RSVP changes");
     return { attending: false };
   }
 
@@ -170,6 +185,7 @@ export async function toggleGazingRsvp(token: string): Promise<ToggleRsvpResult>
   const result = await _toggleGazingRsvp(supabase, token);
   revalidatePath("/home");
   revalidatePath(`/gazing/${token}`);
+  revalidatePath(GAZINGS_INDEX_PATH);
   return result;
 }
 
@@ -181,10 +197,69 @@ export async function _createHomeGazing(client: Client, input: HomeGazingDraft):
   if(valid.inviteeIds.length){const invitees=await client.from("gazing_invitees").insert(valid.inviteeIds.map(userId=>({invite_id:inserted.data.id,user_id:userId})));if(invitees.error)throw invitees.error;}
   return {url:`${SITE_ORIGIN}/gazing/${token}`,inviteId:inserted.data.id};
 }
-export async function createHomeGazing(input: HomeGazingDraft): Promise<CreateGazingResult>{const client=await createClient();const result=await _createHomeGazing(client,input);revalidatePath("/home");revalidatePath("/coven");revalidatePath(`/film/${input.filmId}`);return result;}
+export async function createHomeGazing(input: HomeGazingDraft): Promise<CreateGazingResult>{const client=await createClient();const result=await _createHomeGazing(client,input);revalidatePath("/home");revalidatePath("/coven");revalidatePath(GAZINGS_INDEX_PATH);revalidatePath(`/film/${input.filmId}`);return result;}
 
-export async function _closeGazing(client:Client,token:string,next:"happened"|"cancelled",now=new Date()):Promise<string>{const user=await requireAuthUser(client);const current=await client.from("gazing_invites").select("id,created_by,status,starts_at,film_id").eq("token",token).maybeSingle();if(current.error||!current.data)throw current.error??new Error("Gazing not found");if(!canTransitionGazing({current:current.data.status,next,startsAt:current.data.starts_at,now,isHost:current.data.created_by===user.id}))throw new Error("That gazing cannot be closed this way");const updated=await client.from("gazing_invites").update({status:next,closed_at:now.toISOString(),closed_by:user.id}).eq("id",current.data.id);if(updated.error)throw updated.error;return current.data.id;}
-export async function closeGazing(token:string,next:"happened"|"cancelled"):Promise<string>{const client=await createClient();const id=await _closeGazing(client,token,next);revalidatePath(`/gazing/${token}`);revalidatePath("/home");return id;}
+export async function _closeGazing(client:Client,token:string,next:"happened"|"cancelled",now=new Date()):Promise<string>{const user=await requireAuthUser(client);const current=await client.from("gazing_invites").select("id,created_by,status,starts_at,film_id").eq("token",token).maybeSingle();if(current.error||!current.data)throw current.error??new Error("Gazing not found");if(!canTransitionGazing({current:current.data.status,next,startsAt:current.data.starts_at,now,isHost:current.data.created_by===user.id}))throw new Error("That gazing cannot be closed this way");const updated=await client.from("gazing_invites").update({status:next,closed_at:now.toISOString(),closed_by:user.id}).eq("id",current.data.id).eq("status","scheduled").select("id").maybeSingle();if(updated.error)throw updated.error;if(!updated.data)throw new Error("That gazing changed or was already closed");return updated.data.id;}
+export async function closeGazing(token:string,next:"happened"|"cancelled"):Promise<string>{const client=await createClient();const id=await _closeGazing(client,token,next);revalidatePath(`/gazing/${token}`);revalidatePath("/home");revalidatePath(GAZINGS_INDEX_PATH);return id;}
 
-export async function _confirmAttendance(client:Client,token:string,now=new Date()):Promise<string>{const user=await requireAuthUser(client);const invite=await client.from("gazing_invites").select("id,status,starts_at,created_by").eq("token",token).maybeSingle();if(invite.error||!invite.data)throw invite.error??new Error("Gazing not found");const attendee=await client.from("gazing_attendees").select("id").eq("invite_id",invite.data.id).eq("user_id",user.id).maybeSingle();if(attendee.error)throw attendee.error;const isHost=invite.data.created_by===user.id;if(!canConfirmAttendance({status:invite.data.status,startsAt:invite.data.starts_at,now,isHost,hasRsvp:Boolean(attendee.data)}))throw new Error("Attendance cannot be confirmed yet");if(attendee.data){const result=await client.from("gazing_attendees").update({attended_at:now.toISOString()}).eq("id",attendee.data.id);if(result.error)throw result.error;}else{const result=await client.from("gazing_attendees").insert({invite_id:invite.data.id,user_id:user.id,attended_at:now.toISOString()});if(result.error)throw result.error;}if(invite.data.status==="scheduled"){const svc=serviceRoleClient();const result=await svc.from("gazing_invites").update({status:"happened",closed_at:now.toISOString(),closed_by:user.id}).eq("id",invite.data.id).eq("status","scheduled");if(result.error)throw result.error;}return invite.data.id;}
-export async function confirmAttendance(token:string):Promise<string>{const client=await createClient();const id=await _confirmAttendance(client,token);revalidatePath(`/gazing/${token}`);revalidatePath("/home");return id;}
+export async function _confirmAttendance(client: Client, token: string, now = new Date()): Promise<string> {
+  const user = await requireAuthUser(client);
+  const invite = await client
+    .from("gazing_invites")
+    .select("id,status,starts_at,created_by")
+    .eq("token", token)
+    .maybeSingle();
+  if (invite.error || !invite.data) throw invite.error ?? new Error("Gazing not found");
+
+  const attendee = await client
+    .from("gazing_attendees")
+    .select("id")
+    .eq("invite_id", invite.data.id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (attendee.error) throw attendee.error;
+  const isHost = invite.data.created_by === user.id;
+  if (!canConfirmAttendance({
+    status: invite.data.status,
+    startsAt: invite.data.starts_at,
+    now,
+    isHost,
+    hasRsvp: Boolean(attendee.data),
+  })) throw new Error("Attendance cannot be confirmed yet");
+
+  // Serialize terminal state first. If cancellation won the scheduled-row
+  // compare-and-swap, no attendance history is written to a cancelled gazing.
+  // A later attendee-write failure is safe to retry against `happened`.
+  if (invite.data.status === "scheduled") {
+    const svc = serviceRoleClient();
+    const result = await svc
+      .from("gazing_invites")
+      .update({ status: "happened", closed_at: now.toISOString(), closed_by: user.id })
+      .eq("id", invite.data.id)
+      .eq("status", "scheduled")
+      .select("id")
+      .maybeSingle();
+    if (result.error) throw result.error;
+    if (!result.data) throw new Error("That gazing changed or was cancelled before attendance closed it");
+  }
+
+  if (attendee.data) {
+    const result = await client
+      .from("gazing_attendees")
+      .update({ attended_at: now.toISOString() })
+      .eq("id", attendee.data.id)
+      .select("id")
+      .maybeSingle();
+    if (result.error) throw result.error;
+    if (!result.data) throw new Error("That gazing changed and attendance can no longer be confirmed");
+  } else {
+    const result = await client.from("gazing_attendees").insert({
+      invite_id: invite.data.id,
+      user_id: user.id,
+      attended_at: now.toISOString(),
+    });
+    if (result.error) throw result.error;
+  }
+  return invite.data.id;
+}
+export async function confirmAttendance(token:string):Promise<string>{const client=await createClient();const id=await _confirmAttendance(client,token);revalidatePath(`/gazing/${token}`);revalidatePath("/home");revalidatePath(GAZINGS_INDEX_PATH);return id;}

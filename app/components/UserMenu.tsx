@@ -71,6 +71,14 @@ export default function UserMenu({ username, displayName, avatarUrl, isAdmin, on
           >
             Diary
           </Link>
+          <Link
+            href="/coven/gazings"
+            prefetch={false}
+            onClick={() => setOpen(false)}
+            style={{ display: "block", padding: "10px 14px", color: "var(--void)", textDecoration: "none", fontFamily: "var(--font-ui)", fontSize: 12, borderBottom: "1px solid var(--void)" }}
+          >
+            Your Gazings
+          </Link>
           {isAdmin && (
             <>
               <button
