@@ -17,7 +17,7 @@ import ProfileCollectionTabs, {
   type ProfileFilm,
   type ProfileReview,
 } from "@/components/profile/ProfileCollectionTabs";
-import { formatProfileJoinedDate, formatProfileStat } from "@/lib/profile-page";
+import { formatProfileJoinedDate, formatProfileStat, getVerifiedProfileRole } from "@/lib/profile-page";
 import ProfileCovenRoster from "@/components/profile/ProfileCovenRoster";
 import Link from "next/link";
 
@@ -46,7 +46,7 @@ export default async function PublicProfilePage({
   const isOwner = user?.id === bundle.profile.id;
   const canViewWatched = Boolean(user && (isOwner || coven.state === "member"));
   const filmFields = "id, title, director, year, artwork_url";
-  const [activityResult, watchlistResult, watchedResult, reviewsResult] = await Promise.all([
+  const [activityResult, watchlistResult, watchedResult, reviewsResult, staffResult] = await Promise.all([
     supabase
       .from("activity")
       .select("id, kind, payload, created_at, actor_user_id")
@@ -77,6 +77,11 @@ export default async function PublicProfilePage({
       .eq("status", "published")
       .order("published_at", { ascending: false })
       .limit(12),
+    supabase
+      .from("staff")
+      .select("role")
+      .eq("user_id", bundle.profile.id)
+      .maybeSingle(),
   ]);
 
   const watchlistFilms = uniqueProfileFilms((watchlistResult.data ?? []).map(row => normalizeProfileFilm(row.film)));
@@ -88,6 +93,8 @@ export default async function PublicProfilePage({
   const ownActivity = activityResult.data ?? [];
   const enrichedOwn = await enrichOwnActivity(supabase, ownActivity ?? [], bundle.profile, user?.id ?? null);
   const displayName = bundle.profile.display_name ?? bundle.profile.username;
+  const isAdmin = staffResult.data?.role === "admin";
+  const verifiedRole = getVerifiedProfileRole(bundle.profile.role, staffResult.data?.role);
   const stats = [
     { label: "Watched", value: canViewWatched ? watchedResult.count ?? watchedFilms.length : null },
     { label: "Watchlist", value: isOwner ? watchlistResult.count ?? watchlistFilms.length : null },
@@ -110,7 +117,7 @@ export default async function PublicProfilePage({
             <div className="eyebrow" style={{ color: "var(--accent)", marginBottom: 10 }}>Goblin profile</div>
             <h1>
               <span>{displayName}</span>
-              <RoleBadge role={bundle.profile.role} size={28} />
+              <RoleBadge role={verifiedRole} size={28} title={isAdmin ? "Film Goblin admin" : undefined} />
             </h1>
             <div className="profile-handle">@{bundle.profile.username}</div>
             {bundle.profile.bio && <p className="profile-hero-bio">{bundle.profile.bio}</p>}

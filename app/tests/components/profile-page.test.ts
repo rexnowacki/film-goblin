@@ -3,6 +3,7 @@ import {
   formatProfileJoinedDate,
   formatProfileStat,
   getProfileCovenPreview,
+  getVerifiedProfileRole,
   PROFILE_COVEN_INLINE_LIMIT,
 } from "@/lib/profile-page";
 
@@ -24,5 +25,11 @@ describe("profile page formatting", () => {
     const members = Array.from({ length: 11 }, (_, index) => `member-${index}`);
     expect(getProfileCovenPreview(members)).toEqual(members.slice(0, PROFILE_COVEN_INLINE_LIMIT));
     expect(getProfileCovenPreview(members)).toHaveLength(8);
+  });
+
+  it("uses the staff admin role for the verified pentagram", () => {
+    expect(getVerifiedProfileRole("goblin", "admin")).toBe("witch");
+    expect(getVerifiedProfileRole("high_goblin", "reviewer")).toBe("high_goblin");
+    expect(getVerifiedProfileRole("goblin", null)).toBe("goblin");
   });
 });
