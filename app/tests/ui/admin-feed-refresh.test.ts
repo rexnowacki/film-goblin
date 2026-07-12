@@ -32,7 +32,7 @@ describe("admin and home feed presentation", () => {
     }
   });
 
-  it("adds accessible feed navigation without changing feed composition", () => {
+  it("adds accessible feed navigation while preserving composition plumbing", () => {
     const page = read("app/home/page.tsx");
     const tabs = read("components/FeedTabs.tsx");
     const css = read("app/styles/320-home-feed.css");
@@ -48,5 +48,22 @@ describe("admin and home feed presentation", () => {
     expect(tabs).toContain("enforcePitPositionRules");
     expect(css).toContain(".feed-tab-pill.is-active");
     expect(css).toContain("@media (max-width:720px)");
+  });
+
+  it("puts coven activity first while keeping every feed scope available", () => {
+    const page = read("app/home/page.tsx");
+    const tabs = read("components/FeedTabs.tsx");
+    const returnContract = read("components/return-contract/NextInThePit.tsx");
+    const returnContractCss = read("app/styles/250-return-contract.css");
+    const homeCss = read("app/styles/320-home-feed.css");
+
+    expect(page).toContain('(sp.tab as FeedTab) : "coven"');
+    expect(tabs).toContain(': "coven";');
+    expect(tabs).toContain('if (next === "coven") p.delete("tab")');
+    expect(tabs).toContain('(tab === "all" || tab === "coven")');
+    expect(tabs).toContain("index === 0 && showFeedInsert && children");
+    expect(returnContract).toContain('className="btn return-contract__action"');
+    expect(returnContractCss).toContain("grid-template-columns:minmax(0,1fr) auto");
+    expect(homeCss).toContain("min-height:132px");
   });
 });

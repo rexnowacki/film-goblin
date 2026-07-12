@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import FeedRow from "./activity/FeedRow";
 import SystemEventRow from "./activity/SystemEventRow";
@@ -73,7 +73,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
   const router = useRouter();
   const params = useSearchParams();
   const rawTab = params.get("tab");
-  const urlTab: Tab = rawTab === "coven" || rawTab === "recs" || rawTab === "pit" ? rawTab : "all";
+  const urlTab: Tab = rawTab === "all" || rawTab === "recs" || rawTab === "pit" ? rawTab : "coven";
   const [tab, setTab] = useState<Tab>(urlTab);
 
   const [items, setItems] = useState<EnrichedActivity[]>(initialItems);
@@ -164,7 +164,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
 
   function pickTab(next: Tab) {
     const p = new URLSearchParams(params);
-    if (next === "all") p.delete("tab"); else p.set("tab", next);
+    if (next === "coven") p.delete("tab"); else p.set("tab", next);
     const query = p.toString();
     router.push(query ? `/home?${query}` : "/home");
   }
@@ -223,7 +223,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
       void loadMore();
     }
   }, [cursor, done, filtered.length, loadMore, loading, tab]);
-  const showFeedInsert = tab === "all" && !filters.actorId && !filters.filmId;
+  const showFeedInsert = (tab === "all" || tab === "coven") && !filters.actorId && !filters.filmId;
   const emptyCopy = tab === "all"
     ? "No activity yet."
     : tab === "coven"
@@ -252,22 +252,28 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
         />
       ) : <>
       <div className="feed-stream__rows">
-        {showFeedInsert && children}
         {filtered.length === 0 ? (
           <div className="feed-stream__empty">
             {emptyCopy}
           </div>
         ) : (
-          filtered.map(item =>
-            item.type === "system" ? (
-              <SystemEventRow key={item.event.id} event={item.event} tier={pitTiers.get(item.event.id) ?? "whisper"} />
-            ) : (
-              <FeedRow
-                key={item.type === "group" ? item.group.key : item.activity.id}
-                item={item}
-              />
-            )
-          )
+          filtered.map((item, index) => {
+            const key = item.type === "system"
+              ? item.event.id
+              : item.type === "group"
+                ? item.group.key
+                : item.activity.id;
+            return (
+              <Fragment key={key}>
+                {item.type === "system" ? (
+                  <SystemEventRow event={item.event} tier={pitTiers.get(item.event.id) ?? "whisper"} />
+                ) : (
+                  <FeedRow item={item} />
+                )}
+                {index === 0 && showFeedInsert && children}
+              </Fragment>
+            );
+          })
         )}
       </div>
 

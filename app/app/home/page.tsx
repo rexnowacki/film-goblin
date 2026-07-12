@@ -43,7 +43,7 @@ export default async function HomePage({
   const sp = await searchParams;
   const actorId = sp.actor && UUID_RE.test(sp.actor) ? sp.actor : null;
   const filmId = sp.film && UUID_RE.test(sp.film) ? sp.film : null;
-  const tabParam = VALID_TABS.has(sp.tab as FeedTab) ? (sp.tab as FeedTab) : "all";
+  const tabParam = VALID_TABS.has(sp.tab as FeedTab) ? (sp.tab as FeedTab) : "coven";
   // One instant owns both queue deadlines and UTC-day progress so a request
   // crossing midnight cannot resolve one day and persist under another.
   const now = new Date();
@@ -73,9 +73,9 @@ export default async function HomePage({
   const ritualMessagesPromise = ritualPickPromise.then(ritualPick =>
     user && ritualPick ? getRitualMessages(supabase, ritualPick.pick_id) : [],
   );
-  const systemEventsPromise = tabParam === "pit"
-    ? Promise.resolve([])
-    : user ? getEligiblePitEventsForUser(supabase, user.id, 12) : getRecentSystemEvents(supabase, 12);
+  const systemEventsPromise = tabParam === "all"
+    ? user ? getEligiblePitEventsForUser(supabase, user.id, 12) : getRecentSystemEvents(supabase, 12)
+    : Promise.resolve([]);
   const viewerPromise = user
     ? supabase.from("profiles")
         .select("id, username, avatar_url, display_name")

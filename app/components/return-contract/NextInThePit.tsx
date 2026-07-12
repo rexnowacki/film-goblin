@@ -203,7 +203,7 @@ export default function NextInThePit({ contracts, viewerId, utcDay }: Props) {
       {error && <p className="return-contract__error" role="status">{error}</p>}
       <Link
         prefetch={false}
-        className="btn"
+        className="btn return-contract__action"
         href={href}
         onClick={() => { reviewActiveContract(); }}
       >

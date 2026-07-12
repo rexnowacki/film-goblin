@@ -1,22 +1,31 @@
-.return-contract { position: relative; border: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--void)); padding: 20px; margin-bottom: 20px; }
+.return-contract { position:relative; display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:24px; align-items:center; border-block:1px solid color-mix(in srgb,var(--accent) 58%,transparent); background:linear-gradient(100deg,color-mix(in srgb,var(--accent) 14%,var(--void)),color-mix(in srgb,var(--accent) 4%,var(--void))); padding:14px 16px; margin-bottom:18px; }
 .return-contract-sentinel { position: absolute; inset: 0; pointer-events: none; }
-.return-contract__topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.return-contract__topline { grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .return-contract__topline .eyebrow { color: var(--accent); }
 .return-contract__controls,.return-contract__browse { display: flex; align-items: center; }
 .return-contract__controls { gap: 10px; margin-left: auto; }
 .return-contract__browse { gap: 5px; }
-.return-contract__arrow { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid color-mix(in srgb, var(--bone) 28%, transparent); background: transparent; color: var(--bone); font: 18px/1 var(--font-ui); cursor: pointer; }
+.return-contract__arrow { display:grid; place-items:center; width:32px; height:32px; border:1px solid color-mix(in srgb,var(--bone) 28%,transparent); background:transparent; color:var(--bone); font:16px/1 var(--font-ui); cursor:pointer; }
 .return-contract__arrow:hover { border-color: var(--accent); color: var(--accent); }
 .return-contract__counter { min-width: 40px; color: var(--muted); text-align: center; font: 700 10px var(--font-ui); letter-spacing: .08em; }
-.return-contract__dismiss { border: 0; background: transparent; color: var(--muted); padding: 10px 0 10px 6px; white-space: nowrap; font: 10px var(--font-ui); text-transform: uppercase; letter-spacing: .08em; cursor: pointer; }
+.return-contract__dismiss { border:0; background:transparent; color:var(--muted); padding:8px 0 8px 6px; white-space:nowrap; font:10px var(--font-ui); text-transform:uppercase; letter-spacing:.08em; cursor:pointer; }
 .return-contract__dismiss:hover { color: var(--bone); }
 .return-contract__arrow:disabled,.return-contract__dismiss:disabled { opacity: .42; cursor: wait; }
-.return-contract__swipe-zone { touch-action: pan-y pinch-zoom; }
-.return-contract h2 { margin: 12px 0 6px; font-family: var(--font-display); font-size: clamp(22px, 4vw, 32px); line-height: 1; }
-.return-contract p { margin: 0 0 10px; font-family: var(--font-serif); }
-.return-contract__change { color: var(--muted); font-size: 12px; font-style: italic; }
+.return-contract__swipe-zone { min-width:0; touch-action:pan-y pinch-zoom; }
+.return-contract h2 { margin:7px 0 3px; font-family:var(--font-display); font-size:clamp(20px,3vw,26px); line-height:1.05; }
+.return-contract p { margin:0; font-family:var(--font-serif); font-size:13px; line-height:1.35; }
+.return-contract p.return-contract__change { margin-top:3px; color:var(--muted); font-size:10px; font-style:italic; }
+.return-contract__action { grid-column:2; grid-row:2; min-width:max-content; padding:10px 15px; }
 .return-contract .return-contract__error { color: var(--accent); font: 700 11px var(--font-ui); }
-@media (max-width: 720px) { .return-contract { padding: 16px; margin-inline: calc(-1 * var(--container-pad)); border-inline: 0; } .return-contract__controls { gap: 7px; } }
+@media (max-width:720px) {
+  .return-contract { column-gap:12px; padding:11px var(--container-pad) 12px; margin-inline:calc(-1 * var(--container-pad)); border-inline:0; }
+  .return-contract__topline { align-items:center; }
+  .return-contract__controls { gap:7px; }
+  .return-contract h2 { margin-top:5px; font-size:20px; }
+  .return-contract p:not(.return-contract__change):not(.return-contract__error) { display:none; }
+  .return-contract p.return-contract__change { max-width:33ch; }
+  .return-contract__action { padding:9px 11px; font-size:9px; }
+}
 .social-promise { border-left: 3px solid var(--accent); padding-left: 18px; }
 .social-promise .eyebrow { color: var(--accent); }
 .social-promise ul { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; list-style: none; padding: 0; margin: 14px 0 0; }
