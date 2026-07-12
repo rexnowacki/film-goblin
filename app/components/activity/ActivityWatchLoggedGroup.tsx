@@ -15,8 +15,6 @@ interface Props {
 export default function ActivityWatchLoggedGroup({ group }: Props) {
   const [expanded, setExpanded] = useState(false);
   const { actor, items, count, latestAt } = group;
-  const firstItem = items[0] as Extract<EnrichedActivity, { kind: "watch_logged" }>;
-  const othersCount = count - 1;
   const visiblePosters = items.slice(0, 3);
   const overflowCount = count - visiblePosters.length;
 
@@ -42,19 +40,10 @@ export default function ActivityWatchLoggedGroup({ group }: Props) {
               {actor.username}
             </Link>
             {" watched "}
-            <Link
-              prefetch={false}
-              href={`/film/${firstItem.film.id}`}
-              onClick={e => e.stopPropagation()}
-              style={{ color: "var(--accent)", fontStyle: "italic" }}
-            >
-              {firstItem.film.title}
-            </Link>
-            {" and "}
             <strong style={{ color: "var(--accent)" }}>
-              {othersCount} {othersCount === 1 ? "other film" : "other films"}
+              {count} {count === 1 ? "film" : "films"}
             </strong>
-            {"."}
+            {" that day."}
           </div>
           <div style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--muted)", marginTop: 4, display: "flex", alignItems: "center", gap: 10 }}>
             <span>{relativeTime(latestAt)}</span>

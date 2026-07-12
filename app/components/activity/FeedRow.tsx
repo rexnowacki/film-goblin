@@ -1,8 +1,7 @@
 import type { FeedItem } from "@/lib/queries/activity";
 import ActivityRow from "./ActivityRow";
-import ActivityWatchlistAddedGroup from "./ActivityWatchlistAddedGroup";
 import ActivityWatchLoggedGroup from "./ActivityWatchLoggedGroup";
-import ActivityLibraryAddedGroup from "./ActivityLibraryAddedGroup";
+import ActivityHoardGroup from "./ActivityHoardGroup";
 import SystemEventRow from "./SystemEventRow";
 import { getPitTier } from "@/lib/feed-events/tier";
 
@@ -21,10 +20,7 @@ export default function FeedRow({ item }: { item: FeedItem }) {
     if (item.group.kind === "watch_logged") {
       return <ActivityWatchLoggedGroup group={item.group} />;
     }
-    if (item.group.kind === "library_added") {
-      return <ActivityLibraryAddedGroup group={item.group} />;
-    }
-    return <ActivityWatchlistAddedGroup group={item.group} />;
+    return <ActivityHoardGroup group={item.group} />;
   }
   return <ActivityRow item={item.activity} />;
 }

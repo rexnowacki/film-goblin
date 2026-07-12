@@ -12,6 +12,7 @@ import { composeFeed } from "@/lib/feed-events/compose";
 import { resolvePitTiers } from "@/lib/feed-events/pitCadence";
 import { enforcePitPositionRules } from "@/lib/feed-events/pitPosition";
 import { PIT_ARCHIVE_PAGE_SIZE } from "@/lib/feed-events/pitArchive";
+import { shouldBackfillFeed } from "@/lib/feed/backfill";
 import type { PitTier } from "@/lib/feed-events/tier";
 import type { SystemFeedEvent } from "@/lib/feed-events/types";
 import PitArchiveTab from "./PitArchiveTab";
@@ -45,7 +46,11 @@ const TAB_SCOPES: Record<Tab, "site" | "coven"> = {
 // scope by "coven"/"recs", so any non-"all" tab excludes them outright.
 function feedItemMatches(item: FeedItem, tab: Tab, matcher: (k: EnrichedActivity["kind"]) => boolean): boolean {
   if (item.type === "system") return tab === "all";
-  if (item.type === "group") return matcher(item.group.kind);
+  if (item.type === "group") {
+    return item.group.kind === "hoard_added"
+      ? matcher("watchlist_added") || matcher("library_added")
+      : matcher("watch_logged");
+  }
   return matcher(item.activity.kind);
 }
 
@@ -84,6 +89,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
   const cursorRef = useRef(cursor);
   const doneRef = useRef(done);
   const tabRef = useRef(tab);
+  const scopeVersionRef = useRef(0);
   useEffect(() => { loadingRef.current = loading; }, [loading]);
   useEffect(() => { cursorRef.current = cursor; }, [cursor]);
   useEffect(() => { doneRef.current = done; }, [done]);
@@ -93,6 +99,9 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
 
   // Reset cumulative state on filter change (URL flip → fresh server render → new initialItems prop).
   useEffect(() => {
+    scopeVersionRef.current += 1;
+    cursorRef.current = initialCursor;
+    doneRef.current = initialDone;
     setItems(initialItems);
     setCursor(initialCursor);
     setDone(initialDone);
@@ -108,6 +117,8 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || doneRef.current || !cursorRef.current) return;
+    const scopeVersion = scopeVersionRef.current;
+    loadingRef.current = true;
     setLoading(true);
     try {
       const kinds = TAB_KINDS[tabRef.current];
@@ -118,15 +129,19 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
         filmId: filters.filmId,
         kinds: kinds.length ? kinds : undefined,
       });
+      if (scopeVersion !== scopeVersionRef.current) return;
       setItems(prev => {
         const seen = new Set(prev.map(i => i.id));
         const merged = [...prev];
         for (const it of res.items) if (!seen.has(it.id)) merged.push(it);
         return merged;
       });
+      cursorRef.current = res.nextCursor;
+      doneRef.current = res.done;
       setCursor(res.nextCursor);
       setDone(res.done);
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
   }, [filters.actorId, filters.filmId]);
@@ -197,6 +212,17 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
     () => composed.filter(i => feedItemMatches(i, tab, MATCHERS[tab])),
     [composed, tab],
   );
+  useEffect(() => {
+    if (shouldBackfillFeed({
+      renderedCount: filtered.length,
+      done,
+      loading,
+      hasCursor: Boolean(cursor),
+      tab,
+    })) {
+      void loadMore();
+    }
+  }, [cursor, done, filtered.length, loadMore, loading, tab]);
   const showFeedInsert = tab === "all" && !filters.actorId && !filters.filmId;
   const emptyCopy = tab === "all"
     ? "No activity yet."

@@ -1,86 +1,60 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { groupFeed } from "@/lib/queries/group-activity";
 import type { EnrichedActivity } from "@/lib/queries/activity";
 
-function watchlist(opts: { id: string; actorId: string; minutesAgo: number }): EnrichedActivity {
-  const created = new Date(Date.now() - opts.minutesAgo * 60 * 1000).toISOString();
+function actor(id: string) {
   return {
-    id: opts.id,
-    created_at: created,
-    actor: {
-      id: opts.actorId,
-      username: `user_${opts.actorId}`,
-      display_name: `User ${opts.actorId}`,
-      avatar_url: null,
-    },
+    id,
+    username: `user_${id}`,
+    display_name: `User ${id}`,
+    avatar_url: null,
+  };
+}
+
+function film(id: string) {
+  return {
+    id: `film_${id}`,
+    title: `Film ${id}`,
+    director: "Test Director",
+    year: 2024,
+    artwork_url: "https://example.test/poster.jpg",
+    itunes_url: "https://itunes.apple.com/test",
+  };
+}
+
+function watchlist(id: string, actorId: string, createdAt: string, commentCount = 0): EnrichedActivity {
+  return {
+    id,
+    created_at: createdAt,
+    actor: actor(actorId),
     reactions: { count: 0, likedByMe: false },
-    comments: { count: 0, items: [] },
+    comments: { count: commentCount, items: [] },
     kind: "watchlist_added",
-    film: {
-      id: `film_${opts.id}`,
-      title: `Film ${opts.id}`,
-      director: "Test Director",
-      year: 2024,
-      artwork_url: "https://example.test/poster.jpg",
-      itunes_url: "https://itunes.apple.com/test",
-    },
+    film: film(id),
   };
 }
 
-function rec(opts: { id: string; actorId: string; minutesAgo: number }): EnrichedActivity {
-  const created = new Date(Date.now() - opts.minutesAgo * 60 * 1000).toISOString();
+function library(id: string, actorId: string, createdAt: string, commentCount = 0): EnrichedActivity {
   return {
-    id: opts.id,
-    created_at: created,
-    actor: {
-      id: opts.actorId,
-      username: `user_${opts.actorId}`,
-      display_name: `User ${opts.actorId}`,
-      avatar_url: null,
-    },
+    id,
+    created_at: createdAt,
+    actor: actor(actorId),
     reactions: { count: 0, likedByMe: false },
-    comments: { count: 0, items: [] },
-    kind: "recommendation_sent",
-    film: {
-      id: `film_${opts.id}`,
-      title: `Film ${opts.id}`,
-      director: "Test Director",
-      year: 2024,
-      artwork_url: "https://example.test/poster.jpg",
-      itunes_url: "https://itunes.apple.com/test",
-    },
-    recipient: {
-      id: "rec_target",
-      username: "target",
-      display_name: "Target",
-      avatar_url: null,
-    },
-    note: "",
+    comments: { count: commentCount, items: [] },
+    kind: "library_added",
+    film: film(id),
   };
 }
 
-function watchLog(opts: { id: string; actorId: string; minutesAgo: number; commentCount?: number }): EnrichedActivity {
-  const created = new Date(Date.now() - opts.minutesAgo * 60 * 1000).toISOString();
+function watchLog(id: string, actorId: string, createdAt: string, commentCount = 0): EnrichedActivity {
   return {
-    id: opts.id,
-    created_at: created,
-    actor: {
-      id: opts.actorId,
-      username: `user_${opts.actorId}`,
-      display_name: `User ${opts.actorId}`,
-      avatar_url: null,
-    },
+    id,
+    created_at: createdAt,
+    actor: actor(actorId),
     reactions: { count: 0, likedByMe: false },
-    comments: { count: opts.commentCount ?? 0, items: [] },
+    comments: { count: commentCount, items: [] },
     kind: "watch_logged",
-    film: {
-      id: `film_${opts.id}`,
-      title: `Film ${opts.id}`,
-      director: "Test Director",
-      year: 2024,
-      artwork_url: "https://example.test/poster.jpg",
-      itunes_url: "https://itunes.apple.com/test",
-    },
+    film: film(id),
     note: null,
     recommended: null,
     spoiler: false,
@@ -88,253 +62,122 @@ function watchLog(opts: { id: string; actorId: string; minutesAgo: number; comme
   };
 }
 
-function library(opts: { id: string; actorId: string; minutesAgo: number }): EnrichedActivity {
-  const created = new Date(Date.now() - opts.minutesAgo * 60 * 1000).toISOString();
+function recommendation(id: string, actorId: string, createdAt: string): EnrichedActivity {
   return {
-    id: opts.id,
-    created_at: created,
-    actor: {
-      id: opts.actorId,
-      username: `user_${opts.actorId}`,
-      display_name: `User ${opts.actorId}`,
-      avatar_url: null,
-    },
+    id,
+    created_at: createdAt,
+    actor: actor(actorId),
     reactions: { count: 0, likedByMe: false },
     comments: { count: 0, items: [] },
-    kind: "library_added",
-    film: {
-      id: `film_${opts.id}`,
-      title: `Film ${opts.id}`,
-      director: "Test Director",
-      year: 2024,
-      artwork_url: "https://example.test/poster.jpg",
-      itunes_url: "https://itunes.apple.com/test",
-    },
+    kind: "recommendation_sent",
+    film: film(id),
+    recipient: actor("recipient"),
+    note: "",
   };
 }
 
-describe("groupFeed", () => {
-  it("returns empty array for empty input", () => {
+describe("groupFeed daily digests", () => {
+  it("returns an empty feed unchanged", () => {
     expect(groupFeed([])).toEqual([]);
   });
 
-  it("returns one single for one event", () => {
-    const items = [watchlist({ id: "a", actorId: "u1", minutesAgo: 5 })];
-    const out = groupFeed(items);
+  it("keeps a lone save as a standalone activity", () => {
+    const out = groupFeed([watchlist("a", "u1", "2026-07-11T12:00:00.000Z")]);
+    expect(out).toEqual([{ type: "single", activity: expect.objectContaining({ id: "a" }) }]);
+  });
+
+  it("combines same-day watchlist and grimoire additions into one hoard digest", () => {
+    const out = groupFeed([
+      watchlist("watchlist", "u1", "2026-07-11T22:00:00.000Z"),
+      library("library", "u1", "2026-07-11T04:00:00.000Z"),
+    ]);
+
     expect(out).toHaveLength(1);
-    expect(out[0].type).toBe("single");
+    expect(out[0]).toMatchObject({
+      type: "group",
+      group: {
+        key: "u1:hoard_added:2026-07-11",
+        kind: "hoard_added",
+        count: 2,
+        utcDay: "2026-07-11",
+      },
+    });
   });
 
-  it("groups 2 same-actor events in window (MIN_GROUP_SIZE=2)", () => {
-    const items = [
-      watchlist({ id: "a", actorId: "u1", minutesAgo: 5 }),
-      watchlist({ id: "b", actorId: "u1", minutesAgo: 15 }),
-    ];
-    const out = groupFeed(items);
+  it("groups same-day watches even when they are many hours apart", () => {
+    const out = groupFeed([
+      watchLog("late", "u1", "2026-07-11T23:30:00.000Z"),
+      watchLog("early", "u1", "2026-07-11T00:15:00.000Z"),
+    ]);
+
     expect(out).toHaveLength(1);
-    expect(out[0].type).toBe("group");
-    if (out[0].type === "group") expect(out[0].group.count).toBe(2);
+    expect(out[0]).toMatchObject({ type: "group", group: { kind: "watch_logged", count: 2 } });
   });
 
-  it("returns one group of 3 for 3 same-actor events in window", () => {
-    const items = [
-      watchlist({ id: "a", actorId: "u1", minutesAgo: 5 }),
-      watchlist({ id: "b", actorId: "u1", minutesAgo: 15 }),
-      watchlist({ id: "c", actorId: "u1", minutesAgo: 25 }),
-    ];
-    const out = groupFeed(items);
-    expect(out).toHaveLength(1);
-    expect(out[0].type).toBe("group");
-    if (out[0].type === "group") {
-      expect(out[0].group.count).toBe(3);
-      expect(out[0].group.items).toHaveLength(3);
-      expect(out[0].group.key).toBe("u1:watchlist_added:c");
-    }
-  });
-
-  it("returns one group of 5 for 5 same-actor events in window", () => {
-    const items = [
-      watchlist({ id: "a", actorId: "u1", minutesAgo: 5 }),
-      watchlist({ id: "b", actorId: "u1", minutesAgo: 10 }),
-      watchlist({ id: "c", actorId: "u1", minutesAgo: 15 }),
-      watchlist({ id: "d", actorId: "u1", minutesAgo: 20 }),
-      watchlist({ id: "e", actorId: "u1", minutesAgo: 25 }),
-    ];
-    const out = groupFeed(items);
-    expect(out).toHaveLength(1);
-    expect(out[0].type).toBe("group");
-    if (out[0].type === "group") {
-      expect(out[0].group.count).toBe(5);
-    }
-  });
-
-  it("splits on different actor — each actor's pairs still group independently", () => {
-    const items = [
-      watchlist({ id: "a", actorId: "u1", minutesAgo: 5 }),
-      watchlist({ id: "b", actorId: "u1", minutesAgo: 10 }),
-      watchlist({ id: "c", actorId: "u2", minutesAgo: 15 }),
-      watchlist({ id: "d", actorId: "u1", minutesAgo: 20 }),
-      watchlist({ id: "e", actorId: "u1", minutesAgo: 25 }),
-    ];
-    const out = groupFeed(items);
-    // u1(a,b) → group, u2(c) → single, u1(d,e) → group
-    expect(out).toHaveLength(3);
-    expect(out[0].type).toBe("group");
-    expect(out[1].type).toBe("single");
-    expect(out[2].type).toBe("group");
-  });
-
-  it("bridges over same-actor different-kind interruption, emitting it after the group", () => {
-    const items: EnrichedActivity[] = [
-      watchlist({ id: "a", actorId: "u1", minutesAgo: 5 }),
-      watchlist({ id: "b", actorId: "u1", minutesAgo: 10 }),
-      rec({ id: "c", actorId: "u1", minutesAgo: 15 }),
-      watchlist({ id: "d", actorId: "u1", minutesAgo: 20 }),
-      watchlist({ id: "e", actorId: "u1", minutesAgo: 25 }),
-    ];
-    const out = groupFeed(items);
-    expect(out).toHaveLength(2);
-    expect(out[0].type).toBe("group");
-    if (out[0].type === "group") expect(out[0].group.count).toBe(4);
-    expect(out[1].type).toBe("single");
-    if (out[1].type === "single") expect(out[1].activity.id).toBe("c");
-  });
-
-  it("emits 2 watchlist + 1 interrupting as 3 singles in original order when run is only 1", () => {
-    // Only one watchlist_added after bridging: not enough to group, all come out as singles.
-    const items: EnrichedActivity[] = [
-      watchlist({ id: "a", actorId: "u1", minutesAgo: 5 }),
-      rec({ id: "c", actorId: "u1", minutesAgo: 15 }),
-    ];
-    const out = groupFeed(items);
-    expect(out).toHaveLength(2);
-    expect(out.every(x => x.type === "single")).toBe(true);
-    if (out[0].type === "single") expect(out[0].activity.id).toBe("a");
-    if (out[1].type === "single") expect(out[1].activity.id).toBe("c");
-  });
-
-  it("seals the run when 30-min gap rule fires", () => {
-    const items = [
-      watchlist({ id: "a", actorId: "u1", minutesAgo: 5 }),
-      watchlist({ id: "b", actorId: "u1", minutesAgo: 20 }),
-      watchlist({ id: "c", actorId: "u1", minutesAgo: 60 }),
-      watchlist({ id: "d", actorId: "u1", minutesAgo: 75 }),
-      watchlist({ id: "e", actorId: "u1", minutesAgo: 90 }),
-    ];
-    // gap a→b=15min ok; gap b→c=40min breaks; then c,d,e all within 30min
-    const out = groupFeed(items);
-    expect(out).toHaveLength(2);
-    expect(out[0].type).toBe("group");
-    if (out[0].type === "group") expect(out[0].group.count).toBe(2);
-    expect(out[1].type).toBe("group");
-    if (out[1].type === "group") expect(out[1].group.count).toBe(3);
-  });
-
-  it("seals the run when 24-hour span ceiling fires", () => {
-    // 60 events at 25-min intervals → spans ~24h35m total, but every gap
-    // is well under 30 min, so only the span ceiling can split this run.
-    const items: EnrichedActivity[] = [];
-    for (let i = 0; i < 60; i++) {
-      items.push(watchlist({ id: `a${i}`, actorId: "u1", minutesAgo: i * 25 }));
-    }
-    const out = groupFeed(items);
-    // Span ceiling must trigger at least one split → more than one output item.
-    expect(out.length).toBeGreaterThan(1);
-  });
-
-  it("non-groupable kinds always pass through as single", () => {
-    const items = [
-      rec({ id: "a", actorId: "u1", minutesAgo: 5 }),
-      rec({ id: "b", actorId: "u1", minutesAgo: 10 }),
-      rec({ id: "c", actorId: "u1", minutesAgo: 15 }),
-    ];
-    const out = groupFeed(items);
-    expect(out).toHaveLength(3);
-    expect(out.every(i => i.type === "single")).toBe(true);
-  });
-});
-
-describe("groupFeed: watch_logged", () => {
-  it("groups 3+ same-actor watch_logged events within window", () => {
-    const items: EnrichedActivity[] = [
-      watchLog({ id: "3", actorId: "u1", minutesAgo: 0 }),
-      watchLog({ id: "2", actorId: "u1", minutesAgo: 5 }),
-      watchLog({ id: "1", actorId: "u1", minutesAgo: 10 }),
-    ];
-    const out = groupFeed(items);
-    expect(out).toHaveLength(1);
-    expect(out[0].type).toBe("group");
-    if (out[0].type === "group") {
-      expect(out[0].group.kind).toBe("watch_logged");
-      expect(out[0].group.count).toBe(3);
-    }
-  });
-
-  it("groups 2 watch_logged events within window (MIN_GROUP_SIZE=2)", () => {
-    const items: EnrichedActivity[] = [
-      watchLog({ id: "2", actorId: "u1", minutesAgo: 0 }),
-      watchLog({ id: "1", actorId: "u1", minutesAgo: 5 }),
-    ];
-    const out = groupFeed(items);
-    expect(out).toHaveLength(1);
-    expect(out[0].type).toBe("group");
-    if (out[0].type === "group") expect(out[0].group.count).toBe(2);
-  });
-
-  it("bridges watchlist_added interruption to group two watch_logged events", () => {
-    const items: EnrichedActivity[] = [
-      watchLog({ id: "3", actorId: "u1", minutesAgo: 0 }),
-      watchlist({ id: "2", actorId: "u1", minutesAgo: 5 }),
-      watchLog({ id: "1", actorId: "u1", minutesAgo: 10 }),
-    ];
-    const out = groupFeed(items);
-    expect(out).toHaveLength(2);
-    expect(out[0].type).toBe("group");
-    if (out[0].type === "group") {
-      expect(out[0].group.kind).toBe("watch_logged");
-      expect(out[0].group.count).toBe(2);
-    }
-    expect(out[1].type).toBe("single");
-    if (out[1].type === "single") expect(out[1].activity.id).toBe("2");
-  });
-
-  it("keeps a commented watch standalone while grouping nearby uncommented watches", () => {
-    const items: EnrichedActivity[] = [
-      watchLog({ id: "newest", actorId: "u1", minutesAgo: 0 }),
-      watchLog({ id: "commented", actorId: "u1", minutesAgo: 5, commentCount: 1 }),
-      watchLog({ id: "oldest", actorId: "u1", minutesAgo: 10 }),
-    ];
-
-    const out = groupFeed(items);
+  it("does not group activity across a UTC-day boundary", () => {
+    const out = groupFeed([
+      watchlist("new-day", "u1", "2026-07-12T00:01:00.000Z"),
+      library("old-day", "u1", "2026-07-11T23:59:00.000Z"),
+    ]);
 
     expect(out).toHaveLength(2);
-    expect(out[0].type).toBe("group");
-    if (out[0].type === "group") {
-      expect(out[0].group.items.map(item => item.id)).toEqual(["newest", "oldest"]);
-    }
+    expect(out.every(item => item.type === "single")).toBe(true);
+  });
+
+  it("groups an actor's daily activity despite other actors interleaving", () => {
+    const out = groupFeed([
+      watchlist("u1-new", "u1", "2026-07-11T12:05:00.000Z"),
+      recommendation("u2-rec", "u2", "2026-07-11T12:04:00.000Z"),
+      library("u1-old", "u1", "2026-07-11T12:03:00.000Z"),
+    ]);
+
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({ type: "group", group: { kind: "hoard_added", count: 2 } });
+    expect(out[1]).toMatchObject({ type: "single", activity: { id: "u2-rec" } });
+  });
+
+  it("keeps high-signal activity standalone while digesting saves", () => {
+    const out = groupFeed([
+      watchlist("save-new", "u1", "2026-07-11T12:05:00.000Z"),
+      recommendation("rec", "u1", "2026-07-11T12:04:00.000Z"),
+      library("save-old", "u1", "2026-07-11T12:03:00.000Z"),
+    ]);
+
+    expect(out.map(item => item.type === "group" ? item.group.kind : item.type === "single" ? item.activity.kind : "system")).toEqual([
+      "hoard_added",
+      "recommendation_sent",
+    ]);
+  });
+
+  it("keeps a commented save standalone while grouping the other same-day saves", () => {
+    const out = groupFeed([
+      watchlist("newest", "u1", "2026-07-11T12:05:00.000Z"),
+      library("commented", "u1", "2026-07-11T12:04:00.000Z", 1),
+      library("oldest", "u1", "2026-07-11T12:03:00.000Z"),
+    ]);
+
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({ type: "group", group: { count: 2 } });
     expect(out[1]).toMatchObject({ type: "single", activity: { id: "commented" } });
   });
-});
 
-describe("groupFeed: mixed save burst", () => {
-  it("groups watches, watchlist adds, and grimoire adds independently when interleaved", () => {
-    const items: EnrichedActivity[] = [
-      watchLog({ id: "watch-2", actorId: "u1", minutesAgo: 0 }),
-      library({ id: "library-2", actorId: "u1", minutesAgo: 1 }),
-      watchlist({ id: "watchlist-2", actorId: "u1", minutesAgo: 2 }),
-      watchLog({ id: "watch-1", actorId: "u1", minutesAgo: 3 }),
-      library({ id: "library-1", actorId: "u1", minutesAgo: 4 }),
-      watchlist({ id: "watchlist-1", actorId: "u1", minutesAgo: 5 }),
-    ];
+  it("collapses the observed 43-watch, 8-watchlist, 6-grimoire burst to two cards", () => {
+    const items: EnrichedActivity[] = [];
+    for (let i = 0; i < 43; i++) {
+      items.push(watchLog(`watch-${i}`, "el", `2026-07-11T23:${String(59 - i).padStart(2, "0")}:00.000Z`));
+    }
+    for (let i = 0; i < 8; i++) {
+      items.push(watchlist(`watchlist-${i}`, "el", `2026-07-11T22:${String(59 - i).padStart(2, "0")}:00.000Z`));
+    }
+    for (let i = 0; i < 6; i++) {
+      items.push(library(`library-${i}`, "el", `2026-07-11T21:${String(59 - i).padStart(2, "0")}:00.000Z`));
+    }
+    items.sort((a, b) => b.created_at.localeCompare(a.created_at));
 
     const out = groupFeed(items);
 
-    expect(out).toHaveLength(3);
-    expect(out.map(item => item.type === "group" ? item.group.kind : item.type === "single" ? item.activity.kind : "system")).toEqual([
-      "watch_logged",
-      "library_added",
-      "watchlist_added",
-    ]);
-    expect(out.every(item => item.type === "group" && item.group.count === 2)).toBe(true);
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({ type: "group", group: { kind: "watch_logged", count: 43 } });
+    expect(out[1]).toMatchObject({ type: "group", group: { kind: "hoard_added", count: 14 } });
   });
 });
