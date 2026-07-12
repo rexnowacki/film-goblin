@@ -21,51 +21,58 @@ function SignInInner() {
   }
 
   return (
-    <main style={{ background: "var(--bone)", color: "var(--void)", minHeight: "100dvh", display: "grid", placeItems: "center", padding: 40 }}>
-      <div style={{
-        background: "var(--bone)", color: "var(--void)",
-        border: "3px solid var(--void)", padding: "clamp(24px, 6vw, 40px) clamp(20px, 5vw, 32px)",
-        boxShadow: "var(--card-shadow-offset) var(--card-shadow-offset) 0 var(--accent)",
-        transform: "rotate(var(--card-rotation))",
-        maxWidth: 420, width: "100%",
-      }} className="grain-light">
-        <div className="eyebrow" style={{ marginBottom: 8 }}>✦ Enter The Coven</div>
-        <h1 className="display" style={{ fontSize: 48, margin: "0 0 24px", lineHeight: 0.9 }}>Sign In</h1>
+    <main className="signin-page">
+      <a className="signin-brand" href="/" aria-label="Film Goblin home">
+        Film<span>Goblin</span>
+      </a>
+
+      <div className="signin-shell">
+        <section className="signin-oracle" aria-labelledby="signin-welcome-title">
+          <div className="signin-oracle__copy">
+            <div className="eyebrow">The pit kept your place</div>
+            <h1 id="signin-welcome-title">Come back<br />to the dark.</h1>
+            <p>Your watchlist is waiting. Your coven has been whispering. The next strange thing is already looking for you.</p>
+          </div>
+          <img src="/add-film-oracle.png" alt="A goblin peering over an enchanted crystal ball" />
+          <div className="signin-oracle__seal" aria-hidden="true">✦</div>
+        </section>
+
+        <section className="signin-card grain-light" aria-labelledby="signin-form-title">
+          <div className="eyebrow">Enter the coven</div>
+          <h2 id="signin-form-title">Sign in</h2>
+          <p className="signin-card__lede">Speak the old name. The door remembers.</p>
 
         <GoogleSignInButton />
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0", color: "var(--muted)", fontFamily: "var(--font-ui)", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-          <span style={{ flex: 1, height: 1, background: "var(--muted)" }} />
-          or
-          <span style={{ flex: 1, height: 1, background: "var(--muted)" }} />
+        <div className="signin-divider">
+          <span />
+          or use the old rite
+          <span />
         </div>
 
-        <form action={handle}>
+        <form action={handle} className="signin-form">
           <input type="hidden" name="redirect" value={redirectTo} />
-          <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Username or Email</div>
+          <label className="caps" htmlFor="signin-identifier">Username or email</label>
           <input name="identifier" type="text" required autoComplete="username" defaultValue={prefilledIdentifier}
-            placeholder="moss.witch"
-            style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 16, fontFamily: "var(--font-ui)" }} />
-          <div className="caps" style={{ fontSize: 11, marginBottom: 8 }}>Password</div>
-          <input name="password" type="password" required minLength={6} autoComplete="current-password"
-            style={{ width: "100%", border: "2px solid var(--void)", padding: "12px 14px", marginBottom: 8, fontFamily: "var(--font-ui)" }} />
-          <div style={{ marginBottom: 20 }}>
-            <a href="/auth/forgot" style={{ color: "var(--accent-deep)", fontSize: 13, fontStyle: "italic", textDecoration: "underline" }}>
-              Forgot password?
-            </a>
+            id="signin-identifier" placeholder="moss.witch" />
+          <div className="signin-form__password-label">
+            <label className="caps" htmlFor="signin-password">Password</label>
+            <a href="/auth/forgot">Forgot it?</a>
           </div>
+          <input id="signin-password" name="password" type="password" required minLength={6} autoComplete="current-password" />
           {error && (
-            <div style={{ color: "var(--danger)", fontFamily: "var(--font-serif)", fontStyle: "italic", marginBottom: 16 }}>
+            <div className="signin-form__error" role="alert">
               {error}
             </div>
           )}
-          <button type="submit" disabled={pending} className="btn btn-dark btn-lg" style={{ width: "100%", justifyContent: "center" }}>
-            {pending ? "Summoning…" : "✦ Enter"}
+          <button type="submit" disabled={pending} className="btn btn-dark btn-lg signin-form__submit">
+            {pending ? "Summoning…" : "Enter the pit →"}
           </button>
-          <div style={{ marginTop: 16, fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, textAlign: "center" }}>
-            No coven? <a href="/auth/signup" style={{ color: "var(--accent-deep)", textDecoration: "underline" }}>Join one</a>.
+          <div className="signin-form__join">
+            No place in the pit yet? <a href="/auth/signup">Begin the initiation →</a>
           </div>
         </form>
+        </section>
       </div>
     </main>
   );
