@@ -139,35 +139,36 @@ export default async function HomePage({
   }
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
+    <div className="home-feed-shell">
       <TopNav current="home" />
       <BottomNav current="home" />
 
-      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
-        <div className="container-wide">
-          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
-            The <em style={{ color: "var(--accent)" }}>Feed</em>.
-          </h1>
+      <section className="home-feed-masthead grain-dark">
+        <div className="container-wide home-feed-masthead__inner">
+          <div>
+            <div className="eyebrow">Live transmissions from your coven</div>
+            <h1>The <em>Feed</em></h1>
+          </div>
+          <p>Watches, hoards, recommendations, and strange movements from the Pit.</p>
         </div>
       </section>
 
-      <div className="container-wide stackable" style={{ padding: "32px var(--container-pad)", "--stack-template": "220px 1fr 320px", "--stack-gap": "32px", alignItems: "start" } as React.CSSProperties}>
+      <div className="container-wide stackable home-feed-layout" style={{ "--stack-template": "220px minmax(0, 1fr) 320px", "--stack-gap": "32px" } as React.CSSProperties}>
         <aside
-          className="desktop-only"
-          style={{ position: "sticky", top: "calc(46px + env(safe-area-inset-top))", maxHeight: "calc(100vh - 46px - env(safe-area-inset-top))", overflowY: "auto", paddingBottom: 32 }}
+          className="desktop-only home-feed-rail home-feed-rail--left"
         >
           {user ? (
             <LedgerPanel films={priceDropFilms} />
           ) : (
-            <div>
-              <div className="eyebrow" style={{ color: "var(--muted)", marginBottom: 12 }}>Your Ledger</div>
-              <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 13, color: "var(--muted)" }}>
+            <div className="home-feed-signin-note">
+              <div className="eyebrow">Your Ledger</div>
+              <p>
                 Sign in to see price drops on your watchlist.
               </p>
             </div>
           )}
         </aside>
-        <main>
+        <main className="home-feed-main">
           {returnContracts.length > 0 && user && (
             <NextInThePit contracts={returnContracts} viewerId={user.id} utcDay={dateSeed} />
           )}
@@ -185,8 +186,7 @@ export default async function HomePage({
           </FeedTabs>
         </main>
         <aside
-          className="desktop-only"
-          style={{ position: "sticky", top: "calc(46px + env(safe-area-inset-top))", maxHeight: "calc(100vh - 46px - env(safe-area-inset-top))", overflowY: "auto", paddingBottom: 32 }}
+          className="desktop-only home-feed-rail home-feed-rail--right"
         >
           <GoblinRecommends film={goblinPick} ritual={ritual} />
         </aside>

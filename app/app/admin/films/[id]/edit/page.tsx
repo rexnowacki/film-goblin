@@ -71,21 +71,21 @@ export default async function EditFilmPage({ params }: { params: Promise<{ id: s
   };
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        <h1 className="h-display" style={{ margin: 0 }}>Edit: {film.title}</h1>
-        <div style={{ display: "flex", gap: 8 }}>
+    <div className="admin-form-page">
+      <header className="admin-page-head admin-page-head--edit">
+        <div><div className="eyebrow">Catalog record · {film.year}</div><h1>{film.title}</h1><p>Edit the record, availability, identity, and occult taxonomy.</p></div>
+        <div className="admin-page-actions">
           <Link href="/admin/films" className="btn btn-sm btn-outline">← Back</Link>
           <RetireModal filmId={film.id} title={film.title} year={film.year} counts={{ watchlist: watchlistCount, lists: listsCount, reviews: reviewsCount, activity: activityCount }} />
         </div>
-      </div>
-      <FilmForm mode="edit" filmId={film.id} initial={initial} existingSeries={existingSeries} />
-      <FilmTagEditor
+      </header>
+      <div className="admin-form-surface"><FilmForm mode="edit" filmId={film.id} initial={initial} existingSeries={existingSeries} /></div>
+      <div className="admin-form-surface admin-form-surface--tags"><FilmTagEditor
         filmId={film.id}
         director={film.director}
         vocab={vocab}
         initial={tagInitial}
-      />
+      /></div>
     </div>
   );
 }
