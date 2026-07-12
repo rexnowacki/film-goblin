@@ -62,14 +62,15 @@ export type FeedItem =
   | { type: "system"; event: SystemFeedEvent };
 
 export interface ActivityGroup {
-  // Stable composite key for React. Anchored on the OLDEST event in the run
-  // so the key doesn't shift if newer events join the run on subsequent reads.
+  // Stable actor + digest-kind + UTC-day key for React. It does not shift as
+  // same-day rows arrive or older raw pages are loaded.
   key: string;
   actor: ActorLite;
-  kind: "watchlist_added" | "watch_logged" | "library_added";
+  kind: "hoard_added" | "watch_logged";
   items: EnrichedActivity[]; // newest-first, length >= 2
   count: number; // = items.length
   latestAt: string; // = items[0].created_at
+  utcDay: string;
 }
 
 export interface FeedFilters {
