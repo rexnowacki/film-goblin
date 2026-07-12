@@ -47,6 +47,7 @@ export default async function LandingPage() {
             <div className="landing-hero__copy">
               <div className="eyebrow">A coven for the cinematically afflicted</div>
               <h1>Watch<br /><em>weirder</em>.</h1>
+              <img className="landing-hero__oracle" src="/add-film-oracle.png" alt="A goblin peering over an enchanted palantir" width="400" height="600" />
               <p className="landing-hero__declaration">Movies are better when somebody else won&rsquo;t stop talking about them.</p>
               <p className="landing-hero__body">
                 Log what you watch. Press films on your friends. Hoard what you want. Let the pit stalk Apple TV prices while you sleep.
@@ -57,7 +58,9 @@ export default async function LandingPage() {
               </div>
               <div className="landing-hero__proof"><span>◉</span> Real watches. Real recommendations. No percentage pretending to know your soul.</div>
             </div>
-            {hasFeed && <div className="landing-hero__feed"><div className="eyebrow">Happening in the pit</div><LandingFeedCard rows={feedRows} /></div>}
+            <div className="landing-hero__aside">
+              {hasFeed && <div className="landing-hero__feed"><div className="eyebrow">Happening in the pit</div><LandingFeedCard rows={feedRows} /></div>}
+            </div>
           </div>
         </div>
       </section>
