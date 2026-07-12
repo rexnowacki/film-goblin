@@ -11,12 +11,12 @@ describe("settings page responsive CSS", () => {
     expect(css).toContain(".settings-section__content");
   });
 
-  it("replaces the desktop rail with a mobile chapter bar at the zine breakpoint", () => {
+  it("uses a horizontally scrollable pill row at the zine breakpoint", () => {
     const mobile = css.slice(css.indexOf("@media (max-width: 720px)"));
-    expect(mobile).toContain(".settings-section-rail");
-    expect(mobile).toContain("display: none");
-    expect(mobile).toContain(".settings-mobile-nav");
-    expect(mobile).toContain("display: flex");
-    expect(mobile).toContain("overflow-x: auto");
+    expect(css).toContain(".settings-pill-nav button[aria-selected=\"true\"]");
+    expect(css).toContain("border-radius: 999px");
+    expect(css).toContain("overflow-x: auto");
+    expect(mobile).toContain(".settings-pill-nav");
+    expect(mobile).toContain("margin: 0 -20px 25px");
   });
 });
