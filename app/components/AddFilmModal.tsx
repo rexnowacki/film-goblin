@@ -29,7 +29,7 @@ export default function AddFilmModal({ onClose }: { onClose: () => void }) {
             <h2 id="add-film-title" className="add-film-modal__title">Add Film</h2>
             <p>Feed the Pit.</p>
           </div>
-          <img className="add-film-modal__oracle" src="/add-film-oracle.jpg" alt="A goblin peering into a crystal ball" />
+          <img className="add-film-modal__oracle" src="/add-film-oracle.png" alt="A goblin peering into a crystal ball" />
           <button
             type="button"
             onClick={onClose}
