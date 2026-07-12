@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Avatar from "../Avatar";
 import ActivityWatchLogged from "./ActivityWatchLogged";
+import { watchedDigestSummary } from "./activityDigestCopy";
 import { relativeTime } from "./relativeTime";
 import type { ActivityGroup, EnrichedActivity } from "@/lib/queries/activity";
 
@@ -17,6 +18,7 @@ export default function ActivityWatchLoggedGroup({ group }: Props) {
   const { actor, items, count, latestAt } = group;
   const visiblePosters = items.slice(0, 3);
   const overflowCount = count - visiblePosters.length;
+  const summary = watchedDigestSummary(count);
 
   function toggle() { setExpanded(v => !v); }
 
@@ -39,11 +41,9 @@ export default function ActivityWatchLoggedGroup({ group }: Props) {
             >
               {actor.username}
             </Link>
-            {" watched "}
-            <strong style={{ color: "var(--accent)" }}>
-              {count} {count === 1 ? "film" : "films"}
-            </strong>
-            {" that day."}
+            {summary.before}
+            <strong style={{ color: "var(--accent)" }}>{summary.countLabel}</strong>
+            {summary.after}
           </div>
           <div style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--muted)", marginTop: 4, display: "flex", alignItems: "center", gap: 10 }}>
             <span>{relativeTime(latestAt)}</span>
