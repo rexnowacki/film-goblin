@@ -52,5 +52,6 @@
   transition: max-height 250ms ease-out;
 }
 .activity-group-expanded-items[data-open="true"] {
-  max-height: 2000px;
+  max-height: none;
+  overflow: visible;
 }
