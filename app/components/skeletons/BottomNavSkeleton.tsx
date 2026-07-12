@@ -1,11 +1,20 @@
+import { HomeIcon, DiscoverIcon, CovenIcon, CollectionsIcon } from "../BottomNavIcons";
+
 export default function BottomNavSkeleton() {
+  const tabs = [
+    { label: "Feed", href: "/home", Icon: HomeIcon },
+    { label: "Discover", href: "/films", Icon: DiscoverIcon },
+    { label: "Coven", href: "/coven", Icon: CovenIcon },
+    { label: "Hoard", href: "/watchlist", Icon: CollectionsIcon },
+  ];
+
   return (
-    <nav className="bottom-nav" aria-hidden="true">
-      {[0, 1, 2, 3].map(i => (
-        <div key={i} className="bottom-nav__item" style={{ pointerEvents: "none" }}>
-          <div className="skel" style={{ width: 26, height: 26, borderRadius: 4 }} />
-          <div className="skel" style={{ width: 38, height: 8, marginTop: 4 }} />
-        </div>
+    <nav className="bottom-nav" aria-label="Primary" data-loading="true">
+      {tabs.map(tab => (
+        <a key={tab.href} href={tab.href} className="bottom-nav__item">
+          <tab.Icon className="bottom-nav__icon" />
+          <span className="bottom-nav__label">{tab.label}</span>
+        </a>
       ))}
     </nav>
   );

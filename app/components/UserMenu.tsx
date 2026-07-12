@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Avatar from "./Avatar";
-import { signOut } from "@/lib/actions/auth";
 
 interface Props {
   username: string;
@@ -15,6 +14,7 @@ interface Props {
 
 export default function UserMenu({ username, displayName, avatarUrl, isAdmin, onAddFilm }: Props) {
   const [open, setOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -106,12 +106,14 @@ export default function UserMenu({ username, displayName, avatarUrl, isAdmin, on
           >
             Settings
           </Link>
-          <form action={signOut}>
+          <form action="/auth/signout" method="post" onSubmit={() => setSigningOut(true)}>
             <button
               type="submit"
+              disabled={signingOut}
+              aria-busy={signingOut}
               style={{ width: "100%", textAlign: "left", padding: "10px 14px", background: "transparent", border: 0, cursor: "pointer", fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--danger)" }}
             >
-              Sign out
+              {signingOut ? "Leaving the pit…" : "Sign out"}
             </button>
           </form>
         </div>
