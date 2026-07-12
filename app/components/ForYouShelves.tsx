@@ -100,7 +100,7 @@ export default function ForYouShelves({
   }
 
   return (
-    <>
+    <div className="fyp-experience">
       {omen && omenFilm && (
         <div ref={el => registerCard(el as HTMLElement | null, omen.filmId)} data-film-id={omen.filmId}>
           <DailyOmenHero
@@ -114,20 +114,26 @@ export default function ForYouShelves({
           />
         </div>
       )}
-      {shelves.map(shelf => (
-        <ShelfCarousel
-          key={shelf.id}
-          shelf={shelf}
-          filmsById={filmsById}
-          dismissed={dismissed}
-          onDismiss={onDismiss}
-          onUndo={onUndo}
-          registerCard={registerCard}
-          watchlistIds={watchlistSet}
-          libraryIds={librarySet}
-          sharerUsername={sharerUsername}
-        />
-      ))}
-    </>
+      {shelves.length > 0 ? (
+        <div className="fyp-shelves">
+          <div className="fyp-divider" aria-hidden="true"><span>✦</span></div>
+          {shelves.map((shelf, index) => (
+            <ShelfCarousel
+              key={shelf.id}
+              shelf={shelf}
+              shelfIndex={index}
+              filmsById={filmsById}
+              dismissed={dismissed}
+              onDismiss={onDismiss}
+              onUndo={onUndo}
+              registerCard={registerCard}
+              watchlistIds={watchlistSet}
+              libraryIds={librarySet}
+              sharerUsername={sharerUsername}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }

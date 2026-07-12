@@ -30,15 +30,23 @@ export default async function FilmsPage({
       <TopNav current="films" />
       <BottomNav current="films" />
 
-      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
-        <div className="container-wide">
-          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
-            Watch <em style={{ color: "var(--accent)" }}>Weirder</em>.
-          </h1>
-        </div>
-      </section>
+      {browse ? (
+        <section className="discover-browse-masthead grain-light">
+          <div className="container-wide">
+            <h1 className="h-display">Watch <em>Weirder</em>.</h1>
+          </div>
+        </section>
+      ) : (
+        <section className="fyp-masthead">
+          <div className="container-wide fyp-masthead__inner">
+            <div className="eyebrow">Personal divination</div>
+            <h1>The pit <em>remembers</em>.</h1>
+            <p>Drawn from the traces you leave behind. A fresh reading waits each day.</p>
+          </div>
+        </section>
+      )}
 
-      <section style={{ padding: "24px 0 60px" }}>
+      <section className={browse ? "discover-content" : "discover-content fyp-content"}>
         <div className="container-wide">
           {user && <DiscoverTabs active={browse ? "browse" : "for-you"} />}
           {browse ? (
