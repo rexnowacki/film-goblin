@@ -1,27 +1,16 @@
 import Link from "next/link";
 
 export default function DiscoverTabs({ active }: { active: "for-you" | "browse" }) {
-  const tabStyle = (isActive: boolean): React.CSSProperties => ({
-    padding: "8px 16px",
-    fontSize: 11,
-    fontFamily: "var(--font-ui)",
-    fontWeight: 700,
-    letterSpacing: "0.06em",
-    textDecoration: "none",
-    color: isActive ? "var(--accent-ink)" : "var(--bone)",
-    background: isActive ? "var(--accent)" : "transparent",
-    border: "2px solid var(--accent)",
-  });
   return (
-    <div style={{ display: "flex", gap: 8, marginBottom: 20 }} className="caps">
-      <Link href="/films" prefetch={false} style={tabStyle(active === "for-you")}
+    <nav className="discover-mode-tabs" aria-label="Discover mode">
+      <Link href="/films" prefetch={false} className="discover-mode-tab"
         aria-current={active === "for-you" ? "page" : undefined}>
-        For You
+        <span aria-hidden="true">✦</span> For You
       </Link>
-      <Link href="/films?tab=browse" prefetch={false} style={tabStyle(active === "browse")}
+      <Link href="/films?tab=browse" prefetch={false} className="discover-mode-tab"
         aria-current={active === "browse" ? "page" : undefined}>
-        Browse All
+        <span aria-hidden="true">◇</span> Browse the Pit
       </Link>
-    </div>
+    </nav>
   );
 }
