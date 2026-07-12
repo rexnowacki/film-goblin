@@ -99,63 +99,89 @@
   padding-bottom: calc(92px + env(safe-area-inset-bottom));
 }
 
-.settings-layout__grid {
-  display: grid;
-  grid-template-columns: 190px minmax(0, 820px);
-  gap: clamp(28px, 5vw, 56px);
-  align-items: start;
+.settings-tabs {
+  min-width: 0;
 }
 
-.settings-section-rail {
+.settings-pill-nav {
   position: sticky;
-  top: 84px;
-  display: grid;
-  border-left: 1px solid color-mix(in srgb, var(--bone) 24%, transparent);
-  padding: 4px 0 4px 14px;
+  z-index: 8;
+  top: 72px;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  overflow-x: auto;
+  margin-bottom: 30px;
+  padding: 11px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--bone) 18%, transparent);
+  background: color-mix(in srgb, var(--void) 94%, transparent);
+  backdrop-filter: blur(12px);
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
-.settings-section-rail__label {
-  margin-bottom: 12px;
-  color: var(--muted);
-  font: 700 9px var(--font-ui);
-  letter-spacing: .14em;
-  text-transform: uppercase;
+.settings-pill-nav::-webkit-scrollbar {
+  display: none;
 }
 
-.settings-rail-link {
-  display: grid;
-  grid-template-columns: 25px 1fr;
+.settings-pill-nav button {
+  display: flex;
+  flex: 1 0 auto;
   gap: 7px;
   align-items: center;
-  padding: 8px 0;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid color-mix(in srgb, var(--bone) 26%, transparent);
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: var(--void-2);
   color: var(--muted);
-  text-decoration: none;
+  cursor: pointer;
   font: 700 10px var(--font-ui);
-  letter-spacing: .11em;
+  letter-spacing: .09em;
   text-transform: uppercase;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
 }
 
-.settings-rail-link span {
+.settings-pill-nav button span {
   color: var(--accent);
-  font-size: 9px;
+  font-size: 8px;
 }
 
-.settings-rail-link:hover {
+.settings-pill-nav button:hover {
+  border-color: var(--accent);
   color: var(--bone);
 }
 
-.settings-rail-link[data-danger="true"],
-.settings-rail-link[data-danger="true"] span {
+.settings-pill-nav button[aria-selected="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--void);
+}
+
+.settings-pill-nav button[aria-selected="true"] span {
+  color: var(--void);
+}
+
+.settings-pill-nav button[data-danger="true"] {
   color: var(--danger);
 }
 
-.settings-mobile-nav {
+.settings-pill-nav button[data-danger="true"][aria-selected="true"] {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--bone);
+}
+
+.settings-pill-nav button[data-danger="true"][aria-selected="true"] span {
+  color: var(--bone);
+}
+
+.settings-tab-panel[hidden] {
   display: none;
 }
 
 .settings-groups {
-  display: grid;
-  gap: 54px;
   min-width: 0;
 }
 
@@ -318,54 +344,21 @@
   }
 
   .settings-layout {
-    padding-top: 0;
+    padding-top: 10px;
   }
 
-  .settings-layout__grid {
-    display: block;
-  }
-
-  .settings-section-rail {
-    display: none;
-  }
-
-  .settings-mobile-nav {
-    position: sticky;
-    z-index: 8;
+  .settings-pill-nav {
     top: 0;
-    display: flex;
     gap: 7px;
-    overflow-x: auto;
-    margin: 0 -20px 26px;
+    margin: 0 -20px 25px;
     padding: 11px 20px;
-    border-bottom: 1px solid color-mix(in srgb, var(--bone) 18%, transparent);
-    background: color-mix(in srgb, var(--void) 94%, transparent);
-    backdrop-filter: blur(12px);
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
   }
 
-  .settings-mobile-nav::-webkit-scrollbar {
-    display: none;
-  }
-
-  .settings-mobile-nav a {
+  .settings-pill-nav button {
     flex: 0 0 auto;
-    border: 1px solid color-mix(in srgb, var(--bone) 24%, transparent);
-    padding: 8px 11px;
-    color: var(--bone);
-    background: var(--void-2);
-    text-decoration: none;
+    min-height: 38px;
+    padding: 8px 12px;
     font-size: 9px;
-  }
-
-  .settings-mobile-nav a[data-danger="true"] {
-    border-color: color-mix(in srgb, var(--danger) 65%, transparent);
-    color: var(--danger);
-  }
-
-  .settings-groups {
-    gap: 44px;
   }
 
   .settings-group__header {

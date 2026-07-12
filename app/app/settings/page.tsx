@@ -18,16 +18,9 @@ import InviteLinkSection from "@/components/settings/InviteLinkSection";
 import PushToggle from "@/components/settings/PushToggle";
 import SettingsSection from "@/components/settings/SettingsSection";
 import SettingsGroup from "@/components/settings/SettingsGroup";
+import SettingsTabs from "@/components/settings/SettingsTabs";
 import { THEME_COOKIE, readTheme } from "@/lib/theme";
 import SignOutSection from "./components/SignOutSection";
-
-const SETTINGS_NAV = [
-  { href: "#profile-settings", label: "Profile", mark: "01" },
-  { href: "#signal-settings", label: "Signals", mark: "02" },
-  { href: "#taste-settings", label: "Taste", mark: "03" },
-  { href: "#account-settings", label: "Account", mark: "04" },
-  { href: "#danger", label: "Danger" },
-];
 
 export default async function SettingsPage() {
   const user = await getServerUser();
@@ -73,34 +66,8 @@ export default async function SettingsPage() {
       </section>
 
       <div className="settings-shell settings-layout">
-        <nav className="settings-mobile-nav" aria-label="Settings sections">
-          {SETTINGS_NAV.map(item => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="caps"
-              data-danger={item.href === "#danger" ? "true" : undefined}
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-        <div className="settings-layout__grid">
-          <aside className="settings-section-rail" aria-label="Settings sections">
-            <div className="settings-section-rail__label">Settings ledger</div>
-            {SETTINGS_NAV.map(item => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="settings-rail-link"
-                data-danger={item.href === "#danger" ? "true" : undefined}
-              >
-                <span>{item.mark ?? "×"}</span>
-                {item.label}
-              </a>
-            ))}
-          </aside>
-          <main className="settings-groups">
+        <main className="settings-groups">
+          <SettingsTabs>
             <SettingsGroup
               id="profile-settings"
               eyebrow="01 · Identity"
@@ -164,8 +131,8 @@ export default async function SettingsPage() {
             >
               <DeleteAccountSection username={username} />
             </SettingsGroup>
-          </main>
-        </div>
+          </SettingsTabs>
+        </main>
       </div>
     </div>
   );
