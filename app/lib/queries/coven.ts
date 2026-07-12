@@ -113,19 +113,20 @@ type PendingRelationship = {
 export async function getRelationshipMap(
   client: Client,
   currentUserId: string,
-  profileIds: string[],
+  profileIds?: string[],
 ): Promise<Map<string, PendingRelationship>> {
   const result = new Map<string, PendingRelationship>();
-  if (profileIds.length === 0) return result;
+  if (profileIds?.length === 0) return result;
 
-  const idList = profileIds.join(",");
+  const idList = profileIds?.join(",");
+  const relationshipFilter = idList
+    ? `and(from_user_id.eq.${currentUserId},to_user_id.in.(${idList})),and(to_user_id.eq.${currentUserId},from_user_id.in.(${idList}))`
+    : `from_user_id.eq.${currentUserId},to_user_id.eq.${currentUserId}`;
   const { data, error } = await client
     .from("coven_requests")
     .select("id, from_user_id, to_user_id, status")
     .eq("status", "pending")
-    .or(
-      `and(from_user_id.eq.${currentUserId},to_user_id.in.(${idList})),and(to_user_id.eq.${currentUserId},from_user_id.in.(${idList}))`,
-    );
+    .or(relationshipFilter);
   if (error) throw error;
 
   for (const r of data ?? []) {

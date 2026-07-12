@@ -7,15 +7,16 @@ export interface RankableTwin {
   watchlistOverlap: number; secondDegree: boolean;
   sharedFilm: { id: string; title: string } | null;
 }
+export interface RankableViewer { vector: AffinityVector; evidenceFilmCount: number; }
 export interface RankedTwin extends RankableTwin { source: "taste" | "second_degree" | "watchlist_overlap"; sharedTraits: SharedTrait[]; similarity: number; }
 
-export function rankTasteTwins(viewer: AffinityVector, candidates: RankableTwin[], facets: Record<string, TraitFacet>, limit: number): RankedTwin[] {
-  const viewerHasTaste = Object.values(viewer.byTag).some(value => value > 0);
+export function rankTasteTwins(viewer: RankableViewer, candidates: RankableTwin[], facets: Record<string, TraitFacet>, limit: number): RankedTwin[] {
+  const viewerHasTaste = viewer.evidenceFilmCount >= 3 && Object.values(viewer.vector.byTag).some(value => value > 0);
   const ranked: RankedTwin[] = [];
   for (const candidate of candidates) {
-    const similarity = viewerHasTaste ? cosineSimilarity(viewer, candidate.vector) : 0;
-    const traits = Object.keys(viewer.byTag).filter(tag => (viewer.byTag[tag] ?? 0) > 0 && (candidate.vector.byTag[tag] ?? 0) > 0 && facets[tag])
-      .map(tag => ({ name: tag, facet: facets[tag], strength: Math.min(viewer.byTag[tag], candidate.vector.byTag[tag]) }))
+    const similarity = viewerHasTaste ? cosineSimilarity(viewer.vector, candidate.vector) : 0;
+    const traits = Object.keys(viewer.vector.byTag).filter(tag => (viewer.vector.byTag[tag] ?? 0) > 0 && (candidate.vector.byTag[tag] ?? 0) > 0 && facets[tag])
+      .map(tag => ({ name: tag, facet: facets[tag], strength: Math.min(viewer.vector.byTag[tag], candidate.vector.byTag[tag]) }))
       .sort((a, b) => b.strength - a.strength || a.name.localeCompare(b.name));
     const sharedTraits: SharedTrait[] = [];
     for (const trait of traits) if (!sharedTraits.some(item => item.facet === trait.facet)) sharedTraits.push(trait);

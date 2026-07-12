@@ -21,7 +21,17 @@ import Link from "next/link";
 import SocialPromise from "@/components/coven/SocialPromise";
 import CovenEmptyState from "@/components/coven/CovenEmptyState";
 import TasteTwinStrip from "@/components/coven/TasteTwinStrip";
-import { getTasteTwinSuggestions } from "@/lib/queries/taste-twins";
+import {
+  getActiveTasteTwinSuppressionIds,
+  getTasteTwinSuggestions,
+} from "@/lib/queries/taste-twins";
+import {
+  COVEN_FALLBACK_POOL_LIMIT,
+  COVEN_SUGGESTION_LIMIT,
+  excludePassiveCovenSuggestions,
+  getCovenDiscoveryMode,
+  pickDailyCovenSuggestions,
+} from "@/lib/coven-suggestions";
 
 export default async function CovenPage({
   searchParams,
@@ -29,6 +39,7 @@ export default async function CovenPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
+  const hasSearchQuery = Boolean(q?.trim());
   const user = await getServerUser();
   if (!user) redirect("/auth/signin?redirect=/coven");
   const supabase = await createClient();
@@ -38,7 +49,9 @@ export default async function CovenPage({
     getMyCovenMembers(supabase, user.id),
     getRankedCovenfolk(supabase, user.id),
     getMyInviteCode(user.id),
-    getTasteTwinSuggestions(supabase, user.id, 6).catch(error => { console.error("taste twins query failed", error); return []; }),
+    hasSearchQuery
+      ? Promise.resolve([])
+      : getTasteTwinSuggestions(supabase, user.id, COVEN_SUGGESTION_LIMIT).catch(error => { console.error("taste twins query failed", error); return []; }),
   ]);
   const canInvite =
     !!myInviteCode &&
@@ -46,15 +59,36 @@ export default async function CovenPage({
     myInviteCode.use_count < myInviteCode.max_uses;
 
   const memberIds = members.map((m) => m.id);
-  const profiles = await getProfilesBySearch(supabase, {
-    q,
-    excludeUserIds: [user.id, ...memberIds],
-  });
-  const relationshipMap = await getRelationshipMap(
-    supabase,
-    user.id,
-    profiles.map((p) => p.id),
-  );
+  const discoveryMode = getCovenDiscoveryMode(q, tasteTwins.length);
+  const directoryProfiles = discoveryMode !== "compatibility"
+    ? await getProfilesBySearch(supabase, {
+        q,
+        limit: discoveryMode === "fallback" ? COVEN_FALLBACK_POOL_LIMIT : undefined,
+        excludeUserIds: [user.id, ...memberIds],
+      })
+    : [];
+  const [relationshipMap, suppressedCandidateIds] = await Promise.all([
+    getRelationshipMap(
+      supabase,
+      user.id,
+      discoveryMode === "fallback" ? undefined : directoryProfiles.map((p) => p.id),
+    ),
+    discoveryMode === "fallback"
+      ? getActiveTasteTwinSuppressionIds(supabase, user.id).catch(error => {
+          console.error("taste twin suppressions query failed", error);
+          return null;
+        })
+      : Promise.resolve(new Set<string>()),
+  ]);
+  const eligibleFallbackProfiles = suppressedCandidateIds === null
+    ? []
+    : excludePassiveCovenSuggestions(
+        directoryProfiles,
+        [...relationshipMap.keys(), ...suppressedCandidateIds],
+      );
+  const profiles = discoveryMode === "fallback"
+    ? pickDailyCovenSuggestions(eligibleFallbackProfiles, user.id, new Date())
+    : directoryProfiles;
 
   return (
     <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
@@ -86,8 +120,6 @@ export default async function CovenPage({
           <CovenEmptyState inviteCode={canInvite ? myInviteCode!.code : null} />
         </div>
       )}
-
-      {tasteTwins.length > 0 && <div className="container-wide" style={{ paddingTop: 28 }}><TasteTwinStrip suggestions={tasteTwins} /></div>}
 
       {invites.length > 0 && (
         <section style={{ padding: "24px 0", borderBottom: "3px solid var(--void)" }}>
@@ -142,7 +174,9 @@ export default async function CovenPage({
                 {canInvite && <InviteFriendButton inviteCode={myInviteCode!.code} />}
               </div>
               <PeopleSearch />
-              {profiles.length === 0 ? (
+              {discoveryMode === "compatibility" ? (
+                <TasteTwinStrip suggestions={tasteTwins} />
+              ) : profiles.length === 0 ? (
                 <div
                   style={{
                     textAlign: "center",
@@ -152,7 +186,7 @@ export default async function CovenPage({
                     color: "var(--muted)",
                   }}
                 >
-                  {q ? "No souls match your search." : "No souls in the realm yet."}
+                  {discoveryMode === "search" ? "No souls match your search." : "No souls in the realm yet."}
                 </div>
               ) : (
                 <div style={{ display: "grid", gap: 12 }}>
