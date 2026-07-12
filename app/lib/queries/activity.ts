@@ -66,8 +66,8 @@ export interface ActivityGroup {
   // so the key doesn't shift if newer events join the run on subsequent reads.
   key: string;
   actor: ActorLite;
-  kind: "watchlist_added" | "watch_logged"; // widens as more kinds register
-  items: EnrichedActivity[]; // newest-first, length >= 3
+  kind: "watchlist_added" | "watch_logged" | "library_added";
+  items: EnrichedActivity[]; // newest-first, length >= 2
   count: number; // = items.length
   latestAt: string; // = items[0].created_at
 }

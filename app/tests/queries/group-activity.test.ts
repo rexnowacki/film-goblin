@@ -88,6 +88,31 @@ function watchLog(opts: { id: string; actorId: string; minutesAgo: number; comme
   };
 }
 
+function library(opts: { id: string; actorId: string; minutesAgo: number }): EnrichedActivity {
+  const created = new Date(Date.now() - opts.minutesAgo * 60 * 1000).toISOString();
+  return {
+    id: opts.id,
+    created_at: created,
+    actor: {
+      id: opts.actorId,
+      username: `user_${opts.actorId}`,
+      display_name: `User ${opts.actorId}`,
+      avatar_url: null,
+    },
+    reactions: { count: 0, likedByMe: false },
+    comments: { count: 0, items: [] },
+    kind: "library_added",
+    film: {
+      id: `film_${opts.id}`,
+      title: `Film ${opts.id}`,
+      director: "Test Director",
+      year: 2024,
+      artwork_url: "https://example.test/poster.jpg",
+      itunes_url: "https://itunes.apple.com/test",
+    },
+  };
+}
+
 describe("groupFeed", () => {
   it("returns empty array for empty input", () => {
     expect(groupFeed([])).toEqual([]);
@@ -288,5 +313,28 @@ describe("groupFeed: watch_logged", () => {
       expect(out[0].group.items.map(item => item.id)).toEqual(["newest", "oldest"]);
     }
     expect(out[1]).toMatchObject({ type: "single", activity: { id: "commented" } });
+  });
+});
+
+describe("groupFeed: mixed save burst", () => {
+  it("groups watches, watchlist adds, and grimoire adds independently when interleaved", () => {
+    const items: EnrichedActivity[] = [
+      watchLog({ id: "watch-2", actorId: "u1", minutesAgo: 0 }),
+      library({ id: "library-2", actorId: "u1", minutesAgo: 1 }),
+      watchlist({ id: "watchlist-2", actorId: "u1", minutesAgo: 2 }),
+      watchLog({ id: "watch-1", actorId: "u1", minutesAgo: 3 }),
+      library({ id: "library-1", actorId: "u1", minutesAgo: 4 }),
+      watchlist({ id: "watchlist-1", actorId: "u1", minutesAgo: 5 }),
+    ];
+
+    const out = groupFeed(items);
+
+    expect(out).toHaveLength(3);
+    expect(out.map(item => item.type === "group" ? item.group.kind : item.type === "single" ? item.activity.kind : "system")).toEqual([
+      "watch_logged",
+      "library_added",
+      "watchlist_added",
+    ]);
+    expect(out.every(item => item.type === "group" && item.group.count === 2)).toBe(true);
   });
 });
