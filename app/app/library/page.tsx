@@ -21,48 +21,63 @@ export default async function LibraryPage() {
   ]);
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
+    <div className="collection-page collection-page--grimoire">
       <TopNav current="library" />
       <BottomNav current="library" />
 
-      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
-        <div className="container-wide">
-          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
-            Your <em style={{ color: "var(--accent)" }}>Library</em>.
-          </h1>
+      <section className="collection-hero">
+        <div className="container-wide collection-hero__inner">
+          <div className="collection-hero__copy">
+            <div className="eyebrow">The films you claimed</div>
+            <h1>Your <em>Grimoire</em>.</h1>
+            <p>The shelf is yours. Every disc, download, and strange little treasure you dragged back from the dark.</p>
+          </div>
+          <div className="collection-hero__tally" aria-label={`${rows.length} films in your grimoire`}>
+            <strong>{rows.length}</strong>
+            <span>{rows.length === 1 ? "film claimed" : "films claimed"}</span>
+          </div>
         </div>
       </section>
 
-      <section style={{ padding: "24px 0 60px" }}>
+      <section className="collection-content">
         <div className="container-wide">
           {savings.claimedCount > 0 && (
-            <div style={{ display: "flex", gap: 24, flexWrap: "wrap", margin: "0 0 20px", fontFamily: "var(--font-ui)" }}>
-              <div>
-                <div className="caps" style={{ fontSize: 10, color: "var(--muted)" }}>Claimed</div>
-                <div style={{ fontSize: 22, fontWeight: 800 }}>{savings.claimedCount}</div>
+            <div className="collection-ledger" aria-label="Grimoire savings">
+              <div className="collection-ledger__heading">
+                <span className="eyebrow">The claiming ledger</span>
+                <strong>What the goblin kept</strong>
               </div>
-              <div>
-                <div className="caps" style={{ fontSize: 10, color: "var(--muted)" }}>Tithed to Apple</div>
-                <div style={{ fontSize: 22, fontWeight: 800 }}>${savings.totalPaid.toFixed(2)}</div>
+              <div className="collection-ledger__stat">
+                <span>Prices recorded</span>
+                <strong>{savings.claimedCount}</strong>
               </div>
-              <div>
-                <div className="caps" style={{ fontSize: 10, color: "var(--muted)" }}>Kept from the fire</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--accent)" }}>${savings.totalSaved.toFixed(2)}</div>
+              <div className="collection-ledger__stat">
+                <span>Tithed to Apple</span>
+                <strong>${savings.totalPaid.toFixed(2)}</strong>
+              </div>
+              <div className="collection-ledger__stat collection-ledger__stat--accent">
+                <span>Kept from the fire</span>
+                <strong>${savings.totalSaved.toFixed(2)}</strong>
               </div>
             </div>
           )}
           {rows.length === 0 ? (
-            <div style={{ textAlign: "center", padding: 60, fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--muted)" }}>
-              Empty stacks. Mark films as owned from any film&rsquo;s page.
+            <div className="collection-empty">
+              <div className="collection-empty__mark" aria-hidden="true">◉</div>
+              <div className="eyebrow">No relics on the shelf</div>
+              <h2>The pages are bare.</h2>
+              <p>Claim a film from its page and the grimoire will begin remembering what belongs to you.</p>
+              <Link href="/films" className="btn btn-lg">Browse the archive →</Link>
             </div>
           ) : (
             <>
-              <div style={{ marginBottom: 20, fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--muted)" }}>
-                {rows.length} {rows.length === 1 ? "film" : "films"}
+              <div className="collection-section-heading">
+                <span className="eyebrow">On your shelf</span>
+                <span>{rows.length} {rows.length === 1 ? "film" : "films"}</span>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "var(--grid-gap)" }}>
+              <div className="collection-grid">
                 {rows.map(r => (
-                  <Link key={r.film.id} href={`/film/${r.film.id}`} style={{ cursor: "pointer", textDecoration: "none", color: "inherit" }}>
+                  <Link key={r.film.id} href={`/film/${r.film.id}`} className="collection-card">
                     <div style={{ position: "relative" }}>
                       <FilmPoster film={r.film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
                       <PosterMobileActions
@@ -73,9 +88,9 @@ export default async function LibraryPage() {
                         sharerUsername={myProfile?.username ?? null}
                       />
                     </div>
-                    <div style={{ marginTop: 10 }}>
-                      <div className="head" style={{ fontSize: 16, lineHeight: 1.1 }}>{r.film.title}</div>
-                      <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
+                    <div className="collection-card__caption">
+                      <div className="collection-card__title">{r.film.title}</div>
+                      <div className="collection-card__meta">
                         {r.film.year}
                         {r.film.director ? <span> &middot; {r.film.director}</span> : null}
                       </div>

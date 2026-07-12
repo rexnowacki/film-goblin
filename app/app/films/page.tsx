@@ -31,9 +31,11 @@ export default async function FilmsPage({
       <BottomNav current="films" />
 
       {browse ? (
-        <section className="discover-browse-masthead grain-light">
-          <div className="container-wide">
-            <h1 className="h-display">Watch <em>Weirder</em>.</h1>
+        <section className="discover-browse-masthead">
+          <div className="container-wide discover-browse-masthead__inner">
+            <div className="eyebrow">The complete archive</div>
+            <h1>Watch <em>Weirder</em>.</h1>
+            <p>Every film the pit has swallowed. Search the shelves, sort the bones, and take something home.</p>
           </div>
         </section>
       ) : (

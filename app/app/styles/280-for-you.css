@@ -1,16 +1,45 @@
 .discover-browse-masthead {
-  border-bottom: 3px solid var(--void);
-  padding: 22px 0 18px;
-  background: var(--bone);
-  color: var(--void);
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid color-mix(in srgb, var(--bone) 18%, transparent);
+  background:
+    radial-gradient(circle at 82% 44%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 29%),
+    linear-gradient(135deg, var(--void-2), var(--void));
+  color: var(--bone);
 }
 
+.discover-browse-masthead::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .14;
+  background: repeating-linear-gradient(115deg, transparent 0 24px, color-mix(in srgb, var(--bone) 8%, transparent) 25px 26px);
+}
+
+.discover-browse-masthead__inner {
+  position: relative;
+  z-index: 1;
+  padding-block: 34px 31px;
+}
+
+.discover-browse-masthead .eyebrow { margin-bottom: 8px; color: var(--accent); }
+
 .discover-browse-masthead h1 {
-  font-size: clamp(28px, 5vw, 64px);
+  margin: 0;
+  font: clamp(42px, 7vw, 78px)/.92 var(--font-head);
 }
 
 .discover-browse-masthead em {
   color: var(--accent);
+  font-weight: inherit;
+}
+
+.discover-browse-masthead p {
+  max-width: 600px;
+  margin: 13px 0 0;
+  color: color-mix(in srgb, var(--bone) 72%, transparent);
+  font: italic 16px/1.45 var(--font-serif);
 }
 
 .fyp-masthead {
