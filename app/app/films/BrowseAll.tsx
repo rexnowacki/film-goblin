@@ -39,19 +39,25 @@ export default async function BrowseAll({
   }
 
   return (
-    <>
-      <FilmsSearch />
-      <FilmsSortChips currentSort={sort} currentQ={q} />
-      <div style={{ marginBottom: 20, fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--muted)" }}>
-        {total} {total === 1 ? "film" : "films"}{q ? ` matching "${q}"` : ""}
+    <div className="browse-archive">
+      <div className="collection-tools collection-tools--browse">
+        <FilmsSearch />
+        <div className="collection-tools__sort">
+          <div className="eyebrow">Order the archive</div>
+          <FilmsSortChips currentSort={sort} currentQ={q} />
+        </div>
+      </div>
+      <div className="collection-section-heading">
+        <span className="eyebrow">Catalog census</span>
+        <span>{total} {total === 1 ? "film" : "films"}{q ? ` matching “${q}”` : ""}</span>
       </div>
 
       {films.length === 0 ? (
         <FilmsEmptyState query={q} isSignedIn={!!user} />
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "var(--grid-gap)" }}>
+        <div className="collection-grid">
           {films.map(f => (
-            <Link key={f.id} href={`/film/${f.id}`} style={{ cursor: "pointer", textDecoration: "none", color: "inherit" }}>
+            <Link key={f.id} href={`/film/${f.id}`} className="collection-card">
               {user ? (
                 <PosterQuickAdd
                   filmId={f.id}
@@ -67,9 +73,9 @@ export default async function BrowseAll({
               ) : (
                 <FilmPoster film={f as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
               )}
-              <div style={{ marginTop: 10 }}>
-                <div className="head" style={{ fontSize: 16, lineHeight: 1.1 }}>{f.title}</div>
-                <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>
+              <div className="collection-card__caption">
+                <div className="collection-card__title">{f.title}</div>
+                <div className="collection-card__meta">
                   {f.year}
                   {(sort === "release" || sort === "added") && f.director ? (
                     <span> · {f.director}</span>
@@ -100,7 +106,7 @@ export default async function BrowseAll({
       )}
 
       {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 40, alignItems: "center" }}>
+        <div className="collection-pagination">
           {page > 1 ? (
             <Link href={pageHref(page - 1)} className="btn btn-sm btn-outline">← Prev</Link>
           ) : (
@@ -116,6 +122,6 @@ export default async function BrowseAll({
           )}
         </div>
       )}
-    </>
+    </div>
   );
 }

@@ -25,11 +25,12 @@ function monthHeader(key: string): string {
 
 function WatchedEmpty() {
   return (
-    <div style={{ textAlign: "center", padding: 60, fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--muted)" }}>
-      Nothing watched yet. Mark a film as watched from any film&rsquo;s page.
-      <div style={{ marginTop: 24 }}>
-        <Link href="/films" className="btn btn-lg">Browse the archive →</Link>
-      </div>
+    <div className="collection-empty">
+      <div className="collection-empty__mark" aria-hidden="true">◐</div>
+      <div className="eyebrow">No scratches in the ledger</div>
+      <h2>Nothing witnessed yet.</h2>
+      <p>Log the first film and the diary will begin keeping your nights, verdicts, and dangerous little notes.</p>
+      <Link href="/films" className="btn btn-lg">Find the first one →</Link>
     </div>
   );
 }
@@ -59,46 +60,50 @@ export default async function WatchedPage() {
   const topName = stats.topFilms[0];
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
+    <div className="collection-page collection-page--diary">
       <TopNav current="watched" />
       <BottomNav current="watched" />
 
-      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
-        <div className="container-wide">
-          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
-            Your <em style={{ color: "var(--accent)" }}>Diary</em>.
-          </h1>
+      <section className="collection-hero">
+        <div className="container-wide collection-hero__inner">
+          <div className="collection-hero__copy">
+            <div className="eyebrow">What you saw · what survived</div>
+            <h1>Your <em>Diary</em>.</h1>
+            <p>A record of every watch, every verdict, and every note you scrawled before the credits went cold.</p>
+          </div>
+          <div className="collection-hero__tally" aria-label={`${stats.total} films watched`}>
+            <strong>{stats.total}</strong>
+            <span>{stats.total === 1 ? "watch logged" : "watches logged"}</span>
+          </div>
         </div>
       </section>
 
-      <section style={{ padding: "24px 0 60px" }}>
+      <section className="collection-content">
         <div className="container-wide">
           {rows.length === 0 ? (
             <WatchedEmpty />
           ) : (
             <>
-              <div style={{ display: "flex", gap: 24, flexWrap: "wrap", marginBottom: 24, fontFamily: "var(--font-ui)", fontSize: 13 }}>
-                <span>
-                  <span className="caps" style={{ fontSize: 10, color: "var(--muted)", marginRight: 6 }}>Total</span>
-                  <strong style={{ color: "var(--accent)" }}>{stats.total}</strong>
-                </span>
-                <span>
-                  <span className="caps" style={{ fontSize: 10, color: "var(--muted)", marginRight: 6 }}>{new Date().getUTCFullYear()}</span>
-                  <strong style={{ color: "var(--accent)" }}>{stats.thisYear}</strong>
-                </span>
+              <div className="diary-ledger">
+                <span><small>Total watches</small><strong>{stats.total}</strong></span>
+                <span><small>{new Date().getUTCFullYear()}</small><strong>{stats.thisYear}</strong></span>
                 {topName && (
                   <span>
-                    <span className="caps" style={{ fontSize: 10, color: "var(--muted)", marginRight: 6 }}>Most watched</span>
-                    <em style={{ color: "var(--accent)", fontStyle: "italic" }}>{topName.film.title}</em>
-                    <span style={{ color: "var(--muted)" }}> &times;{topName.count}</span>
+                    <small>Most summoned</small>
+                    <strong className="diary-ledger__film">{topName.film.title} <i>&times;{topName.count}</i></strong>
                   </span>
                 )}
               </div>
 
               {stats.topFilms.length > 0 && (
-                <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 12, marginBottom: 24 }}>
+                <div className="diary-repeats" aria-label="Most watched films">
+                  <div className="diary-repeats__heading">
+                    <span className="eyebrow">Repeat hauntings</span>
+                    <strong>The films that came back</strong>
+                  </div>
+                  <div className="diary-repeats__rail">
                   {stats.topFilms.map((t, i) => (
-                    <Link key={t.film.id} href={`/film/${t.film.id}`} style={{ flexShrink: 0, textDecoration: "none", color: "inherit" }}>
+                    <Link key={t.film.id} href={`/film/${t.film.id}`}>
                       <Image
                         src={t.film.artwork_url}
                         alt={t.film.title}
@@ -107,20 +112,21 @@ export default async function WatchedPage() {
                         style={{ display: "block", objectFit: "cover", border: "1px solid var(--void)" }}
                         priority={i < 3}
                       />
-                      <div className="caps" style={{ fontSize: 10, color: "var(--accent)", marginTop: 4, textAlign: "center" }}>&times;{t.count}</div>
+                      <div className="caps">&times;{t.count}</div>
                     </Link>
                   ))}
+                  </div>
                 </div>
               )}
 
-              <div>
+              <div className="diary-months">
                 {grouped.map(g => (
-                  <div key={g.key} style={{ marginBottom: 28 }}>
-                    <div className="caps" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 10, paddingBottom: 6, borderBottom: "1px solid var(--muted)" }}>
+                  <section key={g.key} className="diary-month">
+                    <h2>
                       {monthHeader(g.key)}
-                    </div>
+                    </h2>
                     {g.rows.map(r => <DiaryRow key={r.id} row={r} />)}
-                  </div>
+                  </section>
                 ))}
               </div>
             </>

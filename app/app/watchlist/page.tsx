@@ -16,15 +16,13 @@ const VALID_SORTS: readonly WatchlistSort[] = ["drop", "recency", "price-low", "
 
 function WatchlistEmpty() {
   return (
-    <div className="watchlist-empty">
-      <h2 className="display" style={{ fontSize: "clamp(36px, 6vw, 64px)", margin: "0 0 16px", lineHeight: 0.95 }}>
-        The Scroll is empty.
-      </h2>
-      <p style={{ fontFamily: "var(--font-serif)", fontSize: 18, fontStyle: "italic", opacity: 0.75, margin: "0 0 28px" }}>
-        No films tracked. Yet.
-      </p>
+    <div className="collection-empty">
+      <div className="collection-empty__mark" aria-hidden="true">◇</div>
+      <div className="eyebrow">Nothing stashed</div>
+      <h2>The hoard is hungry.</h2>
+      <p>Mark a film for later and it will wait here—along with every price drop the pit sniffs out.</p>
       <a href="/films" className="btn btn-lg">
-        Browse the archive →
+        Find something strange →
       </a>
     </div>
   );
@@ -61,37 +59,47 @@ export default async function WatchlistPage({
     : sortWatchlist(rows, sort);
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh" }}>
+    <div className="collection-page collection-page--hoard">
       <TopNav current="watchlist" />
       <BottomNav current="watchlist" />
 
-      <section style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "3px solid var(--void)", padding: "22px 0 18px" }} className="grain-light">
-        <div className="container-wide">
-          <h1 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
-            The <em style={{ color: "var(--accent)" }}>Scroll</em>.
-          </h1>
+      <section className="collection-hero">
+        <div className="container-wide collection-hero__inner">
+          <div className="collection-hero__copy">
+            <div className="eyebrow">Things wanted · prices watched</div>
+            <h1>The <em>Hoard</em>.</h1>
+            <p>Every film you mean to drag home. The pit keeps one eye on the price while you wait.</p>
+          </div>
+          <div className="collection-hero__tally" aria-label={`${rows.length} films in your hoard`}>
+            <strong>{rows.length}</strong>
+            <span>{rows.length === 1 ? "film waiting" : "films waiting"}</span>
+          </div>
         </div>
       </section>
 
-      <section style={{ padding: "16px 0 calc(80px + env(safe-area-inset-bottom))" }}>
+      <section className="collection-content">
         <div className="container-wide">
           {rows.length === 0 ? (
             <WatchlistEmpty />
           ) : (
             <>
-              <WatchlistSearch />
-              <div style={{ fontFamily: "var(--font-ui)", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 8, marginTop: 12 }}>Sort by</div>
-              <WatchlistSortChips currentSort={sort} />
+              <div className="collection-tools">
+                <WatchlistSearch />
+                <div className="collection-tools__sort">
+                  <div className="eyebrow">Order the pile</div>
+                  <WatchlistSortChips currentSort={sort} />
+                </div>
+              </div>
               {sorted.length === 0 && q && (
-                <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--muted)", padding: "20px 0" }}>
-                  No films match.
+                <div className="collection-no-results">
+                  Nothing in the hoard answers that name.
                 </div>
               )}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "var(--grid-gap)" }}>
+              <div className="collection-grid">
                 {sorted.map(r => {
                   const dropPct = computeDropPct(r);
                   return (
-                    <div key={r.id} className="watchlist-card">
+                    <div key={r.id} className="watchlist-card collection-card">
                       <Link prefetch={false} href={`/film/${r.film.id}`} style={{ display: "block", textDecoration: "none", color: "inherit" }}>
                         <div style={{ position: "relative" }}>
                           <FilmPoster film={r.film as never} size="md" style={{ width: "100%", height: "auto", aspectRatio: "2/3" }} />
@@ -105,9 +113,9 @@ export default async function WatchlistPage({
                             currentlyShowing={r.film.currently_showing}
                           />
                         </div>
-                        <div style={{ marginTop: 10 }}>
-                          <div className="head" style={{ fontSize: 16, lineHeight: 1.1 }}>{r.film.title}</div>
-                          <div className="caps" style={{ fontSize: 10, color: "var(--muted)", marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <div className="collection-card__caption">
+                          <div className="collection-card__title">{r.film.title}</div>
+                          <div className="collection-card__meta">
                             {r.film.year}
                             {r.film.director ? <span> · {r.film.director}</span> : null}
                             {r.film.currently_showing ? <span style={{ color: "var(--accent)" }}> · In theaters</span> : null}
