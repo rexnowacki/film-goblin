@@ -237,9 +237,10 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
         <span className="feed-stream__live"><i /> Live</span>
       </div>
       <div className="feed-tab-rail" role="tablist" aria-label="Feed views">
-        {(["all", "coven", "recs", "pit"] as Tab[]).map(t => (
+        {(["coven", "all", "recs", "pit"] as Tab[]).map(t => (
           <button key={t} onClick={() => pickTab(t)} role="tab" aria-selected={tab === t} className={`feed-tab-pill ${tab === t ? "is-active" : ""}`}>
-            {t === "all" ? "All stirrings" : t === "coven" ? "My coven" : t === "recs" ? "Recommendations" : "Pit archive"}
+            <span className="desktop-only">{t === "all" ? "All stirrings" : t === "coven" ? "My coven" : t === "recs" ? "Recommendations" : "Pit archive"}</span>
+            <span className="mobile-only">{t === "all" ? "All" : t === "coven" ? "My coven" : t === "recs" ? "Recs" : "From the Pit"}</span>
           </button>
         ))}
       </div>

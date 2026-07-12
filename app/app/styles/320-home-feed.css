@@ -36,4 +36,14 @@
   .feed-stream__heading { margin-top:20px; }
   .feed-stream__heading h2 { font-size:25px; }
   .feed-tab-rail { margin-right:calc(-1 * var(--container-pad)); padding-right:var(--container-pad); }
+  .feed-tab-rail {
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:5px;
+    width:100%;
+    margin-right:0;
+    padding-right:0;
+    overflow:visible;
+  }
+  .feed-tab-pill { min-width:0; padding:8px 4px; font-size:8px; letter-spacing:.035em; white-space:nowrap; }
 }
