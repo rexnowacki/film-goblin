@@ -22,4 +22,15 @@ describe("sign-in presentation", () => {
     expect(mobile).toContain("grid-template-columns: 1fr");
     expect(mobile).toContain(".signin-oracle > img");
   });
+
+  it("reserves an upper-right image footprint so copy can wrap without overlap", () => {
+    expect(page.indexOf('src="/add-film-oracle.png"')).toBeLessThan(page.indexOf('className="signin-oracle__copy"'));
+    const imageRule = css.slice(
+      css.indexOf(".signin-oracle > img {"),
+      css.indexOf(".signin-oracle__seal"),
+    );
+    expect(imageRule).toContain("float: right");
+    expect(imageRule).toContain("shape-outside");
+    expect(imageRule).not.toContain("position: absolute");
+  });
 });
