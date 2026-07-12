@@ -41,6 +41,9 @@ describe("admin and home feed presentation", () => {
     expect(page).toContain("getEnrichedActivity");
     expect(tabs).toContain('role="tablist"');
     expect(tabs).toContain('aria-selected={tab === t}');
+    expect(tabs).toContain('t === "recs" ? "Recs"');
+    expect(tabs).toContain('"From the Pit"');
+    expect(css).toContain("grid-template-columns:repeat(4,minmax(0,1fr))");
     expect(tabs).toContain("composeFeed");
     expect(tabs).toContain("enforcePitPositionRules");
     expect(css).toContain(".feed-tab-pill.is-active");
