@@ -57,4 +57,12 @@ describe("getRelationshipMap", () => {
       "and(from_user_id.eq.me,to_user_id.in.(alice,bob)),and(to_user_id.eq.me,from_user_id.in.(alice,bob))",
     );
   });
+
+  it("can load every viewer relationship without putting a large candidate pool in the URL", async () => {
+    const client = makeClient([]);
+    await getRelationshipMap(client, "me");
+    expect(client._builder.or).toHaveBeenCalledWith(
+      "from_user_id.eq.me,to_user_id.eq.me",
+    );
+  });
 });

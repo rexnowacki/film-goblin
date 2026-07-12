@@ -13,6 +13,20 @@ export interface TasteTwinSuggestion {
   source: "taste" | "second_degree" | "watchlist_overlap";
 }
 
+export async function getActiveTasteTwinSuppressionIds(
+  client: Client,
+  viewerId: string,
+  now = new Date(),
+): Promise<Set<string>> {
+  const { data, error } = await client
+    .from("taste_twin_suppressions")
+    .select("candidate_id")
+    .eq("viewer_id", viewerId)
+    .gt("suppressed_until", now.toISOString());
+  if (error) throw error;
+  return new Set((data ?? []).map(row => row.candidate_id));
+}
+
 export function buildBulkAffinityVectors(signals: SignalRow[], tags: TagRow[]): Map<string, { vector: AffinityVector; evidenceFilmCount: number }> {
   const tagsByFilm = new Map<string, TagRow[]>();
   for (const tag of tags) tagsByFilm.set(tag.film_id, [...(tagsByFilm.get(tag.film_id) ?? []), tag]);
@@ -42,19 +56,18 @@ export function buildBulkAffinityVectors(signals: SignalRow[], tags: TagRow[]): 
 }
 
 export async function getTasteTwinSuggestions(client: Client, viewerId: string, limit = 6): Promise<TasteTwinSuggestion[]> {
-  const now = new Date().toISOString();
-  const [profilesRes, edgesRes, requestsRes, suppressionsRes] = await Promise.all([
+  const [profilesRes, edgesRes, requestsRes, suppressedCandidateIds] = await Promise.all([
     client.from("profiles").select("id, username, avatar_url").eq("discoverable", true).neq("id", viewerId).limit(100),
     client.from("coven_members").select("user_a_id, user_b_id").or(`user_a_id.eq.${viewerId},user_b_id.eq.${viewerId}`),
     client.from("coven_requests").select("from_user_id, to_user_id").eq("status", "pending").or(`from_user_id.eq.${viewerId},to_user_id.eq.${viewerId}`),
-    client.from("taste_twin_suppressions").select("candidate_id").eq("viewer_id", viewerId).gt("suppressed_until", now),
+    getActiveTasteTwinSuppressionIds(client, viewerId),
   ]);
-  const firstError = profilesRes.error ?? edgesRes.error ?? requestsRes.error ?? suppressionsRes.error;
+  const firstError = profilesRes.error ?? edgesRes.error ?? requestsRes.error;
   if (firstError) throw firstError;
   const excluded = new Set<string>([viewerId]);
   for (const edge of edgesRes.data ?? []) excluded.add(edge.user_a_id === viewerId ? edge.user_b_id : edge.user_a_id);
   for (const req of requestsRes.data ?? []) excluded.add(req.from_user_id === viewerId ? req.to_user_id : req.from_user_id);
-  for (const row of suppressionsRes.data ?? []) excluded.add(row.candidate_id);
+  for (const candidateId of suppressedCandidateIds) excluded.add(candidateId);
   const profiles = (profilesRes.data ?? []).filter(profile => !excluded.has(profile.id));
   if (!profiles.length) return [];
   const userIds = [viewerId, ...profiles.map(profile => profile.id)];
@@ -98,7 +111,7 @@ export async function getTasteTwinSuggestions(client: Client, viewerId: string, 
     if (memberIds.includes(edge.user_b_id)) secondDegree.add(edge.user_a_id);
   }
 
-  const viewer = vectors.get(viewerId)?.vector ?? { byTag: {} };
+  const viewer = vectors.get(viewerId) ?? { vector: { byTag: {} }, evidenceFilmCount: 0 };
   const ranked = rankTasteTwins(viewer, profiles.map(profile => {
     const overlap = candidateWatchlists.get(profile.id) ?? [];
     const shared = overlap[0] ? filmById.get(overlap[0]) : null;
