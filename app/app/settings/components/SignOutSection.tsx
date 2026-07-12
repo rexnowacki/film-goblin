@@ -1,25 +1,17 @@
 import { signOut } from "@/lib/actions/auth";
+import SettingsSection from "@/components/settings/SettingsSection";
 
 export default function SignOutSection() {
   return (
-    <form action={signOut}>
-      <button
-        type="submit"
-        style={{
-          background: "transparent",
-          color: "var(--danger)",
-          border: "2px solid var(--danger)",
-          padding: "10px 18px",
-          fontFamily: "var(--font-ui)",
-          fontWeight: 700,
-          fontSize: 11,
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          cursor: "pointer",
-        }}
-      >
-        Sign out
-      </button>
-    </form>
+    <SettingsSection
+      id="sign-out"
+      eyebrow="Session"
+      title="Leave the pit"
+      description="End this session on the current device. Your hoard and coven stay exactly where you left them."
+    >
+      <form action={signOut}>
+        <button type="submit" className="btn btn-outline">Sign out</button>
+      </form>
+    </SettingsSection>
   );
 }

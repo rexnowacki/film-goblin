@@ -21,7 +21,7 @@ export default function DeleteAccountSection({ username }: { username: string })
   }
 
   return (
-    <SettingsSection id="danger" eyebrow="Danger zone" title="Delete account" danger>
+    <SettingsSection id="delete-account" eyebrow="Danger zone" title="Delete account" danger>
       {!open ? (
         <button
           type="button"

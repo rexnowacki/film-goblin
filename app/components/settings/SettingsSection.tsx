@@ -20,33 +20,15 @@ export default function SettingsSection({
   return (
     <section
       id={id}
-      style={{
-        borderTop: `1px solid ${danger ? "var(--danger)" : "#333"}`,
-        paddingTop: 24,
-        scrollMarginTop: 96,
-      }}
+      className="settings-section"
+      data-danger={danger ? "true" : undefined}
     >
-      <div className="caps" style={{ fontSize: 11, marginBottom: 8, color: danger ? "var(--danger)" : "var(--accent)" }}>
-        {eyebrow}
-      </div>
-      <h2 className="head" style={{ fontSize: 24, margin: "0 0 6px" }}>
-        {title}
-      </h2>
-      {description ? (
-        <p
-          style={{
-            fontFamily: "var(--font-serif)",
-            fontStyle: "italic",
-            fontSize: 14,
-            color: "var(--muted)",
-            lineHeight: 1.5,
-            margin: "0 0 18px",
-          }}
-        >
-          {description}
-        </p>
-      ) : null}
-      {children}
+      <header className="settings-section__header">
+        <div className="caps settings-section__eyebrow">{eyebrow}</div>
+        <h3>{title}</h3>
+        {description ? <p>{description}</p> : null}
+      </header>
+      <div className="settings-section__content">{children}</div>
     </section>
   );
 }
