@@ -24,7 +24,8 @@ describe("landing page presentation", () => {
     expect(css).toContain("var(--pit-plum-bg)");
     expect(css).toContain(".landing-feed-card");
     expect(css).toContain(".landing-hero__oracle");
-    expect(css).toContain("overflow-x: clip");
+    expect(css).toContain("overflow-x: hidden");
+    expect(css).toContain("contain: paint");
   });
 
   it("collapses the hero and rites at the single zine breakpoint", () => {
@@ -33,6 +34,7 @@ describe("landing page presentation", () => {
     expect(mobile).toContain("grid-template-columns: 1fr");
     expect(mobile).toContain(".landing-rites");
     expect(mobile).toContain(".landing-feed-card");
+    expect(mobile).toContain("transform: none");
     expect(mobile).toContain(".landing-hero__oracle");
     expect(mobile).toContain("@media (max-width: 360px)");
   });
