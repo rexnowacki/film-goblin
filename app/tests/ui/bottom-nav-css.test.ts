@@ -5,6 +5,8 @@ const css = readFileSync(
   new URL("../../app/styles/80-discovery-actions.css", import.meta.url),
   "utf8",
 );
+const client = readFileSync(new URL("../../components/BottomNavClient.tsx", import.meta.url), "utf8");
+const loadingNav = readFileSync(new URL("../../components/skeletons/BottomNavSkeleton.tsx", import.meta.url), "utf8");
 
 const baseBottomNavRule = css.match(/\.bottom-nav\s*\{([^}]*)\}/)?.[1] ?? "";
 const mobileBottomNavRule =
@@ -27,5 +29,22 @@ describe("mobile bottom nav CSS contract", () => {
     expect(mobileBottomNavRule).toMatch(
       /(^|[;\s])backface-visibility:\s*hidden/,
     );
+  });
+
+  it("acknowledges taps immediately and retains a native-navigation watchdog", () => {
+    expect(client).toContain("setPending(tab.id)");
+    expect(client).toContain("window.location.assign(tab.href)");
+    expect(client).toContain("NAVIGATION_FALLBACK_MS = 1800");
+    expect(css).toContain(".bottom-nav__item.is-pending");
+  });
+
+  it("keeps the bottom nav actionable while destination content is loading", () => {
+    expect(loadingNav).toContain('href: "/home"');
+    expect(loadingNav).toContain('href: "/films"');
+    expect(loadingNav).toContain('href: "/coven"');
+    expect(loadingNav).toContain('href: "/watchlist"');
+    expect(loadingNav).toContain("<a key={tab.href}");
+    expect(loadingNav).not.toContain("pointerEvents");
+    expect(loadingNav).not.toContain('aria-hidden="true"');
   });
 });

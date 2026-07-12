@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { getServerUser } from "@/lib/supabase/cached";
-import { HomeIcon, DiscoverIcon, CovenIcon, CollectionsIcon } from "./BottomNavIcons";
+import BottomNavClient from "./BottomNavClient";
 
 interface Props {
   current?: string; // shares the existing 6-id space used by TopNav
@@ -21,27 +20,5 @@ export default async function BottomNav({ current }: Props) {
   if (!user) return null; // anon viewers: no bottom nav
 
   const active = activeTab(current);
-  const tabs = [
-    { id: "feed",      label: "Feed",      href: "/home",      Icon: HomeIcon },
-    { id: "discovery", label: "Discover", href: "/films",     Icon: DiscoverIcon },
-    { id: "coven",     label: "Coven",     href: "/coven",     Icon: CovenIcon },
-    { id: "hoard",     label: "Hoard",     href: "/watchlist", Icon: CollectionsIcon },
-  ] as const;
-
-  return (
-    <nav className="bottom-nav" aria-label="Primary">
-      {tabs.map(t => (
-        <Link
-          key={t.id}
-          href={t.href}
-          prefetch={false}
-          className="bottom-nav__item"
-          aria-current={active === t.id ? "page" : undefined}
-        >
-          <t.Icon className="bottom-nav__icon" />
-          <span className="bottom-nav__label">{t.label}</span>
-        </Link>
-      ))}
-    </nav>
-  );
+  return <BottomNavClient active={active} />;
 }
