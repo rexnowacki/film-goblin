@@ -19,26 +19,32 @@ export default async function AdminFilmsPage({
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        <h1 className="h-display" style={{ margin: 0 }}>Films</h1>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Link href="/admin/films/bulk" className="btn btn-outline">Bulk add</Link>
-          <Link href="/admin/films/new" className="btn">+ Add film</Link>
+    <div className="admin-film-page">
+      <header className="admin-page-head">
+        <div>
+          <div className="eyebrow">Catalog ledger · {total} entries</div>
+          <h1>Film Vault</h1>
+          <p>Every title the goblins have dragged into the light.</p>
         </div>
-      </div>
+        <div className="admin-page-actions">
+          <Link href="/admin/films/bulk" className="btn btn-outline">Bulk add</Link>
+          <Link href="/admin/films/new" className="btn">+ Summon film</Link>
+        </div>
+      </header>
 
-      <form method="get" style={{ marginBottom: 12 }}>
+      <section className="admin-film-tools" aria-label="Film catalog tools">
+      <form method="get" className="admin-film-search">
+        <label htmlFor="admin-film-query">Search the vault</label>
         <input
+          id="admin-film-query"
           type="search"
           name="q"
           defaultValue={q}
           placeholder="Search by title…"
-          style={{ width: "100%", maxWidth: 480, padding: "10px 14px", background: "var(--void-2)", border: "2px solid var(--muted)", color: "var(--bone)", fontFamily: "var(--font-ui)", fontSize: 14 }}
         />
         {untagged && <input type="hidden" name="untagged" value="1" />}
       </form>
-      <div style={{ marginBottom: 20, display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div className="admin-film-tool-row">
         <Link
           href={
             untagged
@@ -46,7 +52,6 @@ export default async function AdminFilmsPage({
               : (q ? `/admin/films?q=${encodeURIComponent(q)}&untagged=1` : "/admin/films?untagged=1")
           }
           className={`tag-edit-pill ${untagged ? "is-selected" : ""}`}
-          style={{ textDecoration: "none" }}
         >
           Untagged only
         </Link>
@@ -54,50 +59,51 @@ export default async function AdminFilmsPage({
         <TmdbCastBackfillButton />
         <TmdbStreamingBackfillButton />
       </div>
+      </section>
 
       {rows.length === 0 ? (
-        <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6 }}>
-          No films match.
+        <div className="admin-empty-state">
+          Nothing answers that name in the vault.
         </div>
       ) : (
-        <div style={{ border: "1px solid #333" }}>
+        <div className="admin-film-ledger">
           {rows.map(f => (
-            <div key={f.id} style={{ display: "grid", gridTemplateColumns: "48px 1fr auto auto", gap: 14, alignItems: "center", padding: "10px 14px", borderBottom: "1px solid #333" }}>
+            <article key={f.id} className="admin-film-row">
               {f.artwork_url ? (
-                <img src={f.artwork_url} alt="" width={48} height={72} style={{ objectFit: "cover" }} />
+                <img src={f.artwork_url} alt="" width={52} height={78} className="admin-film-row__poster" />
               ) : (
-                <div style={{ width: 48, height: 72, background: "var(--void-2)", border: "1px solid #333" }} />
+                <div className="admin-film-row__poster admin-film-row__poster--empty" />
               )}
-              <div>
-                <div style={{ fontFamily: "var(--font-head)", fontSize: 18, lineHeight: 1.1 }}>{f.title}</div>
-                <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>{f.director || "—"} · {f.year || "—"}</div>
-                <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-                  <span className="caps" style={{ fontSize: 9, padding: "2px 6px", border: "1px solid", borderColor: f.tracking ? "var(--accent)" : "var(--muted)", color: f.tracking ? "var(--accent)" : "var(--muted)" }}>
+              <div className="admin-film-row__body">
+                <div className="admin-film-row__title">{f.title}</div>
+                <div className="admin-film-row__meta">{f.director || "Unknown director"} · {f.year || "Year unknown"}</div>
+                <div className="admin-film-row__states">
+                  <span className={`admin-state ${f.tracking ? "is-live" : ""}`}>
                     {f.tracking ? "tracking" : "not tracking"}
                   </span>
-                  <span className="caps" style={{ fontSize: 9, padding: "2px 6px", border: "1px solid", borderColor: f.available ? "var(--accent)" : "var(--danger)", color: f.available ? "var(--accent)" : "var(--danger)" }}>
+                  <span className={`admin-state ${f.available ? "is-live" : "is-danger"}`}>
                     {f.available ? "available" : "retired"}
                   </span>
                 </div>
               </div>
-              <Link href={`/admin/films/${f.id}/edit`} className="btn btn-sm btn-outline">Edit</Link>
-            </div>
+              <Link href={`/admin/films/${f.id}/edit`} className="admin-film-row__edit">Open record <span aria-hidden="true">→</span></Link>
+            </article>
           ))}
         </div>
       )}
 
       {totalPages > 1 && (
-        <div style={{ display: "flex", gap: 8, marginTop: 20, alignItems: "center" }}>
+        <nav className="admin-pagination" aria-label="Film pages">
           {page > 1 && (
             <Link href={`/admin/films?q=${encodeURIComponent(q)}&page=${page - 1}`} className="btn btn-sm btn-outline">← Prev</Link>
           )}
-          <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, opacity: 0.7 }}>
+          <span>
             Page {page} of {totalPages} · {total} total
           </span>
           {page < totalPages && (
             <Link href={`/admin/films?q=${encodeURIComponent(q)}&page=${page + 1}`} className="btn btn-sm btn-outline">Next →</Link>
           )}
-        </div>
+        </nav>
       )}
     </div>
   );

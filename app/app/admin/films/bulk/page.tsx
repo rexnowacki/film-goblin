@@ -3,14 +3,14 @@ import BulkAddFilmsClient from "./BulkAddFilmsClient";
 
 export default function BulkAddFilmsPage() {
   return (
-    <div>
-      <div style={{ marginBottom: 24 }}>
+    <div className="admin-form-page">
+      <div className="admin-back-link">
         <Link href="/admin/films" className="btn btn-sm btn-outline" style={{ textDecoration: "none" }}>
           Back to films
         </Link>
       </div>
-      <h1 className="h-display" style={{ marginBottom: 18 }}>Bulk add films</h1>
-      <BulkAddFilmsClient />
+      <header className="admin-page-head"><div><div className="eyebrow">Mass summoning</div><h1>Bulk add films</h1><p>Open the gate for several catalog records at once.</p></div></header>
+      <div className="admin-form-surface"><BulkAddFilmsClient /></div>
     </div>
   );
 }

@@ -231,16 +231,16 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
       : "No recommendations yet.";
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
+    <div className="feed-stream">
+      <div className="feed-stream__heading">
+        <div><span className="eyebrow">The moving picture</span><h2>{tab === "all" ? "Everything stirring" : tab === "coven" ? "Your coven" : tab === "recs" ? "Passed hand to hand" : "From the Pit"}</h2></div>
+        <span className="feed-stream__live"><i /> Live</span>
+      </div>
+      <div className="feed-tab-rail" role="tablist" aria-label="Feed views">
         {(["all", "coven", "recs", "pit"] as Tab[]).map(t => (
-          <button key={t} onClick={() => pickTab(t)} className="caps" style={{
-            background: tab === t ? "var(--accent)" : "transparent",
-            color: tab === t ? "var(--accent-ink)" : "var(--muted)",
-            border: "1px solid " + (tab === t ? "var(--accent)" : "#333"),
-            padding: "6px 12px", fontSize: 10, cursor: "pointer",
-            fontFamily: "var(--font-ui)", fontWeight: 700,
-          }}>{t}</button>
+          <button key={t} onClick={() => pickTab(t)} role="tab" aria-selected={tab === t} className={`feed-tab-pill ${tab === t ? "is-active" : ""}`}>
+            {t === "all" ? "All stirrings" : t === "coven" ? "My coven" : t === "recs" ? "Recommendations" : "Pit archive"}
+          </button>
         ))}
       </div>
       {tab === "pit" ? (
@@ -250,10 +250,10 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
           initialDone={pitArchive ? pitArchive.length < PIT_ARCHIVE_PAGE_SIZE : true}
         />
       ) : <>
-      <div style={{ display: "grid", gap: 0 }}>
+      <div className="feed-stream__rows">
         {showFeedInsert && children}
         {filtered.length === 0 ? (
-          <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", opacity: 0.6, padding: "20px 0" }}>
+          <div className="feed-stream__empty">
             {emptyCopy}
           </div>
         ) : (
@@ -271,7 +271,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
       </div>
 
       {!done && cursor && (
-        <div ref={sentinelRef} style={{ display: "flex", flexDirection: "column", alignItems: "stretch", marginTop: 16, gap: 12 }}>
+        <div ref={sentinelRef} className="feed-stream__sentinel">
           {loading ? (
             <div style={{ display: "grid", gap: 0 }}>
               <FeedCardSkeleton />
@@ -281,19 +281,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
             <button
               type="button"
               onClick={() => void loadMore()}
-              className="caps"
-              style={{
-                alignSelf: "center",
-                padding: "10px 20px",
-                background: "transparent",
-                border: "1px solid var(--accent)",
-                color: "var(--accent)",
-                fontSize: 11,
-                fontFamily: "var(--font-ui)",
-                fontWeight: 700,
-                cursor: "pointer",
-                letterSpacing: "0.06em",
-              }}
+              className="btn btn-outline feed-stream__more"
             >
               Load more
             </button>
@@ -302,15 +290,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
       )}
 
       {done && filtered.length > 0 && (
-        <div style={{
-          textAlign: "center",
-          padding: "32px 0 8px",
-          fontFamily: "var(--font-serif)",
-          fontStyle: "italic",
-          fontSize: 13,
-          color: "var(--muted)",
-          opacity: 0.6,
-        }}>
+        <div className="feed-stream__end">
           — you've reached the back of the grimoire —
         </div>
       )}
