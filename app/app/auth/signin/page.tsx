@@ -28,12 +28,12 @@ function SignInInner() {
 
       <div className="signin-shell">
         <section className="signin-oracle" aria-labelledby="signin-welcome-title">
+          <img src="/add-film-oracle.png" alt="A goblin peering over an enchanted crystal ball" />
           <div className="signin-oracle__copy">
             <div className="eyebrow">The pit kept your place</div>
             <h1 id="signin-welcome-title">Come back<br />to the dark.</h1>
             <p>Your watchlist is waiting. Your coven has been whispering. The next strange thing is already looking for you.</p>
           </div>
-          <img src="/add-film-oracle.png" alt="A goblin peering over an enchanted crystal ball" />
           <div className="signin-oracle__seal" aria-hidden="true">✦</div>
         </section>
 

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getLandingFeed, getRecentlySummoned } from "@/lib/supabase/cached";
 import FilmPoster from "@/components/FilmPoster";
-import HalftoneBar from "@/components/HalftoneBar";
 import LandingFeedCard from "@/components/LandingFeedCard";
 
 // Pre-login landing page. Middleware redirects authenticated users from "/"
@@ -25,93 +24,67 @@ export default async function LandingPage() {
   const marqueeStrip = [...summoned, ...summoned];
 
   return (
-    <div style={{ background: "var(--void)", color: "var(--bone)", minHeight: "100dvh", fontFamily: "var(--font-ui)" }}>
-      {/* Top bar */}
-      <div style={{ background: "var(--void)", borderBottom: "2px solid var(--bone)", paddingTop: "env(safe-area-inset-top)" }}>
-        <div className="container-wide" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px var(--container-pad)" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 30, lineHeight: 1, letterSpacing: "-0.02em" }}>
-              Film <span style={{ color: "var(--accent)" }}>Goblin</span>
-            </div>
-            <span className="eyebrow desktop-only" style={{ marginLeft: 6, color: "var(--muted)" }}>Est. 2026 · Issue nº1</span>
+    <div className="landing-page">
+      <header className="landing-nav">
+        <div className="container-wide landing-nav__inner">
+          <div className="landing-nav__identity">
+            <Link href="/" className="landing-wordmark">Film<span>Goblin</span></Link>
+            <span className="eyebrow desktop-only">Watch weirder · Est. 2026</span>
           </div>
-          <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-            <Link href="/films" className="caps" style={{ fontSize: 12 }}>Films</Link>
-            <Link href="/lists" className="caps" style={{ fontSize: 12 }}>Lists</Link>
-            <Link href="/auth/signin" className="btn btn-outline btn-sm">Sign In</Link>
+          <div className="landing-nav__links">
+            <Link href="/films" className="caps">Discover</Link>
+            <Link href="/lists" className="caps desktop-only">Lists</Link>
+            <Link href="/auth/signin" className="btn btn-outline btn-sm">Enter</Link>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* HERO — pitch + live feed card */}
-      <section style={{ position: "relative", overflow: "hidden" }}>
-        <div className="container-wide" style={{ padding: "48px var(--container-pad) 44px" }}>
+      <section className="landing-hero">
+        <div className="container-wide landing-hero__inner">
           <div
-            className="stackable"
-            style={{ "--stack-template": hasFeed ? "1.15fr 1fr" : "1fr", "--stack-gap": "40px", alignItems: "center" } as React.CSSProperties}
+            className={`landing-hero__grid${hasFeed ? "" : " landing-hero__grid--solo"}`}
           >
-            <div style={hasFeed ? undefined : { maxWidth: 640, margin: "0 auto", textAlign: "center" }}>
-              <div className="stamp" style={{ color: "var(--highlight)", marginBottom: 20 }}><span aria-hidden="true">✦</span> Watch Weirder <span aria-hidden="true">✦</span></div>
-              <h1 className="display" style={{ fontSize: "clamp(64px, 11vw, 160px)", margin: 0, lineHeight: 0.82, letterSpacing: "-0.02em" }}>
-                FILM
-                <br />
-                <span style={{ color: "var(--accent)" }}>GOBLIN</span>
-              </h1>
-              <p className="head" style={{ fontSize: "clamp(22px, 2.6vw, 30px)", lineHeight: 1.12, margin: "26px 0 12px", maxWidth: hasFeed ? 460 : undefined }}>
-                A coven for people who take movies seriously.
+            <div className="landing-hero__copy">
+              <div className="eyebrow">A coven for the cinematically afflicted</div>
+              <h1>Watch<br /><em>weirder</em>.</h1>
+              <p className="landing-hero__declaration">Movies are better when somebody else won&rsquo;t stop talking about them.</p>
+              <p className="landing-hero__body">
+                Log what you watch. Press films on your friends. Hoard what you want. Let the pit stalk Apple TV prices while you sleep.
               </p>
-              <p style={{ fontSize: 15, maxWidth: hasFeed ? 440 : 480, lineHeight: 1.55, margin: hasFeed ? "0 0 28px" : "0 auto 28px", color: "var(--bone-2)" }}>
-                Log what you watch. Press films on your friends. Keep a watchlist
-                that hunts price drops on Apple TV while you sleep.
-              </p>
-              <div style={{ display: "flex", gap: 14, flexWrap: "wrap", justifyContent: hasFeed ? undefined : "center" }}>
-                <Link href="/auth/signup" className="btn btn-lg"><span aria-hidden="true">✦</span> Join The Coven</Link>
-                <Link href="/films" className="btn btn-outline btn-lg">Browse Films</Link>
+              <div className="landing-hero__actions">
+                <Link href="/auth/signup" className="btn btn-lg">Join the coven →</Link>
+                <Link href="/films" className="btn btn-outline btn-lg">Browse the archive</Link>
               </div>
+              <div className="landing-hero__proof"><span>◉</span> Real watches. Real recommendations. No percentage pretending to know your soul.</div>
             </div>
-            {hasFeed && <LandingFeedCard rows={feedRows} />}
+            {hasFeed && <div className="landing-hero__feed"><div className="eyebrow">Happening in the pit</div><LandingFeedCard rows={feedRows} /></div>}
           </div>
         </div>
-        <HalftoneBar color="var(--accent)" height={18} />
       </section>
 
-      {/* THE RITES — bone band */}
-      <section className="grain-light" style={{ background: "var(--bone)", color: "var(--void)", borderBottom: "2px solid var(--void)" }}>
-        <div className="container-wide landing-rites" style={{ padding: "30px var(--container-pad)" }}>
+      <section className="landing-rites-band grain-light">
+        <div className="container-wide landing-rites">
           <div className="landing-rite">
-            <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 6 }}><span aria-hidden="true">⛧</span> Rite I</div>
-            <h2 className="head" style={{ fontSize: 22, margin: "0 0 6px" }}>The Feed</h2>
-            <p style={{ fontSize: 13, lineHeight: 1.45, margin: 0, color: "var(--ink)" }}>
-              Every watch, rating, and review your coven logs — one haunted scroll.
-            </p>
+            <div className="landing-rite__number">01</div><div className="eyebrow">Keep the record</div><h2>Log every watch</h2><p>Your diary remembers the date, verdict, notes, and films that keep coming back.</p>
           </div>
           <div className="landing-rite">
-            <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 6 }}><span aria-hidden="true">⛧</span> Rite II</div>
-            <h2 className="head" style={{ fontSize: 22, margin: "0 0 6px" }}>Recommendations</h2>
-            <p style={{ fontSize: 13, lineHeight: 1.45, margin: 0, color: "var(--ink)" }}>
-              Press a film on a friend. They&apos;ll see it until they watch it. No escape.
-            </p>
+            <div className="landing-rite__number">02</div><div className="eyebrow">Summon the coven</div><h2>Press films on friends</h2><p>Recommendations linger until answered. Plan a shared gazing when the night is right.</p>
           </div>
           <div className="landing-rite">
-            <div className="eyebrow" style={{ color: "var(--accent-deep)", marginBottom: 6 }}><span aria-hidden="true">⛧</span> Rite III</div>
-            <h2 className="head" style={{ fontSize: 22, margin: "0 0 6px" }}>The Hunt</h2>
-            <p style={{ fontSize: 13, lineHeight: 1.45, margin: 0, color: "var(--ink)" }}>
-              Your watchlist stalks Apple TV prices and howls when one drops.
-            </p>
+            <div className="landing-rite__number">03</div><div className="eyebrow">Feed the hoard</div><h2>Hunt the price drop</h2><p>Keep a wanted list. Film Goblin watches Apple TV and howls when the tithe falls.</p>
           </div>
         </div>
       </section>
 
       {/* RECENTLY SUMMONED — marquee */}
       {summoned.length > 0 && (
-        <section style={{ background: "var(--void-2)", padding: "28px 0 32px", overflow: "hidden" }}>
-          <div className="container-wide" style={{ marginBottom: 18 }}>
-            <h2 className="h-display" style={{ fontSize: "clamp(28px, 5vw, 64px)" }}>
-              Recently <span style={{ color: "var(--accent)", fontStyle: "italic" }}>Summoned</span>
-            </h2>
+        <section className="landing-summoned">
+          <div className="container-wide landing-section-heading">
+            <div><div className="eyebrow">Fresh from the dark</div><h2>Recently <em>summoned</em>.</h2></div>
+            <Link href="/films" className="caps">Enter the archive →</Link>
           </div>
-          <div style={{ overflow: "hidden", padding: "10px 0" }}>
-            <div className="marquee" style={{ gap: 24 }}>
+          <div className="landing-summoned__rail">
+            <div className="marquee">
               {marqueeStrip.map((f, i) => (
                 <FilmPoster key={`${f.id}-${i}`} film={f} size="md" />
               ))}
@@ -120,15 +93,10 @@ export default async function LandingPage() {
         </section>
       )}
 
-      {/* FOOTER CTA */}
-      <section aria-label="Join Film Goblin" style={{ borderTop: "2px solid var(--bone)", textAlign: "center", padding: "44px var(--container-pad) 56px" }}>
-        <div className="head" style={{ fontSize: "clamp(22px, 3.5vw, 32px)", fontStyle: "italic", marginBottom: 22 }}>
-          The moon is right. The prices are wrong.
-        </div>
-        <Link href="/auth/signup" className="btn btn-lg"><span aria-hidden="true">✦</span> Join The Coven</Link>
-        <div className="eyebrow" style={{ color: "var(--muted)", marginTop: 28 }}>
-          Film Goblin · Est. 2026 · Printed in a garage
-        </div>
+      <section aria-label="Join Film Goblin" className="landing-final">
+        <div className="eyebrow">The moon is right</div><h2>The prices are wrong.<br /><em>Come inside.</em></h2>
+        <Link href="/auth/signup" className="btn btn-lg">Begin the initiation →</Link>
+        <div className="landing-final__footer">Film Goblin · Est. 2026 · Printed in a garage</div>
       </section>
     </div>
   );
