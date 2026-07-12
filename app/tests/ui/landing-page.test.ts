@@ -19,8 +19,12 @@ describe("landing page presentation", () => {
     expect(page).toContain("landing-rites-band");
     expect(page).toContain("landing-summoned");
     expect(page).toContain("landing-final");
+    expect(page).toContain('src="/add-film-oracle.png"');
+    expect(page).toContain("A goblin peering over an enchanted palantir");
     expect(css).toContain("var(--pit-plum-bg)");
     expect(css).toContain(".landing-feed-card");
+    expect(css).toContain(".landing-hero__oracle");
+    expect(css).toContain("overflow-x: clip");
   });
 
   it("collapses the hero and rites at the single zine breakpoint", () => {
@@ -29,5 +33,7 @@ describe("landing page presentation", () => {
     expect(mobile).toContain("grid-template-columns: 1fr");
     expect(mobile).toContain(".landing-rites");
     expect(mobile).toContain(".landing-feed-card");
+    expect(mobile).toContain(".landing-hero__oracle");
+    expect(mobile).toContain("@media (max-width: 360px)");
   });
 });
