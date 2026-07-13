@@ -14,10 +14,11 @@ beforeAll(async () => {
 afterAll(async () => { await db.close(); });
 
 beforeEach(async () => {
-  // Reset watched + coven edges + watchlists between tests via service_role.
+  // Reset watched + coven edges + collection rows between tests via service_role.
   await beginAs(db.client, null, "service_role");
   await db.client.query(`DELETE FROM watched`);
   await db.client.query(`DELETE FROM watchlists`);
+  await db.client.query(`DELETE FROM library`);
   await db.client.query(`DELETE FROM coven_members`);
   await db.client.query(`DELETE FROM activity WHERE kind = 'watch_logged'`);
   // Reset broadcast_watched to default TRUE for each user.
@@ -239,6 +240,99 @@ describe("RLS: watched", () => {
     const remaining = await db.client.query(`SELECT id FROM watched WHERE id = $1`, [watchId]);
     await commit(db.client);
     expect(remaining.rowCount).toBe(1);
+  });
+});
+
+describe("film watcher RPCs", () => {
+  it("coven results require a logged watch, not a watchlist or library row", async () => {
+    await beginAs(db.client, null, "service_role");
+    await bond(db.client, fx.userA.id, fx.userB.id);
+    await db.client.query(
+      `INSERT INTO watchlists (user_id, film_id) VALUES ($1, $2)`,
+      [fx.userB.id, fx.filmId]
+    );
+    await db.client.query(
+      `INSERT INTO library (user_id, film_id) VALUES ($1, $2)`,
+      [fx.userB.id, fx.filmId]
+    );
+    await commit(db.client);
+
+    await beginAs(db.client, fx.userA.id, "authenticated");
+    let result = await db.client.query(
+      `SELECT id FROM get_coven_watchers_for_film($1, $2)`,
+      [fx.userA.id, fx.filmId]
+    );
+    await commit(db.client);
+    expect(result.rows).toEqual([]);
+
+    await beginAs(db.client, null, "service_role");
+    await db.client.query(
+      `INSERT INTO watched (user_id, film_id) VALUES ($1, $2)`,
+      [fx.userB.id, fx.filmId]
+    );
+    await commit(db.client);
+
+    await beginAs(db.client, fx.userA.id, "authenticated");
+    result = await db.client.query(
+      `SELECT id FROM get_coven_watchers_for_film($1, $2)`,
+      [fx.userA.id, fx.filmId]
+    );
+    await commit(db.client);
+    expect(result.rows).toEqual([{ id: fx.userB.id }]);
+  });
+
+  it("other results require a logged watch, not a watchlist or library row", async () => {
+    await beginAs(db.client, null, "service_role");
+    await db.client.query(
+      `INSERT INTO watchlists (user_id, film_id) VALUES ($1, $2)`,
+      [fx.userC.id, fx.filmId]
+    );
+    await db.client.query(
+      `INSERT INTO library (user_id, film_id) VALUES ($1, $2)`,
+      [fx.userC.id, fx.filmId]
+    );
+    await commit(db.client);
+
+    await beginAs(db.client, fx.userA.id, "authenticated");
+    let result = await db.client.query(
+      `SELECT id FROM get_other_watchers_for_film($1, $2)`,
+      [fx.userA.id, fx.filmId]
+    );
+    await commit(db.client);
+    expect(result.rows).toEqual([]);
+
+    await beginAs(db.client, null, "service_role");
+    await db.client.query(
+      `INSERT INTO watched (user_id, film_id) VALUES ($1, $2), ($1, $2)`,
+      [fx.userC.id, fx.filmId]
+    );
+    await commit(db.client);
+
+    await beginAs(db.client, fx.userA.id, "authenticated");
+    result = await db.client.query(
+      `SELECT id FROM get_other_watchers_for_film($1, $2)`,
+      [fx.userA.id, fx.filmId]
+    );
+    await commit(db.client);
+    expect(result.rows).toEqual([{ id: fx.userC.id }]);
+  });
+
+  it("cannot be called anonymously or with another member's viewer id", async () => {
+    await beginAs(db.client, null, "anon");
+    try {
+      await expect(db.client.query(
+        `SELECT id FROM get_other_watchers_for_film($1, $2)`,
+        [fx.userA.id, fx.filmId]
+      )).rejects.toThrow();
+    } finally { await rollback(db.client); }
+
+    await beginAs(db.client, fx.userA.id, "authenticated");
+    const spoofed = await db.client.query(
+      `SELECT id FROM get_other_watchers_for_film($1, $2)`,
+      [fx.userB.id, fx.filmId]
+    );
+    await commit(db.client);
+    expect(spoofed.rows).toEqual([]);
   });
 });
 
