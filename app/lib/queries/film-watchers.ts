@@ -14,8 +14,9 @@ export interface OtherWatchersResult {
   totalCount: number;
 }
 
-// Uses SECURITY DEFINER RPCs to bypass RLS on watchlists/library, which are
-// owner-only SELECT policies. The DB functions enforce their own access rules.
+// Uses SECURITY DEFINER RPCs because the non-coven list cannot read other
+// members' watched rows through RLS. The DB functions enforce logged-watch,
+// relationship/discoverability, and caller-identity rules themselves.
 
 export async function getCovenWatchersForFilm(
   client: Client,

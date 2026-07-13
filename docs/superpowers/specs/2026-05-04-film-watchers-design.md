@@ -1,5 +1,24 @@
 # Film Watchers — "Who's Watching" Strip
 
+## 2026-07-12 amendment — logged watches only
+
+The product meaning has changed: **Who&rsquo;s Watched** now lists only members
+with at least one `watched` event for the film. Watchlist rows express intent
+to watch, and library rows express ownership; neither is evidence that the
+member watched the film. Rewatches collapse to one profile in this list.
+
+Migration `0221_film_watchers_logged_only.sql` replaces both watcher RPCs so
+their sole film signal is `watched`. The existing audience rules remain:
+Coven members are shown in the Coven group, while non-Coven members must have
+`profiles.discoverable = true`. The RPCs also bind `p_user_id` to the signed-in
+caller (service-role remains available for tests/operations) and revoke public
+and anonymous execution. The strip copy changes from **Watching / Also
+Watching** to **Watched / Who&rsquo;s Watched**.
+
+This amendment supersedes the watchlist/library signal and the "Watched films"
+out-of-scope line below; the remainder is retained as the original design
+record.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Surface coven members and other discoverable users who have a film on their watchlist or in their library, directly on the film detail page — enabling organic user discovery through shared taste.

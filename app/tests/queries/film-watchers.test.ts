@@ -26,6 +26,7 @@ describe.skipIf(!hasEnv)("film-watchers queries", () => {
   let USER_C = "";
   let USER_D = "";
   let USER_E = "";
+  let USER_F = "";
 
   beforeAll(async () => {
     if (!hasEnv) return;
@@ -78,6 +79,7 @@ describe.skipIf(!hasEnv)("film-watchers queries", () => {
     USER_C = await create("c");
     USER_D = await create("d");
     USER_E = await create("e", false);
+    USER_F = await create("f");
 
     // Coven bonds — the table has a CHECK that user_a_id < user_b_id, so
     // sort the pair before inserting.
@@ -90,14 +92,16 @@ describe.skipIf(!hasEnv)("film-watchers queries", () => {
     };
     await bond(USER_A, USER_B);
     await bond(USER_A, USER_C);
+    await bond(USER_A, USER_F);
 
-    // Fixture: B + C have FILM_ID in their lists (via watchlist + library);
-    // D has it on watchlist (non-coven, discoverable);
-    // E has it on watchlist (non-coven, NOT discoverable).
+    // Fixture: B + C only track the film (watchlist/library), while F has
+    // actually logged it. D logged it as a discoverable non-coven user; E
+    // logged it but is not discoverable.
     await client.from("watchlists").insert({ user_id: USER_B, film_id: FILM_ID });
     await client.from("library").insert({ user_id: USER_C, film_id: FILM_ID });
-    await client.from("watchlists").insert({ user_id: USER_D, film_id: FILM_ID });
-    await client.from("watchlists").insert({ user_id: USER_E, film_id: FILM_ID });
+    await client.from("watched").insert({ user_id: USER_F, film_id: FILM_ID });
+    await client.from("watched").insert({ user_id: USER_D, film_id: FILM_ID });
+    await client.from("watched").insert({ user_id: USER_E, film_id: FILM_ID });
   });
 
   afterAll(async () => {
@@ -105,7 +109,7 @@ describe.skipIf(!hasEnv)("film-watchers queries", () => {
     // Deleting users cascades through profiles, watchlists, library, and
     // coven_members (all have ON DELETE CASCADE on auth.users). Then the
     // films, which have no FK back to users.
-    for (const id of [USER_A, USER_B, USER_C, USER_D, USER_E]) {
+    for (const id of [USER_A, USER_B, USER_C, USER_D, USER_E, USER_F]) {
       if (id) await client.auth.admin.deleteUser(id);
     }
     if (FILM_ID) await client.from("films").delete().eq("id", FILM_ID);
@@ -113,16 +117,22 @@ describe.skipIf(!hasEnv)("film-watchers queries", () => {
   });
 
   describe("getCovenWatchersForFilm", () => {
-    it("returns coven members who have the film on watchlist", async () => {
+    it("does not return coven members who only have the film on watchlist", async () => {
       const result = await getCovenWatchersForFilm(client as never, USER_A, FILM_ID);
       const ids = result.map(r => r.id);
-      expect(ids).toContain(USER_B);
+      expect(ids).not.toContain(USER_B);
     });
 
-    it("returns coven members who have the film in library", async () => {
+    it("does not return coven members who only have the film in library", async () => {
       const result = await getCovenWatchersForFilm(client as never, USER_A, FILM_ID);
       const ids = result.map(r => r.id);
-      expect(ids).toContain(USER_C);
+      expect(ids).not.toContain(USER_C);
+    });
+
+    it("returns coven members who logged a watch", async () => {
+      const result = await getCovenWatchersForFilm(client as never, USER_A, FILM_ID);
+      const ids = result.map(r => r.id);
+      expect(ids).toContain(USER_F);
     });
 
     it("does not return non-coven users", async () => {
@@ -158,13 +168,13 @@ describe.skipIf(!hasEnv)("film-watchers queries", () => {
     });
 
     it("excludes the current user", async () => {
-      await client.from("watchlists").insert({ user_id: USER_A, film_id: FILM_ID });
+      await client.from("watched").insert({ user_id: USER_A, film_id: FILM_ID });
       try {
         const result = await getOtherWatchersForFilm(client as never, USER_A, FILM_ID);
         const ids = result.users.map(r => r.id);
         expect(ids).not.toContain(USER_A);
       } finally {
-        await client.from("watchlists").delete().eq("user_id", USER_A).eq("film_id", FILM_ID);
+        await client.from("watched").delete().eq("user_id", USER_A).eq("film_id", FILM_ID);
       }
     });
 
@@ -173,6 +183,7 @@ describe.skipIf(!hasEnv)("film-watchers queries", () => {
       const ids = result.users.map(r => r.id);
       expect(ids).not.toContain(USER_B);
       expect(ids).not.toContain(USER_C);
+      expect(ids).not.toContain(USER_F);
     });
 
     it("returns correct totalCount", async () => {

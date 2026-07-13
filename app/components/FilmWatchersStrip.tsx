@@ -49,7 +49,7 @@ export default function FilmWatchersStrip({
         }}
       >
         <span className="caps" style={{ fontSize: 10, color: "var(--muted)", flexShrink: 0 }}>
-          Watching
+          Watched
         </span>
         {chips.length > 0 && (
           <div style={{ display: "flex" }}>
@@ -67,7 +67,7 @@ export default function FilmWatchersStrip({
         )}
       </button>
 
-      <BottomSheet open={open} onClose={() => setOpen(false)} title="Also Watching">
+      <BottomSheet open={open} onClose={() => setOpen(false)} title="Who’s Watched">
         <div style={{ display: "flex", flexDirection: "column" }}>
           {sheetRows.map(w => (
             <Link

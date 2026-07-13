@@ -42,4 +42,12 @@ describe("film detail editorial UI contract", () => {
   it("renders each published review body once", () => {
     expect(page.match(/\{r\.body\}/g)).toHaveLength(1);
   });
+
+  it("labels the watcher strip as completed watches", () => {
+    const strip = readFileSync("components/FilmWatchersStrip.tsx", "utf8");
+    expect(page).toContain("Who&rsquo;s Watched");
+    expect(strip).toContain("Watched");
+    expect(strip).toContain('title="Who’s Watched"');
+    expect(strip).not.toContain("Also Watching");
+  });
 });
