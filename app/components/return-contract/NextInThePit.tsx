@@ -3,6 +3,8 @@
 import { useEffect, useId, useRef, useState, useTransition, type PointerEvent } from "react";
 import Link from "next/link";
 import { deferReturnContract } from "@/lib/actions/return-contract";
+import { acceptCovenRequest, declineCovenRequest } from "@/lib/actions/coven";
+import { requestTasteTwin } from "@/lib/actions/taste-twins";
 import { getReturnContractCopy } from "@/lib/return-contract/copy";
 import {
   buildReturnContractHref,
@@ -44,6 +46,7 @@ export default function NextInThePit({ contracts, viewerId, utcDay }: Props) {
   const [progressReady, setProgressReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [actionPending, startActionTransition] = useTransition();
   const swipeStart = useRef<ReturnContractPoint | null>(null);
   const itemsRef = useRef(items);
   const indexRef = useRef(0);
@@ -89,6 +92,7 @@ export default function NextInThePit({ contracts, viewerId, utcDay }: Props) {
   const copy = getReturnContractCopy(contract, new Date());
   const href = buildReturnContractHref(contract);
   const canDefer = canDeferReturnContract(contract, new Date());
+  const busy = pending || actionPending;
 
   const reviewActiveContract = (): boolean => {
     const currentItems = itemsRef.current;
@@ -116,7 +120,7 @@ export default function NextInThePit({ contracts, viewerId, utcDay }: Props) {
 
   const browse = (direction: ReturnContractBrowseDirection) => {
     const currentItems = itemsRef.current;
-    if (pending || currentItems.length < 2) return;
+    if (busy || currentItems.length < 2) return;
     setError(null);
     if (reviewActiveContract()) return;
     const nextIndex = moveReturnContractIndex(indexRef.current, currentItems.length, direction);
@@ -127,13 +131,13 @@ export default function NextInThePit({ contracts, viewerId, utcDay }: Props) {
   const finishSwipe = (event: PointerEvent<HTMLDivElement>) => {
     const start = swipeStart.current;
     swipeStart.current = null;
-    if (!start || pending || items.length < 2) return;
+    if (!start || busy || items.length < 2) return;
     const direction = getSwipeDirection(start, { x: event.clientX, y: event.clientY });
     if (direction) browse(direction);
   };
 
   const setAside = () => {
-    if (pending || !canDefer) return;
+    if (busy || !canDefer) return;
     const previousItems = items;
     const previousIndex = activeIndex;
     const next = removeReturnContract(items, contract.key, activeIndex);
@@ -161,6 +165,58 @@ export default function NextInThePit({ contracts, viewerId, utcDay }: Props) {
     });
   };
 
+  const resolveActiveContract = (key: string) => {
+    const currentItems = itemsRef.current;
+    const currentIndex = currentItems.findIndex(item => item.key === key);
+    if (currentIndex < 0) return;
+    reviewedKeysRef.current = markReturnContractReviewed(
+      browserProgressStorage(),
+      viewerId,
+      utcDay,
+      key,
+      reviewedKeysRef.current,
+    );
+    const next = removeReturnContract(currentItems, key, currentIndex);
+    const exhausted = isReturnContractQueueExhausted(
+      next.contracts.map(item => item.key),
+      reviewedKeysRef.current,
+    );
+    const nextItems = exhausted ? [] : next.contracts;
+    const nextIndex = exhausted ? 0 : next.index;
+    itemsRef.current = nextItems;
+    indexRef.current = nextIndex;
+    setItems(nextItems);
+    setIndex(nextIndex);
+  };
+
+  const answerCovenRequest = (answer: "accept" | "decline") => {
+    if (busy || contract.kind !== "coven_request" || !contract.subjectId) return;
+    setError(null);
+    startActionTransition(async () => {
+      try {
+        await (answer === "accept"
+          ? acceptCovenRequest(contract.subjectId!)
+          : declineCovenRequest(contract.subjectId!));
+        resolveActiveContract(contract.key);
+      } catch {
+        setError("The invitation would not move. Try again.");
+      }
+    });
+  };
+
+  const inviteTasteTwin = () => {
+    if (busy || contract.kind !== "taste_twin" || !contract.subjectId) return;
+    setError(null);
+    startActionTransition(async () => {
+      try {
+        await requestTasteTwin(contract.subjectId!);
+        resolveActiveContract(contract.key);
+      } catch {
+        setError("The invitation was lost in the dark. Try again.");
+      }
+    });
+  };
+
   return (
     <section className="return-contract" aria-labelledby={titleId} aria-roledescription="carousel">
       <ReturnContractTracker contractKey={contract.key} kind={contract.kind} />
@@ -169,7 +225,7 @@ export default function NextInThePit({ contracts, viewerId, utcDay }: Props) {
         <div className="return-contract__controls">
           {items.length > 1 && (
             <div className="return-contract__browse" role="group" aria-label="Browse Next in the Pit">
-              <button type="button" className="return-contract__arrow" aria-label="Previous item" disabled={pending} onClick={() => browse("previous")}>←</button>
+              <button type="button" className="return-contract__arrow" aria-label="Previous item" disabled={busy} onClick={() => browse("previous")}>←</button>
               <span
                 className="return-contract__counter"
                 role="status"
@@ -179,18 +235,18 @@ export default function NextInThePit({ contracts, viewerId, utcDay }: Props) {
               >
                 {activeIndex + 1} / {items.length}
               </span>
-              <button type="button" className="return-contract__arrow" aria-label="Next item" disabled={pending} onClick={() => browse("next")}>→</button>
+              <button type="button" className="return-contract__arrow" aria-label="Next item" disabled={busy} onClick={() => browse("next")}>→</button>
             </div>
           )}
           {canDefer && (
-            <button type="button" className="return-contract__dismiss" aria-label="Set this aside" disabled={pending} onClick={setAside}>Set aside</button>
+            <button type="button" className="return-contract__dismiss" aria-label="Set this aside" disabled={busy} onClick={setAside}>Set aside</button>
           )}
         </div>
       </div>
       <div
         className="return-contract__swipe-zone"
         onPointerDown={event => {
-          if (event.pointerType === "mouse" || pending || items.length < 2) return;
+          if (event.pointerType === "mouse" || busy || items.length < 2) return;
           swipeStart.current = { x: event.clientX, y: event.clientY };
         }}
         onPointerUp={finishSwipe}
@@ -201,14 +257,25 @@ export default function NextInThePit({ contracts, viewerId, utcDay }: Props) {
         <p className="return-contract__change">{copy.nextChange}</p>
       </div>
       {error && <p className="return-contract__error" role="status">{error}</p>}
-      <Link
-        prefetch={false}
-        className="btn return-contract__action"
-        href={href}
-        onClick={() => { reviewActiveContract(); }}
-      >
-        {copy.actionLabel} →
-      </Link>
+      <div className="return-contract__actions">
+        {contract.kind === "coven_request" ? (
+          <>
+            <button type="button" className="btn return-contract__action" disabled={busy} onClick={() => answerCovenRequest("accept")}>Accept</button>
+            <button type="button" className="btn-outline return-contract__action" disabled={busy} onClick={() => answerCovenRequest("decline")}>Decline</button>
+          </>
+        ) : contract.kind === "taste_twin" ? (
+          <button type="button" className="btn return-contract__action" disabled={busy} onClick={inviteTasteTwin}>{copy.actionLabel} →</button>
+        ) : (
+          <Link
+            prefetch={false}
+            className="btn return-contract__action"
+            href={href}
+            onClick={() => { reviewActiveContract(); }}
+          >
+            {copy.actionLabel} →
+          </Link>
+        )}
+      </div>
     </section>
   );
 }

@@ -68,6 +68,7 @@ export async function declineCovenRequest(requestId: string) {
   const c = await createClient();
   await _declineCovenRequest(c, requestId);
   revalidatePath("/coven");
+  revalidatePath("/home");
 }
 
 export async function leaveCoven(otherUserId: string, targetUsername?: string) {

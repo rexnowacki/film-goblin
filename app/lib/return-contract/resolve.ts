@@ -1,14 +1,9 @@
 import type { ReturnContract, ReturnContractCandidate, ReturnContractKind } from "./types";
 
 const PRIORITY: Record<ReturnContractKind, number> = {
-  gazing_upcoming: 0,
-  gazing_aftermath: 1,
-  coven_request: 2,
-  recommendation: 3,
-  gazing_invite: 4,
-  price_action: 5,
-  daily_omen: 6,
-  taste_twin: 7,
+  coven_request: 0,
+  profile_photo: 1,
+  taste_twin: 2,
 };
 
 const DEFAULT_SNOOZE_MS = 24 * 60 * 60 * 1000;
