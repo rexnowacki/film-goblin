@@ -5,7 +5,7 @@ const css = readFileSync(
   new URL("../../app/styles/80-discovery-actions.css", import.meta.url),
   "utf8",
 );
-const client = readFileSync(new URL("../../components/BottomNavClient.tsx", import.meta.url), "utf8");
+const authenticatedNav = readFileSync(new URL("../../components/BottomNav.tsx", import.meta.url), "utf8");
 const loadingNav = readFileSync(new URL("../../components/skeletons/BottomNavSkeleton.tsx", import.meta.url), "utf8");
 
 const baseBottomNavRule = css.match(/\.bottom-nav\s*\{([^}]*)\}/)?.[1] ?? "";
@@ -14,7 +14,7 @@ const mobileBottomNavRule =
     /@media\s*\(max-width:\s*720px\)\s*\{\s*\.bottom-nav\s*\{([^}]*)\}/,
   )?.[1] ?? "";
 
-describe("mobile bottom nav CSS contract", () => {
+describe("mobile bottom nav contract", () => {
   it("stays fixed to the safe-area-aware mobile viewport edge", () => {
     expect(baseBottomNavRule).toMatch(/position:\s*fixed/);
     expect(baseBottomNavRule).toMatch(/bottom:\s*0/);
@@ -31,11 +31,20 @@ describe("mobile bottom nav CSS contract", () => {
     );
   });
 
-  it("acknowledges taps immediately and retains a native-navigation watchdog", () => {
-    expect(client).toContain("setPending(tab.id)");
-    expect(client).toContain("window.location.assign(tab.href)");
-    expect(client).toContain("NAVIGATION_FALLBACK_MS = 1800");
-    expect(css).toContain(".bottom-nav__item.is-pending");
+  it("uses native anchors for authenticated navigation", () => {
+    expect(authenticatedNav).toContain('href: "/home"');
+    expect(authenticatedNav).toContain('href: "/films"');
+    expect(authenticatedNav).toContain('href: "/coven"');
+    expect(authenticatedNav).toContain('href: "/watchlist"');
+    expect(authenticatedNav).toMatch(/<a\s+key=\{tab\.id\}/);
+    expect(authenticatedNav).toContain("href={tab.href}");
+    expect(authenticatedNav).not.toContain("BottomNavClient");
+    expect(authenticatedNav).not.toContain('"use client"');
+    expect(authenticatedNav).not.toContain('from "next/link"');
+    expect(authenticatedNav).not.toContain('from "next/navigation"');
+    expect(authenticatedNav).not.toContain("onClick");
+    expect(authenticatedNav).not.toContain("window.location.assign");
+    expect(css).not.toContain(".bottom-nav__item.is-pending");
   });
 
   it("keeps the bottom nav actionable while destination content is loading", () => {
