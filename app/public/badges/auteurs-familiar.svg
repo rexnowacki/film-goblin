@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Auteur's Familiar badge</title>
+  <circle cx="128" cy="128" r="119" fill="#090909" stroke="#f4ead8" stroke-width="8"/>
+  <circle cx="128" cy="128" r="103" fill="none" stroke="#ff2b82" stroke-width="4"/>
+  <path d="m128 42 12 37 39-8-28 29 28 29-39-8-12 37-12-37-39 8 28-29-28-29 39 8Z" fill="#ff2b82"/>
+  <circle cx="128" cy="100" r="43" fill="#f4ead8" stroke="#090909" stroke-width="6"/>
+  <circle cx="128" cy="100" r="13" fill="#090909"/>
+  <path d="M92 181h72M104 194h48" stroke="#f4ead8" stroke-linecap="round" stroke-width="6"/>
+  <text x="128" y="222" fill="#ff2b82" font-family="serif" font-size="19" font-weight="700" text-anchor="middle">3 × 1</text>
+</svg>

@@ -44,6 +44,41 @@
 .admin-back-link { padding-top:24px; }
 .admin-form-surface { padding:clamp(18px,3vw,32px); border:1px solid rgba(243,236,216,.22); background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.01)); }
 .admin-form-surface--tags { margin-top:24px; }
+.admin-badge-layout { display:grid; grid-template-columns:minmax(300px,.82fr) minmax(0,1.18fr); gap:24px; align-items:start; margin-top:24px; }
+.admin-badge-create h2,.admin-badge-ledger h2 { margin:5px 0 0; font:400 32px/1 var(--font-head); }
+.admin-badge-intro { margin:10px 0 20px; color:var(--muted); font:italic 13px/1.45 var(--font-serif); }
+.admin-badge-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px 12px; }
+.admin-badge-form label { display:grid; align-content:start; gap:6px; min-width:0; }
+.admin-badge-form label > span { color:var(--muted); font:700 9px var(--font-mono); letter-spacing:.13em; text-transform:uppercase; }
+.admin-badge-form input,.admin-badge-form select,.admin-badge-form textarea { width:100%; min-height:44px; border:1px solid rgba(243,236,216,.38); border-radius:0; padding:10px 12px; background:#100d0f; color:var(--bone); font:14px var(--font-ui); }
+.admin-badge-form textarea { min-height:90px; resize:vertical; }
+.admin-badge-form input[type="file"] { padding:8px; font-size:12px; }
+.admin-badge-form small,.admin-badge-row small { color:var(--muted); font:11px/1.4 var(--font-ui); }
+.admin-badge-form__wide { grid-column:1 / -1; }
+.admin-badge-preview { display:grid; grid-template-columns:84px minmax(0,1fr); gap:14px; align-items:center; border:1px solid rgba(243,236,216,.2); padding:12px; background:rgba(255,255,255,.025); }
+.admin-badge-preview img { width:84px; aspect-ratio:1; object-fit:contain; }
+.admin-badge-preview > div { min-width:0; }
+.admin-badge-preview span,.admin-badge-preview strong,.admin-badge-preview small { display:block; }
+.admin-badge-preview span { color:var(--accent); font:700 8px var(--font-mono); letter-spacing:.13em; text-transform:uppercase; }
+.admin-badge-preview strong { margin-top:5px; font:22px var(--font-head); }
+.admin-badge-preview small { margin-top:4px; }
+.admin-badge-preview strong,.admin-badge-preview small,.admin-badge-row__title strong,.admin-badge-row__copy p,.admin-badge-row__copy small { overflow-wrap:anywhere; }
+.admin-badge-message { grid-column:1 / -1; border:1px solid currentColor; padding:10px 12px; font:12px/1.4 var(--font-ui); }
+.admin-badge-message.is-error { color:var(--danger); }
+.admin-badge-message.is-success { color:var(--accent); }
+.admin-badge-ledger { min-width:0; }
+.admin-badge-ledger__head { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:13px; }
+.admin-badge-list { border-top:1px solid rgba(243,236,216,.3); }
+.admin-badge-row { display:grid; grid-template-columns:82px minmax(0,1fr) 70px; gap:15px; align-items:center; border-bottom:1px solid rgba(243,236,216,.18); padding:14px 8px; }
+.admin-badge-row > img { width:82px; aspect-ratio:1; object-fit:contain; }
+.admin-badge-row__copy { min-width:0; }
+.admin-badge-row__title { display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+.admin-badge-row__title strong { font:23px/1.05 var(--font-head); }
+.admin-badge-row__copy p { margin:7px 0 5px; color:rgba(243,236,216,.76); font:13px/1.4 var(--font-serif); }
+.admin-badge-row__count { text-align:center; }
+.admin-badge-row__count strong,.admin-badge-row__count span { display:block; }
+.admin-badge-row__count strong { color:var(--accent); font:28px/1 var(--font-head); }
+.admin-badge-row__count span { margin-top:4px; color:var(--muted); font:700 8px var(--font-mono); letter-spacing:.09em; text-transform:uppercase; }
 @media (max-width:720px) {
   .admin-frame { padding-top:16px; padding-bottom:calc(90px + env(safe-area-inset-bottom)); }
   .admin-classification span:first-child,.admin-classification span:last-child { display:none; }
@@ -62,4 +97,12 @@
   .admin-film-row__poster { width:44px; height:66px; }
   .admin-film-row__edit { grid-column:2; padding:0; }
   .admin-form-surface { padding:15px; }
+  .admin-badge-layout { grid-template-columns:1fr; }
+  .admin-badge-form { grid-template-columns:1fr; }
+  .admin-badge-form__wide { grid-column:auto; }
+  .admin-badge-ledger__head { align-items:flex-start; flex-direction:column; }
+  .admin-badge-row { grid-template-columns:66px minmax(0,1fr); padding-inline:2px; }
+  .admin-badge-row > img { width:66px; }
+  .admin-badge-row__count { grid-column:2; display:flex; align-items:baseline; gap:6px; text-align:left; }
+  .admin-badge-row__count strong { font-size:21px; }
 }

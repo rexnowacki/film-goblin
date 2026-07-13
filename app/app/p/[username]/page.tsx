@@ -5,6 +5,7 @@ import { getPublicProfileBundle } from "@/lib/queries/profiles";
 import { getCovenStateBetween } from "@/lib/queries/coven";
 import { getReactionsForActivities } from "@/lib/queries/activity-reactions";
 import { getCommentSummariesForActivities } from "@/lib/queries/activity-comments";
+import { getProfileBadges } from "@/lib/queries/badges";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import Avatar from "@/components/Avatar";
@@ -19,6 +20,7 @@ import ProfileCollectionTabs, {
 } from "@/components/profile/ProfileCollectionTabs";
 import { formatProfileJoinedDate, formatProfileStat, getVerifiedProfileRole } from "@/lib/profile-page";
 import ProfileCovenRoster from "@/components/profile/ProfileCovenRoster";
+import ProfileRelics from "@/components/profile/ProfileRelics";
 import Link from "next/link";
 
 export default async function PublicProfilePage({
@@ -46,7 +48,7 @@ export default async function PublicProfilePage({
   const isOwner = user?.id === bundle.profile.id;
   const canViewWatched = Boolean(user && (isOwner || coven.state === "member"));
   const filmFields = "id, title, director, year, artwork_url";
-  const [activityResult, watchlistResult, watchedResult, reviewsResult, staffResult] = await Promise.all([
+  const [activityResult, watchlistResult, watchedResult, reviewsResult, staffResult, profileBadges] = await Promise.all([
     supabase
       .from("activity")
       .select("id, kind, payload, created_at, actor_user_id")
@@ -82,6 +84,7 @@ export default async function PublicProfilePage({
       .select("role")
       .eq("user_id", bundle.profile.id)
       .maybeSingle(),
+    getProfileBadges(supabase, bundle.profile.id),
   ]);
 
   const watchlistFilms = uniqueProfileFilms((watchlistResult.data ?? []).map(row => normalizeProfileFilm(row.film)));
@@ -163,13 +166,7 @@ export default async function PublicProfilePage({
           <div className="profile-section__topline">
             <div className="eyebrow">Relics</div>
           </div>
-          <div className="profile-relic-empty">
-            <div className="profile-relic-empty__seal" aria-hidden="true">◇</div>
-            <div>
-              <strong>No relics pried from the dark yet.</strong>
-              <span>When badges awaken, the trophies will gather here.</span>
-            </div>
-          </div>
+          <ProfileRelics badges={profileBadges} />
         </section>
 
         <section className="profile-section">

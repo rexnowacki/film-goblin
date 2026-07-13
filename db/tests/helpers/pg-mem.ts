@@ -50,6 +50,12 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
     implementation: (s: string | null) => (s == null ? null : s.length),
   });
   mem.public.registerFunction({
+    name: "btrim",
+    args: [DataType.text],
+    returns: DataType.text,
+    implementation: (s: string | null) => (s == null ? null : s.trim()),
+  });
+  mem.public.registerFunction({
     name: "octet_length",
     args: [DataType.text],
     returns: DataType.integer,
@@ -90,7 +96,7 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
   //     the smoke only asserts tables, not views)
   for (const f of listSqlFiles(DB_MIGRATIONS)) {
     if (f.includes("_trigger")) continue;
-    if (f.includes("avatars_bucket")) continue;
+    if (f.includes("avatars_bucket") || f.includes("badge_images_bucket")) continue;
     // Pure-DML backfills aren't DDL the smoke cares about, and pg-mem chokes on
     // their UPDATE … FROM (subquery) shape.
     if (f.includes("backfill")) continue;
@@ -115,9 +121,15 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
     const raw = readFileSync(join(DB_MIGRATIONS, f), "utf8");
     // 0215 deliberately co-locates the table and its RPC. Preserve the DDL
     // for the smoke while removing the real-Postgres-only function body.
-    const smokeRaw = f === "0215_product_events.sql"
+    let smokeRaw = f === "0215_product_events.sql"
       ? raw.replace(/CREATE\s+OR\s+REPLACE\s+FUNCTION\s+record_product_events[\s\S]*$/i, "")
       : raw;
+    // pg-mem does not implement PostgreSQL's text regex operator. Real
+    // Postgres RLS tests prove this constraint; the DDL smoke keeps the length
+    // half so the table can still be constructed and asserted here.
+    if (f === "0222_badges.sql") {
+      smokeRaw = smokeRaw.replace("\n    AND slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'", "");
+    }
     // pg-mem can't parse `LANGUAGE plpgsql SECURITY DEFINER` functions. Skip
     // any migration file that defines one — the smoke only asserts table
     // presence, so trigger files don't need to execute. Match the full phrase
@@ -136,6 +148,7 @@ export async function makeSmokeDb(): Promise<{ client: Client; close: () => Prom
       .filter(stmt => !/CREATE\s+POLICY\b/i.test(stmt))
       .filter(stmt => !/DROP\s+POLICY\b/i.test(stmt))
       .filter(stmt => !/^\s*GRANT\b/im.test(stmt))
+      .filter(stmt => !/^\s*REVOKE\b/im.test(stmt))
       .filter(stmt => !/CREATE\s+(OR\s+REPLACE\s+)?VIEW\b/i.test(stmt))
       .filter(stmt => !/DROP\s+VIEW\b/i.test(stmt))
       .filter(stmt => !/CREATE\s+TRIGGER\b/i.test(stmt))

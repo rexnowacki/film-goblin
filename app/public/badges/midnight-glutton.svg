@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Midnight Glutton badge</title>
+  <circle cx="128" cy="128" r="119" fill="#090909" stroke="#f4ead8" stroke-width="8"/>
+  <circle cx="128" cy="128" r="103" fill="none" stroke="#ff2b82" stroke-width="4"/>
+  <path d="M158 47a61 61 0 1 0 39 101 69 69 0 0 1-39-101Z" fill="#f4ead8"/>
+  <path d="m75 91 5 11 12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1Z" fill="#ff2b82"/>
+  <path d="M82 159c24 18 68 18 92 0-5 30-25 42-46 42s-41-12-46-42Z" fill="#ff2b82"/>
+  <path d="m105 170 8 16 8-17M136 169l8 17 8-16" fill="#f4ead8" stroke="#090909" stroke-width="2"/>
+  <text x="128" y="226" fill="#f4ead8" font-family="serif" font-size="23" font-weight="700" text-anchor="middle">75</text>
+</svg>

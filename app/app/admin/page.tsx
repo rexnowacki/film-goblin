@@ -20,6 +20,7 @@ export default function AdminHome() {
         <Tile number="05" href="/admin/film-requests" title="Summoning Queue" blurb="Review requests for films missing from the catalog." />
         <Tile number="06" href="/admin/invite-codes" title="Secret Keys" blurb="Create and revoke invite links and inspect their use." />
         <Tile number="07" href="/admin/site-settings" title="Engine Room" blurb="Site health, background jobs, and global controls." />
+        <Tile number="08" href="/admin/badges" title="Badge Forge" blurb="Create achievement rules, upload artwork, and inspect awards." />
       </div>
     </div>
   );

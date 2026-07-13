@@ -43,6 +43,9 @@
 //   library:       price_paid_usd (NUMERIC(6,2) | null) — added by mig 0211
 //   pit_impressions: entire table — added by mig 0212; digest_key (TEXT | null)
 //                    added by mig 0214
+//   badges + user_badges: entire tables — added by mig 0222
+//   badge_condition_kind enum — added by mig 0222
+//   evaluate_badges_for_user + evaluate_badges_for_all_users RPCs — added by mig 0223
 //
 // Workflow when regen is needed on the other machine:
 //   1. Run `npm run gen:types` to get fresh output.
@@ -299,6 +302,48 @@ export type Database = {
           title_color?: "pink" | "plum" | "seafoam" | "bone" | "void"
           body_color?: "pink" | "plum" | "seafoam" | "bone" | "void"
           cta_color?: "pink" | "plum" | "seafoam" | "bone"
+        }
+        Relationships: []
+      }
+      badges: {
+        Row: {
+          condition_kind: Database["public"]["Enums"]["badge_condition_kind"]
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          image_url: string
+          is_active: boolean
+          name: string
+          slug: string
+          threshold: number
+          updated_at: string
+        }
+        Insert: {
+          condition_kind: Database["public"]["Enums"]["badge_condition_kind"]
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          name: string
+          slug: string
+          threshold: number
+          updated_at?: string
+        }
+        Update: {
+          condition_kind?: Database["public"]["Enums"]["badge_condition_kind"]
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          threshold?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1756,6 +1801,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_badges: {
+        Row: {
+          awarded_at: string
+          badge_id: string
+          evidence: Json
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          badge_id: string
+          evidence?: Json
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string
+          badge_id?: string
+          evidence?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       watched: {
         Row: {
           created_at: string
@@ -1928,6 +2002,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      evaluate_badges_for_all_users: {
+        Args: { p_badge_id?: string | null }
+        Returns: number
+      }
+      evaluate_badges_for_user: {
+        Args: { p_badge_id?: string | null; p_user_id: string }
+        Returns: number
+      }
       get_coven_watchers_for_film: {
         Args: { p_user_id: string; p_film_id: string }
         Returns: { id: string; username: string; avatar_url: string | null }[]
@@ -1950,6 +2032,10 @@ export type Database = {
       }
     }
     Enums: {
+      badge_condition_kind:
+        | "watch_log_count"
+        | "distinct_film_count"
+        | "director_distinct_film_count"
       activity_kind:
         | "review_published"
         | "recommendation_sent"
