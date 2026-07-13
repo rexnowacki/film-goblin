@@ -7,7 +7,7 @@ import { requireAuthUser } from "@/lib/auth/require-auth-user";
 import type { Database } from "@/lib/supabase/types";
 
 type Client = SupabaseClient<Database>;
-const KEY_RE = /^(gazing_upcoming|gazing_aftermath|coven_request|recommendation|gazing_invite|price_action|daily_omen|taste_twin):[A-Za-z0-9_-]{1,120}$/;
+const KEY_RE = /^(coven_request|profile_photo|taste_twin):[A-Za-z0-9_-]{1,120}$/;
 
 export async function _deferReturnContract(client: Client, contractKey: string, requestedUntil: string): Promise<void> {
   const user = await requireAuthUser(client);

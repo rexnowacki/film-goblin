@@ -11,7 +11,7 @@ import type { ReturnContract } from "@/lib/return-contract/types";
 
 function contract(key: string, href = "/home"): ReturnContract {
   return {
-    kind: "daily_omen",
+    kind: "profile_photo",
     key,
     href,
     title: key,
@@ -66,14 +66,14 @@ describe("return-contract queue", () => {
   });
 
   it("sets one canonical attribution value instead of duplicating query parameters", () => {
-    const item = contract("daily_omen:2026-07-10", "/films?src=old&contract_key=old&tab=fyp");
+    const item = contract("profile_photo:user-1", "/settings?src=old&contract_key=old#your-face");
     const href = buildReturnContractHref(item);
     const query = new URL(href, "https://freshfromthepit.com").searchParams;
 
     expect(query.getAll("src")).toEqual(["return_contract"]);
-    expect(query.getAll("contract_kind")).toEqual(["daily_omen"]);
+    expect(query.getAll("contract_kind")).toEqual(["profile_photo"]);
     expect(query.getAll("contract_key")).toEqual([item.key]);
-    expect(query.get("tab")).toBe("fyp");
+    expect(new URL(href, "https://freshfromthepit.com").hash).toBe("#your-face");
   });
 
   it("does not offer a deferral whose deadline-aware ceiling has already arrived", () => {

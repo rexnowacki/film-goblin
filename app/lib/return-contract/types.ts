@@ -1,11 +1,6 @@
 export type ReturnContractKind =
-  | "gazing_upcoming"
-  | "gazing_aftermath"
   | "coven_request"
-  | "recommendation"
-  | "gazing_invite"
-  | "price_action"
-  | "daily_omen"
+  | "profile_photo"
   | "taste_twin";
 
 export interface ReturnContractCandidate {
@@ -16,6 +11,8 @@ export interface ReturnContractCandidate {
   detail: string;
   actionLabel: string;
   changedAt: string;
+  subjectId?: string | null;
+  subjectUsername?: string | null;
   deadline?: string | null;
   deferredUntil?: string | null;
 }
