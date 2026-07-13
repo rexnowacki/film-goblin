@@ -1,0 +1,295 @@
+.film-detail-page {
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: var(--void);
+  color: var(--bone);
+}
+
+.film-detail-hero {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid color-mix(in srgb, var(--bone) 18%, transparent);
+  background:
+    radial-gradient(circle at 73% 18%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 28%),
+    linear-gradient(132deg, var(--void-2), var(--void) 58%);
+}
+
+.film-detail-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .15;
+  background: repeating-linear-gradient(115deg, transparent 0 25px, color-mix(in srgb, var(--bone) 8%, transparent) 26px 27px);
+}
+
+.film-detail-hero__inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(270px, 390px) minmax(0, 1fr);
+  grid-template-areas:
+    "poster identity"
+    "poster story";
+  gap: 22px clamp(40px, 6vw, 78px);
+  align-items: start;
+  padding-block: clamp(38px, 6vw, 72px) clamp(48px, 7vw, 82px);
+}
+
+.film-detail-identity { grid-area: identity; min-width: 0; padding-top: 3px; }
+.film-detail-identity .eyebrow { margin-bottom: 10px; color: var(--accent); }
+
+.film-detail-identity h1 {
+  max-width: 850px;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font: clamp(46px, 7.2vw, 94px)/.87 var(--font-head);
+  letter-spacing: -.035em;
+}
+
+.film-detail-identity h1 span { color: var(--accent); }
+
+.film-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 11px;
+  align-items: baseline;
+  margin-top: 17px;
+  color: color-mix(in srgb, var(--bone) 66%, transparent);
+  font: 700 10px/1.45 var(--font-ui);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.film-detail-meta a {
+  color: var(--bone);
+  text-decoration: underline dotted color-mix(in srgb, var(--accent) 70%, transparent);
+  text-underline-offset: 4px;
+}
+
+.film-detail-identity > [class*="sharer"] { margin-top: 20px; }
+
+.film-detail-poster-wrap {
+  grid-area: poster;
+  position: sticky;
+  top: 28px;
+  width: 100%;
+  max-width: 390px;
+  min-width: 0;
+  margin-inline: auto;
+}
+
+.film-detail-poster { transform: rotate(-1.1deg); }
+
+.film-detail-interest {
+  margin: 25px 0 0;
+  padding-top: 13px;
+  border-top: 1px solid color-mix(in srgb, var(--bone) 20%, transparent);
+  color: var(--muted);
+  font: italic 13px/1.45 var(--font-serif);
+  text-align: center;
+}
+
+.film-detail-interest strong { color: var(--accent); font-style: normal; }
+
+.film-detail-story {
+  grid-area: story;
+  min-width: 0;
+  max-width: 790px;
+  padding-top: 9px;
+}
+
+.film-detail-story .film-tags-row { margin: 0 0 29px; }
+.film-detail-price-sticker { margin: 2px 0 28px; }
+
+.film-detail-actions {
+  position: relative;
+  overflow: hidden;
+  margin-top: 30px;
+  border: 1px solid color-mix(in srgb, var(--bone) 28%, transparent);
+  padding: clamp(19px, 3vw, 28px);
+  background:
+    linear-gradient(105deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent 48%),
+    color-mix(in srgb, var(--bone) 3%, transparent);
+}
+
+.film-detail-actions::before {
+  content: "✦";
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  color: color-mix(in srgb, var(--accent) 72%, transparent);
+  font-size: 20px;
+}
+
+.film-detail-actions__heading { margin-bottom: 17px; padding-right: 36px; }
+.film-detail-actions__heading .eyebrow { color: var(--accent); font-size: 8px; }
+
+.film-detail-actions__heading h2 {
+  margin: 5px 0 0;
+  font: clamp(24px, 4vw, 34px)/.98 var(--font-head);
+}
+
+.film-detail-actions__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  align-items: center;
+}
+
+.film-detail-actions__grid .showtimes-pill { min-height: 58px; }
+.film-detail-trailer { margin-top: 38px; padding-right: 9px; }
+
+.film-detail-info-room {
+  border-bottom: 1px solid color-mix(in srgb, var(--bone) 18%, transparent);
+  background: var(--void-2);
+}
+
+.film-detail-info-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(260px, .75fr);
+  gap: 18px;
+  padding-block: 32px;
+}
+
+.film-detail-info-card {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--bone) 20%, transparent);
+  padding: clamp(20px, 3vw, 28px);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--bone) 4%, transparent), transparent);
+}
+
+.film-detail-info-card:only-child { grid-column: 1 / -1; }
+.film-detail-info-card section { max-width: none !important; margin-top: 0 !important; }
+
+.film-detail-coven-room {
+  border-bottom: 1px solid color-mix(in srgb, var(--bone) 18%, transparent);
+  background: var(--void);
+}
+
+.film-detail-coven-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding-block: 28px;
+}
+
+.film-detail-coven-grid--solo { grid-template-columns: minmax(0, 1fr); }
+
+.film-detail-coven-card {
+  min-width: 0;
+  padding: 20px 28px;
+  border-left: 1px solid color-mix(in srgb, var(--bone) 18%, transparent);
+}
+
+.film-detail-coven-card:last-child { border-right: 1px solid color-mix(in srgb, var(--bone) 18%, transparent); }
+.film-detail-coven-card .eyebrow { margin-bottom: 12px; color: var(--accent); font-size: 9px; }
+
+.film-detail-price-room {
+  border-bottom: 3px solid var(--void);
+  padding-block: clamp(46px, 7vw, 72px);
+  background: var(--bone);
+  color: var(--void);
+}
+
+.film-detail-section-heading { margin-bottom: 24px; }
+.film-detail-section-heading .eyebrow { margin-bottom: 8px; color: var(--accent); }
+
+.film-detail-section-heading h2 {
+  max-width: 760px;
+  margin: 0;
+  font: clamp(38px, 6vw, 64px)/.9 var(--font-head);
+}
+
+.film-detail-section-heading h2 em { color: var(--accent); font-weight: inherit; }
+.film-detail-section-heading--dark .eyebrow { color: var(--accent-deep); }
+.film-detail-empty-note { color: color-mix(in srgb, var(--void) 62%, transparent); font: italic 15px var(--font-serif); }
+
+.film-detail-reviews-room {
+  padding-block: clamp(46px, 7vw, 72px) calc(96px + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 88% 16%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 27%),
+    var(--void);
+}
+
+.film-detail-reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.film-detail-review-card {
+  position: relative;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--bone) 25%, transparent);
+  padding: clamp(22px, 4vw, 34px);
+  background: var(--void-2);
+}
+
+.film-detail-review-card::before {
+  content: "“";
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  color: color-mix(in srgb, var(--accent) 42%, transparent);
+  font: 58px/.8 var(--font-head);
+}
+
+.film-detail-review-card h3 {
+  position: relative;
+  margin: 0 35px 12px 0;
+  font: clamp(23px, 3vw, 31px)/1 var(--font-head);
+}
+
+.film-detail-review-card p {
+  margin: 0;
+  color: color-mix(in srgb, var(--bone) 76%, transparent);
+  font: 15px/1.65 var(--font-serif);
+}
+
+@media (max-width: 720px) {
+  .film-detail-hero__inner {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "identity"
+      "poster"
+      "story";
+    gap: 30px;
+    padding-block: 32px 52px;
+  }
+
+  .film-detail-identity h1 { font-size: clamp(45px, 14vw, 68px); }
+  .film-detail-meta { gap: 5px 8px; font-size: 9px; }
+
+  .film-detail-poster-wrap {
+    position: relative;
+    top: auto;
+    width: min(82vw, 350px);
+  }
+
+  .film-detail-interest { margin-top: 23px; }
+  .film-detail-story { max-width: none; padding-top: 0; }
+  .film-detail-story .film-tags-row { margin-bottom: 25px; }
+  .film-detail-actions { margin-top: 27px; padding: 20px 16px; }
+  .film-detail-actions__grid { gap: 8px; }
+
+  .film-detail-actions__grid .btn,
+  .film-detail-actions__grid .showtimes-pill {
+    flex: 1 1 calc(50% - 4px);
+    justify-content: center;
+    min-width: 0;
+    min-height: 51px;
+    padding: 12px 9px;
+    font-size: 10px;
+    text-align: center;
+  }
+
+  .film-detail-trailer { margin-top: 31px; padding-right: 8px; }
+  .film-detail-info-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; padding-block: 22px; }
+  .film-detail-info-card:only-child { grid-column: auto; }
+  .film-detail-coven-grid { grid-template-columns: minmax(0, 1fr); padding-block: 22px; }
+  .film-detail-coven-card { border-right: 1px solid color-mix(in srgb, var(--bone) 18%, transparent); }
+  .film-detail-coven-card + .film-detail-coven-card { border-top: 1px solid color-mix(in srgb, var(--bone) 18%, transparent); }
+  .film-detail-price-room { padding-block: 45px; }
+  .film-detail-section-heading h2 { font-size: clamp(37px, 11vw, 51px); }
+  .film-detail-reviews-grid { grid-template-columns: minmax(0, 1fr); }
+}
