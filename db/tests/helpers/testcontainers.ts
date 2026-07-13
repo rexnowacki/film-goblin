@@ -32,10 +32,11 @@ export async function makeTestDb(): Promise<TestDb> {
   }
 
   // Then our migrations via the applyMigrations runner so _migrations gets populated.
-  // Skip 0117_avatars_bucket — it references Supabase's `storage` schema which is only
-  // provisioned on real Supabase, not on vanilla Postgres. RLS tests don't cover storage.
+  // Skip Storage-only migrations: Supabase provisions the `storage` schema, while
+  // vanilla Postgres testcontainers do not. Storage is covered by app validation/
+  // route contracts; table/function RLS remains real-Postgres tested here.
   await applyMigrations(client, DB_MIGRATIONS, {
-    skip: f => f.includes("avatars_bucket"),
+    skip: f => f.includes("avatars_bucket") || f.includes("badge_images_bucket"),
   });
 
   // Allow cross-schema access for test roles (they need to read everything the policies permit).
@@ -46,6 +47,19 @@ export async function makeTestDb(): Promise<TestDb> {
   await client.query(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;`);
   await client.query(`GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;`);
   await client.query(`GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;`);
+
+  // Mig 0222 deliberately withholds definition authorship and award evidence.
+  // Reapply its column grants after the broad test-harness bootstrap grant.
+  await client.query(`REVOKE ALL ON TABLE badges, user_badges FROM anon, authenticated;`);
+  await client.query(`
+    GRANT SELECT (id, slug, name, description, image_url, condition_kind,
+      threshold, is_active, created_at, updated_at)
+      ON badges TO anon, authenticated
+  `);
+  await client.query(`
+    GRANT SELECT (user_id, badge_id, awarded_at)
+      ON user_badges TO anon, authenticated
+  `);
 
   // Mig 0215 is RPC-only for writes. The broad authenticated DML grant above
   // models the Supabase default but would erase this feature's narrower grant.

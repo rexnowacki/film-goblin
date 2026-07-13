@@ -29,6 +29,13 @@
 .profile-relic-empty__seal { display: grid; place-items: center; width: 56px; height: 56px; border: 1px solid var(--muted); border-radius: 50%; color: var(--accent); font-size: 22px; }
 .profile-relic-empty strong { display: block; font: 18px var(--font-head); }
 .profile-relic-empty span { display: block; margin-top: 4px; color: var(--muted); font: italic 14px var(--font-serif); }
+.profile-relic-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.profile-relic-card { min-width: 0; display: flex; flex-direction: column; border: 1px solid color-mix(in srgb, var(--bone) 28%, transparent); padding: 14px; background: color-mix(in srgb, var(--bone) 3%, transparent); }
+.profile-relic-art { display: grid; place-items: center; width: min(100%, 112px); aspect-ratio: 1; margin: 0 auto 13px; }
+.profile-relic-art img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.profile-relic-card h3 { margin: 0; overflow-wrap: anywhere; text-align: center; font: 18px/1.05 var(--font-head); }
+.profile-relic-card p { margin: 7px 0 0; overflow-wrap: anywhere; text-align: center; color: var(--muted); font: italic 13px/1.35 var(--font-serif); }
+.profile-relic-card time { display: block; margin-top: auto; padding-top: 12px; text-align: center; color: var(--accent); font: 700 9px var(--font-ui); letter-spacing: .08em; text-transform: uppercase; }
 .profile-coven-topline { margin-bottom: 12px; }
 .profile-coven-view-all { border: 0; background: transparent; color: var(--accent); padding: 3px 0; cursor: pointer; font: 700 10px var(--font-ui); letter-spacing: .08em; text-transform: uppercase; }
 .profile-coven-view-all:hover { text-decoration: underline; }
@@ -78,4 +85,9 @@
   .profile-review-grid, .profile-list-grid { grid-template-columns: 1fr; }
   .profile-tabs { margin-inline: -20px; }
   .profile-tab { font-size: 9px; letter-spacing: .07em; padding-inline: 2px; }
+  .profile-relic-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .profile-relic-card { padding: 11px; }
+  .profile-relic-art { width: min(100%, 96px); margin-bottom: 10px; }
+  .profile-relic-card h3 { font-size: 16px; }
+  .profile-relic-card p { font-size: 12px; }
 }

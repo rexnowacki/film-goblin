@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Deep Cut badge</title>
+  <circle cx="128" cy="128" r="119" fill="#090909" stroke="#f4ead8" stroke-width="8"/>
+  <circle cx="128" cy="128" r="103" fill="none" stroke="#ff2b82" stroke-width="4"/>
+  <circle cx="128" cy="112" r="54" fill="#f4ead8"/>
+  <circle cx="128" cy="112" r="39" fill="#090909" stroke="#ff2b82" stroke-width="5"/>
+  <circle cx="128" cy="112" r="10" fill="#f4ead8"/>
+  <path d="m164 71 27-22 8 10-28 23Z" fill="#ff2b82"/>
+  <path d="M73 198h110" stroke="#f4ead8" stroke-width="5"/>
+  <text x="128" y="222" fill="#f4ead8" font-family="serif" font-size="23" font-weight="700" text-anchor="middle">50</text>
+</svg>
