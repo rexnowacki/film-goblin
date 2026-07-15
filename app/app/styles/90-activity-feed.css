@@ -31,7 +31,7 @@
   right: 4px;
   bottom: 2px;
   background: var(--accent);
-  color: var(--void);
+  color: var(--accent-ink);
   padding: 1px 5px;
   font-family: var(--font-ui);
   font-weight: 700;

@@ -50,7 +50,7 @@ export default function DeleteUserModal({ userId, username, email, createdAt, la
       </button>
       {open && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100, display: "grid", placeItems: "center", padding: 20 }}>
-          <div style={{ background: "var(--bone)", color: "var(--void)", border: "3px solid var(--void)", boxShadow: "6px 6px 0 var(--danger)", padding: 22, maxWidth: 480, width: "100%" }}>
+          <div className="theme-paper-panel" style={{ background: "var(--bone)", color: "var(--void)", border: "3px solid var(--void)", boxShadow: "6px 6px 0 var(--danger)", padding: 22, maxWidth: 480, width: "100%" }}>
             {testShape ? (
               <>
                 <div className="head" style={{ fontSize: 22, marginBottom: 10 }}>Delete @{username}?</div>
@@ -87,7 +87,7 @@ export default function DeleteUserModal({ userId, username, email, createdAt, la
               <button
                 type="button"
                 className="btn btn-sm"
-                style={{ background: "var(--danger)", color: "var(--bone)", borderColor: "var(--danger)", opacity: (!testShape && typed !== username) ? 0.4 : 1 }}
+                style={{ background: "var(--danger)", color: "var(--danger-ink)", borderColor: "var(--danger)", opacity: (!testShape && typed !== username) ? 0.4 : 1 }}
                 onClick={onConfirm}
                 disabled={submitting || (!testShape && typed !== username)}
               >

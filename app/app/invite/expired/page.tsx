@@ -3,6 +3,7 @@ import Link from "next/link";
 export default function InviteExpiredPage() {
   return (
     <main
+      className="auth-paper-canvas"
       style={{
         background: "var(--bone)",
         color: "var(--void)",

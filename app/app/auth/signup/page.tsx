@@ -61,7 +61,7 @@ function SignUpInner() {
   }
 
   return (
-    <main style={{ background: "var(--bone)", color: "var(--void)", minHeight: "100dvh", display: "grid", placeItems: "center", padding: 40 }}>
+    <main className="auth-paper-canvas" style={{ background: "var(--bone)", color: "var(--void)", minHeight: "100dvh", display: "grid", placeItems: "center", padding: 40 }}>
       <div style={{
         background: "var(--bone)", color: "var(--void)",
         border: "3px solid var(--void)", padding: "clamp(24px, 6vw, 40px) clamp(20px, 5vw, 32px)",

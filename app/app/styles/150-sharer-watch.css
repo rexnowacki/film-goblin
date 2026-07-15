@@ -32,11 +32,11 @@
 }
 .sharer-watch-pin-verdict.loved {
   background: var(--highlight);
-  color: var(--void);
+  color: var(--highlight-ink);
 }
 .sharer-watch-pin-verdict.didnt {
   background: var(--danger);
-  color: var(--bone);
+  color: var(--danger-ink);
 }
 .sharer-watch-pin-note {
   margin-top: 6px;

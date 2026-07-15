@@ -27,7 +27,7 @@ export default function LeaveCovenButton({ otherUserId, otherUsername, otherDisp
   return (
     <span style={{ display: "inline-flex", gap: 6 }}>
       <button onClick={onLeave} disabled={pending}
-        style={{ padding: "6px 10px", background: "var(--danger)", color: "var(--bone)", border: 0, cursor: "pointer", fontFamily: "var(--font-ui)", fontWeight: 700, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+        style={{ padding: "6px 10px", background: "var(--danger)", color: "var(--danger-ink)", border: 0, cursor: "pointer", fontFamily: "var(--font-ui)", fontWeight: 700, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase" }}>
         Leave {otherDisplayName}?
       </button>
       <button onClick={() => setConfirm(false)}

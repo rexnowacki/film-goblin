@@ -34,7 +34,7 @@ export default function RetireModal({ filmId, title, year, counts }: Props) {
       </button>
       {open && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100, display: "grid", placeItems: "center", padding: 20 }}>
-          <div style={{ background: "var(--bone)", color: "var(--void)", border: "3px solid var(--void)", boxShadow: "6px 6px 0 var(--accent)", padding: 22, maxWidth: 460, width: "100%" }}>
+          <div className="theme-paper-panel" style={{ background: "var(--bone)", color: "var(--void)", border: "3px solid var(--void)", boxShadow: "6px 6px 0 var(--accent)", padding: 22, maxWidth: 460, width: "100%" }}>
             <div className="head" style={{ fontSize: 22, marginBottom: 10 }}>Retire {title} ({year})?</div>
             <ul style={{ fontFamily: "var(--font-ui)", fontSize: 13, margin: "0 0 16px 0", paddingLeft: 18 }}>
               <li>Watchlist entries referencing it: <strong>{counts.watchlist}</strong> — stay intact</li>
@@ -50,7 +50,7 @@ export default function RetireModal({ filmId, title, year, counts }: Props) {
               <button type="button" className="btn btn-sm btn-outline" style={{ color: "var(--void)", borderColor: "var(--void)" }} onClick={() => setOpen(false)} disabled={submitting}>
                 Cancel
               </button>
-              <button type="button" className="btn btn-sm" style={{ background: "var(--danger)", color: "var(--bone)", borderColor: "var(--danger)" }} onClick={onConfirm} disabled={submitting}>
+              <button type="button" className="btn btn-sm" style={{ background: "var(--danger)", color: "var(--danger-ink)", borderColor: "var(--danger)" }} onClick={onConfirm} disabled={submitting}>
                 {submitting ? "Retiring…" : "Retire film"}
               </button>
             </div>

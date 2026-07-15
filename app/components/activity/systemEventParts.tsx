@@ -25,7 +25,8 @@ export function renderCopyText(copy: string, filmId?: string | null): ReactNode[
         key={i}
         prefetch={false}
         href={`/film/${filmId}`}
-        style={{ color: "var(--accent)", fontStyle: "italic" }}
+        className="pit-copy-link"
+        style={{ fontStyle: "italic" }}
       >
         {title}
       </Link>
