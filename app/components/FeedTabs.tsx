@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import FeedRow from "./activity/FeedRow";
 import SystemEventRow from "./activity/SystemEventRow";
@@ -16,6 +16,7 @@ import { shouldBackfillFeed } from "@/lib/feed/backfill";
 import type { PitTier } from "@/lib/feed-events/tier";
 import type { SystemFeedEvent } from "@/lib/feed-events/types";
 import PitArchiveTab from "./PitArchiveTab";
+import FeedPullToRefresh from "./FeedPullToRefresh";
 
 type Tab = "all" | "coven" | "recs" | "pit";
 
@@ -90,6 +91,8 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
   const doneRef = useRef(done);
   const tabRef = useRef(tab);
   const scopeVersionRef = useRef(0);
+  const refreshInFlightRef = useRef(false);
+  const [refreshing, startRefresh] = useTransition();
   useEffect(() => { loadingRef.current = loading; }, [loading]);
   useEffect(() => { cursorRef.current = cursor; }, [cursor]);
   useEffect(() => { doneRef.current = done; }, [done]);
@@ -100,20 +103,35 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
   // Reset cumulative state on filter change (URL flip → fresh server render → new initialItems prop).
   useEffect(() => {
     scopeVersionRef.current += 1;
+    loadingRef.current = false;
     cursorRef.current = initialCursor;
     doneRef.current = initialDone;
     setItems(initialItems);
     setCursor(initialCursor);
     setDone(initialDone);
+    setLoading(false);
   }, [initialItems, initialCursor, initialDone]);
 
   useEffect(() => { setTab(urlTab); }, [urlTab]);
 
+  const requestRefresh = useCallback(() => {
+    if (refreshInFlightRef.current) return;
+    refreshInFlightRef.current = true;
+    // An older pagination request must not append after the refreshed first
+    // page arrives. The prop-reset effect advances this generation again.
+    scopeVersionRef.current += 1;
+    startRefresh(() => router.refresh());
+  }, [router]);
+
   useEffect(() => {
-    function onFocus() { router.refresh(); }
+    if (!refreshing) refreshInFlightRef.current = false;
+  }, [refreshing]);
+
+  useEffect(() => {
+    function onFocus() { requestRefresh(); }
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, [router]);
+  }, [requestRefresh]);
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || doneRef.current || !cursorRef.current) return;
@@ -141,8 +159,10 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
       setCursor(res.nextCursor);
       setDone(res.done);
     } finally {
-      loadingRef.current = false;
-      setLoading(false);
+      if (scopeVersion === scopeVersionRef.current) {
+        loadingRef.current = false;
+        setLoading(false);
+      }
     }
   }, [filters.actorId, filters.filmId]);
 
@@ -234,7 +254,7 @@ export default function FeedTabs({ initialItems, initialCursor, initialDone, fil
     <div className="feed-stream">
       <div className="feed-stream__heading">
         <div><span className="eyebrow">The moving picture</span><h2>{tab === "all" ? "Everything stirring" : tab === "coven" ? "Your coven" : tab === "recs" ? "Passed hand to hand" : "From the Pit"}</h2></div>
-        <span className="feed-stream__live"><i /> Live</span>
+        <FeedPullToRefresh onRefresh={requestRefresh} refreshing={refreshing} />
       </div>
       <div className="feed-tab-rail" role="tablist" aria-label="Feed views">
         {(["coven", "all", "recs", "pit"] as Tab[]).map(t => (
