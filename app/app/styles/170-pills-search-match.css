@@ -221,7 +221,7 @@
   padding: 0;
   margin-right: 4px;
 }
-.feed-active-filter-close:hover { background: var(--accent); color: var(--bone); border-color: var(--accent); }
+.feed-active-filter-close:hover { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
 .invite-pill {
   display: inline-flex;
@@ -245,7 +245,7 @@
 .invite-pill:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--accent); }
 .tag-edit-pill.primary {
   background: var(--accent);
-  color: var(--void);
+  color: var(--accent-ink);
   border-color: var(--accent);
 }
 .tag-edit-pill.is-disabled {

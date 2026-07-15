@@ -31,8 +31,9 @@ function Sentence({ row }: { row: LandingFeedRow }) {
   }
 }
 
-function Thumb({ film }: { film: LandingFilm | null }) {
+function Thumb({ film, pit = false }: { film: LandingFilm | null; pit?: boolean }) {
   if (!film) return <span style={{ width: 30, flexShrink: 0 }} />;
+  const edge = pit ? "var(--pit-cream-dim)" : "var(--bone)";
   return (
     <Link href={`/film/${film.id}`} prefetch={false} style={{ marginLeft: "auto", flexShrink: 0 }}>
       {film.artwork_url ? (
@@ -41,10 +42,10 @@ function Thumb({ film }: { film: LandingFilm | null }) {
           alt={film.title}
           width={30}
           height={44}
-          style={{ width: 30, height: 44, objectFit: "cover", border: "1.5px solid var(--bone)", display: "block" }}
+          style={{ width: 30, height: 44, objectFit: "cover", border: `1.5px solid ${edge}`, display: "block" }}
         />
       ) : (
-        <span style={{ display: "block", width: 30, height: 44, background: "var(--void-3)", border: "1.5px solid var(--bone)" }} />
+        <span style={{ display: "block", width: 30, height: 44, background: pit ? "var(--pit-plum-line)" : "var(--void-3)", border: `1.5px solid ${edge}` }} />
       )}
     </Link>
   );
@@ -84,7 +85,7 @@ export default function LandingFeedCard({ rows }: { rows: LandingFeedRow[] }) {
             {tier !== "whisper" && <PitSeal size={32} />}
             <div style={{ fontFamily: "var(--font-ui)", fontSize: 13, lineHeight: 1.35, flex: 1 }}>
               <div className="pit-kicker" style={{ fontSize: 8 }}>FROM THE PIT · {kicker}</div>
-              <div style={{ marginTop: 2 }}>
+              <div className="pit-copy" style={{ marginTop: 2 }}>
                 <Sentence row={row} />
                 {tier === "full" && price != null && oldPrice != null && (
                   <span style={{ marginLeft: 6, color: "var(--pit-cream-dim)" }}>
@@ -92,11 +93,11 @@ export default function LandingFeedCard({ rows }: { rows: LandingFeedRow[] }) {
                   </span>
                 )}
               </div>
-              <div className="caps" style={{ fontSize: 8, color: "var(--muted)", marginTop: 3 }}>
+              <div className="caps" style={{ fontSize: 8, color: "var(--pit-cream-dim)", marginTop: 3 }}>
                 {relativeTime(row.created_at)}
               </div>
             </div>
-            <Thumb film={row.event.film} />
+            <Thumb film={row.event.film} pit />
           </div>
         );
       })}

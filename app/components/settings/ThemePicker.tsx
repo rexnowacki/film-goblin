@@ -6,8 +6,8 @@ import type { Theme } from "@/lib/theme";
 import SettingsSection from "@/components/settings/SettingsSection";
 
 interface Swatch {
-  bone: string;
-  void: string;
+  paper: string;
+  ink: string;
   accent: string;
   label: string;
   subline: string;
@@ -15,18 +15,18 @@ interface Swatch {
 
 const SWATCHES: Record<Theme, Swatch> = {
   "pink-goblin": {
-    bone: "#f3ecd8",
-    void: "#0a0a0a",
-    accent: "#ff2d88",
+    paper: "#F3ECD8",
+    ink: "#0A0A0A",
+    accent: "#FF2D88",
     label: "Pink Goblin",
     subline: "Cream, void, hot pink. The default.",
   },
-  midsommar: {
-    bone: "#e6d9b8",
-    void: "#4a3622",
-    accent: "#e7c84f",
-    label: "Midsommar",
-    subline: "Wheat, pine, May Queen yellow. Bright ritual daylight.",
+  "goblin-print": {
+    paper: "#F9EAD5",
+    ink: "#050404",
+    accent: "#FB3B84",
+    label: "Goblin Print",
+    subline: "Cream paper, black ink, hot pink. Rough off the press.",
   },
 };
 
@@ -67,14 +67,14 @@ export default function ThemePicker({ current }: { current: Theme }) {
               }}
             >
               <div style={{ display: "flex", gap: 4, marginBottom: 12, height: 36 }}>
-                <div style={{ flex: 1, background: sw.bone, border: "1px solid var(--bone)" }} aria-hidden="true" />
-                <div style={{ flex: 1, background: sw.void, border: "1px solid var(--bone)" }} aria-hidden="true" />
+                <div style={{ flex: 1, background: sw.paper, border: "1px solid var(--bone)" }} aria-hidden="true" />
+                <div style={{ flex: 1, background: sw.ink, border: "1px solid var(--bone)" }} aria-hidden="true" />
                 <div style={{ flex: 1, background: sw.accent, border: "1px solid var(--bone)" }} aria-hidden="true" />
               </div>
               <div className="head" style={{ fontSize: 22, marginBottom: 4 }}>{sw.label}</div>
               <div style={{ fontFamily: "var(--font-serif)", fontSize: 13, opacity: 0.75 }}>{sw.subline}</div>
               {active && (
-                <span className="caps" style={{ position: "absolute", top: 12, right: 12, fontSize: 10, color: "var(--accent)", fontWeight: 700 }}>
+                <span className="caps" style={{ position: "absolute", top: 10, right: 10, padding: "3px 6px", border: "1px solid var(--bone)", background: "var(--accent)", color: "var(--accent-ink)", fontSize: 9, fontWeight: 700 }}>
                   ✓ Active
                 </span>
               )}

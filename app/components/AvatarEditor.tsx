@@ -74,7 +74,7 @@ export default function AvatarEditor({ file, onCancel, onSave }: Props) {
       WebkitBackdropFilter: "blur(4px)",
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: "#141414",
+        background: "var(--void-2)",
         color: "var(--bone)",
         borderTop: "2px solid var(--accent)",
         borderRadius: 16,

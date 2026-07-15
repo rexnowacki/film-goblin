@@ -156,11 +156,11 @@
 .settings-pill-nav button[aria-selected="true"] {
   border-color: var(--accent);
   background: var(--accent);
-  color: var(--void);
+  color: var(--accent-ink);
 }
 
 .settings-pill-nav button[aria-selected="true"] span {
-  color: var(--void);
+  color: var(--accent-ink);
 }
 
 .settings-pill-nav button[data-danger="true"] {
@@ -170,11 +170,11 @@
 .settings-pill-nav button[data-danger="true"][aria-selected="true"] {
   border-color: var(--danger);
   background: var(--danger);
-  color: var(--bone);
+  color: var(--danger-ink);
 }
 
 .settings-pill-nav button[data-danger="true"][aria-selected="true"] span {
-  color: var(--bone);
+  color: var(--danger-ink);
 }
 
 .settings-tab-panel[hidden] {

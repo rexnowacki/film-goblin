@@ -18,7 +18,7 @@ export default async function ChangePasswordPage() {
   if (!profile?.must_change_password) redirect("/home");
 
   return (
-    <main style={{ background: "var(--bone)", color: "var(--void)", minHeight: "100dvh", display: "grid", placeItems: "center", padding: 40 }}>
+    <main className="auth-paper-canvas" style={{ background: "var(--bone)", color: "var(--void)", minHeight: "100dvh", display: "grid", placeItems: "center", padding: 40 }}>
       <div
         style={{
           background: "var(--bone)",

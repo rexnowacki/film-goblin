@@ -86,7 +86,7 @@
   font-weight: 300;
   line-height: 38px;
 }
-.add-film-modal__close:hover { background: var(--pit-magenta-bright); color: var(--void); }
+.add-film-modal__close:hover { background: var(--pit-magenta-bright); color: var(--pit-plum-bg); }
 .add-film-modal__close:focus-visible { outline: 2px solid var(--pit-cream); outline-offset: 3px; }
 
 .add-film-flow { display: grid; gap: 24px; }

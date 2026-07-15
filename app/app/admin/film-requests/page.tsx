@@ -63,7 +63,7 @@ export default async function FilmRequestsPage({
               key={req.id}
               style={{
                 display: "flex", gap: 16, alignItems: "flex-start",
-                background: "#111", border: "1px solid #2a2a2a", borderRadius: 6, padding: 16,
+                background: "var(--void-2)", border: "1px solid var(--void-3)", borderRadius: 6, padding: 16,
                 opacity: req.status === "fulfilled" ? 0.5 : 1,
               }}
             >

@@ -42,10 +42,10 @@ export default function SystemEventRow({
           alt={event.film.title}
           width={40}
           height={60}
-          style={{ display: "block", objectFit: "cover", border: "1px solid var(--void)" }}
+          style={{ display: "block", objectFit: "cover", border: "1px solid var(--pit-cream-dim)" }}
         />
       ) : (
-        <span style={{ display: "block", width: 40, height: 60, background: "var(--void-3, #1a1a1a)", border: "1px solid var(--void)" }} />
+        <span style={{ display: "block", width: 40, height: 60, background: "var(--pit-plum-line)", border: "1px solid var(--pit-cream-dim)" }} />
       )}
     </Link>
   ) : null;
@@ -99,7 +99,7 @@ export default function SystemEventRow({
           </div>
         )}
         <div style={{ marginTop: 4 }}>
-          <span className="activity-footer-time" style={{ fontFamily: "var(--font-ui)", color: "var(--muted)" }}>
+          <span className="activity-footer-time" style={{ fontFamily: "var(--font-ui)", color: "var(--pit-cream-dim)" }}>
             {relativeTime(event.created_at)}
           </span>
         </div>

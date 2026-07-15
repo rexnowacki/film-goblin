@@ -61,7 +61,7 @@ export default function ArchiveButton({ announcementId, title }: Props) {
         className="btn btn-sm"
         onClick={archive}
         disabled={isPending}
-        style={{ background: "var(--danger)", color: "var(--bone)" }}
+        style={{ background: "var(--danger)", color: "var(--danger-ink)" }}
       >
         {isPending ? "Archiving…" : "Confirm"}
       </button>

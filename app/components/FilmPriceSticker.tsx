@@ -24,12 +24,13 @@ export default function FilmPriceSticker({ price, history }: Props) {
 
   return (
     <div
+      className="film-price-sticker"
       style={{
         display: "inline-flex",
         flexDirection: "column",
         alignItems: "center",
         background: "var(--accent)",
-        color: "var(--void)",
+        color: "var(--accent-ink)",
         padding: "12px 20px",
         border: "3px solid var(--void)",
         borderRadius: 2,

@@ -127,7 +127,7 @@ export default function WatchModal({ open, mode, initial, filmTitle, onWatchlist
                     flex: 1, minWidth: 120,
                     padding: "10px 14px",
                     background: active ? (opt.value ? "var(--highlight)" : "var(--danger)") : "transparent",
-                    color: active ? (opt.value ? "var(--void)" : "var(--bone)") : "var(--bone)",
+                    color: active ? (opt.value ? "var(--highlight-ink)" : "var(--danger-ink)") : "var(--bone)",
                     border: `2px solid ${active ? (opt.value ? "var(--highlight)" : "var(--danger)") : "var(--muted)"}`,
                     fontFamily: "var(--font-ui)",
                     fontWeight: 700,

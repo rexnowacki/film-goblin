@@ -98,7 +98,7 @@ export default function DeleteAccountSection({ username }: { username: string })
               disabled={pending || typed !== username}
               style={{
                 background: "var(--danger)",
-                color: "var(--bone)",
+                color: "var(--danger-ink)",
                 border: "2px solid var(--danger)",
                 padding: "9px 16px",
                 fontFamily: "var(--font-ui)",

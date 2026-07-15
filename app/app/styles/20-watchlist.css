@@ -13,7 +13,7 @@
   bottom: 6px;
   left: 6px;
   background: var(--accent);
-  color: var(--void);
+  color: var(--accent-ink);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -30,7 +30,7 @@
   width: 24px;
   height: 24px;
   background: var(--accent);
-  color: var(--void);
+  color: var(--accent-ink);
   border: 1px solid var(--void);
   display: grid;
   place-items: center;

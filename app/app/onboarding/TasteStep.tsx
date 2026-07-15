@@ -41,7 +41,7 @@ export default function TasteStep({ initialUsername, laneTagMap, onNext }: Props
           style={{
             fontFamily: "var(--font-ui)",
             fontSize: 18,
-            background: "#111",
+            background: "var(--void-2)",
             border: "1px solid #333",
             color: "var(--bone)",
             padding: "10px 14px",
@@ -69,7 +69,7 @@ export default function TasteStep({ initialUsername, laneTagMap, onNext }: Props
                 type="button"
                 onClick={() => toggleCard(card.label)}
                 style={{
-                  background: isSelected ? "rgba(255,45,136,0.12)" : "#111",
+                  background: isSelected ? "color-mix(in srgb, var(--accent) 12%, var(--void-2))" : "var(--void-2)",
                   border: `1px solid ${isSelected ? "var(--accent)" : "#333"}`,
                   color: "var(--bone)",
                   padding: "14px 12px",

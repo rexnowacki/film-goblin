@@ -45,7 +45,7 @@ export default async function AdminUsersPage({
                 <div style={{ fontFamily: "var(--font-head)", fontSize: 16 }}>
                   @{u.username}
                   {u.role !== "goblin" && (
-                    <span className="caps" style={{ fontSize: 9, padding: "1px 6px", marginLeft: 6, background: u.role === "witch" ? "var(--accent-deep)" : "var(--accent)", color: "var(--bone)" }}>
+                    <span className="caps" style={{ fontSize: 9, padding: "1px 6px", marginLeft: 6, background: u.role === "witch" ? "var(--accent-deep)" : "var(--accent)", color: u.role === "witch" ? "var(--accent-deep-ink)" : "var(--accent-ink)" }}>
                       {u.role === "high_goblin" ? "high goblin" : u.role}
                     </span>
                   )}

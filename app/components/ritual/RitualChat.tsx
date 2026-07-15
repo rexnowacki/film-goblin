@@ -402,7 +402,7 @@ export default function RitualChat({
           onClick={scrollToBottom}
           style={{
             position: "absolute", bottom: 64, left: "50%", transform: "translateX(-50%)",
-            background: "var(--accent)", color: "var(--void)",
+            background: "var(--accent)", color: "var(--accent-ink)",
             border: "none", padding: "6px 14px",
             fontFamily: "var(--font-ui)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
             cursor: "pointer", textTransform: "uppercase",

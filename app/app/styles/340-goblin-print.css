@@ -1,0 +1,329 @@
+/* ============================================================
+   GOBLIN PRINT — cream paper, black ink, hot-pink screen print
+   ============================================================ */
+
+html[data-theme="goblin-print"] {
+  color-scheme: light;
+
+  /* The reference artwork is paper-dominant. These role tokens deliberately
+     invert the default dark canvas while retaining readable ink/paper pairs. */
+  --bone: #050404;
+  --bone-2: #171112;
+  --void: #F9EAD5;
+  --void-2: #F2DFC7;
+  --void-3: #E8D2B8;
+  --ink: #050404;
+  --accent: #AD1953;
+  --accent-deep: #8E1544;
+  --accent-ink: #F9EAD5;
+  --accent-deep-ink: #F9EAD5;
+  --muted: #624E4F;
+  --muted-dark: #463437;
+  --highlight: #FB3B84;
+  --highlight-deep: #E93477;
+  --highlight-ink: #050404;
+  --danger: #9B183E;
+  --danger-ink: #F9EAD5;
+
+  /* Sampled bright ink stays decorative: it is vivid on black but does not
+     have enough contrast to carry small text on the paper canvas. */
+  --print-pink: #FB3B84;
+  --print-paper-shadow: #C0ADA3;
+  --print-paper-grain: radial-gradient(
+    circle at 2px 2px,
+    rgba(5, 4, 4, .085) 0 .55px,
+    transparent .8px
+  );
+}
+
+/* Subtle screen-print paper grain on full-page canvases. No fixed overlay:
+   scrolling and iOS compositor behavior remain identical to the base theme. */
+html[data-theme="goblin-print"] body,
+html[data-theme="goblin-print"] :where(
+  .landing-page,
+  .settings-page,
+  .profile-page,
+  .collection-page,
+  .gazings-page,
+  .film-detail-page,
+  .home-feed-shell,
+  .admin-shell,
+  .ritual-shell
+) {
+  background-color: var(--void);
+  background-image: var(--print-paper-grain);
+  background-size: 11px 13px;
+  color: var(--bone);
+}
+
+/* Editorial mastheads become ink-on-paper instead of dark washes. The hot
+   pink remains a decorative print bloom; readable accent copy uses --accent. */
+html[data-theme="goblin-print"] :where(
+  .home-feed-masthead,
+  .landing-hero,
+  .settings-hero,
+  .profile-hero,
+  .collection-hero,
+  .discover-browse-masthead,
+  .fyp-masthead,
+  .film-detail-hero,
+  .admin-masthead
+) {
+  border-bottom-color: var(--bone);
+  background-color: var(--void);
+  background-image:
+    radial-gradient(circle at 80% 26%, color-mix(in srgb, var(--print-pink) 24%, transparent), transparent 29%),
+    var(--print-paper-grain),
+    linear-gradient(135deg, var(--void-2), var(--void));
+  background-size: auto, 11px 13px, auto;
+}
+
+/* A narrow pink/black checker echoes the scarf without turning the interface
+   into a literal illustration. It replaces each masthead's generic wash. */
+html[data-theme="goblin-print"] :where(
+  .home-feed-masthead,
+  .landing-hero,
+  .settings-hero,
+  .profile-hero,
+  .collection-hero,
+  .discover-browse-masthead,
+  .fyp-masthead,
+  .film-detail-hero,
+  .admin-masthead
+)::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 2;
+  height: 8px;
+  border: 0;
+  opacity: 1;
+  pointer-events: none;
+  background: conic-gradient(
+    from 90deg,
+    var(--bone) 25%,
+    var(--print-pink) 0 50%,
+    var(--bone) 0 75%,
+    var(--print-pink) 0
+  ) 0 0 / 16px 16px;
+}
+
+/* Core controls need a true ink edge in light mode. The base theme can use
+   --void as both canvas and edge; paper mode cannot. */
+html[data-theme="goblin-print"] .btn {
+  border-color: var(--bone);
+}
+
+html[data-theme="goblin-print"] .btn:hover {
+  box-shadow: 4px 4px 0 var(--bone);
+}
+
+html[data-theme="goblin-print"] .btn:active {
+  box-shadow: 0 0 0 var(--bone);
+}
+
+html[data-theme="goblin-print"] .btn-outline:hover {
+  box-shadow: 4px 4px 0 var(--print-pink);
+}
+
+html[data-theme="goblin-print"] .btn-dark {
+  border-color: var(--bone);
+  background: var(--bone);
+  color: var(--void);
+}
+
+html[data-theme="goblin-print"] .price-drop {
+  border-color: var(--bone);
+  box-shadow: 3px 3px 0 var(--bone);
+}
+
+html[data-theme="goblin-print"] ::selection {
+  background: var(--print-pink);
+  color: var(--bone);
+}
+
+html[data-theme="goblin-print"] ::-webkit-scrollbar-thumb {
+  background: var(--print-pink);
+}
+
+/* Sheets and image editors previously pinned a charcoal panel while inheriting
+   theme text. Paper mode keeps those inherited ink colors on paper instead. */
+html[data-theme="goblin-print"] .bottom-sheet-panel {
+  background-color: var(--void-2);
+  color: var(--bone);
+  box-shadow: 0 -10px 0 color-mix(in srgb, var(--print-pink) 18%, transparent);
+}
+
+/* Feed chrome had fixed cream-on-plum values from its visual refresh. */
+html[data-theme="goblin-print"] .home-feed-masthead p {
+  color: color-mix(in srgb, var(--bone) 72%, transparent);
+}
+
+html[data-theme="goblin-print"] :where(
+  .home-feed-rail--left,
+  .home-feed-rail--right,
+  .feed-tab-rail,
+  .feed-tab-pill,
+  .feed-stream__empty
+) {
+  border-color: color-mix(in srgb, var(--bone) 24%, transparent);
+}
+
+html[data-theme="goblin-print"] .feed-pull-refresh {
+  border-color: var(--bone);
+  background: var(--bone);
+  color: var(--void);
+}
+
+html[data-theme="goblin-print"] .feed-pull-refresh__sigil {
+  border-color: var(--print-pink);
+  color: var(--print-pink);
+}
+
+html[data-theme="goblin-print"] .feed-pull-refresh[data-phase="armed"] .feed-pull-refresh__sigil {
+  background: var(--print-pink);
+  color: var(--bone);
+}
+
+html[data-theme="goblin-print"] .landing-hero__oracle {
+  filter: drop-shadow(0 18px 28px rgba(5, 4, 4, .24));
+}
+
+/* The sign-in oracle remains the fixed Pit identity. Only its form sheet
+   follows the selected paper theme. */
+html[data-theme="goblin-print"] .signin-card {
+  background: var(--void);
+  color: var(--bone);
+}
+
+html[data-theme="goblin-print"] .signin-card__lede {
+  color: color-mix(in srgb, var(--bone) 68%, transparent);
+}
+
+html[data-theme="goblin-print"] .signin-divider span {
+  background: color-mix(in srgb, var(--bone) 24%, transparent);
+}
+
+html[data-theme="goblin-print"] .signin-form input:not([type="hidden"]) {
+  border-color: color-mix(in srgb, var(--bone) 68%, transparent);
+  background: color-mix(in srgb, var(--void-2) 72%, white);
+  color: var(--bone);
+}
+
+/* Staff surfaces contain several fixed dark values. Keep the operational UI
+   plain, but make its borders, inputs, and prose legible on paper. */
+html[data-theme="goblin-print"] .admin-classification::before,
+html[data-theme="goblin-print"] .admin-classification::after {
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--print-pink) 68%, transparent));
+}
+
+html[data-theme="goblin-print"] :where(
+  .admin-masthead p,
+  .admin-page-head p,
+  .admin-badge-row__copy p
+) {
+  color: color-mix(in srgb, var(--bone) 72%, transparent);
+}
+
+html[data-theme="goblin-print"] :where(
+  .admin-tile-grid,
+  .admin-tile,
+  .admin-page-head,
+  .admin-film-tools,
+  .admin-film-ledger,
+  .admin-film-row,
+  .admin-form-surface,
+  .admin-badge-preview,
+  .admin-badge-list,
+  .admin-badge-row,
+  .admin-empty-state
+) {
+  border-color: color-mix(in srgb, var(--bone) 28%, transparent);
+}
+
+html[data-theme="goblin-print"] :where(
+  .admin-film-tools,
+  .admin-form-surface,
+  .admin-badge-preview
+) {
+  background: color-mix(in srgb, var(--bone) 2.5%, transparent);
+}
+
+html[data-theme="goblin-print"] :where(
+  .admin-film-search input,
+  .admin-badge-form input,
+  .admin-badge-form select,
+  .admin-badge-form textarea
+) {
+  border-color: color-mix(in srgb, var(--bone) 42%, transparent);
+  background: var(--void-2);
+  color: var(--bone);
+}
+
+html[data-theme="goblin-print"] .admin-film-row__poster--empty {
+  background: conic-gradient(
+    from 90deg,
+    var(--bone) 25%,
+    var(--print-pink) 0 50%,
+    var(--bone) 0 75%,
+    var(--print-pink) 0
+  ) 0 0 / 14px 14px;
+}
+
+/* Accent-filled zine controls use ink edges instead of disappearing into the
+   paper canvas. Their text already flows through the accessible ink tokens. */
+html[data-theme="goblin-print"] :where(
+  .poster-drop-badge,
+  .poster-check-pill,
+  .showtimes-pill,
+  .showtimes-share,
+  .gazing-rsvp-btn,
+  .films-sort-chip[aria-selected="true"]
+) {
+  border-color: var(--bone);
+  box-shadow: 3px 3px 0 var(--bone);
+}
+
+html[data-theme="goblin-print"] .invite-banner {
+  border-bottom-color: var(--bone);
+}
+
+/* Older inverse surfaces were authored as literal light paper with the
+   default palette's bone/void primitives reversed. Keep that material meaning
+   in paper mode so secondary status colors remain readable. */
+html[data-theme="goblin-print"] :where(
+  .auth-paper-canvas,
+  .theme-paper-panel,
+  .user-menu-panel,
+  .grain-light:not(.signin-card):not(.landing-rites-band)
+) {
+  --bone: #F9EAD5;
+  --bone-2: #F2DFC7;
+  --void: #050404;
+  --void-2: #171112;
+  --void-3: #24191B;
+}
+
+/* .btn-dark's global paper-theme override is correct on the main canvas,
+   but these deliberately literal paper cards restore the original local
+   bone/void meaning and therefore need their local ink/paper pairing back. */
+html[data-theme="goblin-print"] .auth-paper-canvas .btn-dark {
+  border-color: var(--void);
+  background: var(--void);
+  color: var(--bone);
+  box-shadow: 4px 4px 0 var(--accent);
+}
+
+html[data-theme="goblin-print"] .landing-rites-band .eyebrow {
+  color: var(--print-pink);
+}
+
+/* The mobile quick-add control sits on a fixed translucent-black disc. */
+html[data-theme="goblin-print"] .poster-quick-add__mobile-btn {
+  color: var(--void);
+}
+
+html[data-theme="goblin-print"] .film-price-sticker {
+  border-color: var(--bone) !important;
+  box-shadow: 6px 6px 0 var(--bone) !important;
+}

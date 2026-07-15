@@ -194,7 +194,7 @@
 }
 .films-sort-chip[aria-selected="true"] {
   background: var(--accent);
-  color: var(--void);
+  color: var(--accent-ink);
   box-shadow: 4px 4px 0 var(--void);
 }
 .films-sort-chip:focus-visible {

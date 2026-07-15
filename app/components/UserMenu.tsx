@@ -36,7 +36,7 @@ export default function UserMenu({ username, displayName, avatarUrl, isAdmin, on
         <Avatar name={displayName || username} color="var(--accent)" size={36} url={avatarUrl} />
       </button>
       {open && (
-        <div style={{
+        <div className="user-menu-panel" style={{
           position: "absolute",
           right: 0,
           top: "calc(100% + 8px)",

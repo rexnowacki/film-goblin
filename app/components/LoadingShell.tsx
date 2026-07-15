@@ -4,7 +4,7 @@ export default function LoadingShell() {
   return (
     <div
       style={{
-        background: "#000",
+        background: "var(--void)",
         color: "var(--bone)",
         minHeight: "100dvh",
         paddingTop: "env(safe-area-inset-top)",
