@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { runItunesAvailabilityCheck } from "@/lib/itunes-availability/check";
+import type { ItunesCandidate } from "@/lib/itunes-availability/score";
 
 const today = new Date();
 const isoDate = (offsetDays: number) =>
@@ -30,24 +31,17 @@ const FILM_NULL = {
 // FILM_AUTO: exact title + exact year + director → score 1.0 → auto-promote
 // FILM_QUEUE: "Hereditary." normalizes to "hereditary" == "hereditary" → normalized title
 //             + exact year + director → score 0.8 → queue (0.45 ≤ 0.8 < 0.85)
-// FILM_NULL: no iTunes result → candidates.length === 0 → belowThreshold
-const ITUNES_RESPONSES: Record<string, unknown> = {
-  "The Substance": {
-    resultCount: 1,
-    results: [{
-      kind: "feature-movie",
+// FILM_NULL: no Apple TV page result → candidates.length === 0 → belowThreshold
+const APPLE_TV_RESPONSES: Record<string, ItunesCandidate[]> = {
+  "The Substance": [{
       trackId: 111,
       trackName: "The Substance",
       releaseDate: "2024-09-20T07:00:00Z",
       artistName: "Coralie Fargeat",
       trackViewUrl: "https://itunes.apple.com/us/movie/the-substance/id111",
       artworkUrl100: "https://example.com/100x100bb.jpg",
-    }],
-  },
-  "Hereditary": {
-    resultCount: 1,
-    results: [{
-      kind: "feature-movie",
+  }],
+  "Hereditary": [{
       trackId: 222,
       // Trailing period normalizes to "hereditary" — exact-title check fails but
       // fullyNormalize strips punctuation, giving a normalized-title match.
@@ -56,8 +50,7 @@ const ITUNES_RESPONSES: Record<string, unknown> = {
       artistName: "Ari Aster",
       trackViewUrl: "https://itunes.apple.com/us/movie/hereditary/id222",
       artworkUrl100: "https://example.com/her100.jpg",
-    }],
-  },
+  }],
 };
 
 const films = [FILM_AUTO, FILM_QUEUE, FILM_NULL];
@@ -151,12 +144,7 @@ describe("runItunesAvailabilityCheck", () => {
     }
     candidateInserts.length = 0;
     filmUpdates.length = 0;
-    vi.spyOn(global, "fetch").mockImplementation(async (url) => {
-      const u = new URL(url.toString());
-      const term = u.searchParams.get("term") ?? "";
-      const body = ITUNES_RESPONSES[term] ?? { resultCount: 0, results: [] };
-      return new Response(JSON.stringify(body), { status: 200 });
-    });
+    vi.spyOn(global, "fetch").mockRejectedValue(new Error("iTunes Search must not be used for discovery"));
   });
 
   afterEach(() => {
@@ -165,7 +153,8 @@ describe("runItunesAvailabilityCheck", () => {
 
   it("auto-promotes high-confidence matches and queues fuzzy ones", async () => {
     const client = makeStubClient();
-    const summary = await runItunesAvailabilityCheck(client);
+    const appleTvSearch = async (film: { title: string }) => APPLE_TV_RESPONSES[film.title] ?? [];
+    const summary = await runItunesAvailabilityCheck(client, { appleTvSearch });
 
     expect(summary.autoPromoted).toBe(1);
     expect(summary.queued).toBe(1);
@@ -182,9 +171,7 @@ describe("runItunesAvailabilityCheck", () => {
     expect(filmsState.get("f-null")!.itunes_id).toBe(null);
   });
 
-  it("falls back to Apple TV search when iTunes search finds no viable candidate", async () => {
-    // Live iTunes search never surfaced this film ("Obsession", 2026-06) even
-    // though it exists on the store — the fallback path has to find it.
+  it("uses Apple TV page discovery for every film", async () => {
     filmsState.set("f-fallback", {
       id: "f-fallback",
       title: "Obsession",
@@ -198,10 +185,9 @@ describe("runItunesAvailabilityCheck", () => {
       artwork_url: "",
     });
     const calls: string[] = [];
-    const appleTvFallback = async (film: { title: string; year: number; director: string }) => {
+    const appleTvSearch = async (film: { title: string; year: number; director: string }) => {
       calls.push(film.title);
-      if (film.title !== "Obsession") return [];
-      return [{
+      if (film.title === "Obsession") return [{
         trackId: 1895945921,
         trackName: "Obsession (2026)",
         releaseDate: "2026-06-26T07:00:00Z",
@@ -209,25 +195,25 @@ describe("runItunesAvailabilityCheck", () => {
         trackViewUrl: "https://itunes.apple.com/us/movie/obsession-2026/id1895945921?uo=4",
         artworkUrl100: "https://example.com/ob100.jpg",
       }];
+      return APPLE_TV_RESPONSES[film.title] ?? [];
     };
 
     const client = makeStubClient();
-    const summary = await runItunesAvailabilityCheck(client, { appleTvFallback });
+    const summary = await runItunesAvailabilityCheck(client, { appleTvSearch });
 
     expect(summary.autoPromoted).toBe(2);
     expect(filmsState.get("f-fallback")!.itunes_id).toBe(1895945921);
     expect(filmsState.get("f-fallback")!.tracking).toBe(true);
 
-    // Fallback fires only when the primary search yields nothing viable —
-    // not for films that already matched or queued.
     expect(calls).toContain("Obsession");
-    expect(calls).not.toContain("The Substance");
-    expect(calls).not.toContain("Hereditary");
+    expect(calls).toContain("The Substance");
+    expect(calls).toContain("Hereditary");
   });
 
   it("touches last_itunes_check_at for every considered film", async () => {
     const client = makeStubClient();
-    await runItunesAvailabilityCheck(client);
+    const appleTvSearch = async (film: { title: string }) => APPLE_TV_RESPONSES[film.title] ?? [];
+    await runItunesAvailabilityCheck(client, { appleTvSearch });
     for (const f of filmsState.values()) {
       expect(f.last_itunes_check_at).not.toBe(null);
     }
