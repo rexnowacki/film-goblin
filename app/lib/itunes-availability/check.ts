@@ -1,7 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { scoreMatch, type FilmInput, type ItunesCandidate } from "./score";
-import { searchItunesMovies } from "./itunes-search";
 import { searchAppleTv } from "@/lib/search/apple-tv";
 import { emitFeedEventSvc } from "@/lib/feed-events/emit";
 
@@ -25,17 +24,17 @@ interface FilmRow {
   theatrical_release_date: string | null;
 }
 
-export type AppleTvFallback = (film: FilmInput) => Promise<ItunesCandidate[]>;
+export type AppleTvSearch = (film: FilmInput) => Promise<ItunesCandidate[]>;
 
 export interface CheckOptions {
-  appleTvFallback?: AppleTvFallback;
+  appleTvSearch?: AppleTvSearch;
 }
 
-// The iTunes Search API frequently fails to surface new releases (and its
-// movie filter is broken outright — see itunes-search.ts). When it yields no
-// viable candidate, fall back to the same Brave → Apple TV page → adamId →
-// iTunes Lookup pipeline the manual admin add flow uses.
-async function defaultAppleTvFallback(film: FilmInput): Promise<ItunesCandidate[]> {
+// Discover listings through Brave → Apple TV page → adamId. Apple's Search
+// API lags theatrical transitions and has repeatedly returned zero for films
+// already on the storefront. Lookup is still used after discovery to resolve
+// the page's authoritative adamId into current store metadata and price.
+async function defaultAppleTvSearch(film: FilmInput): Promise<ItunesCandidate[]> {
   const res = await searchAppleTv(film.title);
   if (!res.ok) return [];
   return res.candidates.map(hit => ({
@@ -63,7 +62,7 @@ export async function runItunesAvailabilityCheck(
   const minDate = new Date(Date.now() - 365 * 86400 * 1000).toISOString().slice(0, 10);
   const maxDate = new Date(Date.now() - 30 * 86400 * 1000).toISOString().slice(0, 10);
   const minYear = new Date().getUTCFullYear() - 1;
-  const cooldownIso = new Date(Date.now() - 6 * 86400 * 1000).toISOString();
+  const cooldownIso = new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString();
 
   // Two-phase select: first by precise date, then fall back to year-based
   // for rows lacking theatrical_release_date.
@@ -120,11 +119,11 @@ export async function runItunesAvailabilityCheck(
 
   summary.considered = films.length;
 
-  const appleTvFallback = options.appleTvFallback ?? defaultAppleTvFallback;
+  const appleTvSearch = options.appleTvSearch ?? defaultAppleTvSearch;
 
   for (const film of films) {
     try {
-      await processFilm(client, film, summary, appleTvFallback);
+      await processFilm(client, film, summary, appleTvSearch);
     } catch (e) {
       summary.errors++;
       console.error(`itunes-check ${film.id} (${film.title}): ${(e as Error).message}`);
@@ -160,17 +159,10 @@ async function processFilm(
   client: SupabaseClient<Database>,
   film: FilmRow,
   summary: CheckSummary,
-  appleTvFallback: AppleTvFallback,
+  appleTvSearch: AppleTvSearch,
 ): Promise<void> {
   const input: FilmInput = { title: film.title, year: film.year, director: film.director };
-  let best = pickBest(input, await searchItunesMovies(film.title));
-
-  if (!best || best.score < QUEUE_THRESHOLD) {
-    const fallbackBest = pickBest(input, await appleTvFallback(input));
-    if (fallbackBest && (!best || fallbackBest.score > best.score)) {
-      best = fallbackBest;
-    }
-  }
+  const best = pickBest(input, await appleTvSearch(input));
 
   if (!best || best.score < QUEUE_THRESHOLD) {
     summary.belowThreshold++;

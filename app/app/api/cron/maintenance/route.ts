@@ -110,11 +110,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       jobs.refreshShowtimes = { ok: true, skipped: true, reason: "not scheduled today" };
     }
 
-    if (isMonday) {
-      jobs.itunesAvailability = await recordedJob("check-itunes-availability", () => runItunesAvailabilityCheck(sr));
-    } else {
-      jobs.itunesAvailability = { ok: true, skipped: true, reason: "not scheduled today" };
-    }
+    jobs.itunesAvailability = await recordedJob("check-itunes-availability", () => runItunesAvailabilityCheck(sr));
 
     jobs.streamingAvailability = await recordedJob("streaming-availability", () => {
       const maxFilms = Number(process.env.STREAMING_AVAILABILITY_MAX_FILMS_PER_RUN) || 40;
