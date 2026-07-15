@@ -38,30 +38,45 @@ export default function PitArchiveTab({ initialEvents, initialCursor, initialDon
   const loadingRef = useRef(false);
   const cursorRef = useRef(cursor);
   const doneRef = useRef(done);
+  const scopeVersionRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => { loadingRef.current = loading; }, [loading]);
   useEffect(() => { cursorRef.current = cursor; }, [cursor]);
   useEffect(() => { doneRef.current = done; }, [done]);
 
   useEffect(() => {
+    scopeVersionRef.current += 1;
+    loadingRef.current = false;
+    cursorRef.current = initialCursor;
+    doneRef.current = initialDone;
     setEvents(initialEvents);
     setCursor(initialCursor);
     setDone(initialDone);
+    setLoading(false);
   }, [initialEvents, initialCursor, initialDone]);
 
   const loadMore = useCallback(async () => {
-    if (loadingRef.current || doneRef.current || !cursorRef.current) return;
+    const before = cursorRef.current;
+    if (loadingRef.current || doneRef.current || !before) return;
+    const scopeVersion = scopeVersionRef.current;
+    loadingRef.current = true;
     setLoading(true);
     try {
-      const page = await loadMorePitArchive({ before: cursorRef.current });
+      const page = await loadMorePitArchive({ before });
+      if (scopeVersion !== scopeVersionRef.current) return;
       setEvents((previous) => {
         const seen = new Set(previous.map((event) => event.id));
         return [...previous, ...page.events.filter((event) => !seen.has(event.id))];
       });
+      cursorRef.current = page.nextCursor;
+      doneRef.current = page.done;
       setCursor(page.nextCursor);
       setDone(page.done);
     } finally {
-      setLoading(false);
+      if (scopeVersion === scopeVersionRef.current) {
+        loadingRef.current = false;
+        setLoading(false);
+      }
     }
   }, []);
 
