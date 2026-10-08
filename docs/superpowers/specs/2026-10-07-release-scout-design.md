@@ -57,7 +57,7 @@ maintenance cron (Mondays)
   - `popularity ≥ SCOUT_MIN_POPULARITY` (10);
   - `id` is not in `knownTmdbIds`.
 - **Overlap:** a film present in both windows is kept once. The theatrical entry wins, because its release date is the one the Apple TV check needs.
-- **Output fields:** `tmdb_id`, `title`, `year` (from `release_date`), `release_date`, `window: "digital" | "theatrical"`, `artwork_url` (TMDB w500 poster or null), `description` (overview).
+- **Output fields:** `tmdb_id`, `title`, `year` (from `release_date`), `release_date`, `window: "digital" | "theatrical"`, `artwork_url` (TMDB w780 poster, matching the existing `IMG_BASE`, or null), `description` (overview).
 - Constants are exported for tuning.
 
 ### 2. Fetcher — `discoverHorrorReleases(window, today)` in `app/lib/search/tmdb.ts`
@@ -70,7 +70,7 @@ maintenance cron (Mondays)
 
 ### 3. Job — `runReleaseScout(svc, now)` in `app/lib/scout/run.ts`
 
-1. Take the advisory lock `acquireCronLock(svc, "release-scout")`. If the lock is held, return `{ skipped: "locked" }`.
+1. The job takes no lock itself. The caller does: the maintenance wrapper calls `acquireCronLock(sr, "release-scout")` and returns `{ skipped: true, reason: "locked" }` when it is held. The manual runner already locks by job key before running. A lock inside the job would collide with the manual runner's own lock and always skip.
 2. Fetch both windows. If either fails, throw. `recordedJob` records the error, and the remaining maintenance jobs still run.
 3. Load known IDs: `films.tmdb_id` (non-null) ∪ `film_requests.tmdb_id` (non-null, any status, including dismissed and fulfilled).
 4. `pickScoutReleases(…)`.
@@ -119,7 +119,7 @@ maintenance cron (Mondays)
 | TMDB HTTP error or timeout | The job throws; `cron_runs` row `status='error'` with the message; other maintenance jobs continue. |
 | `TMDB_API_KEY` missing | Same path, via the existing helper's error. |
 | Unique violation on insert (race) | Skip that row; count it as `skippedKnown`. |
-| Lock held | Return `{ skipped: "locked" }`, `status='success'`. |
+| Lock held | The maintenance wrapper returns `{ skipped: true, reason: "locked" }`; `recordCronRun` records it as skipped. |
 
 ## Testing
 
