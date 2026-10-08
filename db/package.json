@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "@testcontainers/postgresql": "^10.16.0",
-    "@types/node": "^20.17.10",
+    "@types/node": "^24.19.1",
     "@types/pg": "^8.11.10",
     "pg-mem": "^3.0.4",
     "testcontainers": "^10.16.0",
