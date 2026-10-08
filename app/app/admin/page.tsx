@@ -1,6 +1,19 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { checkAdminAccess } from "@/lib/auth/require-admin";
+import { serviceRoleClient } from "@/lib/supabase/service-role";
 
-export default function AdminHome() {
+export default async function AdminHome() {
+  const access = await checkAdminAccess(await createClient());
+  if (access === "not-authed") redirect("/auth/signin");
+  if (access === "not-admin") redirect("/home");
+
+  const { count: scoutCount } = await (serviceRoleClient().from("film_requests") as any)
+    .select("id", { count: "exact", head: true })
+    .eq("source", "scout")
+    .eq("status", "pending");
+
   return (
     <div className="admin-index">
       <header className="admin-masthead grain-dark">
@@ -17,7 +30,12 @@ export default function AdminHome() {
         <Tile number="02" href="/admin/users" title="Member Ledger" blurb="Search accounts, create test users, and manage access." />
         <Tile number="03" href="/admin/announcements" title="Proclamations" blurb="Publish and archive site-wide or targeted announcements." />
         <Tile number="04" href="/admin/goblin-pick" title="Goblin Pick" blurb="Set the weekly recommendation shown in the feed." />
-        <Tile number="05" href="/admin/film-requests" title="Summoning Queue" blurb="Review requests for films missing from the catalog." />
+        <Tile
+          number="05"
+          href="/admin/film-requests"
+          title="Summoning Queue"
+          blurb={scoutCount ? `${scoutCount} scouted ${scoutCount === 1 ? "release" : "releases"} waiting, plus member requests.` : "Review requests for films missing from the catalog."}
+        />
         <Tile number="06" href="/admin/invite-codes" title="Secret Keys" blurb="Create and revoke invite links and inspect their use." />
         <Tile number="07" href="/admin/site-settings" title="Engine Room" blurb="Site health, background jobs, and global controls." />
         <Tile number="08" href="/admin/badges" title="Badge Forge" blurb="Create achievement rules, upload artwork, and inspect awards." />

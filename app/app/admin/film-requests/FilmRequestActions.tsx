@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { fulfillFilmRequest } from "@/lib/actions/film-requests";
+import { dismissFilmRequest, fulfillFilmRequest } from "@/lib/actions/film-requests";
 
 interface Request {
   id: string;
@@ -21,25 +21,50 @@ export default function FilmRequestActions({ request }: { request: Request }) {
     }
   }
 
+  async function handleDismiss() {
+    const res = await dismissFilmRequest(request.id);
+    if (res.ok) {
+      router.refresh();
+    } else {
+      alert(`Failed: ${res.error}`);
+    }
+  }
+
+  const dismiss = (
+    <button
+      className="btn btn-sm btn-outline"
+      style={{ fontSize: 12, whiteSpace: "nowrap" }}
+      onClick={handleDismiss}
+    >
+        Dismiss
+    </button>
+  );
+
   if (request.needs_itunes_id) {
     return (
-      <a
-        href={`/admin/films/new?request_id=${request.id}`}
-        className="btn btn-sm btn-outline"
-        style={{ fontSize: 12, whiteSpace: "nowrap" }}
-      >
-        Review & Add
-      </a>
+      <div style={{ display: "flex", gap: 8 }}>
+        <a
+          href={`/admin/films/new?request_id=${request.id}`}
+          className="btn btn-sm btn-outline"
+          style={{ fontSize: 12, whiteSpace: "nowrap" }}
+        >
+          Review & Add
+        </a>
+        {dismiss}
+      </div>
     );
   }
 
   return (
-    <button
-      className="btn btn-sm"
-      style={{ fontSize: 12, whiteSpace: "nowrap" }}
-      onClick={handleDirectAdd}
-    >
-      Add to catalog
-    </button>
+    <div style={{ display: "flex", gap: 8 }}>
+      <button
+        className="btn btn-sm"
+        style={{ fontSize: 12, whiteSpace: "nowrap" }}
+        onClick={handleDirectAdd}
+      >
+        Add to catalog
+      </button>
+      {dismiss}
+    </div>
   );
 }
