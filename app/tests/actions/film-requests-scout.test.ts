@@ -92,3 +92,110 @@ describe("dismissFilmRequest", () => {
     expect(await dismissFilmRequest("req-1")).toEqual({ ok: false, error: "boom" });
   });
 });
+
+// ── submitFilmRequest vs the tmdb_id unique index ───────────────────────────
+
+import { submitFilmRequest } from "@/lib/actions/film-requests";
+import { lookupTmdb } from "@/lib/search/tmdb";
+import { createClient } from "@/lib/supabase/server";
+
+type Op = { table: string; kind: "select" | "insert" | "update"; payload?: unknown; filters: [string, unknown][] };
+type Result = { data?: unknown; error?: { message: string; code?: string } | null; count?: number };
+
+// Thenable query-builder fake: records every operation, answers via `answer`.
+function fakeSvc(answer: (op: Op) => Result) {
+  const ops: Op[] = [];
+  const from = (table: string) => {
+    const op: Op = { table, kind: "select", filters: [] };
+    const b: any = {
+      select: () => b,
+      insert: (payload: unknown) => { op.kind = "insert"; op.payload = payload; return b; },
+      update: (payload: unknown) => { op.kind = "update"; op.payload = payload; return b; },
+      eq: (c: string, v: unknown) => { op.filters.push([c, v]); return b; },
+      gte: () => b,
+      in: () => b,
+      maybeSingle: () => b,
+      single: () => b,
+      then: (res: (r: Result) => unknown, rej: (e: unknown) => unknown) => {
+        ops.push(op);
+        return Promise.resolve(answer(op)).then(r => ({ data: null, error: null, ...r })).then(res, rej);
+      },
+    };
+    return b;
+  };
+  return { svc: { from }, ops };
+}
+
+const TMDB_FIELDS = {
+  itunes_id: null, title: "Clayface", director: "Someone", year: 2026, runtime_min: 0,
+  genre_primary: "Horror", description: "", content_advisory: "", artwork_url: "",
+  itunes_url: "", tracking: false, available: true, tmdb_id: 1400940,
+  theatrical_release_date: "2026-10-23", series_id: null, series_new_name: "", series_order: null,
+};
+const MEMBER_INPUT = {
+  source: "tmdb" as const, tmdb_id: 1400940, itunes_id: null, title: "Clayface", year: 2026,
+  needs_itunes_id: true, artwork_url: null, director: null, description: null,
+  runtime_min: null, genre_primary: null, content_advisory: null, itunes_url: null,
+};
+
+function answerWith(existing: Record<string, unknown> | null, insertError: Result["error"] = null) {
+  return (op: Op): Result => {
+    if (op.table === "films") return { data: null };
+    if (op.table === "film_request_users" && op.kind === "select") {
+      return op.filters.some(([c]) => c === "request_id") ? { data: null } : { count: 0 };
+    }
+    if (op.table === "film_requests" && op.kind === "select") return { data: existing };
+    if (op.table === "film_requests" && op.kind === "insert") return insertError ? { error: insertError } : { data: { id: "new-req" } };
+    return {};
+  };
+}
+
+describe("submitFilmRequest against existing tmdb_id rows", () => {
+  beforeEach(() => {
+    vi.mocked(createClient).mockResolvedValue({
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "member-1" } } }) },
+    } as never);
+    vi.mocked(lookupTmdb).mockResolvedValue({ ok: true, fields: TMDB_FIELDS } as never);
+  });
+
+  it("reopens a dismissed scout pick as a member request instead of inserting a duplicate", async () => {
+    const { svc, ops } = fakeSvc(answerWith({ id: "scout-req", request_count: 0, status: "dismissed", source: "scout", fulfilled_film_id: null }));
+    vi.mocked(serviceRoleClient).mockReturnValue(svc as never);
+
+    const result = await submitFilmRequest(MEMBER_INPUT as never);
+
+    expect(result).toEqual({ status: "already_requested", requestCount: 1 });
+    expect(ops.some(o => o.table === "film_requests" && o.kind === "insert")).toBe(false);
+    const lookup = ops.find(o => o.table === "film_requests" && o.kind === "select");
+    expect(lookup?.filters).toEqual([["tmdb_id", 1400940]]);
+    const update = ops.find(o => o.table === "film_requests" && o.kind === "update");
+    expect(update?.payload).toMatchObject({ status: "pending", source: "tmdb", request_count: 1 });
+  });
+
+  it("converts a pending scout pick into a member request when a member joins it", async () => {
+    const { svc, ops } = fakeSvc(answerWith({ id: "scout-req", request_count: 0, status: "pending", source: "scout", fulfilled_film_id: null }));
+    vi.mocked(serviceRoleClient).mockReturnValue(svc as never);
+
+    await submitFilmRequest(MEMBER_INPUT as never);
+
+    const update = ops.find(o => o.table === "film_requests" && o.kind === "update");
+    expect(update?.payload).toMatchObject({ source: "tmdb", request_count: 1 });
+  });
+
+  it("reports a fulfilled request's film as already in the catalog", async () => {
+    const { svc } = fakeSvc(answerWith({ id: "old-req", request_count: 2, status: "fulfilled", source: "tmdb", fulfilled_film_id: "film-9" }));
+    vi.mocked(serviceRoleClient).mockReturnValue(svc as never);
+
+    expect(await submitFilmRequest(MEMBER_INPUT as never)).toEqual({ status: "already_in_catalog", filmId: "film-9" });
+  });
+
+  it("turns a unique-violation race into a friendly message", async () => {
+    const { svc } = fakeSvc(answerWith(null, { message: "duplicate key value violates unique constraint", code: "23505" }));
+    vi.mocked(serviceRoleClient).mockReturnValue(svc as never);
+
+    expect(await submitFilmRequest(MEMBER_INPUT as never)).toEqual({
+      status: "error",
+      message: "That film is already in the summoning queue.",
+    });
+  });
+});
