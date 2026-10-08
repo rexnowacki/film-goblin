@@ -10,6 +10,7 @@ import { serviceRoleClient } from "@/lib/supabase/service-role";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { adminCreateFilm } from "@/lib/actions/admin/films";
 import { consumeRateLimit, utcDayString } from "@/lib/rate-limit";
+import { requestCreateOverrides } from "@/lib/scout/approval";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 
@@ -340,6 +341,8 @@ export async function fulfillFilmRequest(requestId: string): Promise<
 
   if (fetchErr || !req) return { ok: false, error: "Request not found." };
   if (req.status === "fulfilled") return { ok: false, error: "Already fulfilled." };
+  if (req.status === "dismissed") return { ok: false, error: "Request was dismissed." };
+  const overrides = requestCreateOverrides(req);
 
   const createResult = await adminCreateFilm({
     itunes_id: req.itunes_id,
@@ -355,11 +358,11 @@ export async function fulfillFilmRequest(requestId: string): Promise<
     tracking: true,
     available: true,
     tmdb_id: req.tmdb_id,
-    theatrical_release_date: null,
+    theatrical_release_date: overrides.theatrical_release_date,
     series_id: null,
     series_new_name: "",
     series_order: null,
-    summoned: true,
+    summoned: overrides.summoned,
   });
 
   if (!createResult.ok) return createResult;
@@ -369,4 +372,26 @@ export async function fulfillFilmRequest(requestId: string): Promise<
   revalidatePath("/films");
 
   return { ok: true, filmId: createResult.filmId };
+}
+
+// ── dismissFilmRequest ───────────────────────────────────────────────────────
+
+export async function dismissFilmRequest(requestId: string): Promise<
+  | { ok: true }
+  | { ok: false; error: string }
+> {
+  const supabase = await createClient();
+  await requireAdmin(supabase);
+  const svc = serviceRoleClient();
+
+  const { error } = await svc
+    .from("film_requests")
+    .update({ status: "dismissed", updated_at: new Date().toISOString() })
+    .eq("id", requestId)
+    .eq("status", "pending");
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/admin/film-requests");
+  revalidatePath("/admin");
+  return { ok: true };
 }
