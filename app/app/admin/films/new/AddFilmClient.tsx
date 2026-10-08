@@ -7,6 +7,7 @@ import AppleTvSearchBox from "../AppleTvSearchBox";
 import ITunesPasteBox from "../iTunesPasteBox";
 import TmdbSearchBox from "../TmdbSearchBox";
 import { listFilmSeries, type ITunesSearchHit, type FilmFormFields, type FilmSeriesSummary } from "@/lib/actions/admin/films";
+import { requestCreateOverrides } from "@/lib/scout/approval";
 
 const BLANK: FilmFormFields = {
   itunes_id: null,
@@ -62,7 +63,7 @@ export default function AddFilmClient({ onSuccess, variant = "page" }: { onSucce
           tracking: false,
           available: true,
           tmdb_id: req.tmdb_id ?? null,
-          theatrical_release_date: null,
+          theatrical_release_date: requestCreateOverrides(req).theatrical_release_date,
           series_id: null,
           series_new_name: "",
           series_order: null,

@@ -13,6 +13,7 @@ import { runTheaterAlerts } from "@/lib/theaters/scrape-theaters";
 import { runLoftShowtimes } from "@/lib/theaters/showtimes/scrape-loft-showtimes";
 import { recordCronRun } from "@/lib/cron/record-run";
 import { runPriceFeedScan } from "@/lib/feed-events/price-scan";
+import { runReleaseScoutWithSvc } from "@/lib/scout/run";
 import { runDailyFeedEvents } from "@/lib/feed-events/daily";
 import { runProductEventCleanup } from "@/lib/cron/product-event-cleanup";
 import { runGazingReminders } from "@/lib/cron/gazing-reminders";
@@ -106,8 +107,14 @@ export async function GET(request: Request): Promise<NextResponse> {
         if (!locked) return { skipped: true, reason: "locked" };
         return runLoftShowtimes(sr);
       });
+      jobs.releaseScout = await recordedJob("release-scout", async () => {
+        const locked = await acquireCronLock(sr, "release-scout");
+        if (!locked) return { skipped: true, reason: "locked" };
+        return runReleaseScoutWithSvc(sr);
+      });
     } else {
       jobs.refreshShowtimes = { ok: true, skipped: true, reason: "not scheduled today" };
+      jobs.releaseScout = { ok: true, skipped: true, reason: "not scheduled today" };
     }
 
     jobs.itunesAvailability = await recordedJob("check-itunes-availability", () => runItunesAvailabilityCheck(sr));

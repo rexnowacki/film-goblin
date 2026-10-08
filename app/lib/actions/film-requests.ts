@@ -10,6 +10,7 @@ import { serviceRoleClient } from "@/lib/supabase/service-role";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { adminCreateFilm } from "@/lib/actions/admin/films";
 import { consumeRateLimit, utcDayString } from "@/lib/rate-limit";
+import { requestCreateOverrides } from "@/lib/scout/approval";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 
@@ -213,10 +214,20 @@ export async function submitFilmRequest(input: FilmRequestInput): Promise<Submit
     : await svc.from("films").select("id").eq("title", trustedInput.title).eq("year", trustedInput.year as number).maybeSingle();
   if (existingFilm) return { status: "already_in_catalog", filmId: existingFilm.id };
 
-  // 2. Already requested?
+  // 2. Already requested? A tmdb_id is unique across every status (mig 0225),
+  //    so TMDB requests match on it whether the row is pending, dismissed, or
+  //    fulfilled; other sources keep matching pending rows only.
+  const existingCols = "id, request_count, status, source, fulfilled_film_id";
   const { data: existingReq } = trustedInput.itunes_id
-    ? await svc.from("film_requests").select("id, request_count").eq("status", "pending").eq("itunes_id", trustedInput.itunes_id).maybeSingle()
-    : await svc.from("film_requests").select("id, request_count").eq("status", "pending").eq("title", trustedInput.title).eq("year", trustedInput.year as number).maybeSingle();
+    ? await svc.from("film_requests").select(existingCols).eq("status", "pending").eq("itunes_id", trustedInput.itunes_id).maybeSingle()
+    : trustedInput.tmdb_id
+      ? await svc.from("film_requests").select(existingCols).eq("tmdb_id", trustedInput.tmdb_id).maybeSingle()
+      : await svc.from("film_requests").select(existingCols).eq("status", "pending").eq("title", trustedInput.title).eq("year", trustedInput.year as number).maybeSingle();
+
+  if (existingReq?.status === "fulfilled") {
+    if (existingReq.fulfilled_film_id) return { status: "already_in_catalog", filmId: existingReq.fulfilled_film_id };
+    return { status: "error", message: "That film has already been added." };
+  }
 
   if (existingReq) {
     const { data: alreadyUser } = await svc
@@ -239,7 +250,14 @@ export async function submitFilmRequest(input: FilmRequestInput): Promise<Submit
 
     await svc
       .from("film_requests")
-      .update({ request_count: existingReq.request_count + 1, updated_at: new Date().toISOString() })
+      .update({
+        request_count: existingReq.request_count + 1,
+        updated_at: new Date().toISOString(),
+        // A member asking reopens a dismissed row, and turns a scout pick into
+        // a member request so it is listed, counted, and approved as summoned.
+        status: "pending",
+        ...(existingReq.source === "scout" ? { source: trustedInput.source } : {}),
+      })
       .eq("id", existingReq.id);
 
     return { status: "already_requested", requestCount: existingReq.request_count + 1 };
@@ -270,6 +288,9 @@ export async function submitFilmRequest(input: FilmRequestInput): Promise<Submit
     .select("id")
     .single();
 
+  if (insertErr?.code === "23505") {
+    return { status: "error", message: "That film is already in the summoning queue." };
+  }
   if (insertErr || !newReq) {
     return { status: "error", message: insertErr?.message ?? "Failed to save request." };
   }
@@ -340,6 +361,8 @@ export async function fulfillFilmRequest(requestId: string): Promise<
 
   if (fetchErr || !req) return { ok: false, error: "Request not found." };
   if (req.status === "fulfilled") return { ok: false, error: "Already fulfilled." };
+  if (req.status === "dismissed") return { ok: false, error: "Request was dismissed." };
+  const overrides = requestCreateOverrides(req);
 
   const createResult = await adminCreateFilm({
     itunes_id: req.itunes_id,
@@ -355,11 +378,11 @@ export async function fulfillFilmRequest(requestId: string): Promise<
     tracking: true,
     available: true,
     tmdb_id: req.tmdb_id,
-    theatrical_release_date: null,
+    theatrical_release_date: overrides.theatrical_release_date,
     series_id: null,
     series_new_name: "",
     series_order: null,
-    summoned: true,
+    summoned: overrides.summoned,
   });
 
   if (!createResult.ok) return createResult;
@@ -369,4 +392,26 @@ export async function fulfillFilmRequest(requestId: string): Promise<
   revalidatePath("/films");
 
   return { ok: true, filmId: createResult.filmId };
+}
+
+// ── dismissFilmRequest ───────────────────────────────────────────────────────
+
+export async function dismissFilmRequest(requestId: string): Promise<
+  | { ok: true }
+  | { ok: false; error: string }
+> {
+  const supabase = await createClient();
+  await requireAdmin(supabase);
+  const svc = serviceRoleClient();
+
+  const { error } = await svc
+    .from("film_requests")
+    .update({ status: "dismissed", updated_at: new Date().toISOString() })
+    .eq("id", requestId)
+    .eq("status", "pending");
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/admin/film-requests");
+  revalidatePath("/admin");
+  return { ok: true };
 }

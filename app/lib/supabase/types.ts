@@ -461,10 +461,12 @@ export type Database = {
           itunes_id: number | null
           itunes_url: string | null
           needs_itunes_id: boolean
+          release_date: string | null
           request_count: number
           runtime_min: number | null
-          source: "itunes" | "tmdb" | "manual"
-          status: "pending" | "fulfilled"
+          scout_window: "digital" | "theatrical" | null
+          source: "itunes" | "tmdb" | "manual" | "scout"
+          status: "pending" | "fulfilled" | "dismissed"
           title: string
           tmdb_id: number | null
           updated_at: string
@@ -482,10 +484,12 @@ export type Database = {
           itunes_id?: number | null
           itunes_url?: string | null
           needs_itunes_id?: boolean
+          release_date?: string | null
           request_count?: number
           runtime_min?: number | null
-          source: "itunes" | "tmdb" | "manual"
-          status?: "pending" | "fulfilled"
+          scout_window?: "digital" | "theatrical" | null
+          source: "itunes" | "tmdb" | "manual" | "scout"
+          status?: "pending" | "fulfilled" | "dismissed"
           title: string
           tmdb_id?: number | null
           updated_at?: string
@@ -503,10 +507,12 @@ export type Database = {
           itunes_id?: number | null
           itunes_url?: string | null
           needs_itunes_id?: boolean
+          release_date?: string | null
           request_count?: number
           runtime_min?: number | null
-          source?: "itunes" | "tmdb" | "manual"
-          status?: "pending" | "fulfilled"
+          scout_window?: "digital" | "theatrical" | null
+          source?: "itunes" | "tmdb" | "manual" | "scout"
+          status?: "pending" | "fulfilled" | "dismissed"
           title?: string
           tmdb_id?: number | null
           updated_at?: string

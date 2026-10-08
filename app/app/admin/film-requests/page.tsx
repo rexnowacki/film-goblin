@@ -19,9 +19,20 @@ export default async function FilmRequestsPage({
 
   const svc = serviceRoleClient();
 
+  const memberQuery = (svc.from("film_requests") as any)
+    .select("*")
+    .neq("source", "scout")
+    .neq("status", "dismissed");
   const { data: requests } = showFulfilled
-    ? await (svc.from("film_requests") as any).select("*").order("request_count", { ascending: false }).order("created_at", { ascending: false })
-    : await (svc.from("film_requests") as any).select("*").eq("status", "pending").order("request_count", { ascending: false }).order("created_at", { ascending: false });
+    ? await memberQuery.order("request_count", { ascending: false }).order("created_at", { ascending: false })
+    : await memberQuery.eq("status", "pending").order("request_count", { ascending: false }).order("created_at", { ascending: false });
+
+  const { data: scouted } = await (svc.from("film_requests") as any)
+    .select("*")
+    .eq("source", "scout")
+    .eq("status", "pending")
+    .order("release_date", { ascending: true });
+  const scoutRows = scouted ?? [];
 
   const rows = requests ?? [];
 
@@ -51,6 +62,40 @@ export default async function FilmRequestsPage({
               {showFulfilled ? "Hide fulfilled" : `Show fulfilled (${fulfilledCount ?? 0})`}
             </a>
           </div>
+
+          {scoutRows.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <div className="eyebrow" style={{ marginBottom: 10 }}>
+                Scouted · {scoutRows.length} new {scoutRows.length === 1 ? "release" : "releases"}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {scoutRows.map((req: any) => (
+                  <div
+                    key={req.id}
+                    style={{
+                      display: "flex", gap: 16, alignItems: "flex-start",
+                      background: "var(--void-2)", border: "1px solid var(--void-3)", borderRadius: 6, padding: 16,
+                    }}
+                  >
+                    {req.artwork_url ? (
+                      <img src={req.artwork_url} alt={req.title} style={{ width: 48, height: 72, objectFit: "cover", borderRadius: 3, flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: 48, height: 72, background: "#222", borderRadius: 3, flexShrink: 0 }} />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="head" style={{ fontSize: 16 }}>{req.title}</div>
+                      <div style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
+                        {req.scout_window === "theatrical" ? "In theaters" : "Digital"} · {req.release_date}
+                      </div>
+                    </div>
+                    <div style={{ flexShrink: 0 }}>
+                      <FilmRequestActions request={req as { id: string; title: string; needs_itunes_id: boolean }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {rows.length === 0 && (
             <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", color: "var(--muted)", padding: "40px 0" }}>

@@ -3,6 +3,7 @@ export const TRIGGERABLE_JOBS = [
   "check-itunes-availability",
   "theater-alerts",
   "send-rate-reminders",
+  "release-scout",
 ] as const;
 
 export type JobKey = (typeof TRIGGERABLE_JOBS)[number];
@@ -16,4 +17,5 @@ export const JOB_META: Record<JobKey, { label: string; notifies: boolean }> = {
   "check-itunes-availability": { label: "iTunes availability", notifies: false },
   "theater-alerts": { label: "Theater alerts", notifies: false },
   "send-rate-reminders": { label: "Rate reminders", notifies: true },
+  "release-scout": { label: "Release scout", notifies: false },
 };

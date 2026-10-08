@@ -4,6 +4,7 @@ import { runOnce } from "film-goblin-worker";
 import { runRateReminders } from "@/lib/cron/rate-reminders";
 import { runItunesAvailabilityCheck } from "@/lib/itunes-availability/check";
 import { runTheaterAlerts } from "@/lib/theaters/scrape-theaters";
+import { runReleaseScoutWithSvc } from "@/lib/scout/run";
 import { serviceRoleClient } from "@/lib/supabase/service-role";
 import type { Database } from "@/lib/supabase/types";
 import type { JobKey } from "@/lib/cron/job-meta";
@@ -38,6 +39,8 @@ export async function runJobByKey(key: JobKey): Promise<unknown> {
       return runItunesAvailabilityCheck(sr());
     case "theater-alerts":
       return runTheaterAlerts(sr());
+    case "release-scout":
+      return runReleaseScoutWithSvc(sr());
   }
 }
 
