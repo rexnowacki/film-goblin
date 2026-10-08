@@ -1,3 +1,5 @@
+import type { ScoutWindow, TmdbDiscoverResult } from "@/lib/scout/pick";
+
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const IMG_BASE = "https://image.tmdb.org/t/p/w780";
 
@@ -386,5 +388,48 @@ export async function lookupTmdb(tmdbId: number): Promise<
     return { ok: true, fields };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "TMDB lookup failed." };
+  }
+}
+
+export const SCOUT_MAX_PAGES = 10;
+
+function shiftDay(isoDay: string, days: number): string {
+  const d = new Date(`${isoDay}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+export async function discoverHorrorReleases(window: ScoutWindow, today: string): Promise<
+  | { ok: true; results: TmdbDiscoverResult[] }
+  | { ok: false; error: string }
+> {
+  try {
+    const params = new URLSearchParams({
+      api_key: apiKey(),
+      with_genres: "27",
+      region: "US",
+      include_adult: "false",
+      sort_by: "popularity.desc",
+      with_release_type: window === "digital" ? "4|5" : "2|3",
+      "release_date.gte": window === "digital" ? shiftDay(today, -14) : shiftDay(today, 1),
+      "release_date.lte": window === "digital" ? today : shiftDay(today, 30),
+    });
+
+    const results: TmdbDiscoverResult[] = [];
+    let pageNum = 1;
+    let totalPages = 1;
+    do {
+      params.set("page", String(pageNum));
+      const res = await fetch(`${TMDB_BASE}/discover/movie?${params.toString()}`, { cache: "no-store" });
+      if (!res.ok) return { ok: false, error: `TMDB discover returned ${res.status}` };
+      const data = await res.json();
+      results.push(...((data.results ?? []) as TmdbDiscoverResult[]));
+      totalPages = Number(data.total_pages ?? 0);
+      pageNum++;
+    } while (pageNum <= totalPages && pageNum <= SCOUT_MAX_PAGES);
+
+    return { ok: true, results };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "TMDB discover failed." };
   }
 }
