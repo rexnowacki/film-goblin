@@ -38,6 +38,8 @@ function statsLine(job: JobKey, run?: CronRunRow): string | null {
       return `${numberStat(stats.films_refreshed)} indexed · ${numberStat(stats.price_drops)} price drops · ${numberStat(stats.alerts_fired)} alerts`;
     case "send-rate-reminders":
       return `${numberStat(stats.inserted)} reminders queued`;
+    case "release-scout":
+      return `${numberStat(stats.inserted)} new picks · ${numberStat(stats.skippedKnown)} already known`;
     case "check-itunes-availability":
       return Object.entries(stats)
         .filter(([, value]) => typeof value === "number" || typeof value === "string" || typeof value === "boolean")
