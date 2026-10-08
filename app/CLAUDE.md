@@ -12,7 +12,7 @@ npm run gen:types     # regen lib/supabase/types.ts from local Supabase
 npm run test          # vitest run
 ```
 
-**Node 20 required.** Prefix one-shot commands with `PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH` — background bash tool calls don't share shell state so `nvm use 20 && ...` in another call won't carry.
+**Node 24.** Pinned by `.nvmrc`, CI, and `engines.node` in `package.json` (Vercel reads it for the runtime). Vercel functions run in `sfo1`, next to Supabase `us-west-1`.
 
 ## Deploying
 
