@@ -23,7 +23,13 @@ export function decideRedirect(
   return null;
 }
 
+/** The private study site has its own shared-password gate (app/study route); skip Supabase auth. */
+export function isStudyPath(path: string): boolean {
+  return path === "/study" || path.startsWith("/study/");
+}
+
 export async function middleware(request: NextRequest) {
+  if (isStudyPath(request.nextUrl.pathname)) return NextResponse.next();
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
